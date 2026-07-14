@@ -87,6 +87,34 @@
     .done .bar::after { width: 100%; animation: none; }
     .error .bar::after { width: 100%; animation: none; background: #e53935; }
 
+    [hidden] { display: none !important; }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: var(--tg-theme-button-text-color, #fff);
+      background: var(--tg-theme-button-color, #3390ec);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.danger { background: #d93025; }
+
+    button.cancel {
+      color: var(--tg-theme-text-color, #17212b);
+      background: color-mix(in srgb, var(--tg-theme-hint-color, #8b98a5) 16%, transparent);
+    }
+
     @keyframes pulse { to { transform: scale(.94); opacity: .82; } }
     @keyframes travel { from { transform: translateX(-110%); } to { transform: translateX(340%); } }
 
@@ -100,7 +128,11 @@
     <div class="logo loading" id="logo">✉</div>
     <h1 id="title">Перевіряю Gmail</h1>
     <p id="status">Шукаю нові листи та готую повідомлення…</p>
-    <div class="bar" aria-hidden="true"></div>
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <div class="actions" id="confirmActions" hidden>
+      <button type="button" id="confirmButton">Підтвердити</button>
+      <button type="button" class="cancel" id="cancelButton">Скасувати</button>
+    </div>
   </main>
 
   <script>
@@ -116,8 +148,14 @@
       const logo = document.getElementById('logo');
       const title = document.getElementById('title');
       const status = document.getElementById('status');
+      const bar = document.getElementById('bar');
+      const confirmActions = document.getElementById('confirmActions');
+      const confirmButton = document.getElementById('confirmButton');
+      const cancelButton = document.getElementById('cancelButton');
       const tg = window.Telegram && window.Telegram.WebApp;
       let finished = false;
+      let started = false;
+      let timeoutId = 0;
 
       const titles = {
         check: ['Перевіряю Gmail', 'Шукаю нові листи та готую повідомлення…'],
@@ -126,6 +164,41 @@
         settings: ['Відкриваю налаштування', 'Готую поточні параметри бота…'],
         help: ['Відкриваю довідку', 'Готую список можливостей…'],
         eml: ['Готую оригінал листа', 'Завантажую точну копію у форматі .eml…'],
+        archive: ['Архівую лист', 'Прибираю лист із Вхідних…'],
+        trash: ['Видаляю лист', 'Переміщую його до кошика Gmail, звідки лист можна відновити…'],
+        spam: ['Позначаю як спам', 'Gmail перемістить лист до папки Спам…'],
+        unsubscribe: ['Відписую від розсилки', 'Перевіряю стандартний спосіб відписки…'],
+      };
+
+      const confirmations = {
+        archive: {
+          icon: '🗄',
+          title: 'Архівувати цей лист?',
+          message: 'Він зникне з Вхідних, але залишиться у «Вся пошта».',
+          button: 'Архівувати',
+          dangerous: false,
+        },
+        trash: {
+          icon: '🗑',
+          title: 'Видалити цей лист?',
+          message: 'Лист буде переміщено до кошика. Це не безповоротне видалення: його можна відновити до очищення кошика.',
+          button: 'Видалити до кошика',
+          dangerous: true,
+        },
+        spam: {
+          icon: '🚫',
+          title: 'Позначити цей лист як спам?',
+          message: 'Лист буде прибрано з Вхідних, а Gmail врахує ваш сигнал.',
+          button: 'Позначити як спам',
+          dangerous: true,
+        },
+        unsubscribe: {
+          icon: '🔕',
+          title: 'Відписатися від цієї розсилки?',
+          message: 'Для підозрілих листів безпечніше обрати «Спам»: відписка може підтвердити активність адреси.',
+          button: 'Відписатися',
+          dangerous: true,
+        },
       };
 
       [title.textContent, status.textContent] = titles[action] || titles.menu;
@@ -133,7 +206,10 @@
       function finish(result) {
         if (finished) return;
         finished = true;
+        if (timeoutId) clearTimeout(timeoutId);
         const ok = Boolean(result && result.ok);
+        confirmActions.hidden = true;
+        bar.hidden = false;
         card.classList.add(ok ? 'done' : 'error');
         logo.classList.remove('loading');
         logo.classList.toggle('error', !ok);
@@ -143,7 +219,15 @@
         if (tg && tg.HapticFeedback) {
           tg.HapticFeedback.notificationOccurred(ok ? 'success' : 'error');
         }
-        if (ok && tg) setTimeout(() => tg.close(), 650);
+        if (ok && tg) {
+          setTimeout(() => {
+            const openUrl = result && /^https:\/\//i.test(String(result.openUrl || ''))
+              ? String(result.openUrl)
+              : '';
+            if (openUrl) tg.openLink(openUrl);
+            tg.close();
+          }, 650);
+        }
       }
 
       window.telegramControlDone = finish;
@@ -160,28 +244,60 @@
       tg.ready();
       tg.expand();
 
-      const backend = new URL(BACKEND);
-      backend.searchParams.set('format', 'js');
-      backend.searchParams.set('action', action);
-      backend.searchParams.set('key', key);
-      if (tg.initData) backend.searchParams.set('init_data', tg.initData);
-      backend.searchParams.set('_', String(Date.now()));
-      if (messageId) backend.searchParams.set('message_id', messageId);
+      function startRequest() {
+        if (started) return;
+        started = true;
+        confirmActions.hidden = true;
+        bar.hidden = false;
+        logo.classList.add('loading');
+        logo.classList.remove('error');
+        logo.textContent = '✉';
+        [title.textContent, status.textContent] = titles[action] || titles.menu;
 
-      const request = document.createElement('script');
-      request.src = backend.toString();
-      request.async = true;
-      request.referrerPolicy = 'no-referrer';
-      request.onerror = () => finish({
-        ok: false,
-        message: 'Сервер не відповів. Спробуйте натиснути кнопку ще раз.',
-      });
-      document.head.appendChild(request);
+        const backend = new URL(BACKEND);
+        backend.searchParams.set('format', 'js');
+        backend.searchParams.set('action', action);
+        backend.searchParams.set('key', key);
+        if (confirmations[action]) backend.searchParams.set('confirmed', '1');
+        if (tg.initData) backend.searchParams.set('init_data', tg.initData);
+        backend.searchParams.set('_', String(Date.now()));
+        if (messageId) backend.searchParams.set('message_id', messageId);
 
-      setTimeout(() => finish({
-        ok: false,
-        message: 'Перевірка триває довше, ніж очікувалося. Спробуйте ще раз.',
-      }), 45000);
+        const request = document.createElement('script');
+        request.src = backend.toString();
+        request.async = true;
+        request.referrerPolicy = 'no-referrer';
+        request.onerror = () => finish({
+          ok: false,
+          message: 'Сервер не відповів. Спробуйте натиснути кнопку ще раз.',
+        });
+        document.head.appendChild(request);
+
+        timeoutId = setTimeout(() => finish({
+          ok: false,
+          message: 'Перевірка триває довше, ніж очікувалося. Спробуйте ще раз.',
+        }), 45000);
+      }
+
+      const confirmation = confirmations[action];
+      if (confirmation) {
+        if (!/^[A-Za-z0-9_-]{5,64}$/.test(messageId)) {
+          finish({ ok: false, message: 'Gmail ID листа відсутній або пошкоджений.' });
+          return;
+        }
+        logo.classList.remove('loading');
+        logo.textContent = confirmation.icon;
+        title.textContent = confirmation.title;
+        status.textContent = confirmation.message;
+        bar.hidden = true;
+        confirmActions.hidden = false;
+        confirmButton.textContent = confirmation.button;
+        confirmButton.classList.toggle('danger', confirmation.dangerous);
+        confirmButton.addEventListener('click', startRequest, { once: true });
+        cancelButton.addEventListener('click', () => tg.close(), { once: true });
+      } else {
+        startRequest();
+      }
     })();
   </script>
 </body>
