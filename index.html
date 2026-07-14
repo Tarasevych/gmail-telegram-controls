@@ -148,7 +148,7 @@
 
       window.telegramControlDone = finish;
 
-      if (!tg || !tg.initData) {
+      if (!tg || !tg.platform || tg.platform === 'unknown') {
         finish({ ok: false, message: 'Відкрийте цю кнопку безпосередньо в Telegram.' });
         return;
       }
@@ -164,7 +164,7 @@
       backend.searchParams.set('format', 'js');
       backend.searchParams.set('action', action);
       backend.searchParams.set('key', key);
-      backend.searchParams.set('init_data', tg.initData);
+      if (tg.initData) backend.searchParams.set('init_data', tg.initData);
       backend.searchParams.set('_', String(Date.now()));
       if (messageId) backend.searchParams.set('message_id', messageId);
 
