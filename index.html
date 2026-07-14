@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>Gmail сповіщення Павла</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--tg-theme-text-color, #17212b);
+      background:
+        radial-gradient(circle at 50% -15%, rgba(66, 133, 244, .22), transparent 44%),
+        var(--tg-theme-bg-color, #f4f7fb);
+    }
+
+    main {
+      width: min(100%, 420px);
+      padding: 30px 26px 26px;
+      text-align: center;
+      border: 1px solid color-mix(in srgb, var(--tg-theme-hint-color, #8b98a5) 20%, transparent);
+      border-radius: 24px;
+      background: var(--tg-theme-secondary-bg-color, rgba(255, 255, 255, .92));
+      box-shadow: 0 18px 55px rgba(24, 51, 78, .13);
+    }
+
+    .logo {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 34px;
+      background: linear-gradient(145deg, #4285f4, #34a853);
+      box-shadow: 0 10px 28px rgba(66, 133, 244, .25);
+    }
+
+    .logo.loading { animation: pulse 1.1s ease-in-out infinite alternate; }
+    .logo.error { background: linear-gradient(145deg, #e53935, #c62828); }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    p {
+      min-height: 42px;
+      margin: 10px 0 0;
+      color: var(--tg-theme-hint-color, #6d7883);
+      line-height: 1.45;
+    }
+
+    .bar {
+      height: 4px;
+      margin-top: 24px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: color-mix(in srgb, var(--tg-theme-button-color, #3390ec) 18%, transparent);
+    }
+
+    .bar::after {
+      content: "";
+      display: block;
+      width: 42%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--tg-theme-button-color, #3390ec);
+      animation: travel 1s ease-in-out infinite;
+    }
+
+    .done .bar::after { width: 100%; animation: none; }
+    .error .bar::after { width: 100%; animation: none; background: #e53935; }
+
+    @keyframes pulse { to { transform: scale(.94); opacity: .82; } }
+    @keyframes travel { from { transform: translateX(-110%); } to { transform: translateX(340%); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo.loading, .bar::after { animation-duration: 2.4s; }
+    }
+  </style>
+</head>
+<body>
+  <main id="card">
+    <div class="logo loading" id="logo">✉</div>
+    <h1 id="title">Перевіряю Gmail</h1>
+    <p id="status">Шукаю нові листи та готую повідомлення…</p>
+    <div class="bar" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const BACKEND = 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec';
+      const params = new URLSearchParams(location.search);
+      const action = params.get('action') || 'menu';
+      const key = params.get('key') || '';
+      const messageId = params.get('message_id') || '';
+      const card = document.getElementById('card');
+      const logo = document.getElementById('logo');
+      const title = document.getElementById('title');
+      const status = document.getElementById('status');
+      const tg = window.Telegram && window.Telegram.WebApp;
+      let finished = false;
+
+      const titles = {
+        check: ['Перевіряю Gmail', 'Шукаю нові листи та готую повідомлення…'],
+        status: ['Перевіряю стан', 'Збираю актуальний статус бота…'],
+        menu: ['Відкриваю меню', 'Готую кнопки керування в чаті…'],
+        settings: ['Відкриваю налаштування', 'Готую поточні параметри бота…'],
+        help: ['Відкриваю довідку', 'Готую список можливостей…'],
+        eml: ['Готую оригінал листа', 'Завантажую точну копію у форматі .eml…'],
+      };
+
+      [title.textContent, status.textContent] = titles[action] || titles.menu;
+
+      function finish(result) {
+        if (finished) return;
+        finished = true;
+        const ok = Boolean(result && result.ok);
+        card.classList.add(ok ? 'done' : 'error');
+        logo.classList.remove('loading');
+        logo.classList.toggle('error', !ok);
+        logo.textContent = ok ? '✓' : '!';
+        title.textContent = ok ? 'Готово' : 'Не вдалося виконати';
+        status.textContent = result && result.message ? result.message : 'Невідома відповідь сервера.';
+        if (tg && tg.HapticFeedback) {
+          tg.HapticFeedback.notificationOccurred(ok ? 'success' : 'error');
+        }
+        if (ok && tg) setTimeout(() => tg.close(), 650);
+      }
+
+      window.telegramControlDone = finish;
+
+      if (!tg || !tg.initData) {
+        finish({ ok: false, message: 'Відкрийте цю кнопку безпосередньо в Telegram.' });
+        return;
+      }
+      if (!/^[A-Za-z0-9_-]{40,128}$/.test(key)) {
+        finish({ ok: false, message: 'Приватний ключ кнопки відсутній або пошкоджений.' });
+        return;
+      }
+
+      tg.ready();
+      tg.expand();
+
+      const backend = new URL(BACKEND);
+      backend.searchParams.set('format', 'js');
+      backend.searchParams.set('action', action);
+      backend.searchParams.set('key', key);
+      backend.searchParams.set('init_data', tg.initData);
+      backend.searchParams.set('_', String(Date.now()));
+      if (messageId) backend.searchParams.set('message_id', messageId);
+
+      const request = document.createElement('script');
+      request.src = backend.toString();
+      request.async = true;
+      request.referrerPolicy = 'no-referrer';
+      request.onerror = () => finish({
+        ok: false,
+        message: 'Сервер не відповів. Спробуйте натиснути кнопку ще раз.',
+      });
+      document.head.appendChild(request);
+
+      setTimeout(() => finish({
+        ok: false,
+        message: 'Перевірка триває довше, ніж очікувалося. Спробуйте ще раз.',
+      }), 45000);
+    })();
+  </script>
+</body>
+</html>
