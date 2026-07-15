@@ -87,34 +87,6 @@
     .done .bar::after { width: 100%; animation: none; }
     .error .bar::after { width: 100%; animation: none; background: #e53935; }
 
-    [hidden] { display: none !important; }
-
-    .actions {
-      display: grid;
-      gap: 10px;
-      margin-top: 24px;
-    }
-
-    button {
-      width: 100%;
-      min-height: 48px;
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 16px;
-      color: var(--tg-theme-button-text-color, #fff);
-      background: var(--tg-theme-button-color, #3390ec);
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    button.danger { background: #d93025; }
-
-    button.cancel {
-      color: var(--tg-theme-text-color, #17212b);
-      background: color-mix(in srgb, var(--tg-theme-hint-color, #8b98a5) 16%, transparent);
-    }
-
     @keyframes pulse { to { transform: scale(.94); opacity: .82; } }
     @keyframes travel { from { transform: translateX(-110%); } to { transform: translateX(340%); } }
 
@@ -129,10 +101,6 @@
     <h1 id="title">Перевіряю Gmail</h1>
     <p id="status">Шукаю нові листи та готую повідомлення…</p>
     <div class="bar" id="bar" aria-hidden="true"></div>
-    <div class="actions" id="confirmActions" hidden>
-      <button type="button" id="confirmButton">Підтвердити</button>
-      <button type="button" class="cancel" id="cancelButton">Скасувати</button>
-    </div>
   </main>
 
   <script>
@@ -149,9 +117,6 @@
       const title = document.getElementById('title');
       const status = document.getElementById('status');
       const bar = document.getElementById('bar');
-      const confirmActions = document.getElementById('confirmActions');
-      const confirmButton = document.getElementById('confirmButton');
-      const cancelButton = document.getElementById('cancelButton');
       const tg = window.Telegram && window.Telegram.WebApp;
       let finished = false;
       let started = false;
@@ -170,36 +135,7 @@
         unsubscribe: ['Відписую від розсилки', 'Перевіряю стандартний спосіб відписки…'],
       };
 
-      const confirmations = {
-        archive: {
-          icon: '🗄',
-          title: 'Архівувати цей лист?',
-          message: 'Він зникне з Вхідних, але залишиться у «Вся пошта».',
-          button: 'Архівувати',
-          dangerous: false,
-        },
-        trash: {
-          icon: '🗑',
-          title: 'Видалити цей лист?',
-          message: 'Лист буде переміщено до кошика. Це не безповоротне видалення: його можна відновити до очищення кошика.',
-          button: 'Видалити до кошика',
-          dangerous: true,
-        },
-        spam: {
-          icon: '🚫',
-          title: 'Позначити цей лист як спам?',
-          message: 'Лист буде прибрано з Вхідних, а Gmail врахує ваш сигнал.',
-          button: 'Позначити як спам',
-          dangerous: true,
-        },
-        unsubscribe: {
-          icon: '🔕',
-          title: 'Відписатися від цієї розсилки?',
-          message: 'Для підозрілих листів безпечніше обрати «Спам»: відписка може підтвердити активність адреси.',
-          button: 'Відписатися',
-          dangerous: true,
-        },
-      };
+      const mailboxActions = new Set(['archive', 'trash', 'spam', 'unsubscribe']);
 
       [title.textContent, status.textContent] = titles[action] || titles.menu;
 
@@ -208,7 +144,6 @@
         finished = true;
         if (timeoutId) clearTimeout(timeoutId);
         const ok = Boolean(result && result.ok);
-        confirmActions.hidden = true;
         bar.hidden = false;
         card.classList.add(ok ? 'done' : 'error');
         logo.classList.remove('loading');
@@ -250,7 +185,6 @@
       function startRequest() {
         if (started) return;
         started = true;
-        confirmActions.hidden = true;
         bar.hidden = false;
         logo.classList.add('loading');
         logo.classList.remove('error');
@@ -261,7 +195,7 @@
         backend.searchParams.set('format', 'js');
         backend.searchParams.set('action', action);
         backend.searchParams.set('key', key);
-        if (confirmations[action]) backend.searchParams.set('confirmed', '1');
+        if (mailboxActions.has(action)) backend.searchParams.set('confirmed', '1');
         if (tg.initData) backend.searchParams.set('init_data', tg.initData);
         backend.searchParams.set('_', String(Date.now()));
         if (messageId) backend.searchParams.set('message_id', messageId);
@@ -282,25 +216,13 @@
         }), 45000);
       }
 
-      const confirmation = confirmations[action];
-      if (confirmation) {
+      if (mailboxActions.has(action)) {
         if (!/^[A-Za-z0-9_-]{5,64}$/.test(messageId)) {
           finish({ ok: false, message: 'Gmail ID листа відсутній або пошкоджений.' });
           return;
         }
-        logo.classList.remove('loading');
-        logo.textContent = confirmation.icon;
-        title.textContent = confirmation.title;
-        status.textContent = confirmation.message;
-        bar.hidden = true;
-        confirmActions.hidden = false;
-        confirmButton.textContent = confirmation.button;
-        confirmButton.classList.toggle('danger', confirmation.dangerous);
-        confirmButton.addEventListener('click', startRequest, { once: true });
-        cancelButton.addEventListener('click', () => tg.close(), { once: true });
-      } else {
-        startRequest();
       }
+      startRequest();
     })();
   </script>
 </body>
