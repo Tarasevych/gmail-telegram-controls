@@ -224,8 +224,11 @@
             const openUrl = result && /^https:\/\//i.test(String(result.openUrl || ''))
               ? String(result.openUrl)
               : '';
-            if (openUrl) tg.openLink(openUrl);
-            tg.close();
+            try {
+              if (openUrl) tg.openLink(openUrl);
+            } finally {
+              tg.close();
+            }
           }, 650);
         }
       }
