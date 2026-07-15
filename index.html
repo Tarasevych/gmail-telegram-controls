@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; img-src data:; form-action https://script.google.com; base-uri 'none'; object-src 'none'; connect-src 'none'">
   <title>Gmail сповіщення Павла</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
@@ -123,6 +124,7 @@
       let timeoutId = 0;
 
       const titles = {
+        mailbox: ['Відкриваю пошту', 'Захищено підключаю Gmail до вашого Telegram…'],
         check: ['Перевіряю Gmail', 'Шукаю нові листи та готую повідомлення…'],
         status: ['Перевіряю стан', 'Збираю актуальний статус бота…'],
         menu: ['Відкриваю меню', 'Готую кнопки керування в чаті…'],
@@ -174,13 +176,56 @@
         finish({ ok: false, message: 'Відкрийте цю кнопку безпосередньо в Telegram.' });
         return;
       }
+
+      tg.ready();
+      tg.expand();
+
+      if (action === 'mailbox') {
+        if (!tg.initData || tg.initData.length > 16384) {
+          finish({ ok: false, message: 'Telegram не передав захищену команду. Закрийте вікно та відкрийте пошту ще раз.' });
+          return;
+        }
+
+        const initData = tg.initData;
+        const sourceRoute = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+        const route = new URLSearchParams();
+        ['view', 'thread', 'message', 'folder'].forEach(name => {
+          if (sourceRoute.has(name)) route.set(name, sourceRoute.get(name) || '');
+        });
+        const routeValue = route.toString().slice(0, 512);
+        history.replaceState(
+          null,
+          '',
+          location.pathname + location.search + (routeValue ? '#' + routeValue : '')
+        );
+
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = BACKEND + '?action=mailbox';
+        form.acceptCharset = 'UTF-8';
+        form.enctype = 'application/x-www-form-urlencoded';
+        form.referrerPolicy = 'no-referrer';
+
+        function addField(name, value) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+        }
+
+        addField('mailbox_bootstrap', '1');
+        addField('init_data', initData);
+        addField('route', routeValue);
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+
       if (!/^[A-Za-z0-9_-]{40,128}$/.test(key)) {
         finish({ ok: false, message: 'Приватний ключ кнопки відсутній або пошкоджений.' });
         return;
       }
-
-      tg.ready();
-      tg.expand();
 
       function startRequest() {
         if (started) return;
