@@ -189,7 +189,7 @@
         const initData = tg.initData;
         const sourceRoute = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
         const route = new URLSearchParams();
-        ['view', 'thread', 'message', 'folder'].forEach(name => {
+        ['view', 'thread', 'message', 'folder', 'filter', 'panel'].forEach(name => {
           if (sourceRoute.has(name)) route.set(name, sourceRoute.get(name) || '');
         });
         const routeValue = route.toString().slice(0, 512);

@@ -13,7 +13,7 @@ signature, owner, freshness, and one-use replay claim, then returns only a
 
 The bridge has a restrictive CSP, posts only to `script.google.com`, and
 reconstructs deep-link state solely from allowlisted `view`, `folder`,
-`thread`, and `message` fields. Telegram's `tgWebAppData`, platform, and version
+`thread`, `message`, `filter`, and `panel` fields. Telegram's `tgWebAppData`, platform, and version
 fragment fields are never copied into the route. The CSP also permits Google
 Apps Script's `script.google.com`/`script.googleusercontent.com` JSONP response
 only for the temporary legacy-card compatibility path described below.
