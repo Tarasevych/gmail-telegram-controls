@@ -1,5 +1,23 @@
 # Crash and blocker report
 
+## 2026-07-18 — stale Mini App capacity page replays one-use launch
+
+- Symptom: the owner saw the pre-v34 capacity copy and only
+  `Перезапустити Mini App` while opening mail in parallel.
+- Live read-only preflight proves stable Apps Script v34 and exact immutable
+  hashes. The visible page was an already-rendered legacy WebView.
+- Root cause: Restart reposted the same already-claimed Telegram `initData`, so
+  the capacity error lost its recovery code/token and became a generic replay
+  failure.
+- Local v35 resolution: capacity fallback closes the stale WebView instead of
+  replaying it; the account panel adds exact-current-session sign out that
+  leaves Gmail authorization and sibling sessions intact.
+- Verification: targeted 216/216; rendered desktop/mobile 15/15; ordinary
+  candidate 363/364 with the same single pre-existing reminder-helper failure
+  reproduced on clean v34 at 360/361.
+- Production remains v34 until a separately pinned v35 release gate is
+  committed, pushed, and passes guarded staging acceptance.
+
 No current production crash was detected during the v28 baseline audit.
 
 ## Frozen issue

@@ -772,7 +772,8 @@ test('expired mailbox sessions are classified, cleared, and never retried with t
   assert.match(restartSource, /window\.top\.location\.href = bridgeUrl/);
   assert.match(restartSource, /window\.location\.replace\(bridgeUrl\)/);
   assert.match(restartSource, /tg\.close\(\)/);
-  assert.match(restartSource, /retry\.addEventListener\("click", restartMailboxApp\)/);
+  assert.match(restartSource, /retry\.addEventListener\("click", function \(\) \{/);
+  assert.match(restartSource, /restartMailboxApp\(\)/);
   assert.doesNotMatch(restartSource, /retry\.addEventListener\("click", boot\)/);
   assert.doesNotMatch(restartSource, /window\.location\.reload\(\)/);
 
@@ -2801,6 +2802,55 @@ test('Gmail zones expose invitation roles and an inline revocable disconnect flo
   assert.match(normalizationSource, /seen\.has\(id\)/);
   assert.match(normalizationSource, /hasExplicitCurrent/);
   assert.doesNotMatch(normalizationSource, /seen\.has\(key\)/);
+});
+
+test('account panel exposes a current-session sign out without disconnecting Gmail', () => {
+  assert.match(uiSource, /id="signOutMailboxSession"[^>]*>Вийти з цього сеансу</);
+  assert.match(uiSource, /function callCloseMailboxSession\(sessionToken, refreshToken\)/);
+  assert.match(uiSource, /\.mailboxCloseSession\(sessionToken, refreshToken\)/);
+  const signOutSource = sourceBetween(
+    '      async function signOutMailboxSession() {',
+    '      function renewMailboxSession() {'
+  );
+  assert.match(signOutSource, /result\.signedOut !== true/);
+  assert.match(signOutSource, /state\.session = null/);
+  assert.match(signOutSource, /state\.refreshToken = null/);
+  assert.match(signOutSource, /await prepareComposeForSessionClose\(\)/);
+  assert.match(signOutSource, /if \(state\.renewPromise\)[\s\S]*await state\.renewPromise/);
+  assert.match(signOutSource, /state\.sessionClosing = true/);
+  assert.match(signOutSource, /state\.sessionClosing = false/);
+  assert.match(signOutSource, /Gmail-акаунти залишилися підключеними/);
+  assert.match(signOutSource, /\{ signedOut: true \}/);
+  assert.match(signOutSource, /tg\.close\(\)/);
+  assert.doesNotMatch(signOutSource, /disconnectGmail|sourceDisconnect|boxDisconnect|archive|trash|sendDraft/);
+  assert.match(uiSource, /signOutMailboxSession\.addEventListener\("click", signOutMailboxSession\)/);
+  const composeGuardSource = sourceBetween(
+    '      async function prepareComposeForSessionClose() {',
+    '      async function signOutMailboxSession() {'
+  );
+  assert.match(composeGuardSource, /composeAttachmentJobs\(\)/);
+  assert.match(composeGuardSource, /state\.compose\.dirty/);
+  assert.match(composeGuardSource, /await saveDraft\(/);
+  assert.match(composeGuardSource, /Вихід зупинено/);
+  assert.doesNotMatch(composeGuardSource, /finishCloseCompose|discard|cancelAllComposeAttachmentJobs/);
+  const renewalSource = sourceBetween(
+    '      function renewMailboxSession() {',
+    '      function translateRpcRequest(request) {'
+  );
+  assert.match(renewalSource, /if \(state\.sessionClosing\)/);
+  assert.match(renewalSource, /SESSION_CLOSING/);
+});
+
+test('session-capacity fallback closes the stale WebView instead of replaying one-use initData', () => {
+  const errorSource = sourceBetween(
+    '      function showBootError(message, options) {',
+    '      function setBootLoading() {'
+  );
+  assert.match(errorSource, /Закрити й відкрити пошту з меню/);
+  assert.match(errorSource, /opts\.sessionCapacity \|\| opts\.signedOut/);
+  assert.match(errorSource, /tg && typeof tg\.close === "function"/);
+  assert.match(errorSource, /tg\.close\(\)/);
+  assert.match(errorSource, /else if \(typeof window\.close === "function"\) window\.close\(\);[\s\S]*return;/);
 });
 
 test('Gmail metadata panel refreshes the active account and manages only guarded user labels', () => {

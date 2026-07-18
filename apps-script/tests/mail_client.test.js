@@ -427,7 +427,7 @@ test('MailClient loads beside Code.gs and exposes only the intended public RPC s
     .sort();
   assert.deepEqual(
     publicFunctions,
-    ['mailboxOpenSession', 'mailboxRecoverSessionCapacity', 'mailboxRenewSession', 'mailboxRpc'],
+    ['mailboxCloseSession', 'mailboxOpenSession', 'mailboxRecoverSessionCapacity', 'mailboxRenewSession', 'mailboxRpc'],
     'only the authenticated session endpoints may be public to HtmlService clients'
   );
 });
@@ -941,6 +941,66 @@ test('separate Mini App instances retain independent bounded refresh families', 
   const after = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
   assert.equal(after.length, 2, 'rotation must update one family instead of replacing other instances');
   assert.equal(new Set(after.map(item => item.fid)).size, 2);
+});
+
+test('explicit sign out revokes only the current Mini App family and never touches Gmail', () => {
+  const harness = makeContext();
+  const { context, propertyValues } = harness;
+  const first = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-explicit-sign-out-first',
+  })));
+  const second = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-explicit-sign-out-second',
+  })));
+  const before = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  assert.equal(before.length, 2);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(resultData(context.mailboxCloseSession(first.sessionToken, first.refreshToken)))),
+    { signedOut: true }
+  );
+  const after = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  assert.equal(after.length, 1);
+  assert.equal(after[0].sessionKey, context.mailboxSessionKey_(second.sessionToken));
+  assert.equal(context.mailboxRequireSession_(second.sessionToken).ownerId, OWNER_ID);
+  assert.equal(resultFailed(context.mailboxRpc(first.sessionToken, {
+    op: 'bootstrap', payload: {},
+  })).code, 'SESSION_EXPIRED');
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(resultData(context.mailboxCloseSession(first.sessionToken, first.refreshToken)))),
+    { signedOut: true },
+    'a lost success response may be retried into the same signed-out terminal state'
+  );
+
+  const rotating = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-explicit-sign-out-rotation',
+  })));
+  const rotated = resultData(context.mailboxRenewSession(rotating.refreshToken));
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(resultData(context.mailboxCloseSession(
+      rotating.sessionToken,
+      rotating.refreshToken
+    )))),
+    { signedOut: true },
+    'the previous refresh bearer must still revoke its exact rotated family'
+  );
+  assert.equal(resultFailed(context.mailboxRpc(rotated.sessionToken, {
+    op: 'bootstrap', payload: {},
+  })).code, 'SESSION_EXPIRED');
+
+  const mismatchOne = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-explicit-sign-out-mismatch-one',
+  })));
+  const mismatchTwo = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-explicit-sign-out-mismatch-two',
+  })));
+  assert.equal(resultFailed(context.mailboxCloseSession(
+    mismatchOne.sessionToken,
+    mismatchTwo.refreshToken
+  )).code, 'FORBIDDEN');
+  assert.equal(context.mailboxRequireSession_(mismatchOne.sessionToken).ownerId, OWNER_ID);
+  assert.equal(context.mailboxRequireSession_(mismatchTwo.sessionToken).ownerId, OWNER_ID);
+  assert.equal(harness.gmailCalls.length, 0, 'sign out must not call or mutate Gmail');
 });
 
 test('fresh launches retain six parallel same-user families and retire only that user oldest sessions', () => {
