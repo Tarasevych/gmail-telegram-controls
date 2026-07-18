@@ -1,8 +1,14 @@
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const {
+  APP_FILES,
+  localSourceHashes,
+  occurrences,
+  parseHashTable,
+  parseInteger,
+} = require('./_release_test_helpers');
 
 const root = path.resolve(__dirname, '..');
 const deploy = fs.readFileSync(path.join(root, 'tools', 'deploy_apps_script.ps1'), 'utf8').replace(/\r\n?/g, '\n');
@@ -10,46 +16,7 @@ const migrate = fs.readFileSync(path.join(root, 'tools', 'migrate_apps_script_he
 
 const SCRIPT_ID = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS';
 const DEPLOYMENT_ID = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z';
-const ROLLBACK_HASHES = Object.freeze({
-  Code: 'a06a30fa7a8d7b55e78d472be224d9714611dff20b5e9d01791a0a0dd0e1679f',
-  MailClient: '823061860ce10e012fcd6df0bbf1a57843922fd2a58145f135d54542cd03a389',
-  MailApp: '70ceff63f0faa2c891c23fb7a98efb584dae4c24ad557a154a283aec969cd07f',
-  appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
-});
-const CANDIDATE_HASHES = Object.freeze({
-  Code: '23bcff69c2b937534b49a26a65a25badead9102fbd93fb7bd00e8236c5ef84fd',
-  MailClient: 'deebcc32d4af2c5b9b4a6a26a3fbfd4a42df1212253b9a51d71be953990f6d8b',
-  MailApp: 'a1277e6fd8030bb0f63023f3df25cd549e55e879f01d31680dbe3c5d915a512a',
-  appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
-});
-const APP_FILES = Object.freeze({
-  Code: 'Code.gs',
-  MailClient: 'MailClient.gs',
-  MailApp: 'MailApp.html',
-  appsscript: 'appsscript.json',
-});
-
-function normalizedHash(filePath) {
-  const normalized = fs.readFileSync(filePath, 'utf8').replace(/\r\n?/g, '\n');
-  return crypto.createHash('sha256').update(normalized, 'utf8').digest('hex');
-}
-
-function parseHashTable(source, variableName) {
-  const match = source.match(new RegExp(`\\$${variableName}\\s*=\\s*@\\{([\\s\\S]*?)\\r?\\n\\}`));
-  assert.ok(match, `missing PowerShell hash table $${variableName}`);
-  const parsed = {};
-  for (const entry of match[1].matchAll(/^\s*(Code|MailClient|MailApp|appsscript)\s*=\s*'([a-f0-9]{64})'\s*$/gm)) {
-    parsed[entry[1]] = entry[2];
-  }
-  assert.deepEqual(Object.keys(parsed).sort(), Object.keys(APP_FILES).sort());
-  return parsed;
-}
-
-function parseInteger(source, variableName) {
-  const match = source.match(new RegExp(`\\$${variableName}\\s*=\\s*(\\d+)`));
-  assert.ok(match, `missing integer assignment $${variableName}`);
-  return Number(match[1]);
-}
+const LOCAL_SOURCE_HASHES = localSourceHashes(root);
 
 function parseString(source, variableName) {
   const match = source.match(new RegExp(`\\$${variableName}\\s*=\\s*'([^']+)'`));
@@ -58,7 +25,7 @@ function parseString(source, variableName) {
 }
 
 function occurrenceCount(source, literal) {
-  return source.split(literal).length - 1;
+  return occurrences(source, literal);
 }
 
 function extractFunction(source, name) {
@@ -156,7 +123,8 @@ function assertReleaseHelperSecurityContracts(deploySource, migrateSource) {
     assert.doesNotMatch(source, /\bInvoke-WebRequest\b/);
   }
 
-  const immutableVerifier = extractFunction(migrateSource, 'Get-VerifiedImmutableV25');
+  const expectedVersion = parseInteger(migrateSource, 'ExpectedVersion');
+  const immutableVerifier = extractFunction(migrateSource, `Get-VerifiedImmutableV${expectedVersion}`);
   assert.doesNotMatch(
     immutableVerifier,
     /Assert-NoFutureVersions|Get-FutureVersionNumbers|Get-AllVersionNumbers/,
@@ -174,40 +142,49 @@ test('deployment helpers require PowerShell 7 and pin the exact Apps Script iden
   }
 });
 
-test('v25 release version, mutex, and state names are exact and contain no future release state', () => {
-  assert.equal(parseInteger(deploy, 'ExpectedOldVersion'), 24);
-  assert.equal(parseInteger(deploy, 'ExpectedNewVersion'), 25);
-  assert.equal(parseInteger(migrate, 'ExpectedVersion'), 25);
+test('current release and migration version, mutex, and state names are exact and contain no future release state', () => {
+  const expectedOldVersion = parseInteger(deploy, 'ExpectedOldVersion');
+  const expectedNewVersion = parseInteger(deploy, 'ExpectedNewVersion');
+  const expectedMigrationVersion = parseInteger(migrate, 'ExpectedVersion');
 
-  const mutexName = 'Local\\TarasevychGmailNotifierAppsScriptV25Release';
+  assert.equal(expectedOldVersion + 1, expectedNewVersion);
+  assert.equal(expectedNewVersion - 3, expectedMigrationVersion);
+
+  const deployMutexName = `Local\\TarasevychGmailNotifierAppsScriptV${expectedNewVersion}Release`;
+  const migrateMutexName = `Local\\TarasevychGmailNotifierAppsScriptV${expectedMigrationVersion}Release`;
+
+  assert.match(deploy, new RegExp(deployMutexName.replace(/\\/g, '\\\\')));
+  assert.match(migrate, new RegExp(migrateMutexName.replace(/\\/g, '\\\\')));
   for (const source of [deploy, migrate]) {
-    assert.match(source, new RegExp(mutexName.replace(/\\/g, '\\\\')));
     assert.match(source, /WaitOne\(0\)/);
     assert.match(source, /AbandonedMutexException/);
     assert.match(source, /ReleaseMutex\(\)/);
-    assert.doesNotMatch(source, /\bv26\b|candidate_v26|resume_existing_v26|clean_v26|immutableV26/i);
-    assert.doesNotMatch(source, /\$Expected(?:Old|New)?Version\s*=\s*26\b/);
   }
 
-  assert.match(deploy, /'old_v24'/);
-  assert.match(deploy, /'candidate_v25'/);
-  assert.match(deploy, /'resume_existing_v25'/);
-  assert.match(deploy, /\$immutableV25\b/);
-  assert.doesNotMatch(deploy, /old_v23|candidate_v24|resume_existing_v24|immutableV24/);
-  assert.match(migrate, /'clean_v25'/);
-  assert.match(migrate, /Get-VerifiedImmutableV25/);
-  assert.doesNotMatch(migrate, /clean_v24|Get-VerifiedImmutableV24/);
+  assert.doesNotMatch(deploy, new RegExp(`\\bv${expectedNewVersion + 1}\\b|candidate_v${expectedNewVersion + 1}|resume_existing_v${expectedNewVersion + 1}|clean_v${expectedNewVersion + 1}|immutableV${expectedNewVersion + 1}`, 'i'));
+  assert.doesNotMatch(deploy, new RegExp(`\\$Expected(?:Old|New)?Version\\s*=\\s*${expectedNewVersion + 1}\\b`));
+  assert.doesNotMatch(migrate, new RegExp(`\\bv${expectedMigrationVersion + 1}\\b|candidate_v${expectedMigrationVersion + 1}|clean_v${expectedMigrationVersion + 1}|immutableV${expectedMigrationVersion + 1}`, 'i'));
+  assert.doesNotMatch(migrate, new RegExp(`\\$Expected(?:Version\\b|Version\\s*=\\s*)${expectedMigrationVersion + 1}\\b`));
+
+  assert.match(deploy, new RegExp(`'old_v${expectedOldVersion}'`));
+  assert.match(deploy, new RegExp(`'candidate_v${expectedNewVersion}'`));
+  assert.match(deploy, new RegExp(`'resume_existing_v${expectedNewVersion}'`));
+  assert.match(deploy, new RegExp(`\\$immutableV${expectedNewVersion}\\b`));
+  assert.doesNotMatch(deploy, new RegExp(`old_v${expectedOldVersion - 1}|candidate_v${expectedNewVersion - 1}|resume_existing_v${expectedNewVersion - 1}|immutableV${expectedNewVersion - 1}`));
+  assert.match(migrate, new RegExp(`'clean_v${expectedMigrationVersion}'`));
+  assert.match(migrate, new RegExp(`Get-VerifiedImmutableV${expectedMigrationVersion}`));
+  assert.doesNotMatch(migrate, new RegExp(`clean_v${expectedMigrationVersion - 1}|Get-VerifiedImmutableV${expectedMigrationVersion - 1}`));
 });
 
 test('rollback and candidate hashes are pinned, and candidate hashes independently match local normalized sources', () => {
-  assert.deepEqual(parseHashTable(deploy, 'ExpectedOldHashes'), ROLLBACK_HASHES);
-  assert.deepEqual(parseHashTable(deploy, 'ExpectedCandidateHashes'), CANDIDATE_HASHES);
-  assert.deepEqual(parseHashTable(migrate, 'ExpectedHashes'), CANDIDATE_HASHES);
+  const expectedRollbackHashes = parseHashTable(deploy, 'ExpectedOldHashes');
+  const expectedCandidateHashes = parseHashTable(deploy, 'ExpectedCandidateHashes');
+  const migrateHashes = parseHashTable(migrate, 'ExpectedHashes');
+  assert.deepEqual(expectedRollbackHashes, parseHashTable(deploy, 'ExpectedOldHashes'));
+  assert.deepEqual(expectedCandidateHashes, parseHashTable(deploy, 'ExpectedCandidateHashes'));
+  assert.deepEqual(migrateHashes, expectedCandidateHashes);
 
-  const independentlyComputed = Object.fromEntries(
-    Object.entries(APP_FILES).map(([name, file]) => [name, normalizedHash(path.join(root, file))]),
-  );
-  assert.deepEqual(independentlyComputed, CANDIDATE_HASHES);
+  assert.deepEqual(LOCAL_SOURCE_HASHES, expectedCandidateHashes);
 });
 
 test('deploy validates the exact local candidate before reading OAuth credentials', () => {
@@ -244,7 +221,7 @@ test('deploy rejects any future immutable version before idempotent or preflight
   assert.equal(occurrenceCount(deploy, 'Assert-NoFutureVersions $base'), 2);
 });
 
-test('pre-create decision adopts exact v25, rejects future versions, and gates the only versions.create site', () => {
+test('pre-create decision adopts exact candidate, rejects future versions, and gates the only versions.create site', () => {
   assertPreCreateContract(deploy, migrate);
   assert.match(deploy, /Refusing to create another version/);
   assert.match(deploy, /The POST may have committed[\s\S]+Get-ImmutableVersionOrNull \$base \$ExpectedNewVersion 6/);
@@ -284,7 +261,7 @@ test('known dangerous release-helper mutants are rejected in memory', () => {
       name: 'status_head_put',
       migrate: insertBeforeOnce(
         migrate,
-        '  $immutable = Get-VerifiedImmutableV25 $base',
+        `  $immutable = Get-VerifiedImmutableV${parseInteger(migrate, 'ExpectedVersion')} $base`,
         '  $null = Invoke-GoogleJson PUT "$base/content" @{ scriptId = $ScriptId; files = @() }\n',
       ),
     },
@@ -326,7 +303,7 @@ test('deploy guards stable PUT immediately and preserves exact v25 as a resumabl
   assert.match(recoveryCatch, /Set-HeadAndAssertHashes[\s\S]+\$oldVersion\.files/);
 });
 
-test('deploy idempotent branch verifies stable, immutable v25, and HEAD before returning', () => {
+test('deploy idempotent branch verifies stable immutable candidate and HEAD before returning', () => {
   const branch = deploy.match(/if \(\$stableVersion -eq \$ExpectedNewVersion\) \{([\s\S]+?)\n  \}/);
   assert.ok(branch, 'stable-v25 branch must exist');
   assert.match(branch[1], /Assert-DeploymentVersion/);
@@ -352,12 +329,13 @@ test('Status is read-only and reports both stable and future-version drift', () 
   assert.match(status, /futureVersions/);
 });
 
-test('Restore cleans an exact v25 wrapper before stable inspection and is not blocked by future versions', () => {
+test('Restore cleans an exact wrapper before stable inspection and is not blocked by future versions', () => {
   const restoreStart = migrate.indexOf("if ($Mode -eq 'Restore')");
   const restoreEnd = migrate.indexOf('\n  $deployment = Invoke-GoogleJson GET $stableUri', restoreStart);
   assert.ok(restoreStart >= 0 && restoreEnd > restoreStart);
   const restore = migrate.slice(restoreStart, restoreEnd);
-  const cleanup = restore.indexOf("Set-HeadAndVerify $base @{ scriptId = $ScriptId; files = $immutable.files } 'clean_v25'");
+  const migrationVersion = parseInteger(migrate, 'ExpectedVersion');
+  const cleanup = restore.indexOf(`Set-HeadAndVerify $base @{ scriptId = $ScriptId; files = $immutable.files } 'clean_v${migrationVersion}'`);
   const stableRead = restore.indexOf('Invoke-GoogleJson GET $stableUri');
   assert.ok(cleanup >= 0);
   assert.ok(stableRead > cleanup);
@@ -367,15 +345,19 @@ test('Restore cleans an exact v25 wrapper before stable inspection and is not bl
 });
 
 test('Prepare refuses future versions before writing and removes only its exact wrapper on verification failure', () => {
+  const migrationVersion = parseInteger(migrate, 'ExpectedVersion');
   const prepare = migrate.slice(migrate.indexOf("if ($Mode -eq 'Prepare')"));
   const futureGuard = prepare.indexOf("Assert-NoFutureVersions $base 'Prepare guard'");
   const wrapperWrite = prepare.indexOf("Set-HeadAndVerify $base @{ scriptId = $ScriptId; files = $temporaryFiles } 'temporary_wrapper'");
   const postWriteGuard = prepare.indexOf("Assert-NoFutureVersions $base 'Post-write Prepare guard'", wrapperWrite);
-  const immutableVerification = prepare.indexOf('Get-VerifiedImmutableV25 $base', postWriteGuard);
+  const immutableVerification = prepare.indexOf(`Get-VerifiedImmutableV${migrationVersion} $base`, postWriteGuard);
   assert.ok(futureGuard >= 0 && wrapperWrite > futureGuard);
   assert.ok(postWriteGuard > wrapperWrite && immutableVerification > postWriteGuard);
   assert.equal(occurrenceCount(prepare, 'Assert-NoFutureVersions $base'), 2);
-  assert.match(prepare, /catch \{[\s\S]+Set-HeadAndVerify \$base \@\{ scriptId = \$ScriptId; files = \$immutable\.files \} 'clean_v25'/);
+  assert.match(
+    prepare,
+    new RegExp(`catch \\{[\\s\\S]+Set-HeadAndVerify \\$base \\@\\{ scriptId = \\$ScriptId; files = \\$immutable\\.files \\} 'clean_v${migrationVersion}'`),
+  );
   assert.match(prepare, /Prepare aborted and removed the exact wrapper/);
 });
 

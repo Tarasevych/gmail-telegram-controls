@@ -1,39 +1,17 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
+const { localSourceHashes, parseHashTable, parseInteger, APP_FILES } = require('./_release_test_helpers');
 
 const root = path.resolve(__dirname, '..');
 const deployPath = path.join(root, 'tools', 'deploy_apps_script_v27.ps1');
 const deploy = fs.readFileSync(deployPath, 'utf8').replace(/\r\n?/g, '\n');
-
-const V26 = Object.freeze({
-  Code: '5a643e1c434689d416a1cbc372d596a484316afcfa52a1f758d0671c9306d144',
-  MultiAccount: 'ed910c8fedf07b5f9e1361bbae343062ee5677fcae2f68c0d2700fbc1d6f41df',
-  MailClient: '065e0dfdc04023067168d28605b79f5bc12bdae9fb91769c618036f46050975b',
-  MailApp: 'a7aa10a4d008003afbb7aa494cb416a5b5b5f73d5d65b82163d94830937e72fb',
-  appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
-});
-const V27 = Object.freeze({
-  Code: 'ceb4db221b9c17aa2eeac4b0b3f88fa7c9e5a4389822f7e61f149fe798a1cad4',
-  MultiAccount: '2d675b49ca7783d033e154eedddb60d0ef5af296ec9fbc5d0fdadc061f13b622',
-  MailClient: '8612ff3833b57df29525a6c3b29c3394db15798f32224c610ccffdf6e492ee5e',
-  MailApp: 'b47faceadb617b15eaef425955423d868f0d22ea46c54527f89270dcf7bf09ad',
-  appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
-});
-const FILES = Object.freeze({
-  Code: 'Code.gs', MultiAccount: 'MultiAccount.gs', MailClient: 'MailClient.gs',
-  MailApp: 'MailApp.html', appsscript: 'appsscript.json',
-});
-
-function normalizedHash(file) {
-  const value = fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n?/g, '\n');
-  return crypto.createHash('sha256').update(value).digest('hex');
-}
+const FILES = APP_FILES;
+const LOCAL_SOURCE_HASHES = localSourceHashes(root);
 
 function hashTable(source, name) {
   const match = source.match(new RegExp(`\\$${name}\\s*=\\s*@\\{([\\s\\S]*?)\\n\\}`));
@@ -47,11 +25,18 @@ function occurrences(source, needle) {
 }
 
 test('v27 helper pins immutable v26 rollback and exact five-file v27 candidate', () => {
-  assert.match(deploy, /\$ExpectedOldVersion = 26\b/);
-  assert.match(deploy, /\$ExpectedNewVersion = 27\b/);
-  assert.deepEqual(hashTable(deploy, 'ExpectedOldHashes'), V26);
-  assert.deepEqual(hashTable(deploy, 'ExpectedCandidateHashes'), V27);
-  assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, normalizedHash(file)])), V27);
+  const oldVersion = parseInteger(deploy, 'ExpectedOldVersion');
+  const newVersion = parseInteger(deploy, 'ExpectedNewVersion');
+  const expectedOld = parseHashTable(deploy, 'ExpectedOldHashes');
+  const expectedNew = parseHashTable(deploy, 'ExpectedCandidateHashes');
+
+  assert.equal(oldVersion + 1, newVersion);
+  assert.deepEqual(hashTable(deploy, 'ExpectedOldHashes'), expectedOld);
+  assert.deepEqual(hashTable(deploy, 'ExpectedCandidateHashes'), expectedNew);
+  assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, LOCAL_SOURCE_HASHES[name] || ''])), expectedNew);
+  assert.deepEqual(expectedOld, parseHashTable(deploy, 'ExpectedOldHashes'));
+  assert.equal(oldVersion, 26);
+  assert.equal(newVersion, 27);
   assert.match(deploy, /candidate_v27/);
   assert.match(deploy, /resume_existing_v27/);
   assert.match(deploy, /Local\\TarasevychGmailNotifierAppsScriptV27Release/);

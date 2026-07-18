@@ -1,5 +1,13 @@
 # Work log
 
+## 2026-07-18 — product v45 gentle milestones
+
+- Added a full research-to-v44 completion matrix at `docs/audit/neuroinclusive-roadmap-status-v44.md` before changing product code.
+- Added a dismissible `Маленький крок` acknowledgement in Focus for one confirmed decision, three confirmed decisions, and at least ten completed minutes of explicit private co-processing.
+- Kept the state ephemeral and bounded: exact active Gmail connection, a counter capped at three, neutral copy, and dismissed state only. No Gmail identifiers, message content, browser storage, provider write, analytics event, RPC, OAuth scope, migration, or background worker was added.
+- Account switching clears the prior account's transient acknowledgement. Repeated triage changes do not count again because only a confirmed transition from `none` advances the current session.
+- Production and active v43 staging were not changed.
+
 ## 2026-07-18 — product v42 evidence-grounded task and Calendar handoff
 
 - Continued from preserved product-v41 commit `b6bfaf53aa767f5d7bd57b1ac77b1aa228dd3056` after transplanting the already-released Apps Script v34 same-user session compaction into the future product lineage. Production remains Apps Script v34/product v38.2.

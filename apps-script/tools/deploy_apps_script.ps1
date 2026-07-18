@@ -279,7 +279,7 @@ try {
       Assert-FileSetAndHashes $head $ExpectedCandidateHashes 'Current HEAD'
       $headState = 'candidate_v29'
     } catch {
-      throw 'Current HEAD is neither the exact v27 rollback source nor the exact v29 candidate.'
+      throw 'Current HEAD is neither the exact v28 rollback source nor the exact v29 candidate.'
     }
   }
 

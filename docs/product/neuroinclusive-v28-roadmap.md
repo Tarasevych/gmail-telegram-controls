@@ -9,6 +9,10 @@ The product is designed for people with ADHD, depression, low energy, and execut
 - Quiet hours, snooze, drafts/autosave, Telegram-native actions.
 - Gmail labels/settings metadata, Drive and Box connection foundations.
 - Whole-thread Ukrainian summaries, original HTML/text, attachments, and bidirectional Gmail history.
+- Base architecture source refresh: `deep-research-report3.md` (2026-07-18), with explicit hybrid architecture constraint:
+  - Gmail add-on = fast contextual triage (card-based, low cognitive load),
+  - Apps Script Web App = richer control surfaces,
+  - Gmail API `watch`/`history` + optional external queue (Pub/Sub + worker) for durable event ingestion and retries.
 
 ## P0 — Functional Focus
 
@@ -53,6 +57,8 @@ Acceptance:
 4. Add summary evidence/confidence contract.
 5. Add gentle replies, send later, reminder modes, and onboarding.
 6. Run desktop/mobile/phone functional QA; guarded v28 release only after exact preflight.
+7. Close v45 architecture gaps: isolate event ingestion from UI and Telegram control plane, with lock-safe continuation and replay-safe webhook handling.
+8. Add production security proof bundle: scope matrix + webhook safety + state transition contract + endpoint map.
 
 ## Current preserved progress
 
@@ -69,3 +75,15 @@ Acceptance:
 - Production Apps Script v34/product v38.2 now automatically compacts only the launching Telegram user's abandoned session families while preserving up to six parallel sessions and never evicting another user.
 - Product v42 now implements evidence-grounded local-task and Calendar handoff locally. Suggestions require exact action-to-quote or deadline-to-quote support, show the exact Gmail account and quote, keep titles editable, never infer Calendar time, and mutate only after explicit confirmation. Targeted contracts pass 219/219, the ordinary matrix passes 367/367, and desktop/mobile rendered QA passes 44/44. It remains undeployed pending a separately pinned immutable release gate and fresh Telegram WebView acceptance.
 - Product v43 now implements adaptive information density locally. Every Gmail account can use `auto`, `minimal`, `standard`, or `analytical`; auto follows the current energy preset, minimal exposes exactly three primary actions, and the complete original remains one interaction away. The selector is available in every open reader, not only Focus. Targeted contracts pass 220/220, the ordinary matrix passes 368/368, and desktop/mobile rendered preview QA confirms no horizontal overflow. It remains undeployed pending a separately pinned immutable release gate and fresh Telegram WebView acceptance.
+- Product v44 now implements explicit private co-processing presence locally: 10/25-minute timers, gentle phases, account-scoped content-free restoration, idempotent finish/stop, and no Gmail mutation, shared room, streak, or unsolicited push.
+- Product v45 now adds ephemeral gentle in-session milestones for the first decision, third decision, and ten completed co-processing minutes. The acknowledgement is dismissible and account-resetting, uses no durable/browser storage or mail identifiers, and explicitly rejects points, streaks, comparisons, confetti, and pressure to continue.
+
+## v45 priority slice from deep-research-report3
+
+Current highest-value backlog (non-oAuth, non-migration, non-invasive):
+
+1. Read-only noise classification in Focus (newsletters/system mail/social updates) with explicit user-visible rationale.
+2. One-click rule suggestion UX (no automatic Gmail mutation until user confirmation).
+3. End-to-end replay-safe callback contract for all webhook-like actions (`doPost`, Telegram callbacks, external relays).
+4. Lock discipline audit for any token/state refresh path and installable trigger overlap.
+5. Optional calendar-aware `до наступної зустрічі` only after explicit Calendar availability contract is added.

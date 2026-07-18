@@ -3113,6 +3113,46 @@ test('co-processing presence is explicit private restorable and never mutates ma
     'presence must not introduce streaks or shame copy');
 });
 
+test('gentle milestones acknowledge bounded session progress without gamification or durable tracking', () => {
+  assert.match(uiSource, /function resetGentleMilestones\(accountId\)/);
+  assert.match(uiSource, /function recordGentleMilestone\(kind\)/);
+  assert.match(uiSource, /function renderGentleMilestoneCard\(\)/);
+  assert.match(uiSource, /Маленький крок/);
+  assert.match(uiSource, /Один лист уже отримав рішення/);
+  assert.match(uiSource, /Три рішення прийнято/);
+  assert.match(uiSource, /Десять хвилин тихої присутності завершено/);
+  assert.match(uiSource, /Без балів, серій, порівнянь і вимоги продовжувати/);
+  assert.match(uiSource, /"aria-live": "polite"/);
+  assert.match(uiSource, /"aria-label": "Сховати м’яке підтвердження"/);
+
+  const milestoneSource = sourceBetween(
+    '      function resetGentleMilestones(accountId) {',
+    '      function renderFocusSessionBar(focusMode) {'
+  );
+  assert.doesNotMatch(milestoneSource,
+    /localStorage|sessionStorage|mailboxRpc|\brpc\(|threadId|messageId|subject|sender|bodyText|summaryUk|score|points|confetti/i,
+    'milestones must remain ephemeral, content-free, provider-free, and non-competitive');
+  assert.match(milestoneSource, /Math\.min\(3, Number\(milestones\.decisions \|\| 0\) \+ 1\)/,
+    'the visible decision acknowledgement must be capped instead of creating an endless counter');
+
+  const attentionUpdate = sourceBetween(
+    '      async function updateAttention(changes, options) {',
+    '      function renderAttentionPreferenceSurfaces() {'
+  );
+  assert.match(attentionUpdate,
+    /previousTriage === "none" && result\.thread\.triage !== "none"/,
+    'only a confirmed first decision for the open thread may advance the transient milestone');
+  assert.match(uiSource,
+    /var priorTriage = attention\.triage;[\s\S]*previousTriage: priorTriage/,
+    'optimistic triage rendering must still pass the pre-click state into the confirmed milestone check');
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchSource, /resetGentleMilestones\(requested\)/,
+    'switching Gmail accounts must discard the old account transient session acknowledgement');
+});
+
 test('backlog rescue is explicit bounded restorable and never turns Focus into an infinite inbox', () => {
   assert.match(uiSource, /op === "backlogRescue"/);
   assert.match(uiSource, /function normalizeBacklogRescue\(value, threadsValue\)/);

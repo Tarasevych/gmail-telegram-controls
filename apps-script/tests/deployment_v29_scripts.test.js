@@ -19,10 +19,10 @@ const V28 = Object.freeze({
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
 });
 const V29 = Object.freeze({
-  Code: 'ceb4db221b9c17aa2eeac4b0b3f88fa7c9e5a4389822f7e61f149fe798a1cad4',
+  Code: 'a767e717d17a1d50a3ecd373078bef59782f8fa7293d0b61787dae0aeac70b3e',
   MultiAccount: '524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13',
-  MailClient: '0b9df097b75bf63a0201a9fbb1871f6bc3490509a3121907c5a44ac4b4bae28b',
-  MailApp: '543b1104252580a2d0d9a4435a26da19bad899265daf0872aed98a6d335be225',
+  MailClient: 'b777e9b13fcf2a46472cfa0c9da0530ef91ae11f7bef28237c8468d116f68884',
+  MailApp: '29b5c7883706be9cc77625367dfb8ca3aa99e58c635f47fba048be633ebded70',
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
 });
 const FILES = Object.freeze({

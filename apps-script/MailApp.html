@@ -1098,6 +1098,36 @@
       flex: 1 1 120px;
     }
 
+    .gentle-milestone-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+    }
+
+    .gentle-milestone-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .gentle-milestone-copy span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .gentle-milestone-dismiss {
+      min-width: 42px;
+      min-height: 42px;
+    }
+
     .resume-rail-copy {
       display: grid;
       gap: 2px;
@@ -4925,6 +4955,7 @@
           startedAt: 0, endsAt: 0, updatedAt: 0, revision: 0,
           allowedDurations: [10, 25], disclosure: ""
         },
+        gentleMilestones: { accountId: "", decisions: 0, notice: "", dismissed: false },
         attentionSaveTimer: 0,
         attentionInputTimer: 0,
         pendingAttentionUpdate: null,
@@ -7354,6 +7385,7 @@
           state.coProcessingRequestId += 1;
           state.coProcessingBusy = false;
           state.coProcessing = normalizeCoProcessing(null);
+          resetGentleMilestones(requested);
           syncCoProcessingTicker();
           initializeFromBootstrap(bootstrap || selected || {});
           try {
@@ -7980,6 +8012,9 @@
         var opts = options || {};
         var connectionId = safeId(state.account && state.account.id);
         if (!connectionId || state.unifiedMode || state.coProcessingBusy) return false;
+        var previousPresence = normalizeCoProcessing(state.coProcessing);
+        var completedPresenceMinutes = previousPresence.startedAt
+          ? Math.max(0, (Date.now() - previousPresence.startedAt) / 60000) : 0;
         var requestId = ++state.coProcessingRequestId;
         state.coProcessingBusy = true;
         renderThreadList();
@@ -7997,6 +8032,9 @@
               safeId(state.account && state.account.id) !== connectionId) return false;
           state.coProcessing = presence;
           state.attentionPreferences.revision = presence.revision;
+          if (action === "finish" && completedPresenceMinutes >= 10) {
+            recordGentleMilestone("ten_minutes");
+          }
           syncCoProcessingTicker();
           if (!opts.silent) {
             showSnackbar(action === "start"
@@ -8098,6 +8136,59 @@
         syncCoProcessingTicker();
       }
 
+      function resetGentleMilestones(accountId) {
+        state.gentleMilestones = {
+          accountId: safeId(accountId), decisions: 0, notice: "", dismissed: false
+        };
+      }
+
+      function recordGentleMilestone(kind) {
+        var accountId = safeId(state.account && state.account.id);
+        if (!accountId || state.unifiedMode) return;
+        if (safeId(state.gentleMilestones && state.gentleMilestones.accountId) !== accountId) {
+          resetGentleMilestones(accountId);
+        }
+        var milestones = state.gentleMilestones;
+        if (kind === "decision") {
+          milestones.decisions = Math.min(3, Number(milestones.decisions || 0) + 1);
+          milestones.notice = milestones.decisions >= 3
+            ? "Три рішення прийнято. Можна завершити зараз або спокійно продовжити."
+            : "Один лист уже отримав рішення. На сьогодні цього теж може бути достатньо.";
+        } else if (kind === "ten_minutes") {
+          milestones.notice = "Десять хвилин тихої присутності завершено. Контекст збережений — продовжувати не обов’язково.";
+        } else {
+          return;
+        }
+        milestones.dismissed = false;
+      }
+
+      function renderGentleMilestoneCard() {
+        var milestones = state.gentleMilestones || {};
+        var accountId = safeId(state.account && state.account.id);
+        if (!accountId || safeId(milestones.accountId) !== accountId ||
+            !safeText(milestones.notice) || milestones.dismissed) return;
+        var card = make("section", {
+          className: "gentle-milestone-card",
+          attrs: { "aria-label": "Маленький крок", "aria-live": "polite", "aria-atomic": "true" }
+        });
+        var copy = make("div", { className: "gentle-milestone-copy" });
+        copy.append(
+          make("strong", { text: "Маленький крок" }),
+          document.createTextNode(safeText(milestones.notice)),
+          make("span", { text: "Без балів, серій, порівнянь і вимоги продовжувати." })
+        );
+        var dismiss = make("button", {
+          className: "icon-button gentle-milestone-dismiss", type: "button", text: "×",
+          attrs: { "aria-label": "Сховати м’яке підтвердження" }
+        });
+        dismiss.addEventListener("click", function () {
+          state.gentleMilestones.dismissed = true;
+          renderThreadList();
+        });
+        card.append(copy, dismiss);
+        els.focusSessionBar.append(card);
+      }
+
       function renderFocusSessionBar(focusMode) {
         clear(els.focusSessionBar);
         els.focusSessionBar.hidden = !focusMode;
@@ -8194,6 +8285,7 @@
           controls.append(startRescue);
         }
         els.focusSessionBar.append(controls);
+        renderGentleMilestoneCard();
         renderCoProcessingCard();
       }
 
@@ -8832,6 +8924,9 @@
           return true;
         }
         var request = Object.assign(attentionViewPayload(), changes || {});
+        var previousTriage = opts.previousTriage === undefined
+          ? safeText(state.thread.attention && state.thread.attention.triage, "none")
+          : safeText(opts.previousTriage, "none");
         state.attentionBusy = true;
         try {
           var result = normalizeAttentionState(await rpc(request), state.thread.id);
@@ -8842,12 +8937,20 @@
             threads: state.backlogRescue.threads
           });
           state.coProcessing = result.presence;
+          var gentleMilestoneRecorded = request.triage !== undefined &&
+            previousTriage === "none" && result.thread.triage !== "none";
+          if (gentleMilestoneRecorded) {
+            recordGentleMilestone("decision");
+          }
           syncCoProcessingTicker();
           state.threads = state.threads.map(function (thread) {
             if (thread.id !== state.thread.id || thread.accountId !== state.selectedConnectionId) return thread;
             return Object.assign({}, thread, { attention: result.thread });
           });
-          if (!opts.silent) renderThread();
+          if (!opts.silent) {
+            renderThread();
+            if (gentleMilestoneRecorded) renderThreadList();
+          }
           else renderThreadList();
           if (!opts.silent && result.thread.triage !== "none") {
             await completeBacklogRescueThread(state.thread.id, state.selectedConnectionId);
@@ -10007,12 +10110,13 @@
           });
           button.disabled = state.attentionBusy;
           button.addEventListener("click", function () {
-            var nextTriage = attention.triage === item[0] ? "none" : item[0];
+            var priorTriage = attention.triage;
+            var nextTriage = priorTriage === item[0] ? "none" : item[0];
             attention.triage = nextTriage;
             Array.prototype.slice.call(triage.querySelectorAll(".triage-button")).forEach(function (control) {
               control.setAttribute("aria-pressed", control === button && nextTriage === item[0] ? "true" : "false");
             });
-            updateAttention({ triage: nextTriage }, { silent: true });
+            updateAttention({ triage: nextTriage }, { silent: true, previousTriage: priorTriage });
           });
           triage.append(button);
         });

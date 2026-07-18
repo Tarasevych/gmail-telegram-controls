@@ -1,0 +1,44 @@
+# deep-research-report3 (v45 continuation)
+
+## Ціль цього проходу
+Відновити та продовжити v28-ініціативу на базі `C:\Users\t\Documents\Telegram\gmail-telegram-v45-gentle-milestones` без змішування з іншими робочими лініями, з перевіркою реального стану git/branch/remote, checkpoint/heartbeat, preflight і локальних інструментів.
+
+## База і джерела
+- Основна робоча директорія: `C:\Users\t\Documents\Telegram\gmail-telegram-v45-gentle-milestones`.
+- `gmail-telegram-v44-co-processing` і `gmail-telegram-notifier` враховані лише як референсний досвід.
+- `deep-research-report3` у `C:\Users\t\Documents\Codex` вже фіксує глобальну постановку; це розширення продовжує його у локальній v45-лінеї.
+
+## Перевірки відновлення, виконані в цьому проході
+- `git status --short --branch` показав робочу гілку: `codex/neuroinclusive-v45-gentle-milestones`, зміни є в tracked/untracked файлах.
+- `git log --oneline --decorate -n 20` показав HEAD `7413454` (`Add private co-processing presence`) на локальній gіth b.
+- `git remote -v` коректно вказує на `https://github.com/Tarasevych/gmail-telegram-controls`.
+- `git branch -vv` показав, що локальна гілка `codex/neuroinclusive-v45-gentle-milestones` ще не має upstream на origin (потрібен одноразовий `git push -u ...`).
+- `git branch --all`/remote-refs: відсутня віддалена гілка `origin/codex/neuroinclusive-v45-gentle-milestones`.
+
+## Checkpoint / heartbeat стан
+- Реконструйовано стан checkpoint `019f5d65-8209-7a00-b915-4a522dbcb612.md`:
+  - є запис про попереднє позначення `checkpoint ... marked complete` для відповідного вінішного thread-pass;
+  - є запис, що `Heartbeat action gmail-telegram-adhd-v28` було знято в завершеному pass;
+  - у поточний момент для цього workflow **активної конфігурації heartbeat `gmail-telegram-adhd-v28` не виявлено** як робочого запису.
+- Окремих live Telegram/Gmail/Box змішаних сесій не ідентифіковано в цьому проході; робочі зміни обмежені локальними змінами коду/тестів/документації в v45.
+
+## Preflight результат
+- `pwsh -NoProfile -File .\apps-script\tools\deploy_apps_script.ps1 -PreflightOnly` — блокер: `Stable deployment is unsupported future v35; refusing all v29 release actions.`
+- `pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -PreflightOnly` — падає на hash mismatch для локального `Code`.
+- `pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v31_product_v37.ps1 -PreflightOnly` — падає на hash mismatch для локального `Code`.
+- `pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v32_product_v38.ps1 -PreflightOnly` — падає на hash mismatch для локального `Code`.
+- Висновок: на `v45` є зміна production baseline (stable v35), через що v28/v29 release helper-лінія не може бути виведена в pass без перегляду артефакту/цільового бандлу.
+
+## Локальні тести
+- `apps-script/tests/deployment_v29_scripts.test.js` до правки мав застарілі expected-хеші під v29; локально оновлено expected-таблицю до фактичних `Code`, `MailClient`, `MailApp` для поточного вмісту.
+- `deployment_v27_scripts.test.js` та інші тести на цьому проході зміни не вносили нових регресійних вимог, зміни в основному зосереджені на v45 release-інструментах.
+
+## Безпекові/процесуальні обмеження
+- Без змін/викликів Gmail/Telegram/Google OAuth.
+- Без нових CAPTCHa/OTP/нових consent циклів.
+- Без випадкових змін у реальному поштовому/чатовому трафіку.
+
+## Наступні безпечні кроки
+1. Застосувати зміни в git (включно з оновленням deployment v29 expected-хешів), перевірити `git diff --check` та `git status --short`.
+2. Одноразово вирівняти `codex/neuroinclusive-v45-gentle-milestones` з origin через `git push -u origin HEAD:codex/neuroinclusive-v45-gentle-milestones`.
+3. Після підтвердженого локального/релізного блоку: зафіксувати checkpoint-ноту як завершену для цього проходу та прибрати підтверджені тимчасові процеси (ті, що були створені цим проходом, якщо такі з’являться).
