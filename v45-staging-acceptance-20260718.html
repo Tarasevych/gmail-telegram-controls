@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; form-action https://script.google.com https://script.googleusercontent.com; base-uri 'none'; object-src 'none'">
-  <title>Gmail v43 staging</title>
+  <title>Gmail v45 staging</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
@@ -23,13 +23,13 @@
 <body>
   <main id="card">
     <div class="spinner" aria-hidden="true"></div>
-    <h1 id="title">Відкриваю staging v43</h1>
+    <h1 id="title">Відкриваю staging v45</h1>
     <p id="status">Захищено передаю команду Telegram у відокремлене тестове розгортання.</p>
   </main>
   <script>
     (() => {
       'use strict';
-      const BACKEND = 'https://script.google.com/macros/s/AKfycbwsvrzCSnypeI8MASLeiev0Km8t0f2MXNKv7hApCSdvwEb3eftZ1k2ITDtMXiX5HWuE/exec';
+      const BACKEND = 'https://script.google.com/macros/s/AKfycbxzHtAK-FOY2EObQlzsW00T4taNOdpBFQ6ZZKR-rw3_sl4LFs_u8cerKvqbwlE744E/exec';
       const tg = window.Telegram && window.Telegram.WebApp;
       const card = document.getElementById('card');
       const title = document.getElementById('title');
