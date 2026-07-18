@@ -1066,6 +1066,20 @@
       margin-top: 6px;
     }
 
+    .ai-source-link {
+      display: inline;
+      margin-left: 6px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--primary);
+      font: inherit;
+      font-weight: 650;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
     .next-action-field {
       display: grid;
       gap: 6px;
@@ -7689,6 +7703,31 @@
         });
         var messageCodes = [];
         messages.forEach(function (message) { messageCodes = messageCodes.concat(message.codes || []); });
+        var normalizedAnalysis = {
+          kind: safeText(analysis.kind),
+          label: safeText(analysis.label, "Автоматичний AI-аналіз"),
+          method: safeText(analysis.method),
+          confidence: (function () {
+            var value = analysis.confidence || {};
+            var level = ["limited", "medium", "high"].indexOf(value.level) !== -1 ? value.level : "limited";
+            return {
+              level: level,
+              label: safeText(value.label, level === "high" ? "висока" : (level === "medium" ? "середня" : "обмежена")),
+              reason: safeText(value.reason)
+            };
+          })(),
+          risk: safeText(analysis.risk),
+          sourceFragments: (Array.isArray(analysis.sourceFragments) ? analysis.sourceFragments : []).map(function (item) {
+            return {
+              messageId: safeId(item && item.messageId),
+              timestamp: Number(item && item.timestamp) || 0,
+              quote: safeText(item && item.quote).replace(/\s+/g, " ").trim().slice(0, 240),
+              supports: (Array.isArray(item && item.supports) ? item.supports : []).map(function (value) {
+                return ["summary", "action", "deadline", "amount", "risk"].indexOf(value) !== -1 ? value : "";
+              }).filter(Boolean).slice(0, 4)
+            };
+          }).filter(function (item) { return item.messageId && item.quote; }).slice(0, 3)
+        };
         return {
           id: safeId(source.threadId || source.id),
           accountId: safeId(account.id || source.connectionId || (state.account && state.account.id)),
@@ -7710,6 +7749,7 @@
           amounts: (source.amounts || analysis.amounts || []).map(function (item) {
             return safeText(item);
           }).filter(Boolean).slice(0, 3),
+          analysis: normalizedAnalysis,
           labelIds: Array.isArray(source.labelIds) ? source.labelIds.map(String) : [],
           labels: Array.isArray(source.labels) ? source.labels : [],
           unread: Boolean(source.unread != null ? source.unread : (source.isUnread != null ? source.isUnread : flags.unread)),
@@ -8431,7 +8471,10 @@
       }
 
       function renderMessage(message) {
-        var block = make("article", { className: "message-block" });
+        var block = make("article", {
+          className: "message-block",
+          attrs: { "data-message-id": safeId(message && message.id) }
+        });
         var meta = make("header", { className: "message-meta" });
         meta.append(makeAvatar(message.from));
         var sender = make("div", { className: "message-sender" });
@@ -8580,8 +8623,14 @@
         if (state.thread.summary) {
           var summary = make("section", { className: "thread-summary-card ai-summary" });
           var summaryHeader = make("div", { className: "ai-summary-header" });
-          summaryHeader.append(make("h3", { className: "section-kicker", text: "AI-підсумок" }));
-          summaryHeader.append(make("span", { className: "ai-confidence", text: "Впевненість: обмежена" }));
+          var analysis = state.thread.analysis || {};
+          var confidence = analysis.confidence || {};
+          summaryHeader.append(make("h3", { className: "section-kicker", text: safeText(analysis.label, "Автоматичний AI-аналіз") }));
+          summaryHeader.append(make("span", {
+            className: "ai-confidence ai-confidence-" + safeText(confidence.level, "limited"),
+            text: "Впевненість: " + safeText(confidence.label, "обмежена"),
+            attrs: { title: safeText(confidence.reason, "Завжди звіряйте важливі деталі з оригіналом.") }
+          }));
           summary.append(summaryHeader);
           summary.append(make("p", { text: state.thread.summary }));
           var importance = state.thread.importance || {};
@@ -8599,19 +8648,53 @@
           if (state.thread.amounts.length) {
             summary.append(make("p", { className: "summary-analysis-line", text: "💳 Суми: " + state.thread.amounts.join(", ") }));
           }
-          var sources = make("details", { className: "ai-sources" });
-          sources.append(make("summary", { text: "Джерела (" + state.thread.messages.length + ")" }));
-          var sourceList = make("ol", {});
-          state.thread.messages.slice(-3).forEach(function (message) {
-            var fragment = safeText(message.bodyText).replace(/\s+/g, " ").trim().slice(0, 240);
-            sourceList.append(make("li", { text: [
-              safeText(message.from && (message.from.name || message.from.email), "Відправник"),
-              safeText(message.timestampLabel),
-              fragment
-            ].filter(Boolean).join(" — ") }));
-          });
-          sources.append(sourceList);
-          summary.append(sources);
+          if (analysis.risk) {
+            summary.append(make("p", { className: "summary-analysis-line", text: "⚠️ Ризик (автоматична оцінка): " + analysis.risk }));
+          }
+          if (confidence.reason) {
+            summary.append(make("p", { className: "summary-analysis-note", text: confidence.reason }));
+          }
+          if (analysis.method) {
+            summary.append(make("p", { className: "summary-analysis-note", text: "Метод: " + analysis.method }));
+          }
+          var sourceFragments = analysis.sourceFragments || [];
+          if (sourceFragments.length) {
+            var sources = make("details", { className: "ai-sources" });
+            sources.append(make("summary", { text: "Цитати-джерела (" + sourceFragments.length + ")" }));
+            var sourceList = make("ol", {});
+            sourceFragments.forEach(function (fragment) {
+              var message = state.thread.messages.find(function (item) { return item.id === fragment.messageId; }) || {};
+              var sourceItem = make("li", { text: [
+                safeText(message.from && (message.from.name || message.from.email), "Лист у розмові"),
+                safeText(message.timestampLabel || (fragment.timestamp ? formatMessageHeaderTimestamp(fragment.timestamp) : "")),
+                "«" + fragment.quote + "»"
+              ].filter(Boolean).join(" — ") });
+              var sourceLink = make("button", {
+                className: "ai-source-link",
+                type: "button",
+                text: "До повідомлення",
+                attrs: { "aria-label": "Перейти до повідомлення-джерела" }
+              });
+              sourceLink.addEventListener("click", function () {
+                var target = Array.prototype.slice.call(
+                  els.readerContentHost.querySelectorAll("[data-message-id]")
+                ).find(function (node) { return node.getAttribute("data-message-id") === fragment.messageId; });
+                if (!target) {
+                  openSafeUrl(state.thread.gmailUrl, false);
+                  return;
+                }
+                var history = target.closest("details.quoted-history");
+                if (history) history.open = true;
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+                target.setAttribute("tabindex", "-1");
+                target.focus({ preventScroll: true });
+              });
+              sourceItem.append(sourceLink);
+              sourceList.append(sourceItem);
+            });
+            sources.append(sourceList);
+            summary.append(sources);
+          }
           host.append(summary);
         }
 
@@ -15031,6 +15114,27 @@
               var base = PREVIEW_THREADS.find(function (thread) { return thread.id === payload.threadId; }) || PREVIEW_THREADS[0];
               var previewCustomLabelIds = state.previewLabelIds[base.id] || [];
               var hasPreviewReplyAll = base.id === "t-andriy";
+              var previewAnalysis = Object.assign({}, base.analysis, {
+                kind: "automated-ai-analysis",
+                label: "Автоматичний AI-аналіз",
+                method: "локальний аналіз і машинний переклад",
+                confidence: {
+                  level: "medium",
+                  label: "середня",
+                  reason: "Підсумок автоматичний; звірте ключові дати, суми й дії з наведеними цитатами."
+                },
+                risk: base.important
+                  ? "Можна пропустити безпекову подію або потрібну дію; перевірте оригінал."
+                  : "Явного ризику ігнорування не виявлено.",
+                sourceFragments: [{
+                  messageId: base.messageId,
+                  timestamp: Date.now(),
+                  quote: base.id === "t-google"
+                    ? "Для підтвердження використайте код нижче. Якщо це були не ви — ігноруйте цей лист."
+                    : base.summaryUk,
+                  supports: base.important ? ["action", "risk"] : ["summary"]
+                }]
+              });
               var previewDraft = base.draft ? {
                 id: base.draftId,
                 draftId: base.draftId,
@@ -15048,7 +15152,7 @@
                 id: base.id,
                 subject: base.subject,
                 summaryUk: base.analysis.summaryUk,
-                analysis: base.analysis,
+                analysis: previewAnalysis,
                 snippet: base.id === "t-google"
                   ? "Google отримала запит на вхід у ваш обліковий запис. Для підтвердження використайте код нижче. Якщо це були не ви — ігноруйте цей лист."
                   : base.summaryUk,

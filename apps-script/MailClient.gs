@@ -88,8 +88,10 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   MAX_TRANSLATION_CHUNK_ITEMS: 10,
   MAX_THREAD_ANALYSIS_CHARS: 60000,
   MAX_THREAD_ANALYSIS_MESSAGE_CHARS: 6000,
+  MAX_ANALYSIS_SOURCE_FRAGMENTS: 3,
+  MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS: 240,
   SUMMARY_CACHE_SECONDS: 6 * 60 * 60,
-  SUMMARY_CACHE_PREFIX: 'mailbox.summary.v1.',
+  SUMMARY_CACHE_PREFIX: 'mailbox.summary.v2.',
   SEND_AS_CACHE_SECONDS: 5 * 60,
   SEND_AS_CACHE_KEY: 'mailbox.sendas.v1',
   MAX_SEND_AS_ALIASES: 50,
@@ -2804,7 +2806,7 @@ function mailboxThreadAnalysis_(threadId, subject, items) {
   const cached = cache.get(key);
   if (cached) {
     try {
-      return mailboxNormalizeThreadAnalysis_(JSON.parse(cached), subject, body);
+      return mailboxNormalizeThreadAnalysis_(JSON.parse(cached), subject, body, items);
     } catch (error) {
       cache.remove(key);
     }
@@ -2817,12 +2819,12 @@ function mailboxThreadAnalysis_(threadId, subject, items) {
     console.error('Mailbox thread analysis failed: ' + mailboxSafeText_(error && error.message, 300));
     raw = null;
   }
-  const analysis = mailboxNormalizeThreadAnalysis_(raw, subject, body);
+  const analysis = mailboxNormalizeThreadAnalysis_(raw, subject, body, items);
   cache.put(key, JSON.stringify(analysis), MAILBOX_CLIENT_CONFIG_.SUMMARY_CACHE_SECONDS);
   return analysis;
 }
 
-function mailboxNormalizeThreadAnalysis_(value, subject, body) {
+function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
   const raw = value || {};
   const source = cleanBodyForAnalysis_((subject ? subject + '. ' : '') + (body || ''));
   const fallback = source
@@ -2840,15 +2842,123 @@ function mailboxNormalizeThreadAnalysis_(value, subject, body) {
     level: mailboxSafeText_(importanceValue.level, 40) || 'звичайна',
     reason: mailboxSafeText_(importanceValue.reason, 240) || 'не знайдено термінових дій або ризиків',
   };
+  const deadlines = (Array.isArray(raw.deadlines) ? raw.deadlines : [])
+    .slice(0, 3).map(value => mailboxSafeText_(value, 160)).filter(Boolean);
+  const amounts = (Array.isArray(raw.amounts) ? raw.amounts : [])
+    .slice(0, 3).map(value => mailboxSafeText_(value, 120)).filter(Boolean);
+  const sourceFragments = mailboxAnalysisSourceFragments_(items, {
+    summaryUk,
+    action,
+    importance,
+    deadlines,
+    amounts,
+  });
+  const hasGeneratedSummary = Boolean(candidateSummary && summaryUk !== fallback);
+  const confidence = sourceFragments.length && hasGeneratedSummary
+    ? {
+      level: 'medium',
+      label: 'середня',
+      reason: 'Підсумок автоматичний; звірте ключові дати, суми й дії з наведеними цитатами.',
+    }
+    : {
+      level: 'limited',
+      label: 'обмежена',
+      reason: sourceFragments.length
+        ? 'Автоматичний підсумок недоступний або неповний; використайте цитати та оригінал.'
+        : 'Для перевірки підсумку недостатньо доступного тексту; відкрийте оригінал.',
+    };
+  const risk = importance.level === 'висока'
+    ? 'Можна пропустити строк, безпекову подію або потрібну дію; перевірте оригінал.'
+    : (importance.level === 'середня'
+      ? 'Можна пропустити потрібну дію або строк; перевірте оригінал.'
+      : 'Явного ризику ігнорування не виявлено.');
   return {
+    kind: 'automated-ai-analysis',
+    label: 'Автоматичний AI-аналіз',
+    method: 'локальний аналіз і машинний переклад',
     summaryUk: mailboxSafeText_(summaryUk, CONFIG.MAX_SUMMARY_CHARS),
     action: mailboxSafeText_(action, CONFIG.MAX_ACTION_CHARS),
     importance,
-    deadlines: (Array.isArray(raw.deadlines) ? raw.deadlines : [])
-      .slice(0, 3).map(value => mailboxSafeText_(value, 160)).filter(Boolean),
-    amounts: (Array.isArray(raw.amounts) ? raw.amounts : [])
-      .slice(0, 3).map(value => mailboxSafeText_(value, 120)).filter(Boolean),
+    deadlines,
+    amounts,
+    risk,
+    confidence,
+    sourceFragments,
   };
+}
+
+function mailboxAnalysisSourceFragments_(items, analysis) {
+  const targets = [
+    analysis && analysis.summaryUk,
+    analysis && analysis.action,
+    analysis && analysis.importance && analysis.importance.reason,
+  ].concat(analysis && analysis.deadlines || [], analysis && analysis.amounts || []);
+  const targetWords = new Set(
+    cleanBodyForAnalysis_(targets.filter(Boolean).join(' ')).toLowerCase()
+      .match(/[\p{L}\p{N}]{4,}/gu) || []
+  );
+  const normalizedDeadlines = (analysis && analysis.deadlines || [])
+    .map(value => cleanBodyForAnalysis_(value).toLowerCase()).filter(Boolean);
+  const normalizedAmounts = (analysis && analysis.amounts || [])
+    .map(value => cleanBodyForAnalysis_(value).toLowerCase()).filter(Boolean);
+  const seenBodies = new Set();
+  const candidates = [];
+  (items || []).forEach((item, itemIndex) => {
+    const body = mailboxSafeText_(
+      cleanBodyForAnalysis_(item && item.body),
+      MAILBOX_CLIENT_CONFIG_.MAX_THREAD_ANALYSIS_MESSAGE_CHARS
+    );
+    if (!body) return;
+    const fingerprint = mailboxDigestText_(body);
+    if (seenBodies.has(fingerprint)) return;
+    seenBodies.add(fingerprint);
+    const sentences = splitSentences_(body).filter(sentence => !isBoilerplateSentence_(sentence));
+    const options = sentences.length ? sentences : [body];
+    let best = null;
+    options.forEach((sentence, sentenceIndex) => {
+      const normalized = String(sentence || '').replace(/\s+/g, ' ').trim();
+      if (!normalized) return;
+      const words = normalized.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) || [];
+      const lower = normalized.toLowerCase();
+      const hasDeadline = normalizedDeadlines.some(value => lower.indexOf(value) !== -1);
+      const hasAmount = normalizedAmounts.some(value => lower.indexOf(value) !== -1);
+      let score = words.reduce((total, word) => total + (targetWords.has(word) ? 2 : 0), 0);
+      if (isActionSentence_(normalized)) score += 5;
+      if (hasDeadline) score += 4;
+      if (hasAmount) score += 4;
+      if (/(urgent|термінов|негайно|security|безпек|overdue|простроч|final notice|останнє попередження)/i.test(normalized)) score += 4;
+      if (!best || score > best.score || (score === best.score && sentenceIndex < best.sentenceIndex)) {
+        best = { text: normalized, score, sentenceIndex };
+      }
+    });
+    if (!best) return;
+    const bestLower = best.text.toLowerCase();
+    const supports = [];
+    if (isActionSentence_(best.text)) supports.push('action');
+    if (normalizedDeadlines.some(value => bestLower.indexOf(value) !== -1)) supports.push('deadline');
+    if (normalizedAmounts.some(value => bestLower.indexOf(value) !== -1)) supports.push('amount');
+    if (/(urgent|термінов|негайно|security|безпек|overdue|простроч|final notice|останнє попередження)/i.test(best.text)) supports.push('risk');
+    if (!supports.length) supports.push('summary');
+    candidates.push({
+      messageId: mailboxSafeGmailId_(item && item.id),
+      timestamp: mailboxSafeTimestamp_(item && item.timestamp),
+      quote: mailboxSafeText_(best.text, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS),
+      supports: supports.slice(0, 4),
+      score: best.score,
+      order: itemIndex,
+    });
+  });
+  return candidates
+    .filter(item => item.messageId && item.quote)
+    .sort((left, right) => right.score - left.score || right.timestamp - left.timestamp || left.order - right.order)
+    .slice(0, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENTS)
+    .sort((left, right) => left.timestamp - right.timestamp || left.order - right.order)
+    .map(item => ({
+      messageId: item.messageId,
+      timestamp: item.timestamp,
+      quote: item.quote,
+      supports: item.supports,
+    }));
 }
 
 function mailboxAnalysisTextUk_(source, candidate, fallback) {

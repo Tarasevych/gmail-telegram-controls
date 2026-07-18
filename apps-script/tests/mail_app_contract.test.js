@@ -86,7 +86,8 @@ test('preview contracts render Ukrainian analysis, sender avatars and a real rep
   assert.match(previewSource, /analysis:\s*thread\.analysis/);
   assert.match(previewSource, /avatarUrl:\s*thread\.avatarUrl/);
   assert.match(previewSource, /summaryUk:\s*base\.analysis\.summaryUk/);
-  assert.match(previewSource, /analysis:\s*base\.analysis/);
+  assert.match(previewSource, /analysis:\s*previewAnalysis/);
+  assert.match(previewSource, /sourceFragments:\s*\[\{/);
   assert.match(previewSource, /avatarUrl:\s*base\.avatarUrl/);
   assert.match(previewSource, /canReplyAll:\s*hasPreviewReplyAll/);
   assert.match(previewSource, /olena\.design@example\.com/);
@@ -2875,9 +2876,22 @@ test('Focus View exposes bounded triage next action Resume Rail and exactly thre
   assert.match(uiSource, /op === "attentionState"/);
   assert.match(uiSource, /op === "attentionUpdate"/);
   assert.match(uiSource, /Продовжити з місця, де зупинились/);
-  assert.match(uiSource, /AI-підсумок/);
-  assert.match(uiSource, /Впевненість: обмежена/);
-  assert.match(uiSource, /Джерела \(/);
+  assert.match(uiSource, /Автоматичний AI-аналіз/);
+  assert.match(uiSource, /Впевненість: /);
+  assert.match(uiSource, /Цитати-джерела \(/);
+  assert.match(uiSource, /Ризик \(автоматична оцінка\)/);
+  const attentionAssist = sourceBetween(
+    '      function buildAttentionAssist() {',
+    '      function renderThread() {'
+  );
+  assert.match(attentionAssist, /analysis\.sourceFragments/);
+  assert.match(attentionAssist, /Метод: /);
+  assert.match(attentionAssist, /Перейти до повідомлення-джерела/);
+  assert.match(attentionAssist, /details\.quoted-history/);
+  assert.match(attentionAssist, /openSafeUrl\(state\.thread\.gmailUrl, false\)/,
+    'an evidence fragment outside the rendered window must still reach the original Gmail thread');
+  assert.doesNotMatch(attentionAssist, /message\.bodyText|messages\.slice\(-3\)/,
+    'the UI must render only server-bound evidence and never invent citations from message bodies');
   assert.match(uiSource, /className: "next-action-input"/);
   for (const label of ['Дія', 'Чекаю', 'Інфо', 'Пізніше']) {
     assert.match(uiSource, new RegExp(`"${label}"`));

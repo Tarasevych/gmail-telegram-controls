@@ -1649,10 +1649,47 @@ test('thread reader caches a whole-thread Ukrainian analysis built from all uniq
   assert.equal(first.importance.level, 'висока');
   assert.deepEqual(Array.from(first.deadlines), ['18 липня 2026 року']);
   assert.deepEqual(Array.from(first.amounts), ['€31.80']);
+  assert.equal(first.analysis.kind, 'automated-ai-analysis');
+  assert.equal(first.analysis.label, 'Автоматичний AI-аналіз');
+  assert.equal(first.analysis.method, 'локальний аналіз і машинний переклад');
+  assert.equal(first.analysis.confidence.level, 'medium');
+  assert.equal(first.analysis.confidence.label, 'середня');
+  assert.match(first.analysis.confidence.reason, /звірте/i);
+  assert.match(first.analysis.risk, /пропустити/i);
+  assert.deepEqual(Array.from(first.analysis.sourceFragments, item => item.messageId), [
+    'message_whole_1',
+    'message_whole_3',
+  ]);
+  first.analysis.sourceFragments.forEach(fragment => {
+    assert.ok(fragment.quote.length > 0 && fragment.quote.length <= 240);
+    assert.doesNotMatch(fragment.quote, /<[^>]+>/, 'evidence must be cleaned text, never raw HTML');
+    assert.ok(Array.from(fragment.supports).length > 0);
+  });
+  assert.ok(
+    Array.from(first.analysis.sourceFragments).some(fragment => Array.from(fragment.supports).includes('amount')),
+    'the exact payment source must be tied to the amount claim'
+  );
+  assert.ok(
+    Array.from(first.analysis.sourceFragments).some(fragment => Array.from(fragment.supports).includes('deadline')),
+    'the exact payment source must be tied to the deadline claim'
+  );
+  const amountOnlyEvidence = Array.from(harness.context.mailboxAnalysisSourceFragments_([
+    { id: 'message_amount_only', timestamp: 1, body: 'До сплати €31.80.' },
+  ], {
+    summaryUk: 'До сплати €31.80.',
+    action: '',
+    importance: { reason: 'є фінансова сума' },
+    deadlines: ['18 липня 2026 року'],
+    amounts: ['€31.80'],
+  }));
+  assert.ok(Array.from(amountOnlyEvidence[0].supports).includes('amount'));
+  assert.equal(Array.from(amountOnlyEvidence[0].supports).includes('deadline'), false,
+    'a decimal amount must not be misclassified as a dotted date');
   assert.equal(first.snippet, undefined, 'reader detail must not expose Gmail snippet as a summary fallback');
 
   const second = resultData(rpc(harness, token, 'thread', { threadId }));
   assert.equal(second.summaryUk, first.summaryUk);
+  assert.deepEqual(JSON.parse(JSON.stringify(second.analysis)), JSON.parse(JSON.stringify(first.analysis)));
   assert.equal(analysisCalls.length, 1, 'unchanged thread analysis must be served from cache');
 });
 

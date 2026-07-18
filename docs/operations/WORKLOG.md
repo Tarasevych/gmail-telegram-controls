@@ -1,5 +1,17 @@
 # Work log
 
+## 2026-07-18 — product v39 trustworthy summary evidence
+
+- Continued from the verified stable product v38 checkpoint on a new isolated branch; production Apps Script remains immutable v32 and no release helper or deployment was created.
+- Replaced the hardcoded confidence label and client-generated last-three-message excerpts with a server-owned analysis evidence contract.
+- Added explicit analysis kind, user-facing label, disclosed method, conservative confidence reason, automatic risk estimate, and up to three exact message-bound cleaned source fragments of at most 240 characters each.
+- Added source navigation to the exact rendered message, including automatic quoted-history expansion, with original Gmail thread fallback when a bounded-out message is not rendered.
+- Corrected evidence classification so decimal amounts such as `31.80` are not treated as dotted dates; deadlines and amounts must match the exact extracted server values.
+- The Mini App normalizer allowlists confidence levels and claim types and renders only server-provided evidence. Email bodies remain untrusted display data and cannot select actions or RPC operations.
+- Targeted MailApp/MailClient contracts pass 212/212; ordinary mutable-product matrix passes 360/360; standalone system-Chrome rendered QA passes 22/22 at desktop and 390×844 mobile dimensions with disclosed method, exact source navigation, no horizontal overflow, and no application console errors.
+- A broad historical glob was also attempted and correctly rejected mutable product files against immutable v27–v38 hash fixtures; one unrelated legacy deployment fixture still references an absent helper. Those historical guards were not weakened or rewritten.
+- No Gmail message, draft, label, focus preference, Telegram card, OAuth grant, migration, trigger, attachment/provider object, browser account, or phone state was changed.
+
 ## 2026-07-18 — v32 explicit send-later Mini App controls
 
 - Created `codex/neuroinclusive-v32-send-later-ui` from the exact verified v31 backend commit; the separate undeployed v30 reply-starter branch remains isolated.
