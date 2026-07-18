@@ -67,3 +67,14 @@
 - The v29 release-helper contract passed 2/2, including PowerShell parsing, single mutation points, future-version refusal, mutex, and embedded-secret guards.
 - Read-only `-PreflightOnly` returned `ok: true`, stable production version 28, release state `fresh`, and the expected deployment ID and v29 hashes.
 - Preflight permitted only Google Apps Script GET operations. No immutable version, deployment update, Gmail mutation, OAuth consent, migration, or Telegram change occurred.
+
+## 2026-07-18 — v29 production deployment
+
+- Ran the guarded helper once after confirming a clean synchronized remote branch, stable v28, release state `fresh`, and exact candidate hashes.
+- Created immutable Apps Script version 29 and updated the existing deployment from v28 to v29 at `2026-07-18T03:18:37.431Z`.
+- Immediate post-deploy preflight returned `preflight_already_deployed`, `idempotent: true`, the same deployment ID, and the exact immutable v29 hashes.
+- Post-deploy regression passed 337/337, including all ordinary functional tests and both v29 release-helper contracts.
+- Telegram webhook health remained exact: `@TarasevychGmailNotifierBot`, `script.google.com`, query keys `key`/`rev`, zero pending updates, no last error, one connection, and only `message`/`callback_query` updates.
+- The protected bot token was read only inside the local keyring process and was never printed, copied, or committed.
+- An unauthenticated web-app GET returned HTTP 200 and the expected launch bridge, with no mailbox address or mail content exposed.
+- No OAuth/migration was repeated and no Gmail message, Telegram card, attachment, Drive/Box object, provider grant, browser account, or phone state was mutated during post-deploy verification.
