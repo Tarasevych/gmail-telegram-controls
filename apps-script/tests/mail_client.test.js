@@ -1709,7 +1709,7 @@ test('thread reader caches a whole-thread Ukrainian analysis built from all uniq
     analysisCalls.push({ subject, body });
     return {
       essence: 'У листуванні узгоджено оплату; останнє повідомлення містить суму та строк.',
-      action: 'Сплатити рахунок до зазначеного строку.',
+      action: 'Сплатити €31.80 до 18 липня 2026 року.',
       importance: { icon: '🔴', level: 'висока', reason: 'є строк і потрібна дія' },
       deadlines: ['18 липня 2026 року'],
       amounts: ['€31.80'],
@@ -1729,7 +1729,7 @@ test('thread reader caches a whole-thread Ukrainian analysis built from all uniq
   );
   assert.ok(analysisCalls[0].body.length <= 60000, 'whole-thread analysis input must be bounded');
   assert.equal(first.summaryUk, 'У листуванні узгоджено оплату; останнє повідомлення містить суму та строк.');
-  assert.equal(first.action, 'Сплатити рахунок до зазначеного строку.');
+  assert.equal(first.action, 'Сплатити €31.80 до 18 липня 2026 року.');
   assert.equal(first.importance.level, 'висока');
   assert.deepEqual(Array.from(first.deadlines), ['18 липня 2026 року']);
   assert.deepEqual(Array.from(first.amounts), ['€31.80']);
@@ -1757,6 +1757,68 @@ test('thread reader caches a whole-thread Ukrainian analysis built from all uniq
     Array.from(first.analysis.sourceFragments).some(fragment => Array.from(fragment.supports).includes('deadline')),
     'the exact payment source must be tied to the deadline claim'
   );
+  assert.equal(first.handoff.version, 1);
+  assert.equal(first.handoff.account.email, 'tarasevych.pavlo@gmail.com');
+  assert.equal(first.handoff.gmailUrl, first.gmailUrl);
+  assert.equal(first.handoff.task.available, true);
+  assert.equal(first.analysis.actionSource.messageId, 'message_whole_3');
+  assert.match(first.analysis.taskTitleUk, /сплатити/i);
+  assert.equal(first.handoff.task.title, first.analysis.taskTitleUk);
+  assert.equal(first.handoff.task.source.messageId, 'message_whole_3');
+  assert.match(first.handoff.task.source.quote, /сплатити/i);
+  assert.equal(first.handoff.calendar.available, true);
+  assert.equal(first.handoff.calendar.title, 'Payment thread');
+  assert.equal(first.handoff.calendar.deadlineText, '18 липня 2026 року');
+  assert.equal(first.handoff.calendar.startLocal, '', 'the server must never invent a calendar start');
+  assert.equal(first.handoff.calendar.endLocal, '', 'the server must never invent a calendar end');
+  assert.equal(first.handoff.calendar.source.messageId, 'message_whole_3');
+  assert.match(first.handoff.calendar.source.quote, /18 липня 2026 року/);
+  assert.equal(first.handoff.calendar.timezone, 'UTC');
+  const unsupportedHandoff = harness.context.mailboxThreadHandoffDto_({
+    action: 'Сплатити рахунок.',
+    deadlines: ['завтра'],
+    sourceFragments: [{
+      messageId: 'message_unsupported', timestamp: 1, quote: 'Звичайний інформаційний лист.', supports: ['summary'],
+    }],
+  }, {
+    subject: 'Unsupported', accountEmail: 'tarasevych.pavlo@gmail.com', timezone: 'Europe/Brussels',
+  });
+  assert.equal(unsupportedHandoff.task.available, false,
+    'an action without an action-supporting source must not become a task proposal');
+  assert.equal(unsupportedHandoff.calendar.available, false,
+    'an ambiguous deadline without an exact deadline source must not become a calendar proposal');
+  assert.equal(unsupportedHandoff.task.source, null);
+  assert.equal(unsupportedHandoff.calendar.source, null);
+  const actionFragments = [{
+    messageId: 'message_action_wrong', timestamp: 1,
+    quote: 'Підтвердьте бронювання готелю до п’ятниці.', supports: ['action'],
+  }, {
+    messageId: 'message_action_exact', timestamp: 2,
+    quote: 'Подайте заяву на компенсацію до 20 липня.', supports: ['action'],
+  }];
+  const exactActionSource = harness.context.mailboxAnalysisActionSource_(actionFragments);
+  assert.equal(exactActionSource.messageId, 'message_action_exact',
+    'the newest selected action candidate must retain its exact message source in a multi-message thread');
+  const originalTranslateSummaries = harness.context.mailboxTranslateSummariesUk_;
+  harness.context.mailboxTranslateSummariesUk_ = values => values.map(() => 'Подайте заяву на компенсацію до 20 липня.');
+  const translatedTaskTitle = harness.context.mailboxTaskTitleUkFromSource_({
+    messageId: 'message_english_action', timestamp: 3,
+    quote: 'Submit the compensation claim by July 20.',
+  });
+  harness.context.mailboxTranslateSummariesUk_ = originalTranslateSummaries;
+  assert.equal(translatedTaskTitle, 'Подайте заяву на компенсацію до 20 липня.',
+    'a foreign-language task title must be translated from the already selected exact source sentence');
+  const exactActionHandoff = harness.context.mailboxThreadHandoffDto_({
+    action: 'Подайте заяву на компенсацію до 20 липня.',
+    actionSource: exactActionSource,
+    taskTitleUk: 'Подайте заяву на компенсацію до 20 липня.',
+    deadlines: [],
+    sourceFragments: actionFragments,
+  }, {
+    subject: 'Two actions', accountId: 'gmail-one', accountEmail: 'tarasevych.pavlo@gmail.com',
+  });
+  assert.equal(exactActionHandoff.task.available, true);
+  assert.equal(exactActionHandoff.task.source.messageId, 'message_action_exact');
   const amountOnlyEvidence = Array.from(harness.context.mailboxAnalysisSourceFragments_([
     { id: 'message_amount_only', timestamp: 1, body: 'До сплати €31.80.' },
   ], {

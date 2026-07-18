@@ -1,5 +1,17 @@
 # Work log
 
+## 2026-07-18 — product v42 evidence-grounded task and Calendar handoff
+
+- Continued from preserved product-v41 commit `b6bfaf53aa767f5d7bd57b1ac77b1aa228dd3056` after transplanting the already-released Apps Script v34 same-user session compaction into the future product lineage. Production remains Apps Script v34/product v38.2.
+- Added a server-owned handoff DTO that exposes a local-task proposal only for an action-backed exact source fragment and a Calendar proposal only when the extracted deadline appears in an exact deadline-supporting quote.
+- Added an accessible confirmation dialog with exact Gmail account, evidence quote, editable title, blank user-controlled Calendar times, timezone disclosure, original-message access, focus isolation, Escape cancellation, and no mutation on cancel.
+- Local task confirmation reuses the exact account/thread Focus state (`Дія` plus edited next action). Calendar confirmation opens the official Google Calendar template with exact `authuser`; it adds no Calendar OAuth scope and performs no Calendar API write.
+- Account/thread/email/Gmail-URL identity is normalized and checked when the DTO enters the UI and checked again at confirmation. The task action is also bound to its own exact source fragment instead of any generic action-like sentence in the thread. Unsupported, stale, cross-account, or ungrounded proposals are unavailable.
+- Rendered QA found and fixed a real post-task busy-state defect that left the Calendar suggestion disabled. A final render after busy-state cleanup restores all controls.
+- Independent read-only review additionally found and drove fixes for cross-action evidence ambiguity, Cancel/Escape during an in-flight task write, and missing post-success focus restoration.
+- Verification: targeted MailApp/MailClient 219/219 PASS; ordinary mutable-product matrix 367/367 PASS; standalone system-Chrome rendered QA 44/44 PASS at 1440×900 and 390×844 with busy-state protection, focus restoration, zero application console errors, and no horizontal overflow.
+- Private QA artifacts remain outside Git. No live Gmail, Telegram, OAuth, Calendar, Apps Script deployment, provider, browser-account, or phone mutation occurred.
+
 ## 2026-07-18 — product v41 private functional-relief metrics
 
 - Continued from exact preserved product-v40 commit `a41242cc608d1c94edb336eeb4f4c8b00ac1ec67` on isolated branch `codex/neuroinclusive-v41-functional-metrics`; production remains Apps Script v33/product v38 after the separate session-capacity hotfix.

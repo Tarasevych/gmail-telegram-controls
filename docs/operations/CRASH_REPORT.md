@@ -22,6 +22,8 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 
 ## Known non-crash limitations
 
+- Product v42 evidence-grounded local-task and Calendar handoff is a locally verified candidate only. Targeted, ordinary, and desktop/mobile rendered tests pass. It opens an official Calendar template but intentionally does not create or save a Calendar event, infer ambiguous date/time, or add Calendar OAuth scope. Real Telegram WebView acceptance and a separately pinned immutable release gate remain before deployment; production stays Apps Script v34/product v38.2.
+
 - Product v41 private functional-relief metrics is a local undeployed candidate. Targeted and ordinary functional tests pass. The original Browser localhost restriction and later connected-Chrome mobile coordinate scaling mismatch were testing-surface limitations, not product crashes; the authorized standalone Playwright fallback now passes the exact post-fix desktop/mobile clear-confirmation flow 28/28. Only fresh Telegram WebView acceptance and a separately pinned immutable release gate remain before deployment.
 
 - Product v40 backlog rescue is a locally verified candidate only. Its targeted, ordinary, and rendered Chrome suites pass, but it has not been deployed or exercised against real mail. Production remains immutable Apps Script v33/product v38 after the separate session-capacity hotfix; this is an intentional release boundary, not a production outage.

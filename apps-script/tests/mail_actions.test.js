@@ -5815,7 +5815,7 @@ test('accepted Telegram reminder becomes uncertain when its delivered marker can
 });
 
 test('under-lock activity verification invalidates removal through scoped registry revisions', () => {
-  const helper = code.match(/function mailReminderFreshActivityAtLocked_\([\s\S]*?\n}\n/);
+  const helper = code.match(/function mailReminderFreshActivityAtLocked_\([\s\S]*?\r?\n}\r?\n/);
   assert.ok(helper, 'the under-lock activity helper must remain present');
   assert.match(helper[0], /attention\.revision[\s\S]*candidate\.attentionRevision/);
   assert.match(helper[0], /focusRegistry\.revision[\s\S]*candidate\.focusRevision/);

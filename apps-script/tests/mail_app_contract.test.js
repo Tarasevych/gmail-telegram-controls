@@ -87,13 +87,89 @@ test('preview contracts render Ukrainian analysis, sender avatars and a real rep
   assert.match(previewSource, /avatarUrl:\s*thread\.avatarUrl/);
   assert.match(previewSource, /summaryUk:\s*base\.analysis\.summaryUk/);
   assert.match(previewSource, /analysis:\s*previewAnalysis/);
-  assert.match(previewSource, /sourceFragments:\s*\[\{/);
+  assert.match(previewSource, /sourceFragments:\s*\[previewEvidence\]/);
   assert.match(previewSource, /avatarUrl:\s*base\.avatarUrl/);
   assert.match(previewSource, /canReplyAll:\s*hasPreviewReplyAll/);
   assert.match(previewSource, /olena\.design@example\.com/);
   assert.match(previewSource, /teamlead@example\.com/);
   assert.match(previewSource, /payload\.messageId !== unsubscribeBase\.unsubscribeMessageId/);
   assert.match(previewSource, /unsubscribeMessageId:\s*base\.unsubscribeMessageId \|\| ""/);
+});
+
+test('evidence-grounded handoff stays account-bound explicit and calendar-scope free', () => {
+  const normalizeSource = sourceBetween(
+    '      function normalizeThreadHandoff(value, context) {',
+    '      function normalizeThreadDetail(value) {'
+  );
+  const exact = {
+    version: 1,
+    account: { id: 'gmail-account-1', email: 'owner@example.com' },
+    gmailUrl: 'https://mail.google.com/mail/u/0/#inbox/thread-1',
+    task: {
+      available: true,
+      title: 'Сплатити рахунок',
+      source: { messageId: 'message-1', timestamp: 123, quote: 'Сплатіть рахунок до п’ятниці.' },
+    },
+    calendar: {
+      available: true,
+      title: 'Рахунок',
+      deadlineText: 'до п’ятниці',
+      timezone: 'Europe/Brussels',
+      source: { messageId: 'message-1', timestamp: 123, quote: 'Сплатіть рахунок до п’ятниці.' },
+    },
+  };
+  const context = vm.createContext({
+    input: exact,
+    expected: {
+      accountId: 'gmail-account-1',
+      accountEmail: 'owner@example.com',
+      gmailUrl: exact.gmailUrl,
+    },
+    safeId: value => /^[A-Za-z0-9._:@+-]+$/.test(String(value || '')) ? String(value) : '',
+    safeText: (value, fallback = '') => value == null || value === '' ? String(fallback || '') : String(value),
+    safeUrl: value => /^https:\/\//.test(String(value || '')) ? String(value) : '',
+  });
+  vm.runInContext(`${normalizeSource}\nresult = normalizeThreadHandoff(input, expected);`, context);
+  assert.equal(context.result.task.available, true);
+  assert.equal(context.result.calendar.available, true);
+  assert.equal(context.result.calendar.startLocal, '');
+  assert.equal(context.result.calendar.endLocal, '');
+
+  context.input = { ...exact, account: { ...exact.account, id: 'another-account' } };
+  vm.runInContext('result = normalizeThreadHandoff(input, expected);', context);
+  assert.equal(context.result.task.available, false, 'a different Gmail account must disable the task proposal');
+  assert.equal(context.result.calendar.available, false, 'a different Gmail account must disable the Calendar proposal');
+
+  const handoffSource = sourceBetween(
+    '      function setHandoffIsolation(active) {',
+    '      function buildAttentionAssist() {'
+  );
+  assert.match(handoffSource, /updateAttention\(\{ triage: "action", nextAction: title \}\)/);
+  assert.match(handoffSource, /new URL\("https:\/\/calendar\.google\.com\/calendar\/render"\)/);
+  assert.match(handoffSource, /searchParams\.set\("action", "TEMPLATE"\)/);
+  assert.match(handoffSource, /accountEmail: safeText\(handoff\.account && handoff\.account\.email\)\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(handoffSource, /searchParams\.set\("authuser", dialog\.accountEmail\)/);
+  assert.match(handoffSource, /dialog\.accountEmail !== safeText\(state\.thread\.accountEmail\)\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(handoffSource, /dialog\.gmailUrl !== safeText\(state\.thread\.handoff && state\.thread\.handoff\.gmailUrl\)/);
+  assert.match(handoffSource, /searchParams\.set\("dates", start \+ "\/" \+ end\)/);
+  assert.match(handoffSource, /els\.handoffStart\.value = ""/);
+  assert.match(handoffSource, /els\.handoffEnd\.value = ""/);
+  assert.match(handoffSource, /completedKind === "task" && els\.handoffLayer\.hidden && state\.thread[\s\S]*renderThread\(\)[\s\S]*focusThreadHandoffSuggestion\(completedKind\)/,
+    'after explicit handoff finishes the suggestion controls must be rendered enabled again');
+  assert.match(handoffSource, /function closeThreadHandoff\(restoreFocus, force\)[\s\S]*state\.handoffBusy && !force/,
+    'user close, Cancel and Escape must not dismiss an in-flight mutation');
+  assert.match(handoffSource, /state\.handoffBusy = true;[\s\S]*els\.closeHandoff\.disabled = true;[\s\S]*els\.cancelHandoff\.disabled = true;/);
+  assert.match(uiSource, /if \(!id \|\| state\.threadLoading \|\| state\.handoffBusy \|\|/,
+    'an in-flight handoff must also freeze programmatic reader switching');
+  assert.match(handoffSource, /completedKind = "task";[\s\S]*closeThreadHandoff\(false, true\)/);
+  assert.match(handoffSource, /completedKind = "calendar";[\s\S]*closeThreadHandoff\(true, true\)/);
+  assert.match(uiSource, /els\.cancelHandoff\.addEventListener\("click", function \(\) \{ closeThreadHandoff\(true\); \}\)/);
+  assert.match(uiSource, /if \(!els\.handoffLayer\.hidden\)[\s\S]*event\.key === "Escape"[\s\S]*closeThreadHandoff\(true\)/);
+  assert.doesNotMatch(handoffSource, /CalendarApp|google\.script\.run|window\.confirm|\bprompt\(/);
+
+  const manifest = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'appsscript.json'), 'utf8'));
+  assert.equal(manifest.oauthScopes.some(scope => /calendar/i.test(scope)), false,
+    'the handoff opens an official user-confirmed template and must not add Calendar OAuth scope');
 });
 
 test('mail actions remain one-click and never open a confirmation dialog', () => {

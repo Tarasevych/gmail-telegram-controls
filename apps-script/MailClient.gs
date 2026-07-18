@@ -2779,6 +2779,14 @@ function mailboxGetThread_(payload) {
   detail.attention = attentionRegistry
     ? mailboxAttentionThreadDto_(attentionRegistry, threadId)
     : mailboxAttentionEmptyThreadDto_(threadId, 0);
+  detail.handoff = mailboxThreadHandoffDto_(analysis, {
+    threadId,
+    subject,
+    gmailUrl: detail.gmailUrl,
+    accountId: accountContext && accountContext.id,
+    accountEmail,
+    timezone: attentionRegistry && attentionRegistry.preferences && attentionRegistry.preferences.timezone,
+  });
   return detail;
 }
 
@@ -2892,6 +2900,8 @@ function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
     deadlines,
     amounts,
   });
+  const actionSource = mailboxAnalysisActionSource_(sourceFragments);
+  const taskTitleUk = mailboxTaskTitleUkFromSource_(actionSource);
   const hasGeneratedSummary = Boolean(candidateSummary && summaryUk !== fallback);
   const confidence = sourceFragments.length && hasGeneratedSummary
     ? {
@@ -2917,6 +2927,8 @@ function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
     method: 'локальний аналіз і машинний переклад',
     summaryUk: mailboxSafeText_(summaryUk, CONFIG.MAX_SUMMARY_CHARS),
     action: mailboxSafeText_(action, CONFIG.MAX_ACTION_CHARS),
+    actionSource,
+    taskTitleUk,
     importance,
     deadlines,
     amounts,
@@ -2924,6 +2936,34 @@ function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
     confidence,
     sourceFragments,
   };
+}
+
+function mailboxAnalysisActionSource_(fragmentsValue) {
+  const candidates = (Array.isArray(fragmentsValue) ? fragmentsValue : [])
+    .filter(fragment =>
+      Array.isArray(fragment && fragment.supports) && fragment.supports.indexOf('action') !== -1 &&
+      mailboxSafeGmailId_(fragment.messageId) && cleanBodyForAnalysis_(fragment.quote)
+    )
+    .slice()
+    .sort((left, right) => mailboxSafeTimestamp_(right.timestamp) - mailboxSafeTimestamp_(left.timestamp));
+  const selected = candidates[0];
+  return selected ? {
+    messageId: mailboxSafeGmailId_(selected.messageId),
+    timestamp: mailboxSafeTimestamp_(selected.timestamp),
+    quote: mailboxSafeText_(selected.quote, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS),
+  } : null;
+}
+
+function mailboxTaskTitleUkFromSource_(sourceValue) {
+  const source = mailboxSafeText_(
+    cleanBodyForAnalysis_(sourceValue && sourceValue.quote),
+    MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS
+  );
+  if (!source) return '';
+  if (mailboxLikelyUkrainian_(source)) return makePreview_(source, CONFIG.MAX_ACTION_CHARS);
+  const translated = mailboxTranslateSummariesUk_([source])[0] || '';
+  if (!translated || translated === mailboxSummaryFallbackUk_()) return '';
+  return makePreview_(translated, CONFIG.MAX_ACTION_CHARS);
 }
 
 function mailboxAnalysisSourceFragments_(items, analysis) {
@@ -2998,6 +3038,73 @@ function mailboxAnalysisSourceFragments_(items, analysis) {
       quote: item.quote,
       supports: item.supports,
     }));
+}
+
+/**
+ * Build content-only proposals for explicit executive-function handoff. The
+ * server never invents a date/time and never creates a Calendar object here.
+ * A proposal exists only when an exact source fragment supports the claim.
+ */
+function mailboxThreadHandoffDto_(analysisValue, contextValue) {
+  const analysis = analysisValue || {};
+  const context = contextValue || {};
+  const fragments = Array.isArray(analysis.sourceFragments) ? analysis.sourceFragments : [];
+  const declaredActionSource = analysis.actionSource || {};
+  const actionSource = fragments.find(item =>
+    Array.isArray(item && item.supports) && item.supports.indexOf('action') !== -1 &&
+    mailboxSafeGmailId_(item.messageId) === mailboxSafeGmailId_(declaredActionSource.messageId) &&
+    mailboxSafeText_(item.quote, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS) ===
+      mailboxSafeText_(declaredActionSource.quote, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS)
+  );
+  const deadlineSource = fragments.find(item => {
+    if (!Array.isArray(item && item.supports) || item.supports.indexOf('deadline') === -1) return false;
+    const quote = cleanBodyForAnalysis_(item && item.quote).toLowerCase();
+    return (analysis.deadlines || []).some(value => {
+      const deadline = cleanBodyForAnalysis_(value).toLowerCase();
+      return Boolean(deadline && quote.indexOf(deadline) !== -1);
+    });
+  });
+  const deadlineText = deadlineSource
+    ? (analysis.deadlines || []).find(value => {
+      const deadline = cleanBodyForAnalysis_(value).toLowerCase();
+      return deadline && cleanBodyForAnalysis_(deadlineSource.quote).toLowerCase().indexOf(deadline) !== -1;
+    }) || ''
+    : '';
+  let timezone = 'UTC';
+  try { timezone = mailboxScheduledSendTimezone_(context.timezone || 'UTC'); }
+  catch (error) { timezone = 'UTC'; }
+  const sourceDto = item => item ? {
+    messageId: mailboxSafeGmailId_(item.messageId),
+    timestamp: mailboxSafeTimestamp_(item.timestamp),
+    quote: mailboxSafeText_(item.quote, MAILBOX_CLIENT_CONFIG_.MAX_ANALYSIS_SOURCE_FRAGMENT_CHARS),
+  } : null;
+  const taskTitleUk = mailboxSafeText_(analysis.taskTitleUk, CONFIG.MAX_ACTION_CHARS);
+  const account = {
+    id: mailboxSafeOpaqueToken_(context.accountId, 160),
+    email: mailboxSafeText_(context.accountEmail, 320),
+  };
+  const gmailUrl = mailboxSafeText_(context.gmailUrl, 1000);
+  return {
+    version: 1,
+    account,
+    gmailUrl,
+    task: {
+      available: Boolean(taskTitleUk && actionSource),
+      title: taskTitleUk && actionSource ? taskTitleUk : '',
+      source: sourceDto(taskTitleUk && actionSource ? actionSource : null),
+    },
+    calendar: {
+      available: Boolean(deadlineText && deadlineSource),
+      title: deadlineText && deadlineSource
+        ? mailboxSafeText_(context.subject || 'Подія з Gmail', 320)
+        : '',
+      deadlineText: mailboxSafeText_(deadlineText, 160),
+      startLocal: '',
+      endLocal: '',
+      timezone,
+      source: sourceDto(deadlineText && deadlineSource ? deadlineSource : null),
+    },
+  };
 }
 
 function mailboxAnalysisTextUk_(source, candidate, fallback) {

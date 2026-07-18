@@ -1128,6 +1128,117 @@
 
     .triage-action { --triage-color: #0b57d0; }
     .triage-waiting { --triage-color: #e37400; }
+
+    .handoff-suggestions {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+
+    .handoff-suggestions-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .handoff-suggestions-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .handoff-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 72;
+      display: grid;
+      place-items: center;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      background: rgba(19, 28, 45, .54);
+      backdrop-filter: blur(3px);
+    }
+
+    .handoff-layer[hidden],
+    .handoff-field[hidden] { display: none; }
+
+    .handoff-dialog {
+      display: grid;
+      width: min(560px, 100%);
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      gap: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      overscroll-behavior: contain;
+    }
+
+    .handoff-header,
+    .handoff-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .handoff-header h2 { margin: 0; font-size: 20px; }
+    .handoff-description { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .handoff-account { padding: 9px 11px; border-radius: 9px; background: var(--surface); font-size: 12px; }
+
+    .handoff-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .handoff-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .handoff-field-wide { grid-column: 1 / -1; }
+
+    .handoff-field input {
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .handoff-deadline,
+    .handoff-timezone { color: var(--text); font-weight: 650; }
+
+    .handoff-evidence {
+      margin: 0;
+      padding: 11px 13px;
+      border-left: 3px solid var(--primary);
+      border-radius: 0 9px 9px 0;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .handoff-actions { justify-content: flex-end; flex-wrap: wrap; }
+
+    @media (max-width: 560px) {
+      .handoff-dialog { padding: 16px; }
+      .handoff-form { grid-template-columns: minmax(0, 1fr); }
+      .handoff-field-wide { grid-column: 1; }
+      .handoff-actions > * { flex: 1 1 135px; }
+    }
     .triage-info { --triage-color: #1373e6; }
     .triage-later { --triage-color: #7e57c2; }
 
@@ -4195,6 +4306,45 @@
       </section>
     </div>
 
+    <div class="handoff-layer" id="handoffLayer" hidden>
+      <section class="handoff-dialog" id="handoffDialog" role="dialog" aria-modal="true" aria-labelledby="handoffTitle" aria-describedby="handoffDescription" tabindex="-1">
+        <header class="handoff-header">
+          <h2 id="handoffTitle">Зняти дію з голови</h2>
+          <div class="topbar-spacer"></div>
+          <button class="icon-button" id="closeHandoff" type="button" aria-label="Закрити без змін">
+            <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+          </button>
+        </header>
+        <p class="handoff-description" id="handoffDescription"></p>
+        <div class="handoff-account" id="handoffAccount"></div>
+        <div class="handoff-form">
+          <label class="handoff-field handoff-field-wide" for="handoffTitleInput">Назва
+            <input id="handoffTitleInput" type="text" maxlength="320" required>
+          </label>
+          <div class="handoff-field handoff-field-wide" id="handoffDeadlineRow" hidden>
+            <span>Строк, знайдений у листі</span>
+            <span class="handoff-deadline" id="handoffDeadline"></span>
+          </div>
+          <label class="handoff-field" id="handoffStartRow" for="handoffStart" hidden>Початок
+            <input id="handoffStart" type="datetime-local">
+          </label>
+          <label class="handoff-field" id="handoffEndRow" for="handoffEnd" hidden>Завершення
+            <input id="handoffEnd" type="datetime-local">
+          </label>
+          <div class="handoff-field handoff-field-wide" id="handoffTimezoneRow" hidden>
+            <span>Часовий пояс</span>
+            <span class="handoff-timezone" id="handoffTimezone"></span>
+          </div>
+        </div>
+        <blockquote class="handoff-evidence" id="handoffEvidence"></blockquote>
+        <div class="handoff-actions">
+          <button class="text-button" id="handoffOriginal" type="button">Звірити з оригіналом</button>
+          <button class="outline-button" id="cancelHandoff" type="button">Скасувати</button>
+          <button class="primary-button" id="confirmHandoff" type="button">Підтвердити</button>
+        </div>
+      </section>
+    </div>
+
     <div class="attachment-preview-layer" id="attachmentPreviewLayer" hidden>
       <section class="attachment-preview-dialog" id="attachmentPreviewDialog" role="dialog" aria-modal="true" aria-labelledby="attachmentPreviewTitle" aria-describedby="attachmentPreviewStatus" tabindex="-1">
         <header class="attachment-preview-header">
@@ -4669,6 +4819,9 @@
         onboardingDraft: null,
         onboardingBusy: false,
         onboardingReturnFocus: null,
+        handoffDialog: null,
+        handoffBusy: false,
+        handoffReturnFocus: null,
         limits: {
           maxIncomingAttachmentBytes: 15 * 1024 * 1024,
           maxOutgoingAttachmentBytes: 10 * 1024 * 1024,
@@ -4782,6 +4935,7 @@
           "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
           "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
           "onboardingLayer", "onboardingDialog", "onboardingProgress", "onboardingTitle", "onboardingDescription", "onboardingStepOne", "onboardingStepTwo", "onboardingStepThree", "onboardingDigestWindow", "onboardingDigestSelect", "onboardingQuietHours", "onboardingSummary", "skipOnboarding", "onboardingBack", "onboardingNext",
+          "handoffLayer", "handoffDialog", "handoffTitle", "handoffDescription", "closeHandoff", "handoffAccount", "handoffTitleInput", "handoffDeadlineRow", "handoffDeadline", "handoffStartRow", "handoffStart", "handoffEndRow", "handoffEnd", "handoffTimezoneRow", "handoffTimezone", "handoffEvidence", "handoffOriginal", "cancelHandoff", "confirmHandoff",
           "snoozeScrim", "snoozePanel", "closeSnoozeButton", "snoozeLaterToday", "snoozeTomorrowMorning", "snoozeNextMonday",
           "snoozeCustomForm", "snoozeCustomDate", "snoozeCustomSubmit",
           "composeBackdrop", "composeSheet", "closeComposeButton", "minimizeComposeButton", "composeRestoreChip", "composeRestoreStatus",
@@ -7975,11 +8129,72 @@
         };
       }
 
+      function normalizeThreadHandoff(value, context) {
+        var source = value || {};
+        var expected = context || {};
+        var account = source.account || {};
+        var accountId = safeId(account.id);
+        var accountEmail = safeText(account.email).trim().toLowerCase();
+        var expectedId = safeId(expected.accountId);
+        var expectedEmail = safeText(expected.accountEmail).trim().toLowerCase();
+        var gmailUrl = safeUrl(source.gmailUrl, false);
+        var expectedGmailUrl = safeUrl(expected.gmailUrl, false);
+        var accountMatches = Boolean(
+          Number(source.version) === 1 && accountId && expectedId && accountId === expectedId &&
+          accountEmail && expectedEmail && accountEmail === expectedEmail &&
+          gmailUrl && expectedGmailUrl && gmailUrl === expectedGmailUrl &&
+          /^https:\/\/mail\.google\.com\//i.test(gmailUrl)
+        );
+        function evidence(item) {
+          var raw = item || {};
+          var normalized = {
+            messageId: safeId(raw.messageId),
+            timestamp: Number(raw.timestamp) || 0,
+            quote: safeText(raw.quote).replace(/\s+/g, " ").trim().slice(0, 240)
+          };
+          return normalized.messageId && normalized.quote ? normalized : null;
+        }
+        var task = source.task || {};
+        var taskSource = evidence(task.source);
+        var taskTitle = safeText(task.title).trim().slice(0, 320);
+        var calendar = source.calendar || {};
+        var calendarSource = evidence(calendar.source);
+        var calendarTitle = safeText(calendar.title).trim().slice(0, 320);
+        var deadlineText = safeText(calendar.deadlineText).trim().slice(0, 160);
+        var timezone = safeText(calendar.timezone, "UTC").trim();
+        if (!/^(?:UTC|[A-Za-z_]+(?:\/[A-Za-z0-9_+.-]+)+)$/.test(timezone)) timezone = "UTC";
+        var taskAvailable = accountMatches && task.available === true && Boolean(taskTitle && taskSource);
+        var calendarAvailable = accountMatches && calendar.available === true &&
+          Boolean(calendarTitle && deadlineText && calendarSource);
+        return {
+          version: accountMatches ? 1 : 0,
+          account: { id: accountId, email: accountEmail },
+          gmailUrl: accountMatches ? gmailUrl : "",
+          task: {
+            available: taskAvailable,
+            title: taskAvailable ? taskTitle : "",
+            source: taskAvailable ? taskSource : null
+          },
+          calendar: {
+            available: calendarAvailable,
+            title: calendarAvailable ? calendarTitle : "",
+            deadlineText: calendarAvailable ? deadlineText : "",
+            startLocal: "",
+            endLocal: "",
+            timezone: timezone,
+            source: calendarAvailable ? calendarSource : null
+          }
+        };
+      }
+
       function normalizeThreadDetail(value) {
         var source = value && value.thread ? value.thread : (value || {});
         var flags = source.state || {};
         var analysis = source.analysis || {};
         var account = source.account || {};
+        var normalizedAccountId = safeId(account.id || source.connectionId || (state.account && state.account.id));
+        var normalizedAccountEmail = safeText(account.email || source.accountEmail || (state.account && state.account.email));
+        var normalizedGmailUrl = safeUrl(source.gmailUrl, false);
         var unsubscribeMessageId = safeId(source.unsubscribeMessageId);
         var messages = (source.messages || []).map(function (message) {
           var normalized = normalizeMessage(message);
@@ -8029,8 +8244,8 @@
         };
         return {
           id: safeId(source.threadId || source.id),
-          accountId: safeId(account.id || source.connectionId || (state.account && state.account.id)),
-          accountEmail: safeText(account.email || source.accountEmail || (state.account && state.account.email)),
+          accountId: normalizedAccountId,
+          accountEmail: normalizedAccountEmail,
           subject: safeText(source.subject, "(без теми)"),
           summary: safeText(source.summaryUk || source.summary || analysis.summaryUk),
           action: safeText(source.action || analysis.action),
@@ -8056,7 +8271,12 @@
           important: Boolean(source.important || source.isImportant || flags.important),
           focus: normalizeFocus(source.focus),
           attention: normalizeAttention(source.attention, source.threadId || source.id),
-          gmailUrl: safeText(source.gmailUrl),
+          gmailUrl: normalizedGmailUrl,
+          handoff: normalizeThreadHandoff(source.handoff, {
+            accountId: normalizedAccountId,
+            accountEmail: normalizedAccountEmail,
+            gmailUrl: normalizedGmailUrl
+          }),
           unsubscribeMessageId: unsubscribeMessageId,
           unsubscribeAvailable: Boolean(
             unsubscribeMessageId &&
@@ -8111,7 +8331,8 @@
           connectionId || state.selectedConnectionId || (state.account && state.account.id)
         );
         var sameSelection = state.selectedThreadId === id && state.selectedConnectionId === requestedConnectionId;
-        if (!id || state.threadLoading || (!force && sameSelection && state.thread)) return;
+        if (!id || state.threadLoading || state.handoffBusy || (!force && sameSelection && state.thread)) return;
+        if (!els.handoffLayer.hidden) closeThreadHandoff(false);
         if (state.selectedThreadId && !sameSelection) releaseAttachmentResources();
         state.selectedThreadId = id;
         state.selectedConnectionId = requestedConnectionId;
@@ -8981,6 +9202,197 @@
         return rail;
       }
 
+      function setHandoffIsolation(active) {
+        Array.prototype.slice.call(app.children).forEach(function (node) {
+          if (node === els.handoffLayer || node === els.snackbar) return;
+          if (active) {
+            if (node.dataset.handoffIsolated === "true") return;
+            node.dataset.handoffIsolated = "true";
+            node.dataset.handoffPreviousAriaHidden = node.hasAttribute("aria-hidden")
+              ? node.getAttribute("aria-hidden") : "__absent__";
+            node.dataset.handoffPreviousInert = node.inert ? "true" : "false";
+            node.setAttribute("aria-hidden", "true");
+            node.inert = true;
+            return;
+          }
+          if (node.dataset.handoffIsolated !== "true") return;
+          node.inert = node.dataset.handoffPreviousInert === "true";
+          if (node.dataset.handoffPreviousAriaHidden === "__absent__") node.removeAttribute("aria-hidden");
+          else node.setAttribute("aria-hidden", node.dataset.handoffPreviousAriaHidden);
+          delete node.dataset.handoffIsolated;
+          delete node.dataset.handoffPreviousAriaHidden;
+          delete node.dataset.handoffPreviousInert;
+        });
+      }
+
+      function closeThreadHandoff(restoreFocus, force) {
+        if (els.handoffLayer.hidden) return;
+        if (state.handoffBusy && !force) return;
+        var target = state.handoffReturnFocus;
+        els.handoffLayer.hidden = true;
+        setHandoffIsolation(false);
+        state.handoffDialog = null;
+        state.handoffBusy = false;
+        state.handoffReturnFocus = null;
+        els.confirmHandoff.disabled = false;
+        els.closeHandoff.disabled = false;
+        els.cancelHandoff.disabled = false;
+        els.handoffOriginal.disabled = false;
+        els.handoffTitleInput.disabled = false;
+        els.handoffStart.disabled = false;
+        els.handoffEnd.disabled = false;
+        if (restoreFocus && target && target.isConnected && typeof target.focus === "function") target.focus();
+      }
+
+      function focusThreadHandoffSuggestion(kind) {
+        window.requestAnimationFrame(function () {
+          var expected = kind === "calendar" ? "Додати до календаря" : "Перетворити на задачу";
+          var target = Array.prototype.slice.call(
+            els.readerContentHost.querySelectorAll(".handoff-suggestions button")
+          ).find(function (button) { return safeText(button.textContent).trim() === expected && !button.disabled; });
+          if (target) target.focus();
+          else if (els.readerContentHost.isConnected) {
+            els.readerContentHost.setAttribute("tabindex", "-1");
+            els.readerContentHost.focus();
+          }
+        });
+      }
+
+      function openThreadHandoff(kind, trigger) {
+        if (!state.thread || state.handoffBusy || state.attentionBusy) return;
+        var handoff = state.thread.handoff || {};
+        var proposal = kind === "calendar" ? handoff.calendar : handoff.task;
+        if (!proposal || !proposal.available || !proposal.source) {
+          showSnackbar("Для цієї пропозиції бракує точного фрагмента з листа.", { error: true });
+          return;
+        }
+        state.handoffDialog = {
+          kind: kind,
+          threadId: state.thread.id,
+          accountId: state.thread.accountId,
+          accountEmail: safeText(handoff.account && handoff.account.email).trim().toLowerCase(),
+          proposal: proposal,
+          gmailUrl: handoff.gmailUrl
+        };
+        state.handoffReturnFocus = trigger || document.activeElement;
+        els.handoffTitle.textContent = kind === "calendar" ? "Підготувати подію" : "Перетворити на задачу";
+        els.handoffDescription.textContent = kind === "calendar"
+          ? "Дата й час не вгадуються. Заповніть їх самі; Google Calendar ще покаже форму перед збереженням."
+          : "Після підтвердження лист отримає стан «Дія», а цей текст стане вашим наступним кроком.";
+        els.handoffAccount.textContent = "Gmail-акаунт: " + safeText(handoff.account && handoff.account.email, state.thread.accountEmail);
+        els.handoffTitleInput.value = safeText(proposal.title);
+        els.handoffDeadline.textContent = kind === "calendar" ? safeText(proposal.deadlineText) : "";
+        els.handoffTimezone.textContent = kind === "calendar" ? safeText(proposal.timezone, "UTC") : "";
+        els.handoffStart.value = "";
+        els.handoffEnd.value = "";
+        els.handoffDeadlineRow.hidden = kind !== "calendar";
+        els.handoffStartRow.hidden = kind !== "calendar";
+        els.handoffEndRow.hidden = kind !== "calendar";
+        els.handoffTimezoneRow.hidden = kind !== "calendar";
+        els.handoffEvidence.textContent = "Джерело: «" + safeText(proposal.source.quote) + "»";
+        els.confirmHandoff.textContent = kind === "calendar" ? "Відкрити в Calendar" : "Створити задачу";
+        els.confirmHandoff.disabled = false;
+        setHandoffIsolation(true);
+        els.handoffLayer.hidden = false;
+        window.requestAnimationFrame(function () {
+          els.handoffTitleInput.focus();
+          els.handoffTitleInput.select();
+        });
+      }
+
+      function calendarLocalStamp(value) {
+        var match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(safeText(value));
+        if (!match) return "";
+        var parts = match.slice(1).map(Number);
+        var probe = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4]));
+        if (probe.getUTCFullYear() !== parts[0] || probe.getUTCMonth() + 1 !== parts[1] ||
+            probe.getUTCDate() !== parts[2] || probe.getUTCHours() !== parts[3] ||
+            probe.getUTCMinutes() !== parts[4]) return "";
+        return match[1] + match[2] + match[3] + "T" + match[4] + match[5] + "00";
+      }
+
+      function calendarHandoffUrl(dialog, title) {
+        var start = calendarLocalStamp(els.handoffStart.value);
+        var end = calendarLocalStamp(els.handoffEnd.value);
+        if (!start || !end || end <= start) return "";
+        var proposal = dialog.proposal || {};
+        var source = proposal.source || {};
+        var url = new URL("https://calendar.google.com/calendar/render");
+        url.searchParams.set("action", "TEMPLATE");
+        url.searchParams.set("authuser", dialog.accountEmail);
+        url.searchParams.set("text", title);
+        url.searchParams.set("dates", start + "/" + end);
+        url.searchParams.set("ctz", safeText(proposal.timezone, "UTC"));
+        url.searchParams.set("details", [
+          "Строк у листі: " + safeText(proposal.deadlineText),
+          "Джерело: «" + safeText(source.quote) + "»",
+          "Оригінал: " + safeText(dialog.gmailUrl)
+        ].join("\n").slice(0, 1800));
+        return url.href;
+      }
+
+      async function confirmThreadHandoff() {
+        var dialog = state.handoffDialog;
+        if (!dialog || state.handoffBusy || !state.thread ||
+            dialog.threadId !== state.thread.id || dialog.accountId !== state.thread.accountId ||
+            dialog.accountEmail !== safeText(state.thread.accountEmail).trim().toLowerCase() ||
+            dialog.gmailUrl !== safeText(state.thread.handoff && state.thread.handoff.gmailUrl)) {
+          showSnackbar("Лист або Gmail-акаунт змінився. Відкрийте пропозицію ще раз.", { error: true });
+          return;
+        }
+        var title = safeText(els.handoffTitleInput.value).trim().slice(0, 320);
+        if (!title) {
+          showSnackbar("Вкажіть коротку назву.", { error: true });
+          els.handoffTitleInput.focus();
+          return;
+        }
+        state.handoffBusy = true;
+        els.confirmHandoff.disabled = true;
+        els.closeHandoff.disabled = true;
+        els.cancelHandoff.disabled = true;
+        els.handoffOriginal.disabled = true;
+        els.handoffTitleInput.disabled = true;
+        els.handoffStart.disabled = true;
+        els.handoffEnd.disabled = true;
+        var completedKind = "";
+        try {
+          if (dialog.kind === "task") {
+            if (state.attentionBusy || !(await updateAttention({ triage: "action", nextAction: title }))) {
+              throw new Error("Не вдалося зберегти задачу для цього листа.");
+            }
+            completedKind = "task";
+            closeThreadHandoff(false, true);
+            showSnackbar("Задачу збережено в режимі фокусу.");
+            return;
+          }
+          var calendarUrl = calendarHandoffUrl(dialog, title);
+          if (!calendarUrl) {
+            showSnackbar("Вкажіть коректний початок і завершення; завершення має бути пізніше.", { error: true });
+            els.handoffStart.focus();
+            return;
+          }
+          if (!openSafeUrl(calendarUrl, false)) throw new Error("Не вдалося відкрити Google Calendar.");
+          completedKind = "calendar";
+          closeThreadHandoff(true, true);
+          showSnackbar("Відкрито форму Google Calendar. Подію ще потрібно зберегти там.");
+        } catch (error) {
+          showSnackbar(safeText(error.message, "Не вдалося виконати дію."), { error: true });
+        } finally {
+          state.handoffBusy = false;
+          els.confirmHandoff.disabled = false;
+          els.closeHandoff.disabled = false;
+          els.cancelHandoff.disabled = false;
+          els.handoffOriginal.disabled = false;
+          els.handoffTitleInput.disabled = false;
+          els.handoffStart.disabled = false;
+          els.handoffEnd.disabled = false;
+          if (completedKind === "task" && els.handoffLayer.hidden && state.thread) {
+            renderThread();
+            focusThreadHandoffSuggestion(completedKind);
+          }
+        }
+      }
+
       function buildAttentionAssist() {
         var host = make("section", { className: "attention-assist", attrs: { "aria-label": "Розумний фокус листа" } });
         var resumeRail = buildResumeRail();
@@ -9062,6 +9474,31 @@
             summary.append(sources);
           }
           host.append(summary);
+        }
+
+        var handoff = state.thread.handoff || {};
+        if ((handoff.task && handoff.task.available) || (handoff.calendar && handoff.calendar.available)) {
+          var suggestions = make("section", { className: "handoff-suggestions", attrs: { "aria-label": "Зняти дію з голови" } });
+          suggestions.append(make("h3", { className: "section-kicker", text: "Зняти з голови" }));
+          suggestions.append(make("p", {
+            className: "handoff-suggestions-copy",
+            text: "Це лише пропозиції з цитатою-джерелом. Нічого не зміниться без вашого підтвердження."
+          }));
+          var suggestionActions = make("div", { className: "handoff-suggestions-actions" });
+          if (handoff.task && handoff.task.available) {
+            var taskButton = make("button", { className: "outline-button", type: "button", text: "Перетворити на задачу" });
+            taskButton.disabled = state.attentionBusy || state.handoffBusy;
+            taskButton.addEventListener("click", function (event) { openThreadHandoff("task", event.currentTarget); });
+            suggestionActions.append(taskButton);
+          }
+          if (handoff.calendar && handoff.calendar.available) {
+            var calendarButton = make("button", { className: "outline-button", type: "button", text: "Додати до календаря" });
+            calendarButton.disabled = state.attentionBusy || state.handoffBusy;
+            calendarButton.addEventListener("click", function (event) { openThreadHandoff("calendar", event.currentTarget); });
+            suggestionActions.append(calendarButton);
+          }
+          suggestions.append(suggestionActions);
+          host.append(suggestions);
         }
 
         var attention = state.thread.attention || normalizeAttention({}, state.thread.id);
@@ -14739,6 +15176,18 @@
         els.attachmentPreviewDownload.addEventListener("click", function () {
           if (downloadAttachmentData(state.attachmentPreviewData)) showSnackbar("Вкладення завантажено", { success: true });
         });
+        els.closeHandoff.addEventListener("click", function () { closeThreadHandoff(true); });
+        els.cancelHandoff.addEventListener("click", function () { closeThreadHandoff(true); });
+        els.handoffOriginal.addEventListener("click", function () {
+          if (state.handoffDialog) openSafeUrl(state.handoffDialog.gmailUrl, false);
+        });
+        els.confirmHandoff.addEventListener("click", confirmThreadHandoff);
+        els.handoffTitleInput.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            confirmThreadHandoff();
+          }
+        });
         els.inlineImageInput.addEventListener("change", function (event) {
           addInlineImageFiles(event.target.files);
         });
@@ -14795,6 +15244,15 @@
               event.preventDefault();
               event.stopPropagation();
               showSnackbar("Щоб не втратити вибір, натисніть «Пропустити» або завершіть три короткі кроки.");
+            }
+            return;
+          }
+          if (!els.handoffLayer.hidden) {
+            if (event.key === "Tab") trapFocusInDialog(event, els.handoffDialog);
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              closeThreadHandoff(true);
             }
             return;
           }
@@ -15596,6 +16054,23 @@
               var base = PREVIEW_THREADS.find(function (thread) { return thread.id === payload.threadId; }) || PREVIEW_THREADS[0];
               var previewCustomLabelIds = state.previewLabelIds[base.id] || [];
               var hasPreviewReplyAll = base.id === "t-andriy";
+              var previewAccount = { id: "gmail-preview-personal", email: "tarasevych.pavlo@gmail.com" };
+              var previewGmailUrl = "https://mail.google.com/mail/u/0/#inbox/" + base.id;
+              var previewEvidenceQuote = base.id === "t-google"
+                ? "Для підтвердження використайте код нижче. Якщо це були не ви — ігноруйте цей лист."
+                : base.id === "t-nova"
+                  ? "Посилка прибуде завтра до 18:00 у відділення №12. Заберіть її після повідомлення про прибуття."
+                  : base.summaryUk;
+              var previewEvidenceSupports = ["summary"];
+              if (base.analysis.action) previewEvidenceSupports.push("action");
+              if ((base.analysis.deadlines || []).length) previewEvidenceSupports.push("deadline");
+              if (base.important) previewEvidenceSupports.push("risk");
+              var previewEvidence = {
+                messageId: base.messageId,
+                timestamp: Date.now(),
+                quote: previewEvidenceQuote,
+                supports: previewEvidenceSupports
+              };
               var previewAnalysis = Object.assign({}, base.analysis, {
                 kind: "automated-ai-analysis",
                 label: "Автоматичний AI-аналіз",
@@ -15608,15 +16083,28 @@
                 risk: base.important
                   ? "Можна пропустити безпекову подію або потрібну дію; перевірте оригінал."
                   : "Явного ризику ігнорування не виявлено.",
-                sourceFragments: [{
-                  messageId: base.messageId,
-                  timestamp: Date.now(),
-                  quote: base.id === "t-google"
-                    ? "Для підтвердження використайте код нижче. Якщо це були не ви — ігноруйте цей лист."
-                    : base.summaryUk,
-                  supports: base.important ? ["action", "risk"] : ["summary"]
-                }]
+                sourceFragments: [previewEvidence]
               });
+              var previewDeadline = safeText((base.analysis.deadlines || [])[0]);
+              var previewHandoff = {
+                version: 1,
+                account: previewAccount,
+                gmailUrl: previewGmailUrl,
+                task: {
+                  available: Boolean(base.analysis.action),
+                  title: safeText(base.analysis.action),
+                  source: base.analysis.action ? previewEvidence : null
+                },
+                calendar: {
+                  available: Boolean(previewDeadline),
+                  title: previewDeadline ? base.subject : "",
+                  deadlineText: previewDeadline,
+                  startLocal: "",
+                  endLocal: "",
+                  timezone: "Europe/Brussels",
+                  source: previewDeadline ? previewEvidence : null
+                }
+              };
               var previewDraft = base.draft ? {
                 id: base.draftId,
                 draftId: base.draftId,
@@ -15640,7 +16128,9 @@
                   : base.summaryUk,
                 labelIds: (base.draft ? ["DRAFT"] : ["INBOX"]).concat(base.important ? ["IMPORTANT"] : []).concat(previewCustomLabelIds),
                 state: { inbox: !base.draft, draft: Boolean(base.draft), unread: Boolean(base.unread), starred: Boolean(base.starred), important: Boolean(base.important) },
-                gmailUrl: "https://mail.google.com/mail/u/0/#inbox/" + base.id,
+                account: previewAccount,
+                gmailUrl: previewGmailUrl,
+                handoff: previewHandoff,
                 unsubscribeMessageId: base.unsubscribeMessageId || "",
                 unsubscribeAvailable: Boolean(base.unsubscribeMessageId),
                 focus: base.focus || null,
