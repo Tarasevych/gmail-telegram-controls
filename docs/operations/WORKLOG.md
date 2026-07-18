@@ -157,3 +157,10 @@
 - Standalone system-Chrome rendered QA passes 14/14 at 1440×900 and 390×844: all three onboarding screens, completion, reply panel, warm/professional starter insertion, overwrite protection, desktop/mobile horizontal bounds, mobile editor scrolling, page identity, blank/overlay checks, and console health.
 - Expected Telegram WebApp compatibility warnings occur in localhost preview because it is not a current Telegram WebView; there are no application errors or failed resources. Private screenshots and the JSON report remain outside Git in the thread visualization directory.
 - Closed the temporary preview servers after QA. No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.
+
+## 2026-07-18 — v36 isolated Apps Script staging preflight
+
+- Added `stage_apps_script_v36.ps1` for real Telegram WebView proof against Apps Script HEAD/`dev` while keeping the stable `/exec` deployment pinned to immutable v29.
+- The helper pins exact immutable-v29 rollback hashes and exact v36 candidate hashes, accepts only GET/PUT, has no versions.create or deployment-update operation, refuses unexpected future immutable versions, serializes staging with a named mutex, and provides a verified rollback path.
+- Contract tests pass 2/2. Read-only preflight returned stable version 29, `headState: stable_v29`, `stableDeploymentUnchanged: true`, and exact v36 candidate hashes.
+- No Apps Script write occurred during preflight. No Gmail, Telegram, OAuth, provider, browser-account, or phone state was changed.
