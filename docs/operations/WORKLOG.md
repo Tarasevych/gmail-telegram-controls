@@ -295,3 +295,14 @@
 - Independent review found and drove fixes for stale preference responses across account switching, evidence links targeting a collapsed minimal original, duplicated minimal handoff controls, and rollback after a failed account switch. Final rereview reported no findings.
 - Verification: targeted contracts 220/220 PASS; ordinary matrix 368/368 PASS; desktop and 390×844 preview checks confirm one selector, three minimal primary actions, one-click original, analytical evidence, vertical scrolling, and no horizontal overflow. QA port 8774 is closed.
 - No Gmail message, draft, label, OAuth grant, Telegram zone/card, Apps Script deployment, provider account, browser account, or phone state was changed.
+
+## 2026-07-18 — product v44 private co-processing presence
+
+- Continued from exact product-v43 commit `359b8cba5cdcaee9ec022ccd659538a4dd108455` on isolated branch `codex/neuroinclusive-v44-co-processing-presence`; the active v43 staging lane and production Apps Script v35 were not changed.
+- Added explicit private 10/25-minute presence sessions to Focus with a real countdown, progress, gentle beginning/midpoint/closing copy, positive finish, and `Зупинити без оцінки`.
+- State is isolated by exact Telegram user and Gmail connection inside the existing revision-checked attention registry. Only timing state and a bounded operation ID are stored; lost-response retries are idempotent and another active timer cannot be replaced silently.
+- The feature has no Gmail read/mutation dependency, mail-content fields, browser tracking, shared room, streak, penalty, or unsolicited push path. Optional already-enabled functional metrics count only completed/stopped sessions.
+- Verification: targeted MailApp/MailClient contracts 222/222 PASS; ordinary mutable-product matrix 370/370 PASS; `git diff --check` PASS.
+- In-app Browser rendered QA passed on desktop and 390×844: page identity, non-blank app, start/tick/progress/stop interaction, no horizontal overflow, vertical reachability, and no application console errors. Two Telegram WebApp 6.0 capability warnings are preview-only and explained.
+- Private screenshots outside Git: `v44-co-processing-desktop.png` and `v44-co-processing-mobile.png`. QA port 8775 is closed.
+- No Gmail message, draft, label, OAuth grant, Telegram zone/card, provider account, Apps Script deployment, production button, or phone state was changed.

@@ -3068,6 +3068,51 @@ test('adaptive density follows energy preserves evidence and keeps minimal mode 
     'secondary mail management must stay behind the single Other actions disclosure');
 });
 
+test('co-processing presence is explicit private restorable and never mutates mail', () => {
+  assert.match(uiSource, /op === "coProcessingSession"/);
+  assert.match(uiSource, /function normalizeCoProcessing\(value\)/);
+  assert.match(uiSource, /function manageCoProcessing\(action, durationMinutes, options\)/);
+  assert.match(uiSource, /Тиха присутність/);
+  assert.match(uiSource, /Побути поруч " \+ minutes \+ " хв/);
+  assert.match(uiSource, /allowedDurations: \[10, 25\]/);
+  assert.match(uiSource, /Готово на сьогодні/);
+  assert.match(uiSource, /Зупинити без оцінки/);
+  assert.match(uiSource, /aria-live": "polite"/);
+  assert.match(uiSource, /className: "co-processing-progress"/);
+  assert.match(uiSource, /window\.setInterval\(updateCoProcessingClock, 1000\)/);
+  assert.match(uiSource, /кілька м’яких підказок лише у відкритому Mini App/,
+    'the UI must describe in-app presence instead of an unsolicited push channel');
+
+  const mutationSource = sourceBetween(
+    '      async function manageCoProcessing(action, durationMinutes, options) {',
+    '      function renderCoProcessingCard() {'
+  );
+  assert.match(mutationSource, /connectionId = safeId\(state\.account && state\.account\.id\)/);
+  assert.match(mutationSource, /expectedRevision: normalizeAttentionPreferences\(state\.attentionPreferences\)\.revision/);
+  assert.match(mutationSource, /operationId: newClientOperationId\(\)/);
+  assert.match(mutationSource, /op: "coProcessingSession", connectionId: connectionId/);
+  assert.doesNotMatch(mutationSource,
+    /changeThreadAction|attentionUpdate|saveDraft|sendDraft|label|subject|sender|bodyText|summaryUk|localStorage|sessionStorage/,
+    'starting or stopping presence must never mutate Gmail, inspect mail content, or create browser tracking');
+
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchSource, /state\.coProcessing = normalizeCoProcessing\(null\)/);
+  assert.match(switchSource, /state\.coProcessing = accountAttention\.presence/,
+    'account switching must restore presence only from the exact selected Gmail connection');
+
+  const normalizeSource = sourceBetween(
+    '      function normalizeCoProcessing(value) {',
+    '      function normalizeBacklogRescue(value, threadsValue) {'
+  );
+  assert.doesNotMatch(normalizeSource, /threadId|messageId|subject|sender|bodyText|summaryUk/,
+    'the client presence DTO must remain content-free');
+  assert.doesNotMatch(uiSource, /presence streak|серія присутності|пропущена сесія/i,
+    'presence must not introduce streaks or shame copy');
+});
+
 test('backlog rescue is explicit bounded restorable and never turns Focus into an infinite inbox', () => {
   assert.match(uiSource, /op === "backlogRescue"/);
   assert.match(uiSource, /function normalizeBacklogRescue\(value, threadsValue\)/);

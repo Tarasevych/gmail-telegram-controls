@@ -1713,6 +1713,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'attentionUpdate') return mailboxAttentionUpdate_(payload, session);
   if (op === 'attentionPreferences') return mailboxAttentionPreferences_(payload, session);
   if (op === 'backlogRescue') return mailboxBacklogRescue_(payload, session);
+  if (op === 'coProcessingSession') return mailboxCoProcessingSession_(payload, session);
   if (op === 'functionalMetrics') return mailboxFunctionalMetrics_(payload, session);
   if (op === 'label') return mailboxModifyUserLabels_(payload);
   if (op === 'action') return mailboxApplyAction_(payload);
@@ -1738,7 +1739,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1889,7 +1890,7 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
   if (['saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
@@ -4443,6 +4444,7 @@ const MAILBOX_ATTENTION_DENSITY_MODES_ = Object.freeze({
   standard: 'Стандарт',
   analytical: 'Детально',
 });
+const MAILBOX_CO_PROCESSING_DURATIONS_ = Object.freeze([10, 25]);
 const MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_ = Object.freeze([540, 1080]);
 
 function mailboxAttentionScope_(session) {
@@ -4576,6 +4578,46 @@ function mailboxAttentionNormalizeRescue_(value) {
   };
 }
 
+function mailboxAttentionNormalizePresence_(value) {
+  const item = value || {};
+  const durationMinutes = MAILBOX_CO_PROCESSING_DURATIONS_.indexOf(Number(item.durationMinutes)) !== -1
+    ? Number(item.durationMinutes) : 0;
+  const startedAt = mailboxSafeTimestamp_(item.startedAt);
+  const endsAt = mailboxSafeTimestamp_(item.endsAt);
+  const operationId = /^[A-Za-z0-9_-]{16,128}$/.test(String(item.lastOperationId || ''))
+    ? String(item.lastOperationId) : '';
+  const lastAction = ['start', 'finish', 'stop'].indexOf(String(item.lastAction || '')) !== -1
+    ? String(item.lastAction) : '';
+  const active = item.active === true && durationMinutes > 0 && startedAt > 0 &&
+    endsAt === startedAt + durationMinutes * 60 * 1000;
+  return {
+    active,
+    durationMinutes: active ? durationMinutes : 0,
+    startedAt: active ? startedAt : 0,
+    endsAt: active ? endsAt : 0,
+    lastOperationId: operationId,
+    lastAction,
+    updatedAt: mailboxSafeTimestamp_(item.updatedAt),
+  };
+}
+
+function mailboxAttentionPresenceDto_(registry) {
+  const presence = mailboxAttentionNormalizePresence_(registry && registry.presence);
+  const now = Date.now();
+  const running = presence.active && presence.endsAt > now;
+  return {
+    active: running,
+    expired: presence.active && !running,
+    durationMinutes: presence.durationMinutes,
+    startedAt: presence.startedAt,
+    endsAt: presence.endsAt,
+    updatedAt: presence.updatedAt,
+    revision: mailboxSafeCount_(registry && registry.revision),
+    allowedDurations: MAILBOX_CO_PROCESSING_DURATIONS_.slice(),
+    disclosure: 'Зберігаються лише тривалість і часові мітки цієї приватної сесії. Вміст листів не читається й не копіюється.',
+  };
+}
+
 function mailboxAttentionRescueDto_(registry) {
   const rescue = mailboxAttentionNormalizeRescue_(registry && registry.rescue);
   return {
@@ -4609,6 +4651,7 @@ function mailboxAttentionValidateRegistry_(value, scope) {
     resume: mailboxAttentionNormalizeResume_(input.resume),
     preferences: mailboxAttentionPreferencesNormalize_(input.preferences),
     rescue: mailboxAttentionNormalizeRescue_(input.rescue),
+    presence: mailboxAttentionNormalizePresence_(input.presence),
   };
 }
 
@@ -4622,6 +4665,7 @@ function mailboxAttentionInitialRegistry_(scope) {
     resume: mailboxAttentionNormalizeResume_({}),
     preferences: mailboxAttentionPreferencesNormalize_({}),
     rescue: mailboxAttentionNormalizeRescue_({}),
+    presence: mailboxAttentionNormalizePresence_({}),
   };
 }
 
@@ -4680,6 +4724,7 @@ function mailboxAttentionStateDto_(registry, threadId) {
     resume: Object.assign({}, registry.resume),
     preferences: mailboxAttentionPreferencesDto_(registry),
     rescue: mailboxAttentionRescueDto_(registry),
+    presence: mailboxAttentionPresenceDto_(registry),
   };
 }
 
@@ -4804,6 +4849,72 @@ function mailboxAttentionPreferences_(payload, session) {
     registry.preferences = next;
     registry.revision += 1;
     return mailboxAttentionStateDto_(mailboxAttentionWriteRegistry_(props, scope, registry), '');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxCoProcessingSession_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['action', 'durationMinutes', 'operationId', 'expectedRevision']);
+  const action = mailboxEnum_(payload.action, ['state', 'start', 'finish', 'stop'], 'state');
+  const scope = mailboxAttentionScope_(session);
+  if (action === 'state') {
+    return mailboxAttentionPresenceDto_(mailboxAttentionReadRegistry_(null, scope));
+  }
+  const operationId = mailboxRequireClientOperationId_(payload.operationId);
+  const durationMinutes = action === 'start'
+    ? mailboxBoundedInteger_(payload.durationMinutes, 10, 10, 25, 'тривалості тихої сесії')
+    : 0;
+  if (action === 'start' && MAILBOX_CO_PROCESSING_DURATIONS_.indexOf(durationMinutes) === -1) {
+    throw mailboxError_('INVALID_ATTENTION', 'Оберіть тиху сесію на 10 або 25 хвилин.');
+  }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw mailboxError_('BUSY', 'Тиха сесія зараз оновлюється.');
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const registry = mailboxAttentionReadRegistry_(props, scope);
+    const previous = mailboxAttentionNormalizePresence_(registry.presence);
+    if (previous.lastOperationId === operationId && previous.lastAction === action) {
+      return mailboxAttentionPresenceDto_(registry);
+    }
+    const expectedRevision = mailboxSafeCount_(payload.expectedRevision);
+    if (expectedRevision !== registry.revision) {
+      throw mailboxError_('ATTENTION_CONFLICT', 'Стан тихої сесії вже змінився. Оновіть його й повторіть дію.');
+    }
+    const now = Date.now();
+    if (action === 'start') {
+      if (previous.active && previous.endsAt > now) {
+        throw mailboxError_('PRESENCE_ACTIVE', 'Тиха сесія вже триває для цього Gmail-акаунта.');
+      }
+      registry.presence = {
+        active: true,
+        durationMinutes,
+        startedAt: now,
+        endsAt: now + durationMinutes * 60 * 1000,
+        lastOperationId: operationId,
+        lastAction: action,
+        updatedAt: now,
+      };
+    } else {
+      if (!previous.active) return mailboxAttentionPresenceDto_(registry);
+      registry.presence = {
+        active: false,
+        durationMinutes: 0,
+        startedAt: 0,
+        endsAt: 0,
+        lastOperationId: operationId,
+        lastAction: action,
+        updatedAt: now,
+      };
+    }
+    registry.revision += 1;
+    const saved = mailboxAttentionWriteRegistry_(props, scope, registry);
+    if (action === 'finish') {
+      mailboxMetricsRecordLockedBestEffort_(props, scope, 'presence_completed', {});
+    } else if (action === 'stop') {
+      mailboxMetricsRecordLockedBestEffort_(props, scope, 'presence_stopped', {});
+    }
+    return mailboxAttentionPresenceDto_(saved);
   } finally {
     lock.releaseLock();
   }
@@ -5023,7 +5134,8 @@ function mailboxMetricsFirstDecisionBucket_(durationMs) {
 
 function mailboxMetricsRecordLockedBestEffort_(properties, scope, eventName, dataValue) {
   const event = String(eventName || '');
-  if (['rescue_started', 'rescue_decision', 'rescue_stopped'].indexOf(event) === -1) return;
+  if (['rescue_started', 'rescue_decision', 'rescue_stopped', 'presence_completed', 'presence_stopped']
+    .indexOf(event) === -1) return;
   const data = dataValue || {};
   try {
     const props = properties || PropertiesService.getScriptProperties();
@@ -5054,6 +5166,10 @@ function mailboxMetricsRecordLockedBestEffort_(properties, scope, eventName, dat
       }
       if (data.sessionCompleted === true) day.sessionsCompleted += 1;
     } else if (event === 'rescue_stopped') {
+      day.sessionsStopped += 1;
+    } else if (event === 'presence_completed') {
+      day.sessionsCompleted += 1;
+    } else if (event === 'presence_stopped') {
       day.sessionsStopped += 1;
     }
     registry.days = registry.days.sort((left, right) => left.day.localeCompare(right.day))

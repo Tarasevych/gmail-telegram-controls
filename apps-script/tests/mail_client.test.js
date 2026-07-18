@@ -7469,6 +7469,98 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
     'preference storage must never retain email content');
 });
 
+test('private co-processing sessions are explicit content-free idempotent and account-scoped', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  harness.setGmail(requestPath => {
+    throw new Error(`Co-processing must not call Gmail: ${requestPath}`);
+  });
+
+  const initial = resultData(rpc(harness, token, 'attentionState', {}));
+  assert.equal(initial.presence.active, false);
+  assert.equal(initial.presence.expired, false);
+  assert.deepEqual(Array.from(initial.presence.allowedDurations), [10, 25]);
+  assert.match(initial.presence.disclosure, /Вміст листів не читається й не копіюється/);
+
+  const enabledMetrics = resultData(rpc(harness, token, 'functionalMetrics', {
+    action: 'enable', expectedRevision: 0,
+  }));
+  assert.equal(enabledMetrics.enabled, true);
+
+  const startOperation = 'presence_start_01';
+  const started = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 10, operationId: startOperation, expectedRevision: 0,
+  }));
+  assert.equal(started.active, true);
+  assert.equal(started.durationMinutes, 10);
+  assert.equal(started.endsAt - started.startedAt, 10 * 60 * 1000);
+  assert.equal(started.revision, 1);
+
+  const repeatedStart = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 10, operationId: startOperation, expectedRevision: 0,
+  }));
+  assert.equal(repeatedStart.startedAt, started.startedAt,
+    'a retry after a lost response must not restart the timer');
+  assert.equal(repeatedStart.revision, 1);
+  assert.equal(resultFailed(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 25, operationId: 'presence_start_02', expectedRevision: 1,
+  })).code, 'PRESENCE_ACTIVE');
+
+  const finished = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'finish', operationId: 'presence_finish_1', expectedRevision: 1,
+  }));
+  assert.equal(finished.active, false);
+  assert.equal(finished.revision, 2);
+  const repeatedFinish = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'finish', operationId: 'presence_finish_1', expectedRevision: 1,
+  }));
+  assert.equal(repeatedFinish.revision, 2,
+    'a repeated finish must remain idempotent after a lost response');
+
+  const restarted = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 25, operationId: 'presence_start_03', expectedRevision: 2,
+  }));
+  assert.equal(restarted.durationMinutes, 25);
+  const stopped = resultData(rpc(harness, token, 'coProcessingSession', {
+    action: 'stop', operationId: 'presence_stop_01', expectedRevision: 3,
+  }));
+  assert.equal(stopped.active, false);
+  assert.equal(stopped.revision, 4);
+  assert.equal(resultFailed(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 15, operationId: 'presence_invalid1', expectedRevision: 4,
+  })).code, 'INVALID_ATTENTION');
+  assert.equal(resultFailed(rpc(harness, token, 'coProcessingSession', {
+    action: 'start', durationMinutes: 10, operationId: 'presence_conflict', expectedRevision: 2,
+  })).code, 'ATTENTION_CONFLICT');
+
+  const metrics = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(metrics.last30Days.sessionsCompleted, 1);
+  assert.equal(metrics.last30Days.sessionsStopped, 1);
+
+  const attentionKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_ATTENTION_V1_'));
+  assert.ok(attentionKey);
+  const storedPresence = JSON.stringify(JSON.parse(harness.propertyValues[attentionKey]).presence);
+  assert.doesNotMatch(storedPresence,
+    /subject|sender|recipient|bodyText|summaryUk|messageId|threadId/i,
+    'presence storage may contain timing state but no mail content or mail identifiers');
+
+  const registry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 ||
+    JSON.stringify(harness.context.mailboxMultiInitialRegistry_(OWNER_ID)));
+  registry.connections.push({
+    id: 'gmail-owner-presence-second', zoneId: 'zone-owner', provider: 'google_oauth',
+    email: 'presence.second@example.com', displayName: 'Presence second', avatarUrl: '', status: 'active',
+    connectedByUserId: OWNER_ID, connectedAt: Date.now(), tokenGeneration: 1,
+  });
+  registry.revision += 1;
+  harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 = JSON.stringify(registry);
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: 'gmail-owner-presence-second' }));
+  const sibling = resultData(rpc(harness, token, 'attentionState', {}));
+  assert.equal(sibling.presence.active, false,
+    'a sibling Gmail connection must never inherit the first account presence state');
+  assert.equal(sibling.presence.revision, 0);
+});
+
 test('bounded backlog rescue scans read-only and persists only account-scoped thread ids and progress', () => {
   const references = [
     { id: 'thread_old_unread' }, { id: 'thread_important' }, { id: 'thread_plain' },

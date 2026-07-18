@@ -1042,6 +1042,62 @@
       font: 600 11px/1 inherit;
     }
 
+    .co-processing-card {
+      display: grid;
+      gap: 9px;
+      padding: 12px;
+      border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+    }
+
+    .co-processing-heading,
+    .co-processing-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .co-processing-heading strong {
+      font-size: 12px;
+    }
+
+    .co-processing-heading span,
+    .co-processing-copy,
+    .co-processing-disclosure {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .co-processing-time {
+      color: var(--text);
+      font: 700 18px/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .co-processing-progress {
+      width: 100%;
+      height: 8px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 999px;
+      background: var(--border);
+      accent-color: var(--primary);
+    }
+
+    .co-processing-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .co-processing-actions button {
+      min-height: 40px;
+      flex: 1 1 120px;
+    }
+
     .resume-rail-copy {
       display: grid;
       gap: 2px;
@@ -4860,6 +4916,15 @@
           completedCount: 0, remainingCount: 0, scannedCount: 0,
           startedAt: 0, updatedAt: 0, revision: 0
         },
+        coProcessingBusy: false,
+        coProcessingRequestId: 0,
+        coProcessingTimer: 0,
+        coProcessingPhase: "",
+        coProcessing: {
+          active: false, expired: false, durationMinutes: 0,
+          startedAt: 0, endsAt: 0, updatedAt: 0, revision: 0,
+          allowedDurations: [10, 25], disclosure: ""
+        },
         attentionSaveTimer: 0,
         attentionInputTimer: 0,
         pendingAttentionUpdate: null,
@@ -4938,6 +5003,7 @@
         previewAttention: {
           revision: 0, entries: {}, resume: {},
           rescue: { active: false, preset: "five_minutes", threadIds: [], completedIds: [], scannedCount: 0, startedAt: 0, updatedAt: 0 },
+          presence: { active: false, durationMinutes: 0, startedAt: 0, endsAt: 0, updatedAt: 0 },
           preferences: {
             sessionPreset: "five_minutes", reminderMode: "soft", densityMode: "auto", digestWindows: [540, 1080],
             timezone: "UTC", onboardingCompletedAt: 0, updatedAt: 0
@@ -5765,6 +5831,20 @@
               action: safeText(backlogRescue.action, "load"),
               threadId: safeId(backlogRescue.threadId),
               expectedRevision: Math.max(0, Math.floor(Number(backlogRescue.expectedRevision || 0)))
+            }
+          };
+        }
+        if (op === "coProcessingSession") {
+          var coProcessing = input.payload || input;
+          return {
+            op: "coProcessingSession",
+            connectionId: safeId(input.connectionId || coProcessing.connectionId),
+            payload: {
+              action: safeText(coProcessing.action, "state"),
+              durationMinutes: coProcessing.durationMinutes === undefined
+                ? undefined : Math.floor(Number(coProcessing.durationMinutes || 0)),
+              operationId: safeClientOperationId(coProcessing.operationId),
+              expectedRevision: Math.max(0, Math.floor(Number(coProcessing.expectedRevision || 0)))
             }
           };
         }
@@ -7271,6 +7351,10 @@
           state.resumeRail = null;
           state.attentionPreferences = normalizeAttentionPreferences(null);
           state.backlogRescue = normalizeBacklogRescue(null);
+          state.coProcessingRequestId += 1;
+          state.coProcessingBusy = false;
+          state.coProcessing = normalizeCoProcessing(null);
+          syncCoProcessingTicker();
           initializeFromBootstrap(bootstrap || selected || {});
           try {
             var accountAttention = normalizeAttentionState(await rpc({
@@ -7279,6 +7363,8 @@
             state.resumeRail = accountAttention.resume;
             state.attentionPreferences = accountAttention.preferences;
             state.backlogRescue = accountAttention.rescue;
+            state.coProcessing = accountAttention.presence;
+            syncCoProcessingTicker();
           } catch (attentionError) {}
           setAccountPanelOpen(false, null, false);
           await loadThreads(true);
@@ -7587,7 +7673,33 @@
         preferences.revision = revision || preferences.revision;
         return {
           revision: revision, thread: thread, resume: normalizeResumeRail(input.resume),
-          preferences: preferences, rescue: normalizeBacklogRescue(input.rescue)
+          preferences: preferences, rescue: normalizeBacklogRescue(input.rescue),
+          presence: normalizeCoProcessing(input.presence)
+        };
+      }
+
+      function normalizeCoProcessing(value) {
+        var input = value || {};
+        var durationMinutes = [10, 25].indexOf(Number(input.durationMinutes)) !== -1
+          ? Number(input.durationMinutes) : 0;
+        var startedAt = Math.max(0, Number(input.startedAt || 0));
+        var endsAt = Math.max(0, Number(input.endsAt || 0));
+        var active = input.active === true && durationMinutes > 0 && endsAt > startedAt;
+        var allowedDurations = (Array.isArray(input.allowedDurations) ? input.allowedDurations : [10, 25])
+          .map(Number).filter(function (item, index, all) {
+            return [10, 25].indexOf(item) !== -1 && all.indexOf(item) === index;
+          });
+        return {
+          active: active,
+          expired: input.expired === true,
+          durationMinutes: durationMinutes,
+          startedAt: startedAt,
+          endsAt: endsAt,
+          updatedAt: Math.max(0, Number(input.updatedAt || 0)),
+          revision: Math.max(0, Math.floor(Number(input.revision || 0))),
+          allowedDurations: allowedDurations.length ? allowedDurations : [10, 25],
+          disclosure: safeText(input.disclosure,
+            "Зберігаються лише тривалість і часові мітки. Вміст листів не читається й не копіюється.")
         };
       }
 
@@ -7797,6 +7909,195 @@
         rows[nextIndex].focus();
       }
 
+      function coProcessingPhase(value, nowValue) {
+        var presence = normalizeCoProcessing(value);
+        if (!presence.active) return "idle";
+        var now = Number(nowValue || Date.now());
+        var durationMs = Math.max(1, presence.endsAt - presence.startedAt);
+        var remainingMs = Math.max(0, presence.endsAt - now);
+        if (remainingMs <= 60 * 1000) return "closing";
+        if ((now - presence.startedAt) / durationMs >= 0.5) return "middle";
+        return "starting";
+      }
+
+      function coProcessingPhaseCopy(phase) {
+        return {
+          starting: "Я поруч. Достатньо одного маленького рішення за раз.",
+          middle: "Ви вже в процесі. Можна продовжити або завершити раніше.",
+          closing: "Завершуємо м’яко. Збережіть контекст або зупиніться без оцінки."
+        }[phase] || "Можна почати з одного листа й зупинитися будь-коли.";
+      }
+
+      function formatCoProcessingTime(milliseconds) {
+        var seconds = Math.max(0, Math.ceil(Number(milliseconds || 0) / 1000));
+        var minutes = Math.floor(seconds / 60);
+        var remainder = String(seconds % 60).padStart(2, "0");
+        return String(minutes).padStart(2, "0") + ":" + remainder;
+      }
+
+      function updateCoProcessingClock() {
+        var presence = normalizeCoProcessing(state.coProcessing);
+        if (!presence.active) return;
+        var now = Date.now();
+        var remaining = Math.max(0, presence.endsAt - now);
+        var duration = Math.max(1, presence.endsAt - presence.startedAt);
+        var elapsed = Math.max(0, Math.min(duration, now - presence.startedAt));
+        var timer = els.focusSessionBar.querySelector(".co-processing-time");
+        var progress = els.focusSessionBar.querySelector(".co-processing-progress");
+        if (timer) timer.textContent = formatCoProcessingTime(remaining);
+        if (progress) {
+          progress.max = Math.round(duration / 1000);
+          progress.value = Math.round(elapsed / 1000);
+          progress.setAttribute("aria-valuenow", String(progress.value));
+        }
+        var phase = coProcessingPhase(presence, now);
+        if (phase !== state.coProcessingPhase) {
+          state.coProcessingPhase = phase;
+          var copy = coProcessingPhaseCopy(phase);
+          var visible = els.focusSessionBar.querySelector(".co-processing-checkin");
+          var live = els.focusSessionBar.querySelector(".co-processing-live");
+          if (visible) visible.textContent = copy;
+          if (live) live.textContent = copy;
+        }
+        if (!remaining && !state.coProcessingBusy) {
+          if (state.coProcessingTimer) window.clearInterval(state.coProcessingTimer);
+          state.coProcessingTimer = 0;
+          state.coProcessing = Object.assign({}, presence, { active: false, expired: true });
+          manageCoProcessing("finish", 0, { silent: true, automatic: true });
+        }
+      }
+
+      function syncCoProcessingTicker() {
+        if (state.coProcessingTimer) window.clearInterval(state.coProcessingTimer);
+        state.coProcessingTimer = 0;
+        state.coProcessingPhase = "";
+        if (!normalizeCoProcessing(state.coProcessing).active) return;
+        updateCoProcessingClock();
+        state.coProcessingTimer = window.setInterval(updateCoProcessingClock, 1000);
+      }
+
+      async function manageCoProcessing(action, durationMinutes, options) {
+        var opts = options || {};
+        var connectionId = safeId(state.account && state.account.id);
+        if (!connectionId || state.unifiedMode || state.coProcessingBusy) return false;
+        var requestId = ++state.coProcessingRequestId;
+        state.coProcessingBusy = true;
+        renderThreadList();
+        try {
+          var payload = {
+            action: safeText(action),
+            operationId: newClientOperationId(),
+            expectedRevision: normalizeAttentionPreferences(state.attentionPreferences).revision
+          };
+          if (action === "start") payload.durationMinutes = Number(durationMinutes);
+          var presence = normalizeCoProcessing(await rpc({
+            op: "coProcessingSession", connectionId: connectionId, payload: payload
+          }));
+          if (requestId !== state.coProcessingRequestId ||
+              safeId(state.account && state.account.id) !== connectionId) return false;
+          state.coProcessing = presence;
+          state.attentionPreferences.revision = presence.revision;
+          syncCoProcessingTicker();
+          if (!opts.silent) {
+            showSnackbar(action === "start"
+              ? "Тиха присутність почалася. Жоден лист автоматично не змінюється."
+              : action === "finish"
+                ? "Сесію завершено. Те, що вдалося зробити, уже достатньо."
+                : "Сесію зупинено без оцінки й без втрати поштового контексту.", { success: true });
+          }
+          return true;
+        } catch (error) {
+          if (requestId !== state.coProcessingRequestId ||
+              safeId(state.account && state.account.id) !== connectionId) return false;
+          if (safeText(error && error.code) === "ATTENTION_CONFLICT") {
+            try {
+              var fresh = normalizeAttentionState(await rpc({
+                op: "attentionState", connectionId: connectionId
+              }), "");
+              state.attentionPreferences = fresh.preferences;
+              state.backlogRescue = Object.assign({}, state.backlogRescue, fresh.rescue, {
+                threads: state.backlogRescue.threads
+              });
+              state.coProcessing = fresh.presence;
+              syncCoProcessingTicker();
+            } catch (refreshError) {}
+          }
+          if (!opts.silent) showSnackbar(safeText(error && error.message,
+            "Не вдалося оновити тиху сесію."), { error: true });
+          return false;
+        } finally {
+          if (requestId === state.coProcessingRequestId &&
+              safeId(state.account && state.account.id) === connectionId) {
+            state.coProcessingBusy = false;
+            renderThreadList();
+          }
+        }
+      }
+
+      function renderCoProcessingCard() {
+        var presence = normalizeCoProcessing(state.coProcessing);
+        var card = make("section", {
+          className: "co-processing-card",
+          attrs: { "aria-label": "Тиха присутність для розбору пошти" }
+        });
+        var heading = make("div", { className: "co-processing-heading" });
+        heading.append(
+          make("strong", { text: "Тиха присутність" }),
+          make("span", { text: state.unifiedMode ? "Оберіть одну скриньку" : safeText(state.account && state.account.email) })
+        );
+        card.append(heading);
+        if (presence.active) {
+          var status = make("div", { className: "co-processing-status" });
+          status.append(
+            make("span", { className: "co-processing-copy", text: "Ми просто залишаємося поруч — без аналізу листів." }),
+            make("time", { className: "co-processing-time", text: formatCoProcessingTime(presence.endsAt - Date.now()) })
+          );
+          var progress = make("progress", {
+            className: "co-processing-progress",
+            attrs: {
+              max: String(Math.max(1, Math.round((presence.endsAt - presence.startedAt) / 1000))),
+              value: String(Math.max(0, Math.round((Date.now() - presence.startedAt) / 1000))),
+              "aria-label": "Прогрес тихої сесії"
+            }
+          });
+          card.append(status, progress,
+            make("p", { className: "co-processing-copy co-processing-checkin", text: coProcessingPhaseCopy(coProcessingPhase(presence)) }),
+            make("span", { className: "sr-only co-processing-live", attrs: { "aria-live": "polite", "aria-atomic": "true" } })
+          );
+          var activeActions = make("div", { className: "co-processing-actions" });
+          var finish = make("button", { className: "primary-button", type: "button", text: "Готово на сьогодні" });
+          finish.disabled = state.coProcessingBusy;
+          finish.addEventListener("click", function () { manageCoProcessing("finish"); });
+          var stop = make("button", { className: "outline-button", type: "button", text: "Зупинити без оцінки" });
+          stop.disabled = state.coProcessingBusy;
+          stop.addEventListener("click", function () { manageCoProcessing("stop"); });
+          activeActions.append(finish, stop);
+          card.append(activeActions);
+        } else {
+          card.append(make("p", {
+            className: "co-processing-copy",
+            text: presence.expired
+              ? "Попередній блок часу завершився. Можна почати новий, коли будете готові."
+              : "Запустіть приватний блок: тихий таймер і кілька м’яких підказок лише у відкритому Mini App."
+          }));
+          var startActions = make("div", { className: "co-processing-actions" });
+          presence.allowedDurations.forEach(function (minutes) {
+            var start = make("button", {
+              className: minutes === 10 ? "primary-button" : "outline-button",
+              type: "button",
+              text: "Побути поруч " + minutes + " хв"
+            });
+            start.disabled = state.unifiedMode || state.coProcessingBusy;
+            start.addEventListener("click", function () { manageCoProcessing("start", minutes); });
+            startActions.append(start);
+          });
+          card.append(startActions);
+        }
+        card.append(make("p", { className: "co-processing-disclosure", text: presence.disclosure }));
+        els.focusSessionBar.append(card);
+        syncCoProcessingTicker();
+      }
+
       function renderFocusSessionBar(focusMode) {
         clear(els.focusSessionBar);
         els.focusSessionBar.hidden = !focusMode;
@@ -7893,6 +8194,7 @@
           controls.append(startRescue);
         }
         els.focusSessionBar.append(controls);
+        renderCoProcessingCard();
       }
 
       function renderThreadList() {
@@ -8457,6 +8759,8 @@
             state.backlogRescue = Object.assign({}, state.backlogRescue, attentionState.rescue, {
               threads: state.backlogRescue.threads
             });
+            state.coProcessing = attentionState.presence;
+            syncCoProcessingTicker();
           }
           renderThread();
           if (state.thread.unread) {
@@ -8537,6 +8841,8 @@
           state.backlogRescue = Object.assign({}, state.backlogRescue, result.rescue, {
             threads: state.backlogRescue.threads
           });
+          state.coProcessing = result.presence;
+          syncCoProcessingTicker();
           state.threads = state.threads.map(function (thread) {
             if (thread.id !== state.thread.id || thread.accountId !== state.selectedConnectionId) return thread;
             return Object.assign({}, thread, { attention: result.thread });
@@ -8559,6 +8865,8 @@
               state.backlogRescue = Object.assign({}, state.backlogRescue, fresh.rescue, {
                 threads: state.backlogRescue.threads
               });
+              state.coProcessing = fresh.presence;
+              syncCoProcessingTicker();
             } catch (refreshError) {}
           }
           if (!opts.silent) showSnackbar(safeText(error.message, "Не вдалося зберегти стан фокусу."), { error: true });
@@ -8608,6 +8916,8 @@
           state.backlogRescue = Object.assign({}, state.backlogRescue, result.rescue, {
             threads: state.backlogRescue.threads
           });
+          state.coProcessing = result.presence;
+          syncCoProcessingTicker();
           showSnackbar("Режим фокусу збережено.");
           return true;
         } catch (error) {
@@ -15586,6 +15896,8 @@
               state.resumeRail = savedAttention.resume;
               state.attentionPreferences = savedAttention.preferences;
               state.backlogRescue = savedAttention.rescue;
+              state.coProcessing = savedAttention.presence;
+              syncCoProcessingTicker();
             } catch (attentionError) {
               state.resumeRail = null;
             }
@@ -15942,6 +16254,22 @@
         };
       }
 
+      function previewCoProcessingResult() {
+        var presence = state.previewAttention.presence || {};
+        var running = presence.active === true && Number(presence.endsAt || 0) > Date.now();
+        return {
+          active: running,
+          expired: presence.active === true && !running,
+          durationMinutes: Math.max(0, Number(presence.durationMinutes || 0)),
+          startedAt: Math.max(0, Number(presence.startedAt || 0)),
+          endsAt: Math.max(0, Number(presence.endsAt || 0)),
+          updatedAt: Math.max(0, Number(presence.updatedAt || 0)),
+          revision: state.previewAttention.revision,
+          allowedDurations: [10, 25],
+          disclosure: "Зберігаються лише тривалість і часові мітки цієї приватної сесії. Вміст листів не читається й не копіюється."
+        };
+      }
+
       function previewFunctionalMetricsResult(connectionId) {
         var id = safeId(connectionId || state.account && state.account.id || "gmail-preview-personal");
         if (!state.previewFunctionalMetrics[id]) {
@@ -16115,6 +16443,7 @@
                    ]
                 }),
                 rescue: previewRescueState.rescue,
+                presence: previewCoProcessingResult(),
                 triageOptions: [
                   { key: "action", label: "Дія", rank: 4 }, { key: "waiting", label: "Чекаю", rank: 3 },
                   { key: "info", label: "Інфо", rank: 2 }, { key: "later", label: "Пізніше", rank: 1 }
@@ -16160,7 +16489,8 @@
                   revision: state.previewAttention.revision,
                   maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[nextPreviewPreset]
                 }),
-                rescue: previewBacklogRescueResult().rescue
+                rescue: previewBacklogRescueResult().rescue,
+                presence: previewCoProcessingResult()
               });
               return;
             }
@@ -16190,7 +16520,8 @@
                   revision: state.previewAttention.revision,
                   maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[state.previewAttention.preferences.sessionPreset] || 3
                 }),
-                rescue: previewBacklogRescueResult().rescue
+                rescue: previewBacklogRescueResult().rescue,
+                presence: previewCoProcessingResult()
               });
               return;
             }
@@ -16225,6 +16556,30 @@
                 state.previewAttention.revision += 1;
               }
               resolve(previewBacklogRescueResult());
+              return;
+            }
+            if (op === "coProcessingSession") {
+              var previewPresenceAction = safeText(payload.action, "state");
+              if (previewPresenceAction === "start") {
+                var previewPresenceMinutes = [10, 25].indexOf(Number(payload.durationMinutes)) !== -1
+                  ? Number(payload.durationMinutes) : 10;
+                var previewPresenceNow = Date.now();
+                state.previewAttention.presence = {
+                  active: true,
+                  durationMinutes: previewPresenceMinutes,
+                  startedAt: previewPresenceNow,
+                  endsAt: previewPresenceNow + previewPresenceMinutes * 60 * 1000,
+                  updatedAt: previewPresenceNow
+                };
+                state.previewAttention.revision += 1;
+              } else if ((previewPresenceAction === "finish" || previewPresenceAction === "stop") &&
+                  state.previewAttention.presence.active) {
+                state.previewAttention.presence = {
+                  active: false, durationMinutes: 0, startedAt: 0, endsAt: 0, updatedAt: Date.now()
+                };
+                state.previewAttention.revision += 1;
+              }
+              resolve(previewCoProcessingResult());
               return;
             }
             if (op === "list" || op === "unifiedList") {
