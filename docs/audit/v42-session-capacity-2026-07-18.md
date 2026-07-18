@@ -29,6 +29,12 @@ Recovery journal: `C:\Users\t\.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb6
 - Private rendered evidence: `v42-session-capacity-qa.json`, desktop/mobile screenshots, and the QA script under the thread visualization directory.
 - `git diff --check`: PASS.
 
-## Release boundary
+## Production release
 
-This branch is based on product v40 and must not be promoted wholesale over production v38. The session fix must be transplanted onto the exact product-v38 commit and released through a separately pinned immutable v33 hotfix gate.
+The fix was transplanted onto exact product-v38 commit `07ba3a5dc2f05d67abbd9eb0b46f56ebe85a05f0` and released through the separately pinned v33 gate.
+
+- Preflight reconciled one immutable v33 and exactly one verified staging deployment while stable production remained v32.
+- The existing stable deployment ID was atomically promoted from v32 to v33; its public URL did not change.
+- The staging deployment was removed after promotion.
+- Final provider reconciliation: stable v33, exact candidate HEAD and immutable hashes, zero staging deployments, release journal `cleaned`.
+- No Gmail message, OAuth grant, Telegram zone, or other-user refresh family was changed by the release.
