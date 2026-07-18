@@ -56,9 +56,10 @@ Acceptance:
 
 ## Current preserved progress
 
-- Production: immutable v29 energy-aware Focus preferences.
+- Production: immutable v32/product v38 integrated P1, including the exact account-identity compatibility fix and zero-scroll mobile access to Support/Rules before all dynamic lists.
 - Separate preserved candidates: v30 low-pressure reply starters; v31/v32 durable send-later backend and UI; v33 three-screen per-account onboarding; v34 compassionate reminder delivery; v35 soft-to-digest continuation.
 - v33 stores only bounded preference metadata. v34 stores only IDs, states, revisions, and timestamps; neither stores message bodies, summaries, attachment names, or subjects in the reminder ledger.
 - v34 passes the 354-test ordinary functional matrix and independent read-only review. It defers every mode through quiet hours and provides exact-account `Пізніше` / suppression callbacks with at-most-once Telegram delivery boundaries.
 - v35 completes automatic soft-to-digest continuation with under-lock activity invalidation, digest-window-only retries, and durable idempotent retirement of the previous standalone reminder.
-- Remaining before a combined release: real Telegram WebView/delivery acceptance, an immutable release helper, read-only preflight, one guarded deployment, and controlled post-deploy synchronization checks.
+- Combined release completed: product v38 passed ordinary, rendered Chrome, staging-phone, and production-phone checks; stable advanced directly from v29 to v32; temporary bridges and staging deployment were removed.
+- Next product slices remain trustworthy summary evidence, bounded backlog rescue, privacy-preserving functional metrics, task/calendar confirmation, optional co-processing, adaptive information density, and independent multi-provider attachment UX.

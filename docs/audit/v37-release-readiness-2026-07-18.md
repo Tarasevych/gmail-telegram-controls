@@ -79,6 +79,8 @@ The later guarded staging attempt succeeded and created exact immutable v31 whil
 
 That follow-up gate is now satisfied: exact immutable v32/product v38 was staged with stable still on v29, and real-phone Telegram WebView proved both zero-scroll controls plus the first onboarding screen for the exact Gmail account. Temporary acceptance infrastructure was removed. Only final GET-only reconciliation remains before guarded promotion.
 
+Final release result: reconciliation passed, stable was promoted directly from v29 to exact immutable v32/product v38, the same production menu passed the phone check, and the separate staging deployment was removed. Final preflight reports stable v32, exact candidate source, journal `cleaned`, and no staging deployment. Immutable v31 remained evidence only and was never promoted.
+
 ## Crash/blocker disposition
 
 - Current blocker: recoverable external Apps Script API quota exhaustion.

@@ -92,6 +92,7 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Fix: product v38 places the support/rules section before every dynamic list. Source and rendered Chrome contracts prove zero-scroll visibility even with 80 synthetic labels; Support opens the exact three-screen onboarding.
 - Release decision: immutable v31 is evidence only and must not be promoted. A separately pinned product-v38 immutable/staging release is required for the next phone acceptance.
 - Resolution: exact immutable v32/product v38 passed the repeated real-phone acceptance. Both controls are visible without scrolling and Support opens onboarding for the exact Gmail connection. The temporary bridge and owner-menu override were fully removed/restored. Promotion remains conditional only on the final exact GET-only release reconciliation.
+- Closed: final reconciliation passed, stable moved directly from v29 to v32, production phone acceptance passed, and the isolated staging deployment was removed. Final state is stable v32 with no staging deployment; v31 was never promoted.
 
 ## 2026-07-18 — resolved v32 rendered-QA defects
 
