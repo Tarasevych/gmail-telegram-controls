@@ -2839,6 +2839,11 @@ test('Gmail metadata panel refreshes the active account and manages only guarded
 
 test('ADHD focus is visible, manually assignable, and rule-driven per Gmail account', () => {
   assert.match(uiSource, /id="focusSettingsPanel"/);
+  assert.ok(
+    uiSource.indexOf('id="focusSettingsPanel"') < uiSource.indexOf('id="accountList"') &&
+      uiSource.indexOf('id="focusSettingsPanel"') < uiSource.indexOf('id="gmailMetadataPanel"'),
+    'neuroinclusive support and rules must remain before every dynamic account, access, and Gmail label list'
+  );
   assert.match(uiSource, /ADHD-фокус і пріоритети/);
   assert.match(uiSource, /className: "thread-row"[\s\S]*focus-priority/);
   assert.match(uiSource, /className: "focus-badge"/);

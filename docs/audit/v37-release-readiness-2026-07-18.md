@@ -73,6 +73,10 @@ These are genuine roadmap gaps, not release blockers for the integrated P1 candi
 
 New slices must branch from the finally accepted immutable source, not be mixed into the v31 release candidate before acceptance.
 
+## Post-audit update: v31 rejected, product v38 required
+
+The later guarded staging attempt succeeded and created exact immutable v31 while stable remained v29. Real Telegram WebView acceptance then proved the product-v37 account identity fix, but rejected the release because Support/Rules followed unbounded dynamic account, access, and Gmail-label content. Product v38 moves that block directly after the account-panel heading. Local source, functional, and rendered mobile proofs pass; a separately pinned immutable release and repeated phone acceptance are still required. The v31 staging deployment remains evidence and is not a promotion candidate.
+
 ## Crash/blocker disposition
 
 - Current blocker: recoverable external Apps Script API quota exhaustion.

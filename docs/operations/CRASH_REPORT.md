@@ -83,6 +83,15 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Recovery hardening: the helper no longer sends a blind rollback PUT after an upload error. It reads HEAD, accepts an exact prior state without writing, rolls back only an exact candidate state, and leaves an unreadable/unknown state unresolved for later GET-only reconciliation.
 - Decision: do not repeat the provider write in this phase. Continue only isolated local work and retry at most once after a later clean preflight and quota cooldown. Production is healthy and unchanged.
 
+## 2026-07-18 — immutable v31 account-panel controls buried by dynamic Gmail metadata
+
+- Phase: controlled real-phone Telegram WebView acceptance of immutable v31/product v37 after exact staging verification. Stable production remained v29.
+- Symptom: `Підтримка` and `Правила` existed and were enabled, but appeared after the complete dynamic account/access/Gmail-label content. On the real mailbox, ten repeated scroll gestures still remained inside the label list; the controls were not practically reachable.
+- Scope: presentation/order defect only. The exact Gmail account identity was correct and no Gmail, preference, OAuth, role, attachment, provider, or Telegram-zone mutation occurred.
+- Cleanup: the owner menu was restored to its exact production text/URL, the temporary GitHub Pages bridge was deleted and verified HTTP 404, and the phone exited the staging surface.
+- Fix: product v38 places the support/rules section before every dynamic list. Source and rendered Chrome contracts prove zero-scroll visibility even with 80 synthetic labels; Support opens the exact three-screen onboarding.
+- Release decision: immutable v31 is evidence only and must not be promoted. A separately pinned product-v38 immutable/staging release is required for the next phone acceptance.
+
 ## 2026-07-18 — resolved v32 rendered-QA defects
 
 - Phase: local desktop and 390x844 Chrome preview of the send-later controls.
