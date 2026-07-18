@@ -926,6 +926,181 @@
       margin-top: 8px;
     }
 
+    .attention-assist {
+      display: grid;
+      gap: 14px;
+      margin: 16px 0 22px;
+    }
+
+    .resume-rail {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 58px;
+      padding: 10px 14px 13px;
+      border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--primary) 6%, var(--bg));
+      color: var(--text);
+      text-align: left;
+    }
+
+    .resume-rail-copy {
+      display: grid;
+      gap: 2px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .resume-rail-copy span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .resume-rail-progress {
+      position: absolute;
+      right: 14px;
+      bottom: 7px;
+      left: 48px;
+      height: 2px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--primary) 16%, var(--border));
+    }
+
+    .resume-rail-progress > span {
+      display: block;
+      height: 100%;
+      background: var(--primary);
+    }
+
+    .thread-summary-card.ai-summary {
+      margin: 0;
+      border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+      background: color-mix(in srgb, var(--primary) 3%, var(--bg));
+    }
+
+    .ai-summary-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .ai-summary-header .section-kicker {
+      margin: 0;
+      color: var(--primary);
+      font-size: 14px;
+    }
+
+    .ai-confidence {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .ai-sources {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .ai-sources summary {
+      color: var(--primary);
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .ai-sources ol {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .ai-sources li + li {
+      margin-top: 6px;
+    }
+
+    .next-action-field {
+      display: grid;
+      gap: 6px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .next-action-input {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: 500 13px/1.4 inherit;
+    }
+
+    .triage-control {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .triage-control legend {
+      grid-column: 1 / -1;
+      margin-bottom: 2px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .triage-button {
+      min-height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: 650 12px/1 inherit;
+    }
+
+    .triage-action { --triage-color: #0b57d0; }
+    .triage-waiting { --triage-color: #e37400; }
+    .triage-info { --triage-color: #1373e6; }
+    .triage-later { --triage-color: #7e57c2; }
+
+    .triage-button[aria-pressed="true"] {
+      border-color: var(--triage-color);
+      background: color-mix(in srgb, var(--triage-color) 10%, var(--bg));
+      color: var(--triage-color);
+      box-shadow: inset 0 0 0 1px var(--triage-color);
+    }
+
+    .attention-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--rail);
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .attention-action { color: #0b57d0; background: #eaf2ff; }
+    .attention-waiting { color: #b06000; background: #fff1dc; }
+    .attention-info { color: #0b57d0; background: #edf4ff; }
+    .attention-later { color: #6f42b5; background: #f3edff; }
+
     .verification-code {
       display: flex;
       align-items: center;
@@ -1329,7 +1504,7 @@
       left: calc(var(--rail-w) + var(--list-w));
       right: 0;
       bottom: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: space-around;
       min-height: 58px;
@@ -1338,6 +1513,24 @@
       background: color-mix(in srgb, var(--bg) 95%, transparent);
       backdrop-filter: blur(14px);
       z-index: 6;
+    }
+
+    .reader-actionbar .toolbar-button {
+      display: inline-flex;
+      flex: 1 1 0;
+      justify-content: center;
+      min-width: 0;
+      height: 46px;
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .reader-actionbar .toolbar-button.primary {
+      background: var(--primary);
+      color: #fff;
     }
 
     .action-menu {
@@ -4009,6 +4202,11 @@
         requestVersion: 0,
         actionBusy: false,
         focusBusy: false,
+        attentionBusy: false,
+        attentionSaveTimer: 0,
+        attentionInputTimer: 0,
+        pendingAttentionUpdate: null,
+        resumeRail: null,
         limits: {
           maxIncomingAttachmentBytes: 15 * 1024 * 1024,
           maxOutgoingAttachmentBytes: 10 * 1024 * 1024,
@@ -4066,6 +4264,7 @@
         routeReady: false,
         sessionFailureShown: false,
         previewLabelIds: {},
+        previewAttention: { revision: 0, entries: {}, resume: {} },
         previewBoxConnected: false,
         previewDriveConnected: true,
         previewActiveDriveSourceId: "source-drive-preview-personal",
@@ -4074,6 +4273,7 @@
       };
 
       var DEFAULT_FOLDERS = [
+        { id: "FOCUS", name: "Фокус", icon: "important" },
         { id: "INBOX", name: "Вхідні", icon: "inbox" },
         { id: "SENT", name: "Надіслані", icon: "send" },
         { id: "DRAFT", name: "Чернетки", icon: "draft" },
@@ -4813,8 +5013,36 @@
             }
           };
         }
+        if (op === "attentionState") {
+          var attentionState = input.payload || input;
+          return {
+            op: "attentionState",
+            connectionId: safeId(input.connectionId || attentionState.connectionId),
+            payload: { threadId: safeId(attentionState.threadId) }
+          };
+        }
+        if (op === "attentionUpdate") {
+          var attention = input.payload || input;
+          return {
+            op: "attentionUpdate",
+            connectionId: safeId(input.connectionId || attention.connectionId),
+            payload: {
+              threadId: safeId(attention.threadId),
+              triage: safeText(attention.triage),
+              nextAction: safeText(attention.nextAction).slice(0, 320),
+              readingProgress: Math.max(0, Math.min(100, Math.floor(Number(attention.readingProgress) || 0))),
+              draftId: safeId(attention.draftId),
+              folderId: safeId(attention.folderId),
+              labelId: safeId(attention.labelId),
+              query: safeText(attention.query).slice(0, 500),
+              filter: safeMailboxFilter(attention.filter),
+              expectedRevision: Math.max(0, Math.floor(Number(attention.expectedRevision || 0)))
+            }
+          };
+        }
         if (op === "listThreads") {
           var requestedFolder = safeText(input.folderId, "INBOX");
+          if (requestedFolder.toUpperCase() === "FOCUS") requestedFolder = "INBOX";
           return {
             op: input.unified ? "unifiedList" : "list",
             payload: {
@@ -6298,6 +6526,45 @@
         };
       }
 
+      function normalizeAttention(value, threadId) {
+        var input = value || {};
+        var triage = ["action", "waiting", "info", "later"].indexOf(safeText(input.triage)) !== -1
+          ? safeText(input.triage) : "none";
+        var labels = { action: "Дія", waiting: "Чекаю", info: "Інфо", later: "Пізніше" };
+        return {
+          threadId: safeId(input.threadId || threadId),
+          triage: triage,
+          triageLabel: safeText(input.triageLabel, labels[triage] || ""),
+          nextAction: safeText(input.nextAction).slice(0, 320),
+          readingProgress: Math.max(0, Math.min(100, Math.floor(Number(input.readingProgress || 0)))),
+          draftId: safeId(input.draftId),
+          updatedAt: Math.max(0, Number(input.updatedAt || 0)),
+          revision: Math.max(0, Math.floor(Number(input.revision || 0)))
+        };
+      }
+
+      function normalizeResumeRail(value) {
+        var input = value || {};
+        return {
+          threadId: safeId(input.threadId),
+          folderId: safeId(input.folderId),
+          labelId: safeId(input.labelId),
+          query: safeText(input.query).slice(0, 500),
+          filter: safeMailboxFilter(input.filter),
+          readingProgress: Math.max(0, Math.min(100, Math.floor(Number(input.readingProgress || 0)))),
+          draftId: safeId(input.draftId),
+          updatedAt: Math.max(0, Number(input.updatedAt || 0))
+        };
+      }
+
+      function normalizeAttentionState(value, threadId) {
+        var input = value || {};
+        var revision = Math.max(0, Math.floor(Number(input.revision || 0)));
+        var thread = normalizeAttention(input.thread, threadId);
+        thread.revision = revision || thread.revision;
+        return { revision: revision, thread: thread, resume: normalizeResumeRail(input.resume) };
+      }
+
       function normalizeThread(item) {
         var source = item || {};
         var sender = source.sender || source.from || {};
@@ -6328,7 +6595,8 @@
             (source.unsubscribeAvailable || (source.unsubscribe && source.unsubscribe.available))
           ),
           labelIds: Array.isArray(source.labelIds) ? source.labelIds.map(String) : [],
-          focus: normalizeFocus(source.focus)
+          focus: normalizeFocus(source.focus),
+          attention: normalizeAttention(source.attention, source.threadId || source.id)
         };
       }
 
@@ -6483,16 +6751,33 @@
 
       function renderThreadList() {
         var visibleListTitle = updateListHeader();
+        var focusMode = !state.currentLabelId && state.currentFolderId === "FOCUS";
+        var triageRank = { action: 4, waiting: 3, info: 2, later: 1, none: 0 };
+        var visibleThreads = focusMode
+          ? state.threads.filter(function (thread) {
+              return (thread.attention && ["action", "waiting"].indexOf(thread.attention.triage) !== -1) ||
+                (thread.focus && thread.focus.rank > 0);
+            }).sort(function (left, right) {
+              return (triageRank[right.attention && right.attention.triage || "none"] || 0) -
+                (triageRank[left.attention && left.attention.triage || "none"] || 0) ||
+                Number(right.focus && right.focus.rank || 0) - Number(left.focus && left.focus.rank || 0) ||
+                right.timestamp - left.timestamp;
+            }).slice(0, 10)
+          : state.threads;
         els.listPane.setAttribute("aria-label", visibleListTitle);
         els.threadList.setAttribute("aria-label", "Список розмов: " + visibleListTitle);
-        els.listResultCount.textContent = state.totalEstimate == null ? "" : formatCount(state.totalEstimate) + " листів";
+        els.listResultCount.textContent = focusMode
+          ? formatCount(visibleThreads.length) + " у фокусі"
+          : (state.totalEstimate == null ? "" : formatCount(state.totalEstimate) + " листів");
         clear(els.threadList);
-        if (!state.threads.length) {
-          renderListState("empty", state.query ? "За цим запитом нічого не знайдено." : "У цій папці немає листів.");
+        if (!visibleThreads.length) {
+          renderListState("empty", focusMode
+            ? "Тут з’являться важливі листи та розмови зі станом «Дія» або «Чекаю»."
+            : (state.query ? "За цим запитом нічого не знайдено." : "У цій папці немає листів."));
           return;
         }
 
-        state.threads.forEach(function (thread) {
+        visibleThreads.forEach(function (thread) {
           var hasFocus = thread.focus && thread.focus.priority !== "none" && thread.focus.color;
           var row = make("article", {
             className: "thread-row" + (thread.unread ? " unread" : "") + (hasFocus ? " focus-priority" : ""),
@@ -6524,6 +6809,12 @@
             });
             focusBadge.style.setProperty("--focus-color", thread.focus.color);
             top.append(focusBadge);
+          }
+          if (thread.attention && thread.attention.triage !== "none") {
+            top.append(make("span", {
+              className: "attention-badge attention-" + thread.attention.triage,
+              text: thread.attention.triageLabel
+            }));
           }
           top.append(make("time", {
             className: "thread-time",
@@ -6566,7 +6857,7 @@
           els.threadList.append(row);
         });
 
-        if (state.nextPageToken) {
+        if (state.nextPageToken && !focusMode) {
           var moreWrap = make("div", { className: "load-more" });
           var more = make("button", { className: "outline-button", type: "button", text: "Завантажити ще" });
           more.addEventListener("click", function () { loadThreads(false); });
@@ -6824,6 +7115,7 @@
           starred: Boolean(source.starred || source.isStarred || flags.starred),
           important: Boolean(source.important || source.isImportant || flags.important),
           focus: normalizeFocus(source.focus),
+          attention: normalizeAttention(source.attention, source.threadId || source.id),
           gmailUrl: safeText(source.gmailUrl),
           unsubscribeMessageId: unsubscribeMessageId,
           unsubscribeAvailable: Boolean(
@@ -6891,9 +7183,18 @@
         closeDrawer();
         closeActionMenus();
         try {
-          var data = await rpc({ op: "getThread", threadId: id, connectionId: requestedConnectionId });
+          var responses = await Promise.all([
+            rpc({ op: "getThread", threadId: id, connectionId: requestedConnectionId }),
+            rpc({ op: "attentionState", threadId: id, connectionId: requestedConnectionId }).catch(function () { return null; })
+          ]);
+          var data = responses[0];
           if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return;
           state.thread = normalizeThreadDetail(data);
+          if (responses[1]) {
+            var attentionState = normalizeAttentionState(responses[1], id);
+            state.thread.attention = attentionState.thread;
+            state.resumeRail = attentionState.resume;
+          }
           renderThread();
           if (state.thread.unread) {
             await changeThreadAction("markRead", id, {
@@ -6928,10 +7229,98 @@
         }
       }
 
+      function currentReaderProgress(scroll) {
+        var node = scroll || els.readerContentHost.querySelector(".reader-scroll");
+        if (!node) return 0;
+        var available = Math.max(0, node.scrollHeight - node.clientHeight);
+        if (!available) return 100;
+        return Math.max(0, Math.min(100, Math.round((node.scrollTop / available) * 100)));
+      }
+
+      function attentionViewPayload() {
+        var attention = state.thread && state.thread.attention
+          ? state.thread.attention
+          : normalizeAttention({}, state.selectedThreadId);
+        return {
+          op: "attentionUpdate",
+          connectionId: state.selectedConnectionId,
+          threadId: state.selectedThreadId,
+          triage: attention.triage,
+          nextAction: attention.nextAction,
+          readingProgress: attention.readingProgress,
+          draftId: attention.draftId,
+          folderId: state.currentFolderId,
+          labelId: state.currentLabelId,
+          query: state.query,
+          filter: state.filter,
+          expectedRevision: attention.revision
+        };
+      }
+
+      async function updateAttention(changes, options) {
+        if (!state.thread) return false;
+        var opts = options || {};
+        if (state.attentionBusy) {
+          state.pendingAttentionUpdate = Object.assign(state.pendingAttentionUpdate || {}, changes || {});
+          return true;
+        }
+        var request = Object.assign(attentionViewPayload(), changes || {});
+        state.attentionBusy = true;
+        try {
+          var result = normalizeAttentionState(await rpc(request), state.thread.id);
+          state.thread.attention = result.thread;
+          state.resumeRail = result.resume;
+          state.threads = state.threads.map(function (thread) {
+            if (thread.id !== state.thread.id || thread.accountId !== state.selectedConnectionId) return thread;
+            return Object.assign({}, thread, { attention: result.thread });
+          });
+          if (!opts.silent) renderThread();
+          else renderThreadList();
+          return true;
+        } catch (error) {
+          if (safeText(error && error.code) === "ATTENTION_CONFLICT") {
+            try {
+              var fresh = normalizeAttentionState(await rpc({
+                op: "attentionState", threadId: state.thread.id, connectionId: state.selectedConnectionId
+              }), state.thread.id);
+              state.thread.attention = fresh.thread;
+              state.resumeRail = fresh.resume;
+            } catch (refreshError) {}
+          }
+          if (!opts.silent) showSnackbar(safeText(error.message, "Не вдалося зберегти стан фокусу."), { error: true });
+          return false;
+        } finally {
+          state.attentionBusy = false;
+          if (state.pendingAttentionUpdate) {
+            var pending = state.pendingAttentionUpdate;
+            state.pendingAttentionUpdate = null;
+            window.setTimeout(function () { updateAttention(pending, { silent: true }); }, 0);
+          }
+        }
+      }
+
+      function scheduleReadingProgress(scroll) {
+        window.clearTimeout(state.attentionSaveTimer);
+        state.attentionSaveTimer = window.setTimeout(function () {
+          if (!state.thread) return;
+          var progress = currentReaderProgress(scroll);
+          if (Math.abs(progress - Number(state.thread.attention && state.thread.attention.readingProgress || 0)) < 5) return;
+          updateAttention({ readingProgress: progress }, { silent: true });
+        }, 700);
+      }
+
+      function focusNextActionEditor() {
+        var input = els.readerContentHost.querySelector(".next-action-input");
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+
       function toolbarButton(iconName, label, action, options) {
         var opts = options || {};
         var button = make("button", {
-          className: "toolbar-button" + (opts.danger ? " danger" : ""),
+          className: "toolbar-button" + (opts.danger ? " danger" : "") + (opts.primary ? " primary" : ""),
           type: "button",
           title: label,
           attrs: {
@@ -7503,26 +7892,146 @@
 
       function buildMobileActionBar() {
         var bar = make("nav", { className: "reader-actionbar", attrs: { "aria-label": "Швидкі дії" } });
-        var firstAction = state.thread && state.thread.drafts.length
-          ? ["draft", "Редагувати", function () { openExistingDraft(state.thread.drafts[state.thread.drafts.length - 1]); }]
-          : ["reply", "Відповісти", function () { openCompose("reply"); }];
         var items = [
-          firstAction,
-          ["forward", "Переслати", function () { openCompose("forward"); }, {}],
+          ["important", "Зробити", focusNextActionEditor, { primary: true }],
+          ["reply", "Відповісти", function () {
+            if (state.thread && state.thread.drafts.length) openExistingDraft(state.thread.drafts[state.thread.drafts.length - 1]);
+            else openCompose("reply");
+          }],
           ["snooze", "Відкласти", function (event) { openSnoozePanel(event.currentTarget); }, { mailAction: "snooze" }]
         ];
-        mailboxMoveActionsForView().slice(0, 2).forEach(function (move) {
-          items.push([move.icon, move.label, function () { changeThreadAction(move.action); }, {
-            danger: move.danger,
-            mailAction: move.action
-          }]);
-        });
-        items.push(["more", "Ще", function (event) { event.stopPropagation(); toggleMoreMenu(event.currentTarget); }, { menuId: "moreMenu" }]);
         items.forEach(function (item) {
-          var opts = Object.assign({ iconOnly: true }, item[3] || {});
+          var opts = Object.assign({ iconOnly: false }, item[3] || {});
           bar.append(toolbarButton(item[0], item[1], item[2], opts));
         });
         return bar;
+      }
+
+      function buildResumeRail() {
+        var resume = state.resumeRail || {};
+        if (!resume.threadId) return null;
+        var rail = make("button", {
+          className: "resume-rail",
+          type: "button",
+          attrs: { "aria-label": "Продовжити з місця, де зупинились" }
+        });
+        rail.append(svgIcon("snooze", 20));
+        var copy = make("span", { className: "resume-rail-copy" });
+        copy.append(make("strong", { text: "Продовжити з місця, де зупинились" }));
+        copy.append(make("span", {
+          text: resume.draftId ? "Чернетка збережена" : "Прочитано " + resume.readingProgress + "%"
+        }));
+        rail.append(copy);
+        rail.append(make("span", { className: "resume-rail-progress", attrs: { "aria-hidden": "true" } },
+          make("span", { attrs: { style: "width:" + resume.readingProgress + "%" } })
+        ));
+        rail.addEventListener("click", function () {
+          var scroll = els.readerContentHost.querySelector(".reader-scroll");
+          if (!scroll) return;
+          var top = Math.round((Math.max(0, scroll.scrollHeight - scroll.clientHeight) * resume.readingProgress) / 100);
+          scroll.scrollTo({ top: top, left: 0, behavior: "smooth" });
+        });
+        return rail;
+      }
+
+      function buildAttentionAssist() {
+        var host = make("section", { className: "attention-assist", attrs: { "aria-label": "Розумний фокус листа" } });
+        var resumeRail = buildResumeRail();
+        if (resumeRail) host.append(resumeRail);
+
+        if (state.thread.summary) {
+          var summary = make("section", { className: "thread-summary-card ai-summary" });
+          var summaryHeader = make("div", { className: "ai-summary-header" });
+          summaryHeader.append(make("h3", { className: "section-kicker", text: "AI-підсумок" }));
+          summaryHeader.append(make("span", { className: "ai-confidence", text: "Впевненість: обмежена" }));
+          summary.append(summaryHeader);
+          summary.append(make("p", { text: state.thread.summary }));
+          var importance = state.thread.importance || {};
+          summary.append(make("p", {
+            className: "summary-analysis-line",
+            text: [
+              safeText(importance.icon, "🟢"),
+              "Важливість: " + safeText(importance.level, "звичайна"),
+              safeText(importance.reason)
+            ].filter(Boolean).join(" · ")
+          }));
+          if (state.thread.deadlines.length) {
+            summary.append(make("p", { className: "summary-analysis-line", text: "⏳ Строки: " + state.thread.deadlines.join(", ") }));
+          }
+          if (state.thread.amounts.length) {
+            summary.append(make("p", { className: "summary-analysis-line", text: "💳 Суми: " + state.thread.amounts.join(", ") }));
+          }
+          var sources = make("details", { className: "ai-sources" });
+          sources.append(make("summary", { text: "Джерела (" + state.thread.messages.length + ")" }));
+          var sourceList = make("ol", {});
+          state.thread.messages.slice(-3).forEach(function (message) {
+            var fragment = safeText(message.bodyText).replace(/\s+/g, " ").trim().slice(0, 240);
+            sourceList.append(make("li", { text: [
+              safeText(message.from && (message.from.name || message.from.email), "Відправник"),
+              safeText(message.timestampLabel),
+              fragment
+            ].filter(Boolean).join(" — ") }));
+          });
+          sources.append(sourceList);
+          summary.append(sources);
+          host.append(summary);
+        }
+
+        var attention = state.thread.attention || normalizeAttention({}, state.thread.id);
+        var next = make("label", { className: "next-action-field" });
+        next.append(make("span", { text: "Наступний крок" }));
+        var nextInput = make("input", {
+          className: "next-action-input",
+          attrs: {
+            type: "text",
+            maxlength: "320",
+            value: attention.nextAction || state.thread.action || "",
+            placeholder: "Один найменший реальний крок"
+          }
+        });
+        function saveNextAction() {
+          var value = safeText(nextInput.value).trim();
+          if (value === attention.nextAction) return;
+          updateAttention({ nextAction: value }, { silent: true });
+        }
+        nextInput.addEventListener("input", function () {
+          window.clearTimeout(state.attentionInputTimer);
+          state.attentionInputTimer = window.setTimeout(saveNextAction, 450);
+        });
+        nextInput.addEventListener("blur", function () {
+          window.clearTimeout(state.attentionInputTimer);
+          saveNextAction();
+        });
+        nextInput.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") { event.preventDefault(); nextInput.blur(); }
+        });
+        next.append(nextInput);
+        host.append(next);
+
+        var triage = make("fieldset", { className: "triage-control" });
+        triage.append(make("legend", { text: "Що з цим листом?" }));
+        [
+          ["action", "Дія"], ["waiting", "Чекаю"], ["info", "Інфо"], ["later", "Пізніше"]
+        ].forEach(function (item) {
+          var button = make("button", {
+            className: "triage-button triage-" + item[0],
+            type: "button",
+            text: item[1],
+            attrs: { "aria-pressed": attention.triage === item[0] ? "true" : "false" }
+          });
+          button.disabled = state.attentionBusy;
+          button.addEventListener("click", function () {
+            var nextTriage = attention.triage === item[0] ? "none" : item[0];
+            attention.triage = nextTriage;
+            Array.prototype.slice.call(triage.querySelectorAll(".triage-button")).forEach(function (control) {
+              control.setAttribute("aria-pressed", control === button && nextTriage === item[0] ? "true" : "false");
+            });
+            updateAttention({ triage: nextTriage }, { silent: true });
+          });
+          triage.append(button);
+        });
+        host.append(triage);
+        return host;
       }
 
       function renderThread() {
@@ -7591,37 +8100,7 @@
         titleRow.append(star);
         content.append(titleRow);
 
-        if (state.thread.summary) {
-          var summary = make("section", { className: "thread-summary-card" });
-          summary.append(make("h3", { className: "section-kicker", text: "Підсумок усієї розмови" }));
-          summary.append(make("p", { text: state.thread.summary }));
-          var importance = state.thread.importance || {};
-          summary.append(make("p", {
-            className: "summary-analysis-line",
-            text: [
-              safeText(importance.icon, "🟢"),
-              "Важливість: " + safeText(importance.level, "звичайна"),
-              safeText(importance.reason)
-            ].filter(Boolean).join(" · ")
-          }));
-          if (state.thread.action) {
-            summary.append(make("h3", { className: "section-kicker summary-analysis-line", text: "Що потрібно зробити" }));
-            summary.append(make("p", { text: state.thread.action }));
-          }
-          if (state.thread.deadlines.length) {
-            summary.append(make("p", {
-              className: "summary-analysis-line",
-              text: "⏳ Строки: " + state.thread.deadlines.join(", ")
-            }));
-          }
-          if (state.thread.amounts.length) {
-            summary.append(make("p", {
-              className: "summary-analysis-line",
-              text: "💳 Суми: " + state.thread.amounts.join(", ")
-            }));
-          }
-          content.append(summary);
-        }
+        content.append(buildAttentionAssist());
         renderVerificationCodes(content);
 
         var messages = state.thread.messages;
@@ -7647,8 +8126,15 @@
           content.append(buildConversationActions());
         }
         scroll.append(content);
+        scroll.addEventListener("scroll", function () { scheduleReadingProgress(scroll); }, { passive: true });
         els.readerContentHost.append(scroll);
         els.readerContentHost.append(buildMobileActionBar());
+        if (state.resumeRail && state.resumeRail.threadId === state.thread.id && state.resumeRail.readingProgress > 0) {
+          window.setTimeout(function () {
+            var available = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+            scroll.scrollTop = Math.round((available * state.resumeRail.readingProgress) / 100);
+          }, 0);
+        }
         renderThreadList();
       }
 
@@ -12694,8 +13180,29 @@
             bootstrap = await rpc({ op: "bootstrap" });
           }
           initializeFromBootstrap(bootstrap || {});
+          var savedAttention = null;
+          if (!state.needsGoogleConnection && state.account && state.account.id) {
+            try {
+              savedAttention = normalizeAttentionState(await rpc({
+                op: "attentionState", connectionId: state.account.id
+              }), "");
+              state.resumeRail = savedAttention.resume;
+            } catch (attentionError) {
+              state.resumeRail = null;
+            }
+          }
           var initialRoute = parseLocationRoute();
           if (initialRoute && initialRoute.view === "list") applyListRoute(initialRoute);
+          var resume = savedAttention && savedAttention.resume;
+          var resumeFresh = resume && resume.threadId && resume.updatedAt > 0 &&
+            Date.now() - resume.updatedAt <= 7 * 24 * 60 * 60 * 1000;
+          if (!initialRoute && resumeFresh) {
+            state.currentFolderId = safeId(resume.folderId || "INBOX").toUpperCase();
+            state.currentLabelId = safeId(resume.labelId);
+            state.query = safeText(resume.query);
+            state.filter = safeMailboxFilter(resume.filter);
+            renderNavigation();
+          }
           bootState.hidden = true;
           app.setAttribute("aria-busy", "false");
           if (state.needsGoogleConnection) {
@@ -12708,6 +13215,8 @@
           if (initialRoute && initialRoute.view === "thread") {
             await openThread(initialRoute.threadId, true);
             openThreadRoutePanel(initialRoute);
+          } else if (!initialRoute && resumeFresh) {
+            await openThread(resume.threadId, true, state.account.id);
           }
         } catch (error) {
           showBootError(safeText(error.message, "Спробуйте відкрити Mini App ще раз."));
@@ -13004,8 +13513,9 @@
       }
 
       function previewRpc(request) {
-        return new Promise(function (resolve) {
+        return new Promise(function (resolve, reject) {
           window.setTimeout(function () {
+            try {
             var op = request.op;
             var payload = request.payload || {};
             if (op === "bootstrap") {
@@ -13100,6 +13610,47 @@
               resolve({ revision: Number(payload.expectedRevision || 0) + 1, levels: [], colors: [], rules: [], manualCount: 0 });
               return;
             }
+            if (op === "attentionState") {
+              var previewAttention = state.previewAttention.entries[payload.threadId] || {
+                threadId: payload.threadId, triage: "none", nextAction: "", readingProgress: 0,
+                draftId: "", updatedAt: 0
+              };
+              resolve({
+                revision: state.previewAttention.revision,
+                thread: payload.threadId ? Object.assign({}, previewAttention, { revision: state.previewAttention.revision }) : null,
+                resume: Object.assign({}, state.previewAttention.resume),
+                triageOptions: [
+                  { key: "action", label: "Дія", rank: 4 }, { key: "waiting", label: "Чекаю", rank: 3 },
+                  { key: "info", label: "Інфо", rank: 2 }, { key: "later", label: "Пізніше", rank: 1 }
+                ]
+              });
+              return;
+            }
+            if (op === "attentionUpdate") {
+              var previousAttention = state.previewAttention.entries[payload.threadId] || {};
+              var changedAttention = ["triage", "nextAction", "readingProgress", "draftId"].some(function (key) {
+                return safeText(previousAttention[key]) !== safeText(payload[key]);
+              });
+              if (changedAttention || state.previewAttention.resume.threadId !== payload.threadId) {
+                state.previewAttention.revision += 1;
+              }
+              state.previewAttention.entries[payload.threadId] = {
+                threadId: payload.threadId, triage: payload.triage, nextAction: payload.nextAction,
+                readingProgress: payload.readingProgress, draftId: payload.draftId, updatedAt: Date.now(),
+                revision: state.previewAttention.revision
+              };
+              state.previewAttention.resume = {
+                threadId: payload.threadId, folderId: payload.folderId, labelId: payload.labelId,
+                query: payload.query, filter: payload.filter, readingProgress: payload.readingProgress,
+                draftId: payload.draftId, updatedAt: Date.now()
+              };
+              resolve({
+                revision: state.previewAttention.revision,
+                thread: state.previewAttention.entries[payload.threadId],
+                resume: state.previewAttention.resume
+              });
+              return;
+            }
             if (op === "list" || op === "unifiedList") {
               var query = safeText(payload.query).toLowerCase();
               var filter = safeMailboxFilter(payload.filter);
@@ -13129,6 +13680,7 @@
                   unsubscribeMessageId: thread.unsubscribeMessageId || "",
                   unsubscribeAvailable: Boolean(thread.unsubscribeMessageId),
                   focus: thread.focus || null,
+                  attention: state.previewAttention.entries[thread.id] || null,
                   labelIds: (thread.draft ? ["DRAFT"] : ["INBOX"]).concat(thread.unread ? ["UNREAD"] : []).concat(thread.starred ? ["STARRED"] : []).concat(thread.important ? ["IMPORTANT"] : []).concat(customLabelIds),
                   state: { unread: Boolean(thread.unread), starred: Boolean(thread.starred), important: Boolean(thread.important), inbox: !thread.draft, draft: Boolean(thread.draft) },
                   hasAttachments: Boolean(thread.hasAttachments),
@@ -13170,6 +13722,7 @@
                 unsubscribeMessageId: base.unsubscribeMessageId || "",
                 unsubscribeAvailable: Boolean(base.unsubscribeMessageId),
                 focus: base.focus || null,
+                attention: state.previewAttention.entries[base.id] || null,
                 unsubscribe: { available: base.id === "t-megogo" || base.id === "t-notion", mode: "web" },
                 drafts: previewDraft ? [previewDraft] : [],
                 replyPreset: {
@@ -13475,6 +14028,9 @@
               return;
             }
             resolve({ message: "Готово" });
+            } catch (error) {
+              reject(error);
+            }
           }, 260);
         });
       }

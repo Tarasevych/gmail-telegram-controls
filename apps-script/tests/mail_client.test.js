@@ -7151,6 +7151,52 @@ test('ADHD focus rules and manual priorities stay scoped to the Telegram user an
   })).code, 'FOCUS_CONFLICT');
 });
 
+test('neuroinclusive triage next action and Resume Rail persist idempotently per Gmail connection', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const initial = resultData(rpc(harness, token, 'attentionState', { threadId: 'thread_attention_1' }));
+  assert.equal(initial.revision, 0);
+  assert.equal(initial.thread.triage, 'none');
+  assert.equal(initial.thread.nextAction, '');
+  assert.equal(initial.triageOptions.map(item => item.key).join(','), 'action,waiting,info,later');
+
+  const updated = resultData(rpc(harness, token, 'attentionUpdate', {
+    threadId: 'thread_attention_1', expectedRevision: 0,
+    triage: 'action', nextAction: 'Сплатити рахунок до п’ятниці', readingProgress: 42,
+    folderId: 'INBOX', filter: 'unread', query: 'from:worker@example.com',
+  }));
+  assert.equal(updated.revision, 1);
+  assert.equal(updated.thread.triageLabel, 'Дія');
+  assert.equal(updated.thread.nextAction, 'Сплатити рахунок до п’ятниці');
+  assert.equal(updated.resume.threadId, 'thread_attention_1');
+  assert.equal(updated.resume.readingProgress, 42);
+  assert.equal(updated.resume.filter, 'unread');
+
+  const registryKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_ATTENTION_V1_'));
+  assert.ok(registryKey, 'attention state must use a durable isolated property');
+  assert.doesNotMatch(registryKey, new RegExp(OWNER_ID));
+  assert.doesNotMatch(harness.propertyValues[registryKey], /worker@example\.com.*body|message body/i,
+    'Resume Rail may store navigation and the explicit next action, never message content');
+
+  const repeated = resultData(rpc(harness, token, 'attentionUpdate', {
+    threadId: 'thread_attention_1', expectedRevision: 1,
+    triage: 'action', nextAction: 'Сплатити рахунок до п’ятниці', readingProgress: 42,
+    folderId: 'INBOX', filter: 'unread', query: 'from:worker@example.com',
+  }));
+  assert.equal(repeated.revision, 1, 'an exact UI retry must not create a second revision');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionUpdate', {
+    threadId: 'thread_attention_1', expectedRevision: 0, triage: 'later',
+  })).code, 'ATTENTION_CONFLICT');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionUpdate', {
+    threadId: 'thread_attention_1', expectedRevision: 1, triage: 'urgent',
+  })).code, 'INVALID_ATTENTION');
+
+  const refreshed = resultData(rpc(harness, token, 'attentionState', { threadId: 'thread_attention_1' }));
+  assert.equal(refreshed.thread.triage, 'action');
+  assert.equal(refreshed.resume.query, 'from:worker@example.com');
+});
+
 test('Telegram priority callbacks update only the exact user account and Gmail thread', () => {
   const harness = makeContext();
   const sessionToken = openOwnerSession(harness);

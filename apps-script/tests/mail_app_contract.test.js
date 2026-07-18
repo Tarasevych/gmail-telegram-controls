@@ -2837,6 +2837,33 @@ test('ADHD focus is visible, manually assignable, and rule-driven per Gmail acco
   assert.doesNotMatch(focusSource, /window\.confirm|window\.prompt|\bconfirm\(|\bprompt\(/);
 });
 
+test('Focus View exposes bounded triage next action Resume Rail and exactly three primary actions', () => {
+  assert.match(uiSource, /\{ id: "FOCUS", name: "Фокус", icon: "important" \}/);
+  assert.match(uiSource, /requestedFolder\.toUpperCase\(\) === "FOCUS"/);
+  assert.match(uiSource, /function normalizeAttention\(value, threadId\)/);
+  assert.match(uiSource, /op === "attentionState"/);
+  assert.match(uiSource, /op === "attentionUpdate"/);
+  assert.match(uiSource, /Продовжити з місця, де зупинились/);
+  assert.match(uiSource, /AI-підсумок/);
+  assert.match(uiSource, /Впевненість: обмежена/);
+  assert.match(uiSource, /Джерела \(/);
+  assert.match(uiSource, /className: "next-action-input"/);
+  for (const label of ['Дія', 'Чекаю', 'Інфо', 'Пізніше']) {
+    assert.match(uiSource, new RegExp(`"${label}"`));
+  }
+  const actionBar = sourceBetween(
+    '      function buildMobileActionBar() {',
+    '      function buildResumeRail() {'
+  );
+  for (const label of ['Зробити', 'Відповісти', 'Відкласти']) {
+    assert.match(actionBar, new RegExp(`"${label}"`));
+  }
+  assert.doesNotMatch(actionBar, /Переслати|До кошика|mailboxMoveActionsForView|"Ще"/,
+    'the low-energy primary bar must not exceed the three intentional actions');
+  assert.match(uiSource, /slice\(0, 10\)/, 'Focus queue must remain bounded');
+  assert.match(uiSource, /scheduleReadingProgress\(scroll\)/);
+});
+
 test('preview draft save returns the current canonical nested draft contract', () => {
   const previewSource = sourceBetween(
     '      function previewRpc(request) {',

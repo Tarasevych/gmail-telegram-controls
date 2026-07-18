@@ -12,5 +12,5 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 
 ## Known non-crash limitations
 
-- Fresh rendered QA of the v27 public-link panel is still missing; static and runtime contracts pass.
+- The v28 P0 Focus View now has fresh localhost desktop and 390×844 rendered QA. Provider OAuth and real-message mutation paths were intentionally not exercised.
 - The repository is public. Runtime secrets, sessions, message content, and private QA captures must never be committed.
