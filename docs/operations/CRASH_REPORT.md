@@ -73,6 +73,7 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Local resolution: the server now emits the authorized session connection ID on the primary account DTO, and the client independently falls back to `bootstrap.session.connectionId`. Targeted tests pass 212/212 and the ordinary functional matrix passes 360/360.
 - Preserved state: stable production is still v29. Immutable v30 and its staging deployment remain unpromoted evidence; no random Gmail mutation, OAuth consent, or preference write occurred. The temporary bridge and Telegram test messages were removed, and the production owner menu was verified exactly restored.
 - Next safe action: commit and push the v37 compatibility fix, prepare a v31/product-v37 release helper that cannot promote v30, stage v31 once, and repeat the non-mutating phone test. Promotion remains forbidden until the account card and onboarding both pass on the same immutable version.
+- Update: the compatibility fix is preserved at `45262d02df023bd08c5b410dd30fe1b5e378c705`. The v31/product-v37 helper now passes its static contract and GET-only live preflight with stable v29, prior-v30 HEAD, no v31, and no v37 staging. The blocker remains open until the same immutable v31 passes real-phone onboarding.
 
 ## 2026-07-18 — resolved v32 rendered-QA defects
 

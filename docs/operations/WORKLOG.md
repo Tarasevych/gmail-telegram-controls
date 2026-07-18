@@ -207,3 +207,12 @@
 - Verification after the fix: MailApp plus MailClient targeted matrix 212/212 PASS; ordinary functional matrix 360/360 PASS; `git diff --check` PASS. The broad historical glob additionally reported expected immutable hash-fixture failures and one absent legacy helper; those old release pins were not rewritten.
 - Temporary Telegram messages `554`, `556`, and `557` are absent/confirmed deleted; the owner menu exactly equals the production GitHub Pages mailbox URL. The phone was returned from the staging WebView, and no new Google consent was requested.
 - Release decision: do not promote v30. Preserve this fix as product v37, then create a separately pinned v31 release/staging path and repeat the same non-mutating phone acceptance before any stable promotion.
+
+## 2026-07-18 — v31/product-v37 guarded release preflight
+
+- Added a new release helper and contract instead of altering the immutable v30/product-v36 evidence. It pins exact v29 rollback, exact v30 product-v36 history, and exact product-v37 source separately.
+- Stable deployment states are allowlisted to v29 or v31 only. The helper cannot accept or promote stable v30; `-Promote` requires exactly one product-v37 staging deployment bound to immutable v31.
+- HEAD may be exact v29, prior v30, or v37. If v37 upload fails before v31 is verified, the helper restores the exact prior HEAD rather than assuming v29. Version and deployment creates remain journal-reserved before POST, and ambiguous create outcomes remain non-replayable.
+- Static release contracts pass 2/2. GET-only live preflight returned stable v29, HEAD exact prior v30, exact immutable v30 present, no v31, no product-v37 staging deployment, and an empty v31 journal.
+- Candidate hashes: Code `9d11455cab5686b44827da830cf19e2c2acbf1070f66ffc13cb704a1cc40e7e7`; MultiAccount `524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13`; MailClient `6a46e71d06bb9072c7281d0c830f5ce0c0f482fce7584fc48aa9ddfdc54e5d6c`; MailApp `96a92d849b41e93904932d113ed13c1e7c6670c9b2c624631720709726d3bd81`; manifest `354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9`.
+- No Apps Script write, stable deployment update, Gmail/Telegram mutation, OAuth action, or phone action occurred during this preflight.
