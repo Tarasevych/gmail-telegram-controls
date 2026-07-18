@@ -39,6 +39,14 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Verification: MailApp contracts 73/73, ordinary functional matrix 360/360, and rendered Chrome checks 14/14 pass. The browser console contains no application errors; localhost-only Telegram SDK version warnings are expected.
 - Preserved state: production v29 and all real Gmail, Telegram, OAuth, provider, browser-account, and phone state remained unchanged. Remaining gate is controlled real Telegram WebView proof followed by a separately pinned release helper and guarded deployment.
 
+## 2026-07-18 — resolved v36 mobile Support reachability defect
+
+- Phase: first Apps Script HEAD/`dev` run inside the real Telegram WebView on the connected Huawei phone.
+- Runtime defect: the account panel rendered `Підтримка` and `Правила` in an unbounded inline toolbar. At phone width, `Правила` remained visible while `Підтримка` had no reachable on-screen geometry, blocking voluntary onboarding re-entry.
+- Resolution: the Focus settings title owns a full row and its toolbar is a two-column `minmax(0, 1fr)` grid; both buttons receive bounded full-width cells.
+- Verification before staging refresh: source/staging contracts 75/75, ordinary functional plus staging matrix 362/362, and rendered desktop/mobile checks 17/17. A second real WebView pass against the refreshed HEAD remains the immediate release gate.
+- No Gmail message/draft, stored preference, OAuth grant, or provider object was mutated while finding this defect. Production `/exec` remained immutable v29.
+
 ## 2026-07-18 — resolved v32 rendered-QA defects
 
 - Phase: local desktop and 390x844 Chrome preview of the send-later controls.

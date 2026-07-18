@@ -18,7 +18,7 @@ const V36 = Object.freeze({
   Code: '9d11455cab5686b44827da830cf19e2c2acbf1070f66ffc13cb704a1cc40e7e7',
   MultiAccount: '524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13',
   MailClient: 'e0b8ba5ff92eea446733e56d401e6a2d38e3cae9f7e9510594a72b66783f80a6',
-  MailApp: 'f0d91bca5effaf5b5e3262fac389346766ab3e581cb098fcfb7f96074c3ba2d2',
+  MailApp: '3b17e4e144f152d01019274364c487ae652ab39d12b48b8a41ec2aced285700a',
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
 });
 
@@ -39,6 +39,7 @@ test('v36 staging helper pins the exact local candidate and immutable v29 baseli
   assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, normalizedHash(file)])), V36);
   assert.match(stage, /\$ExpectedStableVersion = 29\b/);
   assert.match(stage, /candidate_v36/);
+  assert.match(stage, /prior_candidate_v36/);
   assert.match(stage, /stable_v29/);
   assert.match(stage, /Local\\TarasevychGmailNotifierAppsScriptV36Staging/);
 });

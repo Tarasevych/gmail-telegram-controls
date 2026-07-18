@@ -2909,6 +2909,8 @@ test('three-screen onboarding is accessible explicit and isolated per Gmail acco
     'the app shell must stay interactive enough for its onboarding child while every sibling becomes inert');
   assert.doesNotMatch(isolationSource, /node\.inert = true/,
     'the app shell itself cannot become inert because inert propagates into the onboarding dialog');
+  assert.match(uiSource, /#focusSettingsPanel \.toolbar-group\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[\s\S]*width:\s*100%/,
+    'mobile account settings must keep both Support and Rules reachable on their own full-width row');
   assert.match(uiSource, /completeOnboarding:[\s\S]*true|completeOnboarding: true/);
   assert.match(uiSource, /digestWindows: state\.onboardingDraft\.digestWindows/);
   assert.match(uiSource, /timezone: state\.onboardingDraft\.timezone/);

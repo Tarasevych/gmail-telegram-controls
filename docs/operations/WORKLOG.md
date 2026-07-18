@@ -164,3 +164,12 @@
 - The helper pins exact immutable-v29 rollback hashes and exact v36 candidate hashes, accepts only GET/PUT, has no versions.create or deployment-update operation, refuses unexpected future immutable versions, serializes staging with a named mutex, and provides a verified rollback path.
 - Contract tests pass 2/2. Read-only preflight returned stable version 29, `headState: stable_v29`, `stableDeploymentUnchanged: true`, and exact v36 candidate hashes.
 - No Apps Script write occurred during preflight. No Gmail, Telegram, OAuth, provider, browser-account, or phone state was changed.
+
+## 2026-07-18 — v36 first real Telegram WebView pass
+
+- Uploaded exact v36 to Apps Script HEAD/`dev`; readback confirmed `headState: candidate_v36` while stable production `/exec` remained immutable v29.
+- Temporarily changed only the owner chat's Telegram menu button to the staging `/dev` URL. The prior GitHub Pages mailbox URL was read first and retained for exact restoration.
+- On the connected Huawei Telegram WebView, staging loaded under `tarasevych.pavlo@gmail.com`; one explicit read-only refresh populated the real Inbox with account badges, sender images, Ukrainian summaries, unread styling, and no random Gmail mutation.
+- The phone pass found a responsive defect: `Підтримка` existed beside `Правила` but became geometrically unreachable in the narrow account panel. The Focus settings header now gives the two controls an explicit two-column full-width grid.
+- Added a source regression contract and extended rendered QA to verify that mobile Support has non-zero in-panel bounds and opens onboarding. Targeted MailApp plus staging contracts pass 75/75; ordinary functional plus staging matrix passes 362/362; rendered QA passes 17/17 with no application errors.
+- No reply starter was applied to a real message, so no Gmail draft or message was created or changed. The real WebView was closed before refreshing staging.

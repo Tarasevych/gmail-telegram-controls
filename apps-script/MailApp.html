@@ -1881,6 +1881,20 @@
 
     .gmail-metadata-panel-header h3 { flex: 1 1 160px; margin: 0; font-size: 14px; }
 
+    #focusSettingsPanel .gmail-metadata-panel-header h3 { flex-basis: 100%; }
+
+    #focusSettingsPanel .toolbar-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      width: 100%;
+    }
+
+    #focusSettingsPanel .toolbar-group .workspace-button {
+      width: 100%;
+      min-width: 0;
+    }
+
     .gmail-metadata-content { display: grid; gap: 10px; }
 
     .gmail-metadata-card {

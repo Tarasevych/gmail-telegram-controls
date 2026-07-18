@@ -30,6 +30,13 @@ $ExpectedCandidateHashes = @{
   Code         = '9d11455cab5686b44827da830cf19e2c2acbf1070f66ffc13cb704a1cc40e7e7'
   MultiAccount = '524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13'
   MailClient   = 'e0b8ba5ff92eea446733e56d401e6a2d38e3cae9f7e9510594a72b66783f80a6'
+  MailApp      = '3b17e4e144f152d01019274364c487ae652ab39d12b48b8a41ec2aced285700a'
+  appsscript   = '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
+}
+$ExpectedPriorCandidateHashes = @{
+  Code         = '9d11455cab5686b44827da830cf19e2c2acbf1070f66ffc13cb704a1cc40e7e7'
+  MultiAccount = '524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13'
+  MailClient   = 'e0b8ba5ff92eea446733e56d401e6a2d38e3cae9f7e9510594a72b66783f80a6'
   MailApp      = 'f0d91bca5effaf5b5e3262fac389346766ab3e581cb098fcfb7f96074c3ba2d2'
   appsscript   = '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
@@ -172,8 +179,13 @@ try {
     Assert-FileSetAndHashes $head $ExpectedStableHashes 'Current HEAD'
     $headState = 'stable_v29'
   } catch {
-    Assert-FileSetAndHashes $head $ExpectedCandidateHashes 'Current HEAD'
-    $headState = 'candidate_v36'
+    try {
+      Assert-FileSetAndHashes $head $ExpectedCandidateHashes 'Current HEAD'
+      $headState = 'candidate_v36'
+    } catch {
+      Assert-FileSetAndHashes $head $ExpectedPriorCandidateHashes 'Current HEAD'
+      $headState = 'prior_candidate_v36'
+    }
   }
 
   if ($PreflightOnly) {
@@ -190,7 +202,7 @@ try {
   }
 
   if ($Rollback) {
-    if ($headState -eq 'candidate_v36') {
+    if ($headState -ne 'stable_v29') {
       $null = Set-HeadAndAssertHashes $base @{ scriptId = $ScriptId; files = $stable.files } $ExpectedStableHashes 'Rolled-back HEAD'
     }
     [pscustomobject]@{
@@ -203,7 +215,7 @@ try {
     return
   }
 
-  if ($headState -eq 'stable_v29') {
+  if ($headState -ne 'candidate_v36') {
     try {
       $null = Set-HeadAndAssertHashes $base $candidate $ExpectedCandidateHashes 'Staged v36 HEAD'
     } catch {
