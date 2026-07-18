@@ -176,3 +176,13 @@
 - The refreshed HEAD retained the same `/dev` URL and Telegram reused the prior WebView document. Query and fragment cache-bust attempts were rejected fail-closed by the mailbox launch router as invalid private keys; neither reached mailbox data. Device-process restart was blocked by host policy before execution and was not retried.
 - Restored the exact prior owner menu button (`📬 Пошта` → GitHub Pages mailbox bridge), rolled Apps Script HEAD back to exact v29, and verified stable deployment v29 plus `headState: stable_v29`.
 - The updated mobile Support fix therefore has local 17/17 rendered proof but not yet a fresh real-WebView document. The next safe route is a unique immutable staging deployment URL, not cache clearing or another `/dev` retry.
+
+## 2026-07-18 — v30/product-v36 immutable staging release gate
+
+- Added `release_apps_script_v30_product_v36.ps1` plus a static contract test. The helper pins immutable v29 rollback hashes, exact product-v36 hashes, the stable deployment identity, and a separate staging description.
+- Release modes are deliberately separate: read-only `-PreflightOnly`, one-time immutable v30 plus unique staging `-StageOnly`, stable promotion `-Promote`, and post-promotion `-CleanupStaging`. Stage mode cannot move stable production from v29.
+- A protected recovery journal is written before either irreversible Google `versions.create` or staging `deployments.create`. An unresolved reserved state refuses an automatic replay; returned objects, immutable content, deployment identity, description, and hashes are all read back or asserted before progress is recorded.
+- Duplicate exact staging deployments fail closed outside cleanup. Cleanup is reachable only after stable v30 verification and treats an already-absent deployment as an idempotent success.
+- Independent read-only review identified ambiguous-create replay, unreachable duplicate cleanup, and an over-escaped secret signature; all were fixed before release use.
+- Verification: release contracts 2/2 PASS; complete ordinary plus staging plus release matrix 364/364 PASS; PowerShell parse and `git diff --check` PASS; bounded changed-file secret/trailing-whitespace scan 0 hits.
+- Live read-only preflight at `2026-07-18T08:13:05+02:00` confirmed stable v29, HEAD exact v29, no immutable v30, no matching staging deployment, empty release journal, and exact candidate hashes. No Google, Gmail, Telegram, OAuth, browser-account, or phone mutation occurred.

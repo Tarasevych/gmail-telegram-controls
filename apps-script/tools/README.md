@@ -45,6 +45,32 @@ reported but intentionally not edited: `editMessageReplyMarkup` can only
 change inline keyboards. Telegram already shows the most recent persistent
 reply keyboard, which the current bot publishes as native text commands.
 
+# Product v36 immutable staging and release
+
+`release_apps_script_v30_product_v36.ps1` creates one immutable Apps Script v30
+and a separate unique staging deployment while keeping the stable deployment on
+v29 until explicit acceptance. Run each mode from the repository root and never
+repeat a failed create blindly:
+
+```powershell
+# Always first; GET-only and safe to repeat.
+pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -PreflightOnly
+
+# One guarded immutable version plus one unique staging /exec URL; stable stays v29.
+pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -StageOnly
+
+# Only after real Telegram WebView acceptance of the returned staging URL.
+pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -Promote
+
+# Only after stable v30 post-deploy verification.
+pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -CleanupStaging
+```
+
+The helper stores only release state and deployment identity in the protected
+thread recovery directory. It reads OAuth material from the existing protected
+`clasp` store, never emits it, and refuses automatic replay after an ambiguous
+Google create response.
+
 The migration converts legacy inline buttons as follows:
 
 | Old action | New button |
