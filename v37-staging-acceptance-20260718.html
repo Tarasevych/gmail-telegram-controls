@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; form-action https://script.google.com https://script.googleusercontent.com; base-uri 'none'; object-src 'none'">
+  <title>Gmail v37 staging</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f7fb; color: #172033; }
+    main { max-width: 420px; margin: 24px; padding: 28px; border-radius: 22px; background: #fff; box-shadow: 0 12px 40px #1720331f; text-align: center; }
+    .spinner { width: 38px; height: 38px; margin: 0 auto 18px; border: 4px solid #d9e5f2; border-top-color: #1778d4; border-radius: 50%; animation: spin .9s linear infinite; }
+    h1 { margin: 0 0 10px; font-size: 22px; }
+    p { margin: 0; color: #5a6678; line-height: 1.5; }
+    .error .spinner { display: none; }
+    .error h1 { color: #b42318; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main id="card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1 id="title">Відкриваю staging v37</h1>
+    <p id="status">Захищено передаю команду Telegram у відокремлене тестове розгортання.</p>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const BACKEND = 'https://script.google.com/macros/s/AKfycbzxk9c89W1e23arYD_2P4DwC3HO9GMvWQJsDxU9JdqUk0u7C41qYaruNdL2DxP4FOdZ/exec';
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const card = document.getElementById('card');
+      const title = document.getElementById('title');
+      const status = document.getElementById('status');
+
+      function fail(message) {
+        card.classList.add('error');
+        title.textContent = 'Не вдалося відкрити staging';
+        status.textContent = message;
+      }
+
+      if (!tg || !tg.platform || tg.platform === 'unknown') {
+        fail('Відкрийте цю кнопку безпосередньо в Telegram.');
+        return;
+      }
+      tg.ready();
+      tg.expand();
+      if (!tg.initData || tg.initData.length > 16384) {
+        fail('Telegram не передав захищену команду.');
+        return;
+      }
+
+      const sourceRoute = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+      const route = new URLSearchParams();
+      ['view', 'thread', 'message', 'folder', 'filter', 'panel'].forEach(name => {
+        if (sourceRoute.has(name)) route.set(name, sourceRoute.get(name) || '');
+      });
+      const routeValue = route.toString().slice(0, 512);
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.action = BACKEND + '?action=mailbox';
+      form.acceptCharset = 'UTF-8';
+      form.enctype = 'application/x-www-form-urlencoded';
+      form.referrerPolicy = 'no-referrer';
+
+      function addField(name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      }
+      addField('mailbox_bootstrap', '1');
+      addField('init_data', tg.initData);
+      addField('route', routeValue);
+      document.body.appendChild(form);
+      form.submit();
+    })();
+  </script>
+</body>
+</html>
