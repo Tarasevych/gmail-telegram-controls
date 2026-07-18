@@ -35,3 +35,4 @@
 - v28 release-contract tests pass 2/2 and confirm fail-closed future-version, mutex, parse, and no-embedded-secret guards.
 - Read-only `-PreflightOnly` passed with stable version 27, release state `fresh`, and the expected deployment ID.
 - No Apps Script POST or PUT was permitted during preflight; production remains v27 until the guarded release step.
+- The first guarded v28 deployment received Google Apps Script HTTP 500 before immutable v28 verification. The helper completed HEAD rollback; immediate read-only preflight confirmed stable v27 and release state `fresh`. No automatic retry was made.
