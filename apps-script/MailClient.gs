@@ -25,6 +25,12 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   REFRESH_SIGNING_SECRET_PROPERTY: 'MAILBOX_REFRESH_SIGNING_SECRET',
   REFRESH_FAMILIES_PROPERTY: 'MAILBOX_REFRESH_FAMILIES_V1',
   REFRESH_FAMILY_LIMIT: 24,
+  // A closed Telegram WebView cannot reliably notify Apps Script. Bound each
+  // user's abandoned launch families while retaining several genuinely
+  // parallel Mini App instances. A fresh launch may retire only that same
+  // Telegram user's oldest families; it can never evict another user.
+  REFRESH_FAMILY_PER_USER_LIMIT: 6,
+  SESSION_AUTOMATIC_MIN_EXISTING: 1,
   SESSION_RECOVERY_PREFIX: 'mailbox.session-recovery.v1.',
   SESSION_RECOVERY_SECONDS: 2 * 60,
   SESSION_RECOVERY_KEEP_EXISTING: 2,
@@ -9950,32 +9956,57 @@ function mailboxPersistSessionFamily_(
         throw mailboxError_('BUSY', 'Не вдалося створити унікальну родину сесії. Спробуйте ще раз.');
       }
       const recoveryOwnerId = String(recoveryOwnerIdValue || '');
-      if (recoveryOwnerId) {
-        if (!constantTimeEqual_(recoveryOwnerId, String(nextClaims && nextClaims.sub || ''))) {
-          throw mailboxError_('FORBIDDEN', 'Відновлення сеансів не належить Telegram-користувачу.');
-        }
-        const ownFamilies = families
-          .map((item, indexValue) => ({ item, index: indexValue }))
-          .filter(entry => constantTimeEqual_(String(entry.item.sub || ''), recoveryOwnerId))
-          .sort((left, right) =>
-            Number(right.item.iat) - Number(left.item.iat) || right.index - left.index
-          )
-          .map(entry => entry.item);
-        const keep = new Set(ownFamilies
-          .slice(0, MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_KEEP_EXISTING)
-          .map(item => String(item.fid || '')));
-        retiredSessionKeys = ownFamilies
-          .filter(item => !keep.has(String(item.fid || '')))
-          .map(item => String(item.sessionKey || ''));
-        families = families.filter(item =>
-          !constantTimeEqual_(String(item.sub || ''), recoveryOwnerId) ||
-          keep.has(String(item.fid || ''))
-        );
+      const nextOwnerId = String(nextClaims && nextClaims.sub || '');
+      if (recoveryOwnerId && !constantTimeEqual_(recoveryOwnerId, nextOwnerId)) {
+        throw mailboxError_('FORBIDDEN', 'Відновлення сеансів не належить Telegram-користувачу.');
       }
+      if (!/^\d{1,24}$/.test(nextOwnerId)) {
+        throw mailboxError_('UNAUTHORIZED', 'Власник нового сеансу недійсний.');
+      }
+
+      const ownFamilies = families
+        .map((item, indexValue) => ({ item, index: indexValue }))
+        .filter(entry => constantTimeEqual_(String(entry.item.sub || ''), nextOwnerId))
+        .sort((left, right) =>
+          Number(right.item.iat) - Number(left.item.iat) || right.index - left.index
+        )
+        .map(entry => entry.item);
+      const preferredKeep = recoveryOwnerId
+        ? Math.min(ownFamilies.length, MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_KEEP_EXISTING)
+        : Math.min(
+          ownFamilies.length,
+          MAILBOX_CLIENT_CONFIG_.REFRESH_FAMILY_PER_USER_LIMIT - 1
+        );
+      const minimumKeep = recoveryOwnerId
+        ? 0
+        : Math.min(ownFamilies.length, MAILBOX_CLIENT_CONFIG_.SESSION_AUTOMATIC_MIN_EXISTING);
+      const globalKeepBudget = Math.max(
+        0,
+        MAILBOX_CLIENT_CONFIG_.REFRESH_FAMILY_LIMIT - 1 -
+          (families.length - ownFamilies.length)
+      );
+      const keepCount = Math.max(minimumKeep, Math.min(preferredKeep, globalKeepBudget));
+      const keep = new Set(ownFamilies
+        .slice(0, keepCount)
+        .map(item => String(item.fid || '')));
+      retiredSessionKeys = ownFamilies
+        .filter(item => !keep.has(String(item.fid || '')))
+        .map(item => String(item.sessionKey || ''));
+      families = families.filter(item =>
+        !constantTimeEqual_(String(item.sub || ''), nextOwnerId) ||
+        keep.has(String(item.fid || ''))
+      );
+
       if (families.length >= MAILBOX_CLIENT_CONFIG_.REFRESH_FAMILY_LIMIT) {
+        if (recoveryOwnerId) {
+          throw mailboxError_(
+            'SESSION_CAPACITY',
+            'Спільний ліміт зайнятий іншими Telegram-користувачами; їхні сеанси не завершувались.'
+          );
+        }
         throw mailboxError_(
           'SESSION_CAPACITY',
-          'Досягнуто ліміт активних сеансів пошти. Можна явно завершити лише ваші старі сеанси й відкрити новий.'
+          'Досягнуто спільний ліміт активних сеансів пошти. Чужі Telegram-сеанси не завершувались.'
         );
       }
     }
