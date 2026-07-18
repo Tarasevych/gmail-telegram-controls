@@ -77,6 +77,8 @@ New slices must branch from the finally accepted immutable source, not be mixed 
 
 The later guarded staging attempt succeeded and created exact immutable v31 while stable remained v29. Real Telegram WebView acceptance then proved the product-v37 account identity fix, but rejected the release because Support/Rules followed unbounded dynamic account, access, and Gmail-label content. Product v38 moves that block directly after the account-panel heading. Local source, functional, and rendered mobile proofs pass; a separately pinned immutable release and repeated phone acceptance are still required. The v31 staging deployment remains evidence and is not a promotion candidate.
 
+That follow-up gate is now satisfied: exact immutable v32/product v38 was staged with stable still on v29, and real-phone Telegram WebView proved both zero-scroll controls plus the first onboarding screen for the exact Gmail account. Temporary acceptance infrastructure was removed. Only final GET-only reconciliation remains before guarded promotion.
+
 ## Crash/blocker disposition
 
 - Current blocker: recoverable external Apps Script API quota exhaustion.
