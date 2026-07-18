@@ -313,6 +313,11 @@ function assertPublicFunctions(context) {
     'function',
     'MailClient.gs must expose mailboxRenewSession(refreshToken).'
   );
+  assert.equal(
+    typeof context.mailboxRecoverSessionCapacity,
+    'function',
+    'MailClient.gs must expose explicit owner-bound session-capacity recovery.'
+  );
 }
 
 function resultData(result, message = 'mailbox RPC should succeed') {
@@ -422,8 +427,8 @@ test('MailClient loads beside Code.gs and exposes only the intended public RPC s
     .sort();
   assert.deepEqual(
     publicFunctions,
-    ['mailboxOpenSession', 'mailboxRenewSession', 'mailboxRpc'],
-    'all MailClient helpers must end in _ so anonymous HtmlService clients cannot call them directly'
+    ['mailboxOpenSession', 'mailboxRecoverSessionCapacity', 'mailboxRenewSession', 'mailboxRpc'],
+    'only the authenticated session endpoints may be public to HtmlService clients'
   );
 });
 
@@ -957,7 +962,7 @@ test('refresh family storage rejects active eviction and compacts only expired f
     resultFailed(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
       query_id: 'AAE-family-over-capacity',
     }))).code,
-    'STORAGE_FULL'
+    'SESSION_CAPACITY'
   );
   assert.deepEqual(
     JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1).map(item => item.fid),
@@ -979,6 +984,52 @@ test('refresh family storage rejects active eviction and compacts only expired f
 
   assert.match(clientSource, /assertTelegramPropertyValueFits_\(/);
   assert.match(clientSource, /assertTelegramPropertyStoreFits_\(/);
+});
+
+test('explicit capacity recovery keeps other users and newest parallel owner sessions', () => {
+  const harness = makeContext();
+  const { context, propertyValues } = harness;
+  const ownerSessions = [];
+  for (let index = 0; index < 23; index += 1) {
+    ownerSessions.push(resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+      query_id: `AAE-owner-capacity-${index}`,
+    }))));
+  }
+  const otherUserId = '1051792511';
+  const otherSession = resultData(context.mailboxOpenSession(telegramInitData(otherUserId, {
+    query_id: 'AAE-other-user-capacity',
+  })));
+  const before = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  const otherFamily = before.find(item => item.sub === otherUserId);
+  const newestOwnerFamilies = before.filter(item => item.sub === OWNER_ID)
+    .slice(-2)
+    .map(item => item.fid);
+
+  const blockedInitData = telegramInitData(OWNER_ID, {
+    query_id: 'AAE-owner-capacity-blocked',
+  });
+  const blocked = context.mailboxOpenSession(blockedInitData);
+  assert.equal(resultFailed(blocked).code, 'SESSION_CAPACITY');
+  assert.match(blocked.capacityRecoveryToken, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(harness.gmailCalls.length, 0);
+
+  const recovered = resultData(
+    context.mailboxRecoverSessionCapacity(blocked.capacityRecoveryToken)
+  );
+  assert.ok(recovered.sessionToken);
+  assert.ok(recovered.refreshToken);
+  const after = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  assert.equal(after.length, 4, 'two previous owner sessions plus the new one and other user remain');
+  assert.ok(after.some(item => item.fid === otherFamily.fid), 'another user family must remain exact');
+  newestOwnerFamilies.forEach(fid => assert.ok(after.some(item => item.fid === fid)));
+  assert.equal(context.mailboxRequireSession_(otherSession.sessionToken).ownerId, otherUserId);
+  assert.equal(context.mailboxRequireSession_(ownerSessions.at(-1).sessionToken).ownerId, OWNER_ID);
+  assert.equal(resultFailed(context.mailboxRecoverSessionCapacity(
+    blocked.capacityRecoveryToken
+  )).code, 'SESSION_EXPIRED', 'the recovery bearer must be one-use');
+  assert.match(resultFailed(context.mailboxOpenSession(blockedInitData)).message, /вже використано/i,
+    'the failed launch claim remains consumed and cannot mint another family');
+  assert.equal(harness.gmailCalls.length, 0, 'session recovery must never call Gmail');
 });
 
 test('refresh family total-storage guard fails before creating a bearer cache entry', () => {
@@ -5240,6 +5291,11 @@ test('MailApp authenticates with Telegram initData without URL/localStorage secr
   assert.match(uiSource, /embeddedLaunchNonce/, 'MailApp must accept a one-use server launch nonce');
   assert.match(uiSource, /mailboxRedeemLaunch/, 'MailApp must redeem the nonce before receiving its in-memory session');
   assert.match(uiSource, /embeddedLaunchRoute/, 'MailApp must preserve a validated deep-link route after POST');
+  assert.match(uiSource, /mailboxRecoverSessionCapacity/, 'capacity recovery must be an explicit server action');
+  assert.match(uiSource, /Завершити старі мої сеанси й відкрити/,
+    'the capacity screen must explain that only the current user sessions are ended');
+  assert.match(codeSource, /capacityRecoveryToken[\s\S]{0,300}mailboxCapacityRecoveryToken/,
+    'POST launch failures must pass only the bounded one-use recovery bearer into the template');
   assert.match(
     codeSource,
     /postedParams\.action[\s\S]{0,160}mailbox_bootstrap[\s\S]{0,100}serveMailboxLaunchPost_\(e\)/,

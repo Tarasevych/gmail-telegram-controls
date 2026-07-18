@@ -3356,6 +3356,10 @@
       line-height: 1.55;
     }
 
+    .state-content > button + button {
+      margin-top: 8px;
+    }
+
     .spinner {
       width: 26px;
       height: 26px;
@@ -4574,6 +4578,8 @@
       var embeddedLaunchNonce = embeddedToken_("<?= mailboxLaunchNonce ?>");
       var embeddedLaunchRoute = decodeEmbeddedBase64Url_("<?= mailboxLaunchRouteB64 ?>", 512);
       var embeddedLaunchError = decodeEmbeddedBase64Url_("<?= mailboxLaunchErrorB64 ?>", 500);
+      var embeddedLaunchErrorCode = decodeEmbeddedBase64Url_("<?= mailboxLaunchErrorCodeB64 ?>", 64);
+      var embeddedCapacityRecoveryToken = embeddedToken_("<?= mailboxCapacityRecoveryToken ?>");
       var app = document.getElementById("app");
       var bootState = document.getElementById("bootState");
       var state = {
@@ -5225,6 +5231,9 @@
           var detail = response.error && response.error.message ? response.error.message : response.message;
           var responseError = new Error(safeText(detail, "Сервер не виконав запит."));
           responseError.code = safeText(response.error && response.error.code, safeText(response.code));
+          responseError.recoveryToken = response.capacityRecoveryToken
+            ? embeddedToken_(response.capacityRecoveryToken)
+            : "";
           throw responseError;
         }
         if (response && Object.prototype.hasOwnProperty.call(response, "data")) return response.data;
@@ -5310,6 +5319,38 @@
             })
             .mailboxRenewSession(refreshToken);
         });
+      }
+
+      function callRecoverSessionCapacity(recoveryToken) {
+        return new Promise(function (resolve, reject) {
+          if (!window.google || !google.script || !google.script.run ||
+              typeof google.script.run.mailboxRecoverSessionCapacity !== "function") {
+            reject(new Error("Відновлення старих сеансів недоступне."));
+            return;
+          }
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(function (error) {
+              reject(new Error(safeText(error && error.message, "Не вдалося завершити старі сеанси.")));
+            })
+            .mailboxRecoverSessionCapacity(recoveryToken);
+        });
+      }
+
+      async function recoverSessionCapacity(recoveryToken) {
+        setBootLoading();
+        try {
+          var opened = normalizeResponse(await callRecoverSessionCapacity(recoveryToken));
+          state.session = safeText(opened && opened.sessionToken);
+          state.refreshToken = safeText(opened && opened.refreshToken);
+          if (!state.session || !state.refreshToken) throw new Error("Сервер не повернув нову сесію.");
+          embeddedLaunchError = "";
+          embeddedLaunchErrorCode = "";
+          embeddedCapacityRecoveryToken = "";
+          await boot();
+        } catch (error) {
+          showBootError(safeText(error.message, "Не вдалося завершити старі сеанси."));
+        }
       }
 
       function renewMailboxSession() {
@@ -5898,10 +5939,24 @@
         var content = make("div", { className: "state-content" });
         var symbol = make("div", { className: "state-icon error" }, svgIcon("alert", 24));
         content.append(symbol);
-        content.append(make("h2", { text: opts.sessionExpired ? "Сеанс пошти завершився" : "Не вдалося відкрити пошту" }));
+        content.append(make("h2", { text: opts.sessionExpired
+          ? "Сеанс пошти завершився"
+          : opts.sessionCapacity ? "Забагато відкритих сеансів" : "Не вдалося відкрити пошту" }));
         content.append(make("p", { text: safeText(message, "Спробуйте відкрити Mini App ще раз.") }));
+        if (opts.sessionCapacity && opts.recoveryToken) {
+          var recover = make("button", {
+            className: "primary-button",
+            type: "button",
+            text: "Завершити старі мої сеанси й відкрити"
+          });
+          recover.addEventListener("click", function () {
+            recover.disabled = true;
+            recoverSessionCapacity(opts.recoveryToken);
+          });
+          content.append(recover);
+        }
         var retry = make("button", {
-          className: "primary-button",
+          className: opts.sessionCapacity && opts.recoveryToken ? "outline-button" : "primary-button",
           type: "button",
           text: "Перезапустити Mini App"
         });
@@ -14434,7 +14489,12 @@
             tg.expand();
             if (typeof tg.disableVerticalSwipes === "function") tg.disableVerticalSwipes();
           }
-          if (embeddedLaunchError) throw new Error(embeddedLaunchError);
+          if (embeddedLaunchError) {
+            var launchFailure = new Error(embeddedLaunchError);
+            launchFailure.code = embeddedLaunchErrorCode;
+            launchFailure.recoveryToken = embeddedCapacityRecoveryToken;
+            throw launchFailure;
+          }
           var opened;
           if (state.session) {
             opened = { sessionToken: state.session };
@@ -14499,7 +14559,11 @@
             await openThread(resume.threadId, true, state.account.id);
           }
         } catch (error) {
-          showBootError(safeText(error.message, "Спробуйте відкрити Mini App ще раз."));
+          var capacity = safeText(error && error.code).toUpperCase() === "SESSION_CAPACITY";
+          showBootError(safeText(error.message, "Спробуйте відкрити Mini App ще раз."), {
+            sessionCapacity: capacity,
+            recoveryToken: capacity ? safeText(error && error.recoveryToken) : ""
+          });
         }
       }
 
