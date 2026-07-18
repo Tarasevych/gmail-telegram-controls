@@ -2307,6 +2307,64 @@
       font-size: 10px;
     }
 
+    .reply-starter-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--rail);
+    }
+
+    .reply-starter-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .reply-starter-heading span,
+    .reply-starter-hint {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .reply-starter-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .reply-starter-actions button {
+      min-height: 38px;
+      padding: 7px 9px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reply-starter-actions button:hover:not(:disabled),
+    .reply-starter-actions button:focus-visible {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+
+    .reply-starter-actions button:disabled {
+      cursor: default;
+      opacity: .55;
+    }
+
+    .reply-starter-hint {
+      margin: 0;
+      line-height: 1.4;
+    }
+
     .compose-field {
       display: grid;
       grid-template-columns: 64px minmax(0, 1fr) auto;
@@ -4176,6 +4234,18 @@
           <span></span>
         </div>
       </div>
+      <div class="reply-starter-panel" id="replyStarterPanel" hidden>
+        <div class="reply-starter-heading">
+          <strong>Швидкий початок</strong>
+          <span>редагований шаблон · нічого не надсилається автоматично</span>
+        </div>
+        <div class="reply-starter-actions" role="group" aria-label="Стиль початку відповіді">
+          <button type="button" data-reply-starter="short">Коротко</button>
+          <button type="button" data-reply-starter="professional">Професійно</button>
+          <button type="button" data-reply-starter="warm">Тепло</button>
+        </div>
+        <p class="reply-starter-hint" id="replyStarterHint">Оберіть стиль, а потім замініть підказку власною відповіддю.</p>
+      </div>
       <div class="reply-attachments-option" id="replyAttachmentsOption" hidden>
         <label for="includeOriginalAttachments">
           <input id="includeOriginalAttachments" type="checkbox">
@@ -4672,7 +4742,7 @@
           "composeTitle", "composeAccount", "composeFrom", "composeTo", "composeCc",
           "composeBcc", "composeSubject", "composeBody", "composeFormatToolbar", "composeParagraphStyle", "composeFontFamily", "composeFontSize",
           "composeTextColor", "composeBackgroundColor", "inlineImageInput", "composeLinkButton", "composeLinkForm", "composeLinkUrl", "cancelComposeLink", "ccField", "bccField",
-          "showCcButton", "showBccButton", "hideCcButton", "hideBccButton", "replyAttachmentsOption", "includeOriginalAttachments", "replyAttachmentsHint", "composeAttachments", "attachButton",
+          "showCcButton", "showBccButton", "hideCcButton", "hideBccButton", "replyStarterPanel", "replyStarterHint", "replyAttachmentsOption", "includeOriginalAttachments", "replyAttachmentsHint", "composeAttachments", "attachButton",
           "composeTableButton", "composeTablePanel", "composeTableRows", "composeTableColumns", "composeTableBorderStyle", "composeTableBorderWidth", "composeTableBorderColor", "insertComposeTableButton", "cancelComposeTable",
           "attachmentInput", "attachmentFolderInput", "saveDraftButton", "sendLaterButton", "sendLaterPanel", "sendLaterStatus", "sendLaterTomorrow", "sendLaterNextWorkday", "sendLaterForm", "sendLaterDateTime", "confirmSendLater", "cancelScheduledSend", "closeSendLater", "sendButton", "composeSourceLayer", "composeSourceDialog", "closeComposeSource",
           "composeSourceDeviceTab", "composeSourceDriveTab", "composeSourceBoxTab", "composeSourcePublicTab", "composeSourceDevicePanel", "composeSourceDrivePanel", "composeSourceBoxPanel", "composeSourcePublicPanel",
@@ -11390,6 +11460,7 @@
         resetComposeHistory();
         setOptionalRecipientField("cc", Boolean(draft.cc), false);
         setOptionalRecipientField("bcc", Boolean(draft.bcc), false);
+        renderReplyStarterPanel();
         renderReplyAttachmentsOption();
         renderComposeAttachments();
         renderSendLaterState();
@@ -11403,6 +11474,55 @@
         return state.thread.messages.find(function (message) {
           return message.id === state.compose.replyToMessageId;
         }) || state.thread.messages[state.thread.messages.length - 1];
+      }
+
+      function replyStarterText(styleValue) {
+        var style = safeText(styleValue);
+        var message = replySourceMessage();
+        var senderName = safeText(message && message.from && message.from.name);
+        if (!senderName) senderName = safeText(message && message.from && message.from.email).split("@")[0];
+        senderName = senderName.split(/\s+/)[0].replace(/[<>\[\]{}]/g, "").slice(0, 60);
+        var accountName = safeText(state.account && state.account.displayName, "Павло").split(/\s+/)[0]
+          .replace(/[<>\[\]{}]/g, "").slice(0, 60) || "Павло";
+        var greeting = senderName ? "Вітаю, " + senderName + "!" : "Вітаю!";
+        if (style === "professional") {
+          return greeting + "\n\nДякую за ваш лист. [Коротко вкажіть рішення або наступний крок.]\n\nЗ повагою,\n" + accountName;
+        }
+        if (style === "warm") {
+          return greeting + "\n\nДякую, що написали. [Додайте людську відповідь без зайвих зобов’язань.]\n\nЗ теплом,\n" + accountName;
+        }
+        return greeting + "\n\nДякую за повідомлення. [Напишіть коротку відповідь.]\n\nЗ повагою,\n" + accountName;
+      }
+
+      function renderReplyStarterPanel() {
+        var available = Boolean(state.compose && (state.compose.mode === "reply" || state.compose.mode === "replyAll"));
+        els.replyStarterPanel.hidden = !available;
+        if (!available) return;
+        var hasBody = Boolean(composeEditorText().trim());
+        els.replyStarterHint.textContent = hasBody
+          ? "Відповідь уже містить текст. Шаблон не перезапише вашу роботу."
+          : "Оберіть стиль, а потім замініть підказку власною відповіддю.";
+        els.replyStarterPanel.querySelectorAll("button[data-reply-starter]").forEach(function (button) {
+          button.disabled = Boolean(composeLocked() || hasBody);
+        });
+      }
+
+      function applyReplyStarter(styleValue) {
+        if (!state.compose || (state.compose.mode !== "reply" && state.compose.mode !== "replyAll") || composeLocked()) return;
+        if (composeEditorText().trim()) {
+          renderReplyStarterPanel();
+          showSnackbar("Шаблон не застосовано: ваша відповідь уже містить текст.");
+          return;
+        }
+        var styles = { short: true, professional: true, warm: true };
+        var style = safeText(styleValue);
+        if (!styles[style]) return;
+        setComposeEditorContent("", replyStarterText(style));
+        resetComposeHistory();
+        syncComposeFromFields();
+        renderReplyStarterPanel();
+        els.composeBody.focus();
+        showSnackbar("Стартовий шаблон додано. Перевірте факти й відредагуйте текст.");
       }
 
       function renderReplyAttachmentsOption() {
@@ -12279,6 +12399,7 @@
         els.attachmentInput.disabled = attachmentsLocked;
         els.includeOriginalAttachments.disabled = Boolean(attachmentsLocked || els.replyAttachmentsOption.hidden);
         els.composeAttachments.querySelectorAll("button").forEach(function (node) { node.disabled = attachmentsLocked; });
+        renderReplyStarterPanel();
         els.saveDraftButton.textContent = state.composeSaveInFlight
           ? "Зберігаю…"
           : networkBusy
@@ -14019,6 +14140,11 @@
           if (!format) return;
           event.preventDefault();
           applyComposeFormat(format);
+        });
+        els.replyStarterPanel.addEventListener("click", function (event) {
+          var button = event.target.closest && event.target.closest("button[data-reply-starter]");
+          if (!button || !els.replyStarterPanel.contains(button)) return;
+          applyReplyStarter(button.dataset.replyStarter);
         });
         els.composeFormatToolbar.addEventListener("pointerdown", function () {
           var range = composeSelectionRange();

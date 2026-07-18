@@ -135,3 +135,15 @@
 - The previous standalone Telegram message ID is stored as content-free retirement metadata until idempotent deletion is confirmed. A crash or definite retry cannot lose it; a bounded worker finishes cleanup later.
 - Every `soft_digest` retry rechecks the selected digest window. A Telegram create accepted before a local marker failure becomes uncertain and is never converted into an automatic duplicate.
 - Targeted mail-action contracts pass 139/139 and the complete ordinary functional matrix passes 359/359. No subject, sender, body, summary, attachment name, OAuth secret, or token was added to the ledger.
+
+## 2026-07-18 — v30 low-pressure reply starters
+
+- Created `codex/neuroinclusive-v30` from the verified production-v29 evidence commit; production remains v29.
+- Added exactly three Ukrainian reply starters: `Коротко`, `Професійно`, and `Тепло`.
+- Starters are deterministic editable templates with explicit placeholders. They do not claim AI generation, do not invent facts or commitments, and say that nothing is sent automatically.
+- A starter can populate only an empty reply/reply-all editor. Existing text disables all starter buttons and cannot be overwritten.
+- Choosing a starter enters the existing revision-aware Gmail draft autosave lifecycle; the starter code has no direct `saveDraft` or `sendDraft` path.
+- Targeted regression passed 203/203; ordinary full regression passed 336/336.
+- Chrome preview DOM QA opened the reply editor, verified all three unique buttons, inserted the `Тепло` template, confirmed exact editable text and overwrite protection, and verified 390 px body/panel width with no horizontal overflow.
+- Chrome's captured bitmap showed the underlying fixed reader despite `dialog open`, a visible 390 px panel, and valid DOM geometry. This screenshot inconsistency is not used as visual proof; the DOM and functional evidence remain recorded, and production was not changed.
+- No real Gmail draft/message, Telegram card, OAuth grant, attachment, provider object, browser account, or phone state was mutated.

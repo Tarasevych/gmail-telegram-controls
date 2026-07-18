@@ -2988,6 +2988,25 @@ test('send later saves a Gmail draft first and keeps scheduling explicit account
     'a preset may fill the explicit form but cannot silently schedule a message');
 });
 
+test('low-pressure reply starters are editable bounded and never overwrite or auto-send', () => {
+  assert.match(uiSource, /id="replyStarterPanel"/);
+  assert.equal((uiSource.match(/data-reply-starter="(?:short|professional|warm)"/g) || []).length, 3);
+  for (const label of ['Коротко', 'Професійно', 'Тепло']) assert.match(uiSource, new RegExp(label));
+  const starterSource = sourceBetween(
+    '      function replyStarterText(styleValue) {',
+    '      function renderReplyAttachmentsOption() {'
+  );
+  assert.match(starterSource, /if \(composeEditorText\(\)\.trim\(\)\)/,
+    'an existing reply must block template replacement');
+  assert.match(starterSource, /setComposeEditorContent\("", replyStarterText\(style\)\)/);
+  assert.match(starterSource, /syncComposeFromFields\(\)/,
+    'a chosen starter must enter the normal editable Gmail draft lifecycle');
+  assert.match(starterSource, /Перевірте факти й відредагуйте текст/);
+  assert.doesNotMatch(starterSource, /sendDraft|saveDraft\s*\(|op:\s*"sendDraft"/,
+    'choosing a starter must never send or force-save a message directly');
+  assert.match(uiSource, /редагований шаблон · нічого не надсилається автоматично/);
+});
+
 test('preview draft save returns the current canonical nested draft contract', () => {
   const previewSource = sourceBetween(
     '      function previewRpc(request) {',

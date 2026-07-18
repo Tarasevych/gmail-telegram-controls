@@ -94,7 +94,7 @@ No subject, sender, body, attachment name, AI summary, or reply text is stored i
 
 1. Deploy and verify frozen v28 P0.
 2. Add isolated preference storage and interactive session presets. **Implemented and locally verified in v29.**
-3. Add gentle reply styles as editable Gmail drafts.
+3. Add gentle reply styles as editable Gmail drafts. **Implemented and locally functionally verified in v30; integrated into v36; real Telegram WebView visual proof remains required before release.**
 4. Add durable scheduled-send journal and worker with readback. **Backend v31 and Mini App controls v32 are implemented and locally verified; real Telegram WebView and release proof remain pending.**
 5. Add reminder modes and three-screen onboarding. **Three-screen onboarding v33, content-free compassionate reminder delivery v34, and soft-to-digest continuation v35 are implemented and locally verified; real Telegram WebView acceptance and release proof remain pending.**
 6. Run ordinary regression, desktop/mobile/phone QA, guarded release, and post-deploy synchronization checks.
