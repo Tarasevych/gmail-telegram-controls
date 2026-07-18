@@ -22,7 +22,7 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 
 ## Known non-crash limitations
 
-- Product v41 private functional-relief metrics is a local undeployed candidate. Targeted and ordinary functional tests pass, and the populated desktop card rendered correctly before the interaction fix. The in-app Browser then blocked localhost reload under its URL policy; post-fix desktop/mobile clear-confirmation QA remains a release gate. This is a QA limitation, not a production outage, and was not bypassed through another browser.
+- Product v41 private functional-relief metrics is a local undeployed candidate. Targeted and ordinary functional tests pass. The original Browser localhost restriction and later connected-Chrome mobile coordinate scaling mismatch were testing-surface limitations, not product crashes; the authorized standalone Playwright fallback now passes the exact post-fix desktop/mobile clear-confirmation flow 28/28. Only fresh Telegram WebView acceptance and a separately pinned immutable release gate remain before deployment.
 
 - Product v40 backlog rescue is a locally verified candidate only. Its targeted, ordinary, and rendered Chrome suites pass, but it has not been deployed or exercised against real mail. Production remains immutable Apps Script v33/product v38 after the separate session-capacity hotfix; this is an intentional release boundary, not a production outage.
 
