@@ -9990,14 +9990,19 @@
 
       function setOnboardingIsolation(active) {
         Array.from(document.body.children).forEach(function (node) {
-          if (node === els.onboardingLayer || node.tagName === "SCRIPT") return;
-          if (active) {
-            node.dataset.onboardingPreviousInert = node.inert ? "true" : "false";
-            node.inert = true;
-          } else {
-            node.inert = node.dataset.onboardingPreviousInert === "true";
-            delete node.dataset.onboardingPreviousInert;
-          }
+          if (node.tagName === "SCRIPT") return;
+          var targets = node === app
+            ? Array.from(app.children).filter(function (child) { return child !== els.onboardingLayer; })
+            : [node];
+          targets.forEach(function (target) {
+            if (active) {
+              target.dataset.onboardingPreviousInert = target.inert ? "true" : "false";
+              target.inert = true;
+            } else {
+              target.inert = target.dataset.onboardingPreviousInert === "true";
+              delete target.dataset.onboardingPreviousInert;
+            }
+          });
         });
       }
 

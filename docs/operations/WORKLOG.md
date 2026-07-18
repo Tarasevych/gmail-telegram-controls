@@ -147,3 +147,13 @@
 - Chrome preview DOM QA opened the reply editor, verified all three unique buttons, inserted the `Тепло` template, confirmed exact editable text and overwrite protection, and verified 390 px body/panel width with no horizontal overflow.
 - Chrome's captured bitmap showed the underlying fixed reader despite `dialog open`, a visible 390 px panel, and valid DOM geometry. This screenshot inconsistency is not used as visual proof; the DOM and functional evidence remain recorded, and production was not changed.
 - No real Gmail draft/message, Telegram card, OAuth grant, attachment, provider object, browser account, or phone state was mutated.
+
+## 2026-07-18 — v36 integrated P1 candidate and rendered QA
+
+- Created `codex/neuroinclusive-v36-integrated-p1` from the verified v35 continuation candidate and integrated the independent v30 low-pressure reply starters. The resulting branch contains v30–v35 P1 work together while production remains immutable Apps Script v29.
+- The first standalone Chrome run found a real interaction defect: the onboarding dialog was nested inside `#app`, but isolation made the entire app shell inert, so the visible dialog intercepted no pointer or keyboard interaction.
+- Changed isolation to keep the app shell itself active and make only its non-onboarding children inert. Added a regression contract that rejects making `#app` inert and requires explicit exclusion of the onboarding layer.
+- Targeted MailApp contracts pass 73/73. The complete ordinary functional matrix excluding immutable historical deployment fixtures passes 360/360.
+- Standalone system-Chrome rendered QA passes 14/14 at 1440×900 and 390×844: all three onboarding screens, completion, reply panel, warm/professional starter insertion, overwrite protection, desktop/mobile horizontal bounds, mobile editor scrolling, page identity, blank/overlay checks, and console health.
+- Expected Telegram WebApp compatibility warnings occur in localhost preview because it is not a current Telegram WebView; there are no application errors or failed resources. Private screenshots and the JSON report remain outside Git in the thread visualization directory.
+- Closed the temporary preview servers after QA. No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.

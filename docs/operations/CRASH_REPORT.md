@@ -26,10 +26,18 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - The repository is public. Runtime secrets, sessions, message content, and private QA captures must never be committed.
 - The energy/reminder preference slice is now immutable production v29. Scheduled reminder delivery, low-pressure reply templates, send-later, and onboarding remain later P1 phases; this is incomplete scope, not a production crash.
 - The v31 send-later backend plus v32 Mini App controls are locally verified candidates only. Real Telegram WebView proof, immutable release helper, guarded deployment, and controlled post-deploy acceptance are intentionally pending; production v29 cannot schedule sends yet.
-- The v33 onboarding candidate is functionally verified but still needs rendered desktop/mobile QA and real Telegram WebView proof before any release helper or deployment. The four failures from the unfiltered test glob are immutable historical release-pin fixtures comparing v27–v29 hashes with the current mutable candidate, not runtime regressions; the supported functional matrix passes 344/344.
+- The v33 onboarding functionality is now integrated into v36 and has passing desktop/mobile rendered QA. Real Telegram WebView proof is still required before any release helper or deployment. Historical release-pin fixtures remain immutable rollback evidence and are intentionally excluded from the ordinary mutable-candidate matrix.
 - The v34 reminder-delivery candidate is local and undeployed. Its ordinary functional matrix passes 354/354 and the independent review is clear, but real Telegram delivery/callback acceptance is intentionally pending until a guarded combined release; this is a release gate, not a production outage.
 - Codex Security scanning remains intentionally frozen after repeated policy-filter interruptions. The open v27 browser tab is static and must not be interpreted as a running or hung security process. Functional tests and positive expected-denial isolation checks continue without attack-path or exploit-style scans.
 - v35 closes the previously documented soft-to-digest product gap locally. Durable retirement and retry recovery are covered by functional tests, but real Telegram WebView/delivery acceptance and a guarded release remain pending; production v29 is unchanged.
+
+## 2026-07-18 — resolved v36 onboarding isolation defect
+
+- Phase: standalone system-Chrome rendered QA of the integrated v30–v35 candidate at desktop and 390×844 mobile sizes.
+- Runtime defect: `setOnboardingIsolation(true)` made the whole `#app` element inert even though the onboarding layer was its descendant. Inert propagated into the visible dialog, so onboarding buttons could not receive pointer or keyboard interaction.
+- Resolution: keep `#app` active, make only its non-onboarding children inert, and restore every target's previous inert state on close. A source contract now rejects direct inerting of the app shell.
+- Verification: MailApp contracts 73/73, ordinary functional matrix 360/360, and rendered Chrome checks 14/14 pass. The browser console contains no application errors; localhost-only Telegram SDK version warnings are expected.
+- Preserved state: production v29 and all real Gmail, Telegram, OAuth, provider, browser-account, and phone state remained unchanged. Remaining gate is controlled real Telegram WebView proof followed by a separately pinned release helper and guarded deployment.
 
 ## 2026-07-18 — resolved v32 rendered-QA defects
 

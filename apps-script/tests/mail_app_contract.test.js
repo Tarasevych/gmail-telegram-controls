@@ -2901,6 +2901,14 @@ test('three-screen onboarding is accessible explicit and isolated per Gmail acco
   assert.match(uiSource, />\s*Пропустити\s*</);
   assert.match(uiSource, /function trapOnboardingFocus\(event\)/);
   assert.match(uiSource, /if \(state\.onboardingOpen\)[\s\S]*trapOnboardingFocus\(event\)/);
+  const isolationSource = sourceBetween(
+    '      function setOnboardingIsolation(active) {',
+    '      function renderOnboarding() {'
+  );
+  assert.match(isolationSource, /node === app[\s\S]*Array\.from\(app\.children\)[\s\S]*child !== els\.onboardingLayer/,
+    'the app shell must stay interactive enough for its onboarding child while every sibling becomes inert');
+  assert.doesNotMatch(isolationSource, /node\.inert = true/,
+    'the app shell itself cannot become inert because inert propagates into the onboarding dialog');
   assert.match(uiSource, /completeOnboarding:[\s\S]*true|completeOnboarding: true/);
   assert.match(uiSource, /digestWindows: state\.onboardingDraft\.digestWindows/);
   assert.match(uiSource, /timezone: state\.onboardingDraft\.timezone/);
