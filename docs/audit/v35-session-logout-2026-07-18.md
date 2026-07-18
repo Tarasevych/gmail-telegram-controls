@@ -42,3 +42,17 @@ launch error without the owner-bound recovery token.
 No live Gmail message, label, draft, OAuth grant, Telegram zone/card, provider
 account, browser account, or phone state was changed while building or testing
 this candidate.
+
+## Production release
+
+- Implementation commit `213761c6c0d38d1d9bacbf74897501c1f89e9168` and
+  pinned release-gate commit `c3d35e4be760449f6e714193374e033a20ec375f`
+  were pushed before provider mutation.
+- Guarded staging returned HTTP 200 from the expected Gmail/Telegram mailbox
+  bridge while the stable deployment remained v34.
+- Stable deployment
+  `AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z`
+  was promoted atomically from immutable v34 to immutable v35.
+- The temporary staging deployment was removed. Final read-only preflight
+  reports stable v35, exact candidate hashes, zero staging deployments, and a
+  cleaned release journal.

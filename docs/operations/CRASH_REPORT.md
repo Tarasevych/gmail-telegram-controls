@@ -15,8 +15,10 @@
 - Verification: targeted 216/216; rendered desktop/mobile 15/15; ordinary
   candidate 363/364 with the same single pre-existing reminder-helper failure
   reproduced on clean v34 at 360/361.
-- Production remains v34 until a separately pinned v35 release gate is
-  committed, pushed, and passes guarded staging acceptance.
+- Resolution is live in immutable Apps Script v35 on the unchanged stable
+  deployment. The separately pinned release gate and implementation were
+  pushed before promotion; staging was accepted and removed, and final
+  preflight reports exact hashes with a cleaned journal.
 
 No current production crash was detected during the v28 baseline audit.
 
