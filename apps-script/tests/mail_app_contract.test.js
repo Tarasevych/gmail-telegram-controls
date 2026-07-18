@@ -3010,6 +3010,64 @@ test('energy presets and reminder modes keep Focus compassionate bounded and acc
     'neuroinclusive copy must not shame users for unfinished mail');
 });
 
+test('adaptive density follows energy preserves evidence and keeps minimal mode to three primary actions', () => {
+  assert.match(uiSource, /densityMode: "auto"/);
+  assert.match(uiSource, /function effectiveDensityMode\(value\)/);
+  const effectiveSource = sourceBetween(
+    '      function effectiveDensityMode(value) {',
+    '      function densityModeLabel(mode) {'
+  );
+  assert.match(effectiveSource, /sessionPreset === "low"\) return "minimal"/);
+  assert.match(effectiveSource, /sessionPreset === "untimed"\) return "analytical"/);
+  assert.match(effectiveSource, /return "standard"/);
+  for (const label of ['Авто за енергією', 'Мінімум', 'Стандарт', 'Аналітично']) {
+    assert.match(uiSource, new RegExp(label));
+  }
+  assert.match(uiSource, /updateAttentionPreferences\(\{ densityMode: densitySelect\.value \}\)/);
+  assert.match(uiSource, /"aria-label": "Вигляд відкритого листа"/,
+    'the density selector must remain available in every open reader, not only Focus');
+  assert.match(uiSource, /updateAttentionPreferences\(\{ densityMode: densityReaderSelect\.value \}\)/,
+    'the reader-level selector must persist through the account-scoped preference RPC');
+  const preferenceUpdateSource = sourceBetween(
+    '      async function updateAttentionPreferences(changes) {',
+    '      async function loadBacklogRescue(action, options) {'
+  );
+  assert.match(preferenceUpdateSource, /requestId !== state\.attentionPreferencesRequestId/);
+  assert.match(preferenceUpdateSource, /safeId\(state\.account && state\.account\.id\) !== connectionId/,
+    'a late preference response must not overwrite a newly selected Gmail account');
+  const switchAccountSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchAccountSource,
+    /await rpc\(\{ op: "switchAccount"[\s\S]*state\.attentionPreferencesRequestId \+= 1/,
+    'only a confirmed account switch may invalidate an in-flight preference response');
+  assert.match(uiSource, /data-density": densityMode/);
+  assert.match(uiSource, /Показати оригінал листа й переписку/,
+    'minimal mode must keep the full original one interaction away');
+  assert.match(uiSource, /sources\.open = analyticalDensity \|\| minimalDensity/,
+    'one minimal-mode disclosure must expose the already-open grounded sources');
+  assert.match(uiSource, /target\.closest\("details\.density-original"\)[\s\S]*original\.open = true/,
+    'source navigation must reveal a target hidden inside the minimal original disclosure');
+  assert.match(uiSource, /history\.open = densityMode === "analytical"/);
+  assert.match(uiSource, /if \(!minimalDensity && \(\(handoff\.task/,
+    'minimal mode must not duplicate handoff controls below its three primary actions');
+  assert.match(uiSource, /effectiveDensityMode\(\) === "minimal"[\s\S]*Додати до календаря/,
+    'a calendar-only secondary action remains reachable through the Other actions menu');
+
+  const toolbarSource = sourceBetween(
+    '      function buildAdaptiveThreadToolbar(densityMode) {',
+    '      function threadStateLabels() {'
+  );
+  assert.equal((toolbarSource.match(/primaryAction: true/g) || []).length, 3,
+    'minimal mode must expose exactly three primary actions');
+  for (const label of ['Відповісти', 'Перетворити на задачу', 'Відкласти', 'Інші дії']) {
+    assert.match(toolbarSource, new RegExp(label));
+  }
+  assert.doesNotMatch(toolbarSource, /Архівувати|До кошика|Позначити прочитаним|Мітки/,
+    'secondary mail management must stay behind the single Other actions disclosure');
+});
+
 test('backlog rescue is explicit bounded restorable and never turns Focus into an infinite inbox', () => {
   assert.match(uiSource, /op === "backlogRescue"/);
   assert.match(uiSource, /function normalizeBacklogRescue\(value, threadsValue\)/);

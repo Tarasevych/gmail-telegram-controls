@@ -285,3 +285,13 @@
 - v32 GET-only preflight passed and the single guarded StageOnly attempt created exact immutable v32 plus its separate staging deployment while stable stayed v29. Real Huawei Telegram WebView then showed the exact Gmail identity and zero-scroll controls: Support `[229,891][619,985]`, Rules `[634,891][1022,985]`; Support opened `Крок 1 із 3` without saving or completing onboarding.
 - Temporary v38 acceptance bridge commits on `main` are `5c16b77` add and `4e29470` remove; the path returns HTTP 404. The owner menu is restored exactly to `📬 Пошта` with the production GitHub Pages URL. Phone WebView was closed without a preference write. The v32 promotion gate is cleared pending one final exact GET-only reconciliation.
 - Final reconciliation passed and the guarded helper promoted stable directly from v29 to exact immutable v32/product v38. A production phone-pass through the ordinary `📬 Пошта` menu repeated exact-account, zero-scroll Support/Rules, and onboarding-open checks without saving preferences. The separate staging deployment was then deleted; final preflight reports stable v32, exact candidate HEAD/immutable, journal `cleaned`, and no staging deployment.
+
+## 2026-07-18 — product v43 adaptive information density
+
+- Continued from verified product-v42 commit `eadcd818f8ce008823aabfd6992efef53ff87572` on isolated branch `codex/neuroinclusive-v43-adaptive-density`; production remained Apps Script v35/product v38.3.
+- Added account-scoped `auto|minimal|standard|analytical` reading density with revision-checked persistence and no mail content in preference storage.
+- Minimal mode shows exactly reply, task handoff, and snooze as primary actions. The original message/conversation and grounded evidence remain one disclosure away; analytical mode expands evidence and history when present.
+- Rendered QA found that the first implementation exposed density only inside Focus. Added an accessible `Вигляд відкритого листа` selector to every open reader and reran the contracts and desktop/mobile interaction checks.
+- Independent review found and drove fixes for stale preference responses across account switching, evidence links targeting a collapsed minimal original, duplicated minimal handoff controls, and rollback after a failed account switch. Final rereview reported no findings.
+- Verification: targeted contracts 220/220 PASS; ordinary matrix 368/368 PASS; desktop and 390×844 preview checks confirm one selector, three minimal primary actions, one-click original, analytical evidence, vertical scrolling, and no horizontal overflow. QA port 8774 is closed.
+- No Gmail message, draft, label, OAuth grant, Telegram zone/card, Apps Script deployment, provider account, browser account, or phone state was changed.

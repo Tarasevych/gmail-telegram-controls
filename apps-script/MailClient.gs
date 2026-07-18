@@ -4437,6 +4437,12 @@ const MAILBOX_ATTENTION_REMINDER_MODES_ = Object.freeze({
   digest: 'Дайджест',
   urgent_only: 'Лише термінове',
 });
+const MAILBOX_ATTENTION_DENSITY_MODES_ = Object.freeze({
+  auto: 'Авто за енергією',
+  minimal: 'Мінімум',
+  standard: 'Стандарт',
+  analytical: 'Детально',
+});
 const MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_ = Object.freeze([540, 1080]);
 
 function mailboxAttentionScope_(session) {
@@ -4481,6 +4487,8 @@ function mailboxAttentionPreferencesNormalize_(value) {
       Object.keys(MAILBOX_ATTENTION_SESSION_PRESETS_), 'five_minutes'),
     reminderMode: mailboxEnum_(input.reminderMode,
       Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_), 'soft'),
+    densityMode: mailboxEnum_(input.densityMode,
+      Object.keys(MAILBOX_ATTENTION_DENSITY_MODES_), 'auto'),
     digestWindows: digestWindows.length ? digestWindows : MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_.slice(),
     timezone,
     onboardingCompletedAt: mailboxSafeTimestamp_(input.onboardingCompletedAt),
@@ -4502,6 +4510,10 @@ function mailboxAttentionPreferencesDto_(registry) {
     reminderModes: Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_).map(key => ({
       key,
       label: MAILBOX_ATTENTION_REMINDER_MODES_[key],
+    })),
+    densityModes: Object.keys(MAILBOX_ATTENTION_DENSITY_MODES_).map(key => ({
+      key,
+      label: MAILBOX_ATTENTION_DENSITY_MODES_[key],
     })),
     quietHours: { startMinute: 22 * 60, endMinute: 8 * 60, label: '22:00–08:00' },
   });
@@ -4739,7 +4751,7 @@ function mailboxAttentionUpdate_(payload, session) {
 
 function mailboxAttentionPreferences_(payload, session) {
   mailboxAssertAllowedKeys_(payload, [
-    'sessionPreset', 'reminderMode', 'digestWindows', 'timezone', 'completeOnboarding', 'expectedRevision',
+    'sessionPreset', 'reminderMode', 'densityMode', 'digestWindows', 'timezone', 'completeOnboarding', 'expectedRevision',
   ]);
   if (payload.sessionPreset !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_SESSION_PRESETS_, String(payload.sessionPreset || ''))) {
@@ -4748,6 +4760,10 @@ function mailboxAttentionPreferences_(payload, session) {
   if (payload.reminderMode !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_REMINDER_MODES_, String(payload.reminderMode || ''))) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректний режим нагадувань.');
+  }
+  if (payload.densityMode !== undefined &&
+      !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_DENSITY_MODES_, String(payload.densityMode || ''))) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректна щільність відображення листа.');
   }
   if (payload.digestWindows !== undefined && !Array.isArray(payload.digestWindows)) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректні часові вікна дайджесту.');
@@ -4769,6 +4785,7 @@ function mailboxAttentionPreferences_(payload, session) {
     const next = mailboxAttentionPreferencesNormalize_({
       sessionPreset: payload.sessionPreset === undefined ? previous.sessionPreset : payload.sessionPreset,
       reminderMode: payload.reminderMode === undefined ? previous.reminderMode : payload.reminderMode,
+      densityMode: payload.densityMode === undefined ? previous.densityMode : payload.densityMode,
       digestWindows: payload.digestWindows === undefined ? previous.digestWindows : payload.digestWindows,
       timezone: payload.timezone === undefined ? previous.timezone : payload.timezone,
       onboardingCompletedAt: payload.completeOnboarding === true
@@ -4777,6 +4794,7 @@ function mailboxAttentionPreferences_(payload, session) {
       updatedAt: previous.updatedAt,
     });
     if (previous.sessionPreset === next.sessionPreset && previous.reminderMode === next.reminderMode &&
+        previous.densityMode === next.densityMode &&
         previous.timezone === next.timezone &&
         previous.onboardingCompletedAt === next.onboardingCompletedAt &&
         JSON.stringify(previous.digestWindows) === JSON.stringify(next.digestWindows)) {

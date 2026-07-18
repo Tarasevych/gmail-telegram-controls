@@ -7393,6 +7393,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   const initial = resultData(rpc(harness, token, 'attentionState', {}));
   assert.equal(initial.preferences.sessionPreset, 'five_minutes');
   assert.equal(initial.preferences.reminderMode, 'soft');
+  assert.equal(initial.preferences.densityMode, 'auto');
   assert.deepEqual(Array.from(initial.preferences.digestWindows), [540, 1080]);
   assert.equal(initial.preferences.timezone, 'UTC');
   assert.equal(initial.preferences.onboardingCompletedAt, 0);
@@ -7401,15 +7402,18 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
     'low,five_minutes,three_threads,untimed');
   assert.equal(initial.preferences.reminderModes.map(item => item.key).join(','),
     'soft,digest,urgent_only');
+  assert.equal(initial.preferences.densityModes.map(item => item.key).join(','),
+    'auto,minimal,standard,analytical');
 
   const low = resultData(rpc(harness, token, 'attentionPreferences', {
-    sessionPreset: 'low', reminderMode: 'digest', digestWindows: [1080],
+    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', digestWindows: [1080],
     timezone: 'Europe/Brussels', completeOnboarding: true, expectedRevision: 0,
   }));
   assert.equal(low.revision, 1);
   assert.equal(low.preferences.sessionPreset, 'low');
   assert.equal(low.preferences.maxThreads, 1);
   assert.equal(low.preferences.reminderMode, 'digest');
+  assert.equal(low.preferences.densityMode, 'minimal');
   assert.deepEqual(Array.from(low.preferences.digestWindows), [1080]);
   assert.equal(low.preferences.timezone, 'Europe/Brussels');
   assert.ok(low.preferences.onboardingCompletedAt > 0,
@@ -7417,7 +7421,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   const completedAt = low.preferences.onboardingCompletedAt;
 
   const repeated = resultData(rpc(harness, token, 'attentionPreferences', {
-    sessionPreset: 'low', reminderMode: 'digest', digestWindows: [1080],
+    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', digestWindows: [1080],
     timezone: 'Europe/Brussels', completeOnboarding: true, expectedRevision: 1,
   }));
   assert.equal(repeated.revision, 1, 'an exact preference retry must be idempotent');
@@ -7428,6 +7432,9 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   })).code, 'ATTENTION_CONFLICT');
   assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
     sessionPreset: 'endless', reminderMode: 'soft', expectedRevision: 1,
+  })).code, 'INVALID_ATTENTION');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
+    densityMode: 'overwhelming', expectedRevision: 1,
   })).code, 'INVALID_ATTENTION');
   assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
     digestWindows: '09:00', expectedRevision: 1,
@@ -7452,6 +7459,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   const second = resultData(rpc(harness, token, 'attentionState', {}));
   assert.equal(second.preferences.sessionPreset, 'five_minutes');
   assert.equal(second.preferences.reminderMode, 'soft');
+  assert.equal(second.preferences.densityMode, 'auto');
   assert.equal(second.preferences.onboardingCompletedAt, 0);
   assert.deepEqual(Array.from(second.preferences.digestWindows), [540, 1080]);
 
