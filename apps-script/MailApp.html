@@ -4614,6 +4614,11 @@
         focusConfigLoading: false,
         focusConfigBusy: false,
         focusRuleDeleteConfirmId: "",
+        functionalMetrics: null,
+        functionalMetricsAccountId: "",
+        functionalMetricsLoading: false,
+        functionalMetricsBusy: false,
+        functionalMetricsClearConfirm: false,
         unifiedMode: false,
         needsGoogleConnection: false,
         sendAs: [],
@@ -4724,6 +4729,7 @@
             timezone: "UTC", onboardingCompletedAt: 0, updatedAt: 0
           }
         },
+        previewFunctionalMetrics: {},
         previewBoxConnected: false,
         previewDriveConnected: true,
         previewActiveDriveSourceId: "source-drive-preview-personal",
@@ -5508,6 +5514,17 @@
               action: safeText(backlogRescue.action, "load"),
               threadId: safeId(backlogRescue.threadId),
               expectedRevision: Math.max(0, Math.floor(Number(backlogRescue.expectedRevision || 0)))
+            }
+          };
+        }
+        if (op === "functionalMetrics") {
+          var functionalMetrics = input.payload || input;
+          return {
+            op: "functionalMetrics",
+            connectionId: safeId(input.connectionId || functionalMetrics.connectionId),
+            payload: {
+              action: safeText(functionalMetrics.action, "state"),
+              expectedRevision: Math.max(0, Math.floor(Number(functionalMetrics.expectedRevision || 0)))
             }
           };
         }
@@ -6556,6 +6573,9 @@
           state.focusConfig = null;
           state.focusConfigAccountId = "";
           state.focusRuleDeleteConfirmId = "";
+          state.functionalMetrics = null;
+          state.functionalMetricsAccountId = "";
+          state.functionalMetricsClearConfirm = false;
           if (result && result.metadata) applyGmailMetadataSnapshot(result.metadata);
           else state.gmailMetadata = null;
           showSnackbar(request.action === "create" ? "Мітку створено." : (request.action === "delete" ? "Мітку видалено." : "Мітку оновлено."), { success: true });
@@ -6594,14 +6614,123 @@
         };
       }
 
+      function normalizeFunctionalMetrics(value) {
+        var input = value || {};
+        function summary(source, days) {
+          var item = source || {};
+          var median = item.medianFirstDecision || {};
+          return {
+            days: days,
+            rescueStarted: Math.max(0, Math.floor(Number(item.rescueStarted || 0))),
+            selectedOffered: Math.max(0, Math.floor(Number(item.selectedOffered || 0))),
+            decisions: Math.max(0, Math.floor(Number(item.decisions || 0))),
+            sessionsCompleted: Math.max(0, Math.floor(Number(item.sessionsCompleted || 0))),
+            sessionsStopped: Math.max(0, Math.floor(Number(item.sessionsStopped || 0))),
+            recoveryPercent: Math.max(0, Math.min(100, Math.floor(Number(item.recoveryPercent || 0)))),
+            medianFirstDecision: {
+              key: safeText(median.key, "none"), label: safeText(median.label, "ще немає даних"),
+              sampleCount: Math.max(0, Math.floor(Number(median.sampleCount || 0)))
+            }
+          };
+        }
+        return {
+          enabled: input.enabled === true,
+          revision: Math.max(0, Math.floor(Number(input.revision || 0))),
+          retentionDays: Math.max(1, Math.min(30, Math.floor(Number(input.retentionDays || 30)))),
+          disclosure: safeText(input.disclosure,
+            "Лише денні лічильники й часові діапазони; без адрес, тем, текстів та ID листів."),
+          last7Days: summary(input.last7Days, 7),
+          last30Days: summary(input.last30Days, 30)
+        };
+      }
+
+      function appendFunctionalMetricsCard() {
+        var card = make("section", { className: "gmail-metadata-card" });
+        card.append(make("h4", { text: "Мій ритм · приватно" }));
+        var activeId = safeId(state.account && state.account.id);
+        var metrics = state.functionalMetricsAccountId === activeId ? state.functionalMetrics : null;
+        if (state.functionalMetricsLoading) {
+          card.append(make("p", { className: "gmail-metadata-muted", text: "Завантажую приватну статистику…" }));
+          els.focusSettingsContent.append(card);
+          return;
+        }
+        if (!metrics) {
+          card.append(make("p", { className: "gmail-metadata-muted", text: "Статистика недоступна. Правила пріоритету працюють незалежно від неї." }));
+          els.focusSettingsContent.append(card);
+          return;
+        }
+        card.append(make("p", { className: "gmail-metadata-muted", text: metrics.disclosure }));
+        card.append(make("p", {
+          className: "gmail-metadata-muted",
+          text: metrics.enabled
+            ? "Збір увімкнено лише для цієї Gmail-скриньки. Це не оцінка продуктивності й не серія."
+            : "Збір вимкнено. Нічого нового не рахується, доки ви самі його не ввімкнете."
+        }));
+        var week = metrics.last7Days;
+        var grid = make("div", { className: "gmail-metadata-card" });
+        [
+          ["Коротких сесій", week.rescueStarted],
+          ["Прийнятих рішень", week.decisions],
+          ["Відновлено з блоку", week.recoveryPercent + "%"],
+          ["До першого рішення", week.medianFirstDecision.label]
+        ].forEach(function (entry) {
+          var row = make("div", { className: "gmail-metadata-row" });
+          row.append(make("span", { text: entry[0] }));
+          row.append(make("strong", { text: String(entry[1]) }));
+          grid.append(row);
+        });
+        grid.append(make("p", { className: "gmail-metadata-muted", text: "Останні 7 днів · без streaks і червоних боргів" }));
+        card.append(grid);
+        var actions = make("div", { className: "gmail-label-actions" });
+        var toggle = make("button", {
+          className: "workspace-button", type: "button",
+          text: metrics.enabled ? "Вимкнути збір" : "Увімкнути приватну статистику"
+        });
+        toggle.disabled = state.functionalMetricsBusy;
+        toggle.addEventListener("click", function () {
+          manageFunctionalMetrics(metrics.enabled ? "disable" : "enable");
+        });
+        actions.append(toggle);
+        var hasHistory = metrics.last30Days.rescueStarted || metrics.last30Days.decisions ||
+          metrics.last30Days.sessionsCompleted || metrics.last30Days.sessionsStopped;
+        if (hasHistory) {
+          var clear = make("button", {
+            className: "workspace-button" + (state.functionalMetricsClearConfirm ? " danger" : ""),
+            type: "button", text: state.functionalMetricsClearConfirm ? "Підтвердити очищення" : "Очистити історію"
+          });
+          clear.disabled = state.functionalMetricsBusy;
+          clear.addEventListener("click", function () {
+            if (!state.functionalMetricsClearConfirm) {
+              state.functionalMetricsClearConfirm = true;
+              renderFocusSettings();
+              return;
+            }
+            manageFunctionalMetrics("clear");
+          });
+          actions.append(clear);
+          if (state.functionalMetricsClearConfirm) {
+            var cancelClear = make("button", { className: "workspace-button", type: "button", text: "Скасувати" });
+            cancelClear.addEventListener("click", function () {
+              state.functionalMetricsClearConfirm = false;
+              renderFocusSettings();
+            });
+            actions.append(cancelClear);
+          }
+        }
+        card.append(actions);
+        els.focusSettingsContent.append(card);
+      }
+
       function renderFocusSettings() {
         if (!els.focusSettingsContent) return;
         clear(els.focusSettingsContent);
-        els.refreshFocusSettings.disabled = state.focusConfigLoading || state.focusConfigBusy;
+        els.refreshFocusSettings.disabled = state.focusConfigLoading || state.focusConfigBusy ||
+          state.functionalMetricsLoading || state.functionalMetricsBusy;
         if (state.focusConfigLoading) {
           els.focusSettingsContent.append(make("p", { className: "account-panel-note", text: "Завантажую персональні правила…" }));
           return;
         }
+        appendFunctionalMetricsCard();
         var activeId = safeId(state.account && state.account.id);
         var config = state.focusConfigAccountId === activeId ? state.focusConfig : null;
         if (!config) {
@@ -6687,17 +6816,56 @@
       }
 
       async function loadFocusSettings() {
-        if (state.focusConfigLoading || state.focusConfigBusy) return;
+        if (state.focusConfigLoading || state.focusConfigBusy || state.functionalMetricsLoading || state.functionalMetricsBusy) return;
         state.focusConfigLoading = true;
+        state.functionalMetricsLoading = true;
         renderFocusSettings();
         try {
           var connectionId = safeId(state.account && state.account.id);
-          state.focusConfig = normalizeFocusConfig(await rpc({ op: "focusConfig", connectionId: connectionId, payload: {} }));
+          var responses = await Promise.all([
+            rpc({ op: "focusConfig", connectionId: connectionId, payload: {} }),
+            rpc({ op: "functionalMetrics", connectionId: connectionId, action: "state" }).catch(function () { return null; })
+          ]);
+          state.focusConfig = normalizeFocusConfig(responses[0]);
           state.focusConfigAccountId = connectionId;
+          state.functionalMetrics = responses[1] ? normalizeFunctionalMetrics(responses[1]) : null;
+          state.functionalMetricsAccountId = connectionId;
         } catch (error) {
           showSnackbar(safeText(error && error.message, "Не вдалося завантажити правила пріоритету."), { error: true });
         } finally {
           state.focusConfigLoading = false;
+          state.functionalMetricsLoading = false;
+          renderFocusSettings();
+        }
+      }
+
+      async function manageFunctionalMetrics(action) {
+        if (state.functionalMetricsBusy) return;
+        var connectionId = safeId(state.account && state.account.id);
+        var current = normalizeFunctionalMetrics(state.functionalMetrics);
+        state.functionalMetricsBusy = true;
+        renderFocusSettings();
+        try {
+          state.functionalMetrics = normalizeFunctionalMetrics(await rpc({
+            op: "functionalMetrics", connectionId: connectionId, action: action,
+            expectedRevision: current.revision
+          }));
+          state.functionalMetricsAccountId = connectionId;
+          state.functionalMetricsClearConfirm = false;
+          showSnackbar(action === "enable" ? "Приватну статистику ввімкнено лише для цієї скриньки."
+            : action === "disable" ? "Збір статистики вимкнено."
+              : "Історію приватної статистики очищено.", { success: true });
+        } catch (error) {
+          if (safeText(error && error.code).toUpperCase() === "METRICS_CONFLICT") {
+            try {
+              state.functionalMetrics = normalizeFunctionalMetrics(await rpc({
+                op: "functionalMetrics", connectionId: connectionId, action: "state"
+              }));
+            } catch (refreshError) {}
+          }
+          showSnackbar(safeText(error && error.message, "Не вдалося змінити приватну статистику."), { error: true });
+        } finally {
+          state.functionalMetricsBusy = false;
           renderFocusSettings();
         }
       }
@@ -14553,7 +14721,9 @@
         els.moreMenu.addEventListener("keydown", handleActionMenuKeydown);
         document.addEventListener("click", function (event) {
           if (!els.moreMenu.contains(event.target) && !els.labelMenu.contains(event.target) && !els.focusMenu.contains(event.target)) closeActionMenus();
-          if (!els.accountPanel.hidden && !els.accountPanel.contains(event.target) &&
+          var clickPath = typeof event.composedPath === "function" ? event.composedPath() : [];
+          var startedInsideAccountPanel = clickPath.indexOf(els.accountPanel) !== -1 || els.accountPanel.contains(event.target);
+          if (!els.accountPanel.hidden && !startedInsideAccountPanel &&
               event.target !== els.accountAvatar && event.target !== els.mobileAccountButton) {
             setAccountPanelOpen(false, null, false);
           }
@@ -15043,6 +15213,30 @@
         };
       }
 
+      function previewFunctionalMetricsResult(connectionId) {
+        var id = safeId(connectionId || state.account && state.account.id || "gmail-preview-personal");
+        if (!state.previewFunctionalMetrics[id]) {
+          state.previewFunctionalMetrics[id] = {
+            enabled: id === "gmail-preview-personal", revision: 1,
+            hasHistory: id === "gmail-preview-personal"
+          };
+        }
+        var record = state.previewFunctionalMetrics[id];
+        var week = record.hasHistory
+          ? { rescueStarted: 3, selectedOffered: 7, decisions: 5, sessionsCompleted: 1,
+              sessionsStopped: 1, recoveryPercent: 71,
+              medianFirstDecision: { key: "under_5m", label: "до 5 хв", sampleCount: 3 } }
+          : { rescueStarted: 0, selectedOffered: 0, decisions: 0, sessionsCompleted: 0,
+              sessionsStopped: 0, recoveryPercent: 0,
+              medianFirstDecision: { key: "none", label: "ще немає даних", sampleCount: 0 } };
+        return {
+          enabled: record.enabled, revision: record.revision, retentionDays: 30,
+          disclosure: "Лише денні лічильники й часові діапазони; без адрес, тем, текстів та ID листів.",
+          last7Days: Object.assign({ days: 7 }, week),
+          last30Days: Object.assign({ days: 30 }, week)
+        };
+      }
+
       function previewRpc(request) {
         return new Promise(function (resolve, reject) {
           window.setTimeout(function () {
@@ -15139,6 +15333,25 @@
             }
             if (op === "focusRuleAdmin") {
               resolve({ revision: Number(payload.expectedRevision || 0) + 1, levels: [], colors: [], rules: [], manualCount: 0 });
+              return;
+            }
+            if (op === "functionalMetrics") {
+              var previewMetricsId = safeId(request.connectionId || state.account && state.account.id);
+              var previewMetrics = previewFunctionalMetricsResult(previewMetricsId);
+              var previewMetricsAction = safeText(payload.action, "state");
+              var previewMetricsRecord = state.previewFunctionalMetrics[previewMetricsId];
+              if (previewMetricsAction !== "state" &&
+                  Number(payload.expectedRevision || 0) !== previewMetricsRecord.revision) {
+                var previewMetricsConflict = new Error("Статистика вже змінилася.");
+                previewMetricsConflict.code = "METRICS_CONFLICT";
+                reject(previewMetricsConflict);
+                return;
+              }
+              if (previewMetricsAction === "enable") previewMetricsRecord.enabled = true;
+              else if (previewMetricsAction === "disable") previewMetricsRecord.enabled = false;
+              else if (previewMetricsAction === "clear") previewMetricsRecord.hasHistory = false;
+              if (previewMetricsAction !== "state") previewMetricsRecord.revision += 1;
+              resolve(previewFunctionalMetricsResult(previewMetricsId));
               return;
             }
             if (op === "attentionState") {

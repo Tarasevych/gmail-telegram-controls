@@ -2977,6 +2977,48 @@ test('backlog rescue is explicit bounded restorable and never turns Focus into a
     'switching Gmail accounts must clear the old rescue and restore only the selected account session');
 });
 
+test('functional metrics explain opt-in relief without mail content shame or browser tracking', () => {
+  assert.match(uiSource, /op === "functionalMetrics"/);
+  assert.match(uiSource, /function normalizeFunctionalMetrics\(value\)/);
+  assert.match(uiSource, /function appendFunctionalMetricsCard\(\)/);
+  assert.match(uiSource, /Мій ритм · приватно/);
+  assert.match(uiSource, /Це не оцінка продуктивності й не серія/);
+  assert.match(uiSource, /без streaks і червоних боргів/);
+  assert.match(uiSource, /Увімкнути приватну статистику/);
+  assert.match(uiSource, /Підтвердити очищення/);
+  assert.match(uiSource, /Лише денні лічильники й часові діапазони/);
+
+  const metricsSource = sourceBetween(
+    '      function normalizeFunctionalMetrics(value) {',
+    '      function renderFocusSettings() {'
+  );
+  assert.match(metricsSource, /state\.functionalMetricsAccountId === activeId/,
+    'metrics must render only for the exact selected Gmail connection');
+  assert.match(metricsSource, /manageFunctionalMetrics\(metrics\.enabled \? "disable" : "enable"\)/);
+  assert.match(metricsSource, /manageFunctionalMetrics\("clear"\)/);
+  assert.doesNotMatch(metricsSource,
+    /localStorage|sessionStorage|threadId|messageId|subject|sender|bodyText|summaryUk|streakCount/i,
+    'the metrics UI must not create browser tracking or consume mail content');
+
+  const mutationSource = sourceBetween(
+    '      async function manageFunctionalMetrics(action) {',
+    '      async function manageFocusRule(request) {'
+  );
+  assert.match(mutationSource, /connectionId: connectionId/);
+  assert.match(mutationSource, /expectedRevision: current\.revision/,
+    'metrics preference writes must use optimistic account-scoped revisions');
+  assert.match(mutationSource, /op: "functionalMetrics"[\s\S]*action: "state"/,
+    'a conflict must refresh authoritative server state');
+
+  const outsideClickSource = sourceBetween(
+    '        document.addEventListener("click", function (event) {',
+    '        document.addEventListener("focusin", function (event) {'
+  );
+  assert.match(outsideClickSource, /event\.composedPath\(\)/);
+  assert.match(outsideClickSource, /clickPath\.indexOf\(els\.accountPanel\) !== -1/,
+    'a synchronous in-panel rerender must not turn its original click into a false outside click');
+});
+
 test('three-screen onboarding is accessible explicit and isolated per Gmail account', () => {
   for (const id of ['onboardingLayer', 'onboardingStepOne', 'onboardingStepTwo', 'onboardingStepThree',
     'skipOnboarding', 'onboardingBack', 'onboardingNext', 'openOnboardingSettings']) {

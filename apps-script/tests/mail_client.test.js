@@ -7421,6 +7421,224 @@ test('bounded backlog rescue scans read-only and persists only account-scoped th
   assert.equal(finished.threads.length, 0);
 });
 
+test('functional relief metrics are opt-in content-free bounded and isolated per Telegram user and Gmail account', () => {
+  let failNextMetricRetentionWrite = false;
+  const harness = makeContext({
+    propertySet: key => {
+      if (failNextMetricRetentionWrite && key.startsWith('MAILBOX_FUNCTIONAL_METRICS_V1_')) {
+        failNextMetricRetentionWrite = false;
+        throw new Error('synthetic transient retention write failure');
+      }
+    },
+    urlFetch: url => {
+      const match = String(url).match(/\/threads\/([^?]+)/);
+      assert.ok(match, `metric-backed rescue must request one exact thread: ${url}`);
+      const id = decodeURIComponent(match[1]);
+      return jsonResponse({
+        id, historyId: '1', messages: [{
+          id: `message_${id}`, threadId: id, internalDate: '1710000000000', labelIds: ['INBOX', 'IMPORTANT'],
+          snippet: 'Private metric preview that must never persist',
+          payload: { headers: [
+            { name: 'From', value: 'Private Metrics Sender <private-metrics@example.com>' },
+            { name: 'To', value: 'tarasevych.pavlo@gmail.com' },
+            { name: 'Date', value: 'Wed, 15 Jul 2026 13:09:00 +0200' },
+            { name: 'Subject', value: 'Private metric subject that must never persist' },
+          ] },
+        }],
+      });
+    },
+    languageTranslate: value => value,
+  });
+  const token = openOwnerSession(harness);
+  harness.setGmail((requestPath, requestOptions) => {
+    assert.equal(String(requestOptions.method || 'get').toLowerCase(), 'get');
+    if (requestPath.startsWith('/threads?')) return { threads: [{ id: 'thread_metrics_1' }], resultSizeEstimate: 1 };
+    throw new Error(`Unexpected functional-metrics Gmail call: ${requestPath}`);
+  });
+
+  const initial = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(initial.enabled, false);
+  assert.equal(initial.revision, 0);
+  assert.equal(initial.last30Days.decisions, 0);
+  assert.equal(Object.keys(harness.propertyValues)
+    .filter(key => key.startsWith('MAILBOX_FUNCTIONAL_METRICS_V1_')).length, 0,
+  'reading disabled defaults must not create durable tracking state');
+
+  const enabled = resultData(rpc(harness, token, 'functionalMetrics', {
+    action: 'enable', expectedRevision: 0,
+  }));
+  assert.equal(enabled.enabled, true);
+  assert.equal(enabled.revision, 1);
+  assert.equal(resultFailed(rpc(harness, token, 'functionalMetrics', {
+    action: 'disable', expectedRevision: 0,
+  })).code, 'METRICS_CONFLICT', 'stale preference writes must fail closed');
+
+  const started = resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'start', expectedRevision: 0,
+  }));
+  assert.equal(started.rescue.selectedCount, 1);
+  const afterStart = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(afterStart.last7Days.rescueStarted, 1);
+  assert.equal(afterStart.last7Days.selectedOffered, 1);
+  assert.equal(afterStart.last7Days.decisions, 0);
+
+  resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'complete', threadId: 'thread_metrics_1', expectedRevision: 1,
+  }));
+  const afterDecision = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(afterDecision.last7Days.decisions, 1);
+  assert.equal(afterDecision.last7Days.sessionsCompleted, 1);
+  assert.equal(afterDecision.last7Days.recoveryPercent, 100);
+  assert.equal(afterDecision.last7Days.medianFirstDecision.key, 'under_1m');
+  assert.equal(afterDecision.last7Days.medianFirstDecision.sampleCount, 1);
+  assert.equal(harness.context.mailboxMetricsFirstDecisionBucket_(60 * 1000), 0,
+    'the exact one-minute boundary belongs to the disclosed up-to-one-minute bucket');
+
+  const metricKeys = Object.keys(harness.propertyValues)
+    .filter(key => key.startsWith('MAILBOX_FUNCTIONAL_METRICS_V1_'));
+  assert.equal(metricKeys.length, 1);
+  const stored = harness.propertyValues[metricKeys[0]];
+  assert.doesNotMatch(stored,
+    /thread_metrics|message_thread|Private metric|private-metrics|Subject|From|snippet|body|summary/i,
+    'durable metrics must contain no Gmail thread/message id or mail content');
+  const storedRecord = JSON.parse(stored);
+  assert.ok(storedRecord.days.length <= 30);
+  assert.deepEqual(Object.keys(storedRecord.days[0]).sort(), [
+    'day', 'decisions', 'firstDecisionBuckets', 'rescueStarted', 'selectedOffered',
+    'sessionsCompleted', 'sessionsStopped',
+  ]);
+  storedRecord.days.unshift({
+    day: '2000-01-01', rescueStarted: 99, selectedOffered: 99, decisions: 99,
+    sessionsCompleted: 99, sessionsStopped: 99, firstDecisionBuckets: [99, 0, 0, 0, 0],
+  });
+  harness.propertyValues[metricKeys[0]] = JSON.stringify(storedRecord);
+  const purge = harness.context.mailboxProcessExpiredFunctionalMetrics_();
+  assert.equal(purge.compacted, 1);
+  assert.equal(purge.failed, 0);
+  assert.equal(harness.context.mailboxProcessExpiredFunctionalMetrics_().skipped, 'already_today',
+    'the minute worker must scan the bounded property store at most once per UTC day');
+  const compacted = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(compacted.last30Days.decisions, 1);
+  assert.doesNotMatch(harness.propertyValues[metricKeys[0]], /2000-01-01/,
+    'a read must physically compact behavioral aggregates older than 30 calendar days');
+
+  delete harness.propertyValues.MAILBOX_FUNCTIONAL_METRICS_PURGE_DAY_V1;
+  const corruptKey = 'MAILBOX_FUNCTIONAL_METRICS_V1_' + 'f'.repeat(32);
+  harness.propertyValues[corruptKey] = '{not-json';
+  const corruptPurge = harness.context.mailboxProcessExpiredFunctionalMetrics_();
+  assert.equal(corruptPurge.failed, 0);
+  assert.equal(corruptPurge.compacted, 1);
+  assert.equal(harness.propertyValues[corruptKey], undefined,
+    'a malformed content-free metrics registry must be deleted fail-closed');
+
+  delete harness.propertyValues.MAILBOX_FUNCTIONAL_METRICS_PURGE_DAY_V1;
+  storedRecord.days.unshift({
+    day: '2000-01-01', rescueStarted: 1, selectedOffered: 1, decisions: 1,
+    sessionsCompleted: 1, sessionsStopped: 0, firstDecisionBuckets: [1, 0, 0, 0, 0],
+  });
+  harness.propertyValues[metricKeys[0]] = JSON.stringify(storedRecord);
+  failNextMetricRetentionWrite = true;
+  const failedPurge = harness.context.mailboxProcessExpiredFunctionalMetrics_();
+  assert.equal(failedPurge.failed, 1);
+  assert.equal(harness.propertyValues.MAILBOX_FUNCTIONAL_METRICS_PURGE_DAY_V1, undefined,
+    'a transient compaction write failure must not suppress the next minute-worker retry');
+  const retriedPurge = harness.context.mailboxProcessExpiredFunctionalMetrics_();
+  assert.equal(retriedPurge.failed, 0);
+  assert.equal(retriedPurge.compacted, 1);
+  assert.doesNotMatch(harness.propertyValues[metricKeys[0]], /2000-01-01/);
+
+  const tenantRegistry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 ||
+    JSON.stringify(harness.context.mailboxMultiInitialRegistry_(OWNER_ID)));
+  tenantRegistry.connections.push({
+    id: 'gmail-owner-metrics-second', zoneId: 'zone-owner', provider: 'google_oauth',
+    email: 'metrics.second@example.com', displayName: 'Metrics second', avatarUrl: '', status: 'active',
+    connectedByUserId: OWNER_ID, connectedAt: Date.now(), tokenGeneration: 1,
+  });
+  tenantRegistry.revision += 1;
+  harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 = JSON.stringify(tenantRegistry);
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: 'gmail-owner-metrics-second' }));
+  const sibling = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(sibling.enabled, false);
+  assert.equal(sibling.last30Days.decisions, 0,
+    'a sibling Gmail connection must not inherit the first account metrics');
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: 'gmail-owner' }));
+  const restored = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(restored.last30Days.decisions, 1);
+
+  const cleared = resultData(rpc(harness, token, 'functionalMetrics', {
+    action: 'clear', expectedRevision: restored.revision,
+  }));
+  assert.equal(cleared.enabled, true, 'clearing history must not silently change the opt-in preference');
+  assert.equal(cleared.last30Days.decisions, 0);
+  const disabled = resultData(rpc(harness, token, 'functionalMetrics', {
+    action: 'disable', expectedRevision: cleared.revision,
+  }));
+  assert.equal(disabled.enabled, false);
+});
+
+test('functional recovery percentage keeps a rescue session in its start-day cohort across midnight', () => {
+  let now = Date.now();
+  const civilMidnight = now + 60 * 1000;
+  const harness = makeContext({
+    formatDate: (date, timezone) => timezone === 'Pacific/Kiritimati'
+      ? '2026-07-18' : (date.getTime() < civilMidnight ? '2026-07-17' : '2026-07-18'),
+    urlFetch: url => {
+      const id = decodeURIComponent(String(url).match(/\/threads\/([^?]+)/)[1]);
+      return jsonResponse({
+        id, historyId: '1', messages: [{
+          id: `message_${id}`, threadId: id, internalDate: '1710000000000', labelIds: ['INBOX'],
+          snippet: 'Cohort preview', payload: { headers: [
+            { name: 'From', value: 'Cohort Sender <cohort@example.com>' },
+            { name: 'To', value: 'tarasevych.pavlo@gmail.com' },
+            { name: 'Date', value: 'Wed, 15 Jul 2026 13:09:00 +0200' },
+            { name: 'Subject', value: 'Cohort subject' },
+          ] },
+        }],
+      });
+    },
+  });
+  const NativeDate = Date;
+  class FakeDate extends NativeDate {
+    constructor(...args) { super(...(args.length ? args : [now])); }
+    static now() { return now; }
+  }
+  harness.context.Date = FakeDate;
+  const token = openOwnerSession(harness);
+  harness.setGmail(requestPath => {
+    if (requestPath.startsWith('/threads?')) return { threads: [{ id: 'thread_cohort_1' }], resultSizeEstimate: 1 };
+    throw new Error(`Unexpected cohort Gmail call: ${requestPath}`);
+  });
+
+  resultData(rpc(harness, token, 'functionalMetrics', { action: 'enable', expectedRevision: 0 }));
+  resultData(rpc(harness, token, 'backlogRescue', { action: 'start', expectedRevision: 0 }));
+  resultData(rpc(harness, token, 'attentionPreferences', {
+    timezone: 'Pacific/Kiritimati', expectedRevision: 1,
+  }));
+  now = civilMidnight + 60 * 1000;
+  resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'complete', threadId: 'thread_cohort_1', expectedRevision: 2,
+  }));
+
+  const metrics = resultData(rpc(harness, token, 'functionalMetrics', { action: 'state' }));
+  assert.equal(metrics.last7Days.selectedOffered, 1);
+  assert.equal(metrics.last7Days.decisions, 1);
+  assert.equal(metrics.last7Days.recoveryPercent, 100);
+  const key = Object.keys(harness.propertyValues)
+    .find(item => item.startsWith('MAILBOX_FUNCTIONAL_METRICS_V1_'));
+  const days = JSON.parse(harness.propertyValues[key]).days;
+  assert.equal(days.length, 1);
+  assert.equal(days[0].day, '2026-07-17',
+    'both events must retain the fixed session start-day even after midnight and timezone change');
+
+  const rescueSource = clientSource.slice(
+    clientSource.indexOf('function mailboxBacklogRescue_(payload, session) {'),
+    clientSource.indexOf('function mailboxSourceProvider_(value) {')
+  );
+  assert.ok(rescueSource.indexOf('mailboxMetricsRecordLockedBestEffort_') <
+    rescueSource.indexOf('lock.releaseLock()'),
+  'metrics must be decided under the same lock as the rescue action so opt-in and clear cannot race');
+});
+
 test('Telegram priority callbacks update only the exact user account and Gmail thread', () => {
   const harness = makeContext();
   const sessionToken = openOwnerSession(harness);
@@ -8450,6 +8668,8 @@ test('minute worker includes bounded send-later processing without adding anothe
   const timerEnd = codeSource.indexOf('\nfunction runMultiAccountMailChecks_', timerStart);
   const timer = codeSource.slice(timerStart, timerEnd);
   assert.match(timer, /mailboxProcessDueScheduledSends_\(3\)/);
+  assert.match(timer, /mailboxProcessExpiredFunctionalMetrics_\(\)/,
+    'the existing minute trigger must perform the internally once-daily metrics retention purge');
   assert.equal((codeSource.match(/\.everyMinutes\(CONFIG\.POLL_MINUTES\)/g) || []).length, 1);
 });
 

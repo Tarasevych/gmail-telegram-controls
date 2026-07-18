@@ -549,6 +549,13 @@ function checkNewMail_() {
     console.error('Compassionate reminder processing failed: ' + error);
   }
   try {
+    if (typeof mailboxProcessExpiredFunctionalMetrics_ === 'function') {
+      mailboxProcessExpiredFunctionalMetrics_();
+    }
+  } catch (error) {
+    console.error('Private functional-metrics retention cleanup failed: ' + error);
+  }
+  try {
     if (typeof mailboxProcessGoogleRevocations_ === 'function') mailboxProcessGoogleRevocations_(1);
   } catch (error) {
     console.error('Gmail OAuth revocation cleanup failed: ' + error);

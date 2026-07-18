@@ -22,7 +22,9 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 
 ## Known non-crash limitations
 
-- Product v40 backlog rescue is a locally verified candidate only. Its targeted, ordinary, and rendered Chrome suites pass, but it has not been deployed or exercised against real mail. Production remains immutable Apps Script v32/product v38; this is an intentional release boundary, not a production outage.
+- Product v41 private functional-relief metrics is a local undeployed candidate. Targeted and ordinary functional tests pass, and the populated desktop card rendered correctly before the interaction fix. The in-app Browser then blocked localhost reload under its URL policy; post-fix desktop/mobile clear-confirmation QA remains a release gate. This is a QA limitation, not a production outage, and was not bypassed through another browser.
+
+- Product v40 backlog rescue is a locally verified candidate only. Its targeted, ordinary, and rendered Chrome suites pass, but it has not been deployed or exercised against real mail. Production remains immutable Apps Script v33/product v38 after the separate session-capacity hotfix; this is an intentional release boundary, not a production outage.
 
 - The v28 P0 Focus View now has fresh localhost desktop and 390×844 rendered QA. Provider OAuth and real-message mutation paths were intentionally not exercised.
 - The repository is public. Runtime secrets, sessions, message content, and private QA captures must never be committed.

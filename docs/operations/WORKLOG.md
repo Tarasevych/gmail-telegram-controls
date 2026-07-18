@@ -1,5 +1,15 @@
 # Work log
 
+## 2026-07-18 — product v41 private functional-relief metrics
+
+- Continued from exact preserved product-v40 commit `a41242cc608d1c94edb336eeb4f4c8b00ac1ec67` on isolated branch `codex/neuroinclusive-v41-functional-metrics`; production remains Apps Script v33/product v38 after the separate session-capacity hotfix.
+- Added an explicit per-Gmail-account opt-in card, `Мій ритм · приватно`, with bounded rescue starts, decisions, start-day recovery percentage, and a coarse median first-decision range. Copy explicitly rejects productivity scoring, streaks, and red debt language.
+- Durable metrics contain only a civil date, counters, and five time buckets. They are isolated by Telegram user and Gmail connection, never use browser storage or third-party analytics, and physically compact beyond 30 calendar days on read/write plus a bounded once-daily pass in the existing minute worker.
+- Independent review found and drove fixes for delayed opt-in/clear races, lazy-only retention, corrupt-registry retention, transient purge retry, DST day arithmetic, cross-midnight and timezone-change cohort distortion, and silent lock contention. Recording now occurs under the same ScriptLock as the rescue transition and attributes the whole session to its persisted start-day cohort; the final read-only rereview reports no findings.
+- In-app Browser rendered the populated desktop card within account-panel bounds and reported no application console errors. Interaction QA found a real synchronous rerender bug that closed the account panel after the first clear click; the document click handler now honors the event's original composed path and a regression contract covers it.
+- Verification: targeted MailApp/MailClient 217/217 PASS; ordinary mutable-product matrix 365/365 PASS. Browser policy blocked the required localhost reload after the UI fix, so post-fix desktop/mobile rendered interaction proof remains pending and no release was attempted.
+- No Gmail message, draft, label, preference, Telegram card, OAuth grant, provider object, Apps Script deployment, browser account, or phone state was changed.
+
 ## 2026-07-18 — product v40 bounded backlog rescue
 
 - Continued from exact preserved product-v39 commit `5e7c1f70b01814d0cd14a45abcbe6dfa8d2f3efb` on isolated branch `codex/neuroinclusive-v40-backlog-rescue`; production remains immutable Apps Script v32/product v38.

@@ -109,6 +109,9 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   MAX_ATTENTION_THREADS: 120,
   MAX_RESCUE_SCAN_THREADS: 60,
   MAX_RESCUE_THREADS: 10,
+  METRICS_PROPERTY_PREFIX: 'MAILBOX_FUNCTIONAL_METRICS_V1_',
+  METRICS_PURGE_DAY_PROPERTY: 'MAILBOX_FUNCTIONAL_METRICS_PURGE_DAY_V1',
+  MAX_METRICS_DAYS: 30,
   MAX_NEXT_ACTION_CHARS: 320,
   DRAFT_OPERATION_INDEX_PROPERTY: 'MAILBOX_DRAFT_OPERATION_INDEX_V1',
   DRAFT_OPERATION_PREFIX: 'MAILBOX_DRAFT_OPERATION_V1_',
@@ -1678,6 +1681,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'attentionUpdate') return mailboxAttentionUpdate_(payload, session);
   if (op === 'attentionPreferences') return mailboxAttentionPreferences_(payload, session);
   if (op === 'backlogRescue') return mailboxBacklogRescue_(payload, session);
+  if (op === 'functionalMetrics') return mailboxFunctionalMetrics_(payload, session);
   if (op === 'label') return mailboxModifyUserLabels_(payload);
   if (op === 'action') return mailboxApplyAction_(payload);
   if (op === 'saveDraft') return mailboxSaveDraft_(payload);
@@ -1702,7 +1706,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1790,7 +1794,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1853,7 +1857,7 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
   if (['saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
@@ -4415,6 +4419,8 @@ function mailboxAttentionNormalizeRescue_(value) {
         MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_SCAN_THREADS, 'кількості переглянутих листів')
       : 0,
     startedAt: active ? mailboxSafeTimestamp_(item.startedAt) : 0,
+    cohortDay: active && /^\d{4}-\d{2}-\d{2}$/.test(String(item.cohortDay || ''))
+      ? String(item.cohortDay) : '',
     updatedAt: active ? mailboxSafeTimestamp_(item.updatedAt) : 0,
   };
 }
@@ -4646,6 +4652,315 @@ function mailboxAttentionPreferences_(payload, session) {
   }
 }
 
+const MAILBOX_FUNCTIONAL_METRIC_BUCKETS_ = Object.freeze([
+  Object.freeze({ key: 'under_1m', maxMs: 60 * 1000, label: 'до 1 хв' }),
+  Object.freeze({ key: 'under_5m', maxMs: 5 * 60 * 1000, label: 'до 5 хв' }),
+  Object.freeze({ key: 'under_15m', maxMs: 15 * 60 * 1000, label: 'до 15 хв' }),
+  Object.freeze({ key: 'under_60m', maxMs: 60 * 60 * 1000, label: 'до 1 год' }),
+  Object.freeze({ key: 'over_60m', maxMs: Number.MAX_SAFE_INTEGER, label: 'понад 1 год' }),
+]);
+
+function mailboxMetricsPropertyKey_(scope) {
+  return MAILBOX_CLIENT_CONFIG_.METRICS_PROPERTY_PREFIX +
+    mailboxDigestText_(scope.userId + ':' + scope.connectionId).slice(0, 32);
+}
+
+function mailboxMetricsEmptyDay_(dayValue) {
+  const day = String(dayValue || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    throw mailboxError_('METRICS_CORRUPT', 'Некоректний день приватної статистики.');
+  }
+  return {
+    day,
+    rescueStarted: 0,
+    selectedOffered: 0,
+    decisions: 0,
+    sessionsCompleted: 0,
+    sessionsStopped: 0,
+    firstDecisionBuckets: [0, 0, 0, 0, 0],
+  };
+}
+
+function mailboxMetricsNormalizeDay_(value) {
+  const input = value || {};
+  const day = mailboxMetricsEmptyDay_(input.day);
+  ['rescueStarted', 'selectedOffered', 'decisions', 'sessionsCompleted', 'sessionsStopped']
+    .forEach(key => { day[key] = mailboxBoundedInteger_(input[key], 0, 0, 1000000, key); });
+  const buckets = Array.isArray(input.firstDecisionBuckets) ? input.firstDecisionBuckets : [];
+  day.firstDecisionBuckets = MAILBOX_FUNCTIONAL_METRIC_BUCKETS_.map((_bucket, index) =>
+    mailboxBoundedInteger_(buckets[index], 0, 0, 1000000, 'часового кошика')
+  );
+  return day;
+}
+
+function mailboxMetricsInitialRegistry_(scope) {
+  return {
+    v: 1,
+    userId: scope.userId,
+    connectionId: scope.connectionId,
+    revision: 0,
+    enabled: false,
+    days: [],
+  };
+}
+
+function mailboxMetricsValidateRegistry_(value, scope, timezoneValue) {
+  const input = value || {};
+  if (!mailboxIsPlainObject_(input) || Number(input.v) !== 1 ||
+      String(input.userId || '') !== scope.userId || String(input.connectionId || '') !== scope.connectionId) {
+    throw mailboxError_('METRICS_CORRUPT', 'Приватна статистика пошкоджена й не буде використана.');
+  }
+  const byDay = new Map();
+  const retainedDays = new Set(mailboxMetricsRecentDayKeys_(timezoneValue || 'UTC',
+    MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS));
+  (Array.isArray(input.days) ? input.days : [])
+    .slice(0, MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS)
+    .map(mailboxMetricsNormalizeDay_)
+    .filter(day => retainedDays.has(day.day))
+    .forEach(day => byDay.set(day.day, day));
+  return {
+    v: 1,
+    userId: scope.userId,
+    connectionId: scope.connectionId,
+    revision: mailboxSafeCount_(input.revision),
+    enabled: input.enabled === true,
+    days: Array.from(byDay.values()).sort((left, right) => left.day.localeCompare(right.day))
+      .slice(-MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS),
+  };
+}
+
+function mailboxMetricsTimezone_(properties, scope) {
+  try { return mailboxAttentionReadRegistry_(properties, scope).preferences.timezone; } catch (error) { return 'UTC'; }
+}
+
+function mailboxMetricsReadRegistry_(properties, scope, timezoneValue) {
+  const props = properties || PropertiesService.getScriptProperties();
+  const raw = String(props.getProperty(mailboxMetricsPropertyKey_(scope)) || '');
+  if (!raw) return mailboxMetricsInitialRegistry_(scope);
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch (error) { parsed = null; }
+  return mailboxMetricsValidateRegistry_(parsed, scope,
+    timezoneValue || mailboxMetricsTimezone_(props, scope));
+}
+
+function mailboxMetricsWriteRegistry_(properties, scope, registry, timezoneValue) {
+  const props = properties || PropertiesService.getScriptProperties();
+  const safe = mailboxMetricsValidateRegistry_(registry, scope,
+    timezoneValue || mailboxMetricsTimezone_(props, scope));
+  const key = mailboxMetricsPropertyKey_(scope);
+  const serialized = JSON.stringify(safe);
+  assertTelegramPropertyValueFits_(key, serialized);
+  assertTelegramPropertyStoreFits_(props, { [key]: serialized });
+  props.setProperty(key, serialized);
+  return safe;
+}
+
+function mailboxMetricsDayKey_(timezoneValue, timeValue) {
+  const timezone = mailboxScheduledSendTimezone_(timezoneValue || 'UTC');
+  const instant = new Date(Number(timeValue == null ? Date.now() : timeValue));
+  let formatted = '';
+  try { formatted = Utilities.formatDate(instant, timezone, 'yyyy-MM-dd'); } catch (error) { formatted = ''; }
+  return /^\d{4}-\d{2}-\d{2}$/.test(formatted) ? formatted : instant.toISOString().slice(0, 10);
+}
+
+function mailboxMetricsRecentDayKeys_(timezone, count) {
+  const requested = Math.max(0, Math.min(MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS,
+    Math.floor(Number(count || 0))));
+  const today = mailboxMetricsDayKey_(timezone, Date.now());
+  const civilAnchor = Date.parse(today + 'T12:00:00.000Z');
+  const result = [];
+  for (let offset = requested - 1; offset >= 0; offset -= 1) {
+    result.push(new Date(civilAnchor - offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  }
+  return result;
+}
+
+function mailboxMetricsSummary_(registry, timezone, dayCount) {
+  const dayKeys = new Set(mailboxMetricsRecentDayKeys_(timezone, dayCount));
+  const selected = registry.days.filter(day => dayKeys.has(day.day));
+  const summary = {
+    days: dayCount,
+    rescueStarted: 0,
+    selectedOffered: 0,
+    decisions: 0,
+    sessionsCompleted: 0,
+    sessionsStopped: 0,
+    recoveryPercent: 0,
+    medianFirstDecision: { key: 'none', label: 'ще немає даних', sampleCount: 0 },
+  };
+  const buckets = [0, 0, 0, 0, 0];
+  selected.forEach(day => {
+    ['rescueStarted', 'selectedOffered', 'decisions', 'sessionsCompleted', 'sessionsStopped']
+      .forEach(key => { summary[key] += day[key]; });
+    day.firstDecisionBuckets.forEach((value, index) => { buckets[index] += value; });
+  });
+  summary.recoveryPercent = summary.selectedOffered
+    ? Math.min(100, Math.round(summary.decisions * 100 / summary.selectedOffered)) : 0;
+  const samples = buckets.reduce((total, value) => total + value, 0);
+  if (samples) {
+    const midpoint = Math.ceil(samples / 2);
+    let seen = 0;
+    const index = buckets.findIndex(value => { seen += value; return seen >= midpoint; });
+    const bucket = MAILBOX_FUNCTIONAL_METRIC_BUCKETS_[Math.max(0, index)];
+    summary.medianFirstDecision = { key: bucket.key, label: bucket.label, sampleCount: samples };
+  }
+  return summary;
+}
+
+function mailboxMetricsDto_(registry, scope) {
+  const timezone = mailboxMetricsTimezone_(null, scope);
+  return {
+    enabled: registry.enabled,
+    revision: registry.revision,
+    retentionDays: MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS,
+    disclosure: 'Лише денні лічильники й часові діапазони; без адрес, тем, текстів та ID листів.',
+    last7Days: mailboxMetricsSummary_(registry, timezone, 7),
+    last30Days: mailboxMetricsSummary_(registry, timezone, 30),
+  };
+}
+
+function mailboxFunctionalMetrics_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['action', 'expectedRevision']);
+  const action = mailboxEnum_(payload.action, ['state', 'enable', 'disable', 'clear'], 'state');
+  const scope = mailboxAttentionScope_(session);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw mailboxError_('BUSY', 'Приватна статистика зараз оновлюється.');
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const timezone = mailboxMetricsTimezone_(props, scope);
+    const key = mailboxMetricsPropertyKey_(scope);
+    const raw = String(props.getProperty(key) || '');
+    const registry = mailboxMetricsReadRegistry_(props, scope, timezone);
+    if (action === 'state') {
+      const compact = JSON.stringify(registry);
+      if (raw && raw !== compact) {
+        try { mailboxMetricsWriteRegistry_(props, scope, registry, timezone); } catch (error) {
+          console.error('Expired private metrics could not be compacted: ' +
+            mailboxSafeText_(error && error.message, 180));
+        }
+      }
+      return mailboxMetricsDto_(registry, scope);
+    }
+    const expectedRevision = mailboxSafeCount_(payload.expectedRevision);
+    if (expectedRevision !== registry.revision) {
+      throw mailboxError_('METRICS_CONFLICT', 'Налаштування статистики вже змінилися. Оновіть їх і повторіть дію.');
+    }
+    const nextEnabled = action === 'enable' ? true : action === 'disable' ? false : registry.enabled;
+    const nextDays = action === 'clear' ? [] : registry.days;
+    if (nextEnabled === registry.enabled && nextDays.length === registry.days.length) {
+      return mailboxMetricsDto_(registry, scope);
+    }
+    registry.enabled = nextEnabled;
+    registry.days = nextDays;
+    registry.revision += 1;
+    return mailboxMetricsDto_(mailboxMetricsWriteRegistry_(props, scope, registry, timezone), scope);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxMetricsFirstDecisionBucket_(durationMs) {
+  const bounded = Math.max(0, Math.min(7 * 24 * 60 * 60 * 1000, Number(durationMs || 0)));
+  return MAILBOX_FUNCTIONAL_METRIC_BUCKETS_.findIndex(bucket => bounded <= bucket.maxMs);
+}
+
+function mailboxMetricsRecordLockedBestEffort_(properties, scope, eventName, dataValue) {
+  const event = String(eventName || '');
+  if (['rescue_started', 'rescue_decision', 'rescue_stopped'].indexOf(event) === -1) return;
+  const data = dataValue || {};
+  try {
+    const props = properties || PropertiesService.getScriptProperties();
+    const timezone = mailboxMetricsTimezone_(props, scope);
+    const registry = mailboxMetricsReadRegistry_(props, scope, timezone);
+    if (!registry.enabled) return;
+    const cohortStartedAt = Math.max(0, Number(data.cohortStartedAt || Date.now()));
+    const fixedCohortDay = /^\d{4}-\d{2}-\d{2}$/.test(String(data.cohortDay || ''))
+      ? String(data.cohortDay) : '';
+    const key = fixedCohortDay || mailboxMetricsDayKey_(timezone, cohortStartedAt);
+    const retainedDays = new Set(mailboxMetricsRecentDayKeys_(timezone,
+      MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS));
+    if (!retainedDays.has(key)) return;
+    let day = registry.days.find(item => item.day === key);
+    if (!day) {
+      day = mailboxMetricsEmptyDay_(key);
+      registry.days.push(day);
+    }
+    if (event === 'rescue_started') {
+      day.rescueStarted += 1;
+      day.selectedOffered += mailboxBoundedInteger_(data.selectedCount, 0, 0,
+        MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_THREADS, 'кількості запропонованих листів');
+    } else if (event === 'rescue_decision') {
+      day.decisions += 1;
+      if (data.firstDecision === true) {
+        const bucketIndex = mailboxMetricsFirstDecisionBucket_(data.firstDecisionMs);
+        day.firstDecisionBuckets[Math.max(0, bucketIndex)] += 1;
+      }
+      if (data.sessionCompleted === true) day.sessionsCompleted += 1;
+    } else if (event === 'rescue_stopped') {
+      day.sessionsStopped += 1;
+    }
+    registry.days = registry.days.sort((left, right) => left.day.localeCompare(right.day))
+      .slice(-MAILBOX_CLIENT_CONFIG_.MAX_METRICS_DAYS);
+    registry.revision += 1;
+    mailboxMetricsWriteRegistry_(props, scope, registry, timezone);
+  } catch (error) {
+    console.error('Private functional metric was not recorded: ' + mailboxSafeText_(error && error.message, 180));
+  }
+}
+
+function mailboxProcessExpiredFunctionalMetrics_() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { skipped: 'busy', checked: 0, compacted: 0, failed: 0 };
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const purgeDay = mailboxMetricsDayKey_('UTC', Date.now());
+    if (String(props.getProperty(MAILBOX_CLIENT_CONFIG_.METRICS_PURGE_DAY_PROPERTY) || '') === purgeDay) {
+      return { skipped: 'already_today', checked: 0, compacted: 0, failed: 0 };
+    }
+    const all = props.getProperties();
+    const keys = Object.keys(all).filter(key => key.indexOf(MAILBOX_CLIENT_CONFIG_.METRICS_PROPERTY_PREFIX) === 0);
+    let checked = 0;
+    let compacted = 0;
+    let failed = 0;
+    keys.forEach(key => {
+      let parsed = null;
+      try {
+        parsed = JSON.parse(String(all[key] || ''));
+        const scope = { userId: String(parsed && parsed.userId || ''), connectionId: String(parsed && parsed.connectionId || '') };
+        if (mailboxMetricsPropertyKey_(scope) !== key) throw new Error('metrics scope mismatch');
+        const timezone = mailboxMetricsTimezone_(props, scope);
+        const safe = mailboxMetricsValidateRegistry_(parsed, scope, timezone);
+        checked += 1;
+        if (JSON.stringify(safe) !== String(all[key] || '')) {
+          try {
+            mailboxMetricsWriteRegistry_(props, scope, safe, timezone);
+            compacted += 1;
+          } catch (error) {
+            failed += 1;
+            console.error('Private metrics retention write will be retried: ' +
+              mailboxSafeText_(error && error.message, 180));
+          }
+        }
+      } catch (error) {
+        checked += 1;
+        try {
+          props.deleteProperty(key);
+          compacted += 1;
+          console.error('Corrupt private metrics registry was deleted by retention cleanup.');
+        } catch (deleteError) {
+          failed += 1;
+          console.error('Corrupt private metrics registry deletion will be retried: ' +
+            mailboxSafeText_(deleteError && deleteError.message, 180));
+        }
+      }
+    });
+    if (!failed) props.setProperty(MAILBOX_CLIENT_CONFIG_.METRICS_PURGE_DAY_PROPERTY, purgeDay);
+    return { skipped: '', checked, compacted, failed };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function mailboxBacklogRescueEmptyResult_(registry) {
   return {
     rescue: mailboxAttentionRescueDto_(registry),
@@ -4782,6 +5097,8 @@ function mailboxBacklogRescue_(payload, session) {
   if (!lock.tryLock(5000)) throw mailboxError_('BUSY', 'Коротка сесія зараз оновлюється.');
   let saved;
   let unchanged = false;
+  let metricsEvent = '';
+  let metricsData = {};
   try {
     const props = PropertiesService.getScriptProperties();
     const registry = mailboxAttentionReadRegistry_(props, scope);
@@ -4800,10 +5117,13 @@ function mailboxBacklogRescue_(payload, session) {
         const selected = scanned.items.slice(0, limit);
         if (!selected.length) return mailboxBacklogRescueEmptyResult_(registry);
         const now = Date.now();
+        const cohortDay = mailboxMetricsDayKey_(mailboxMetricsTimezone_(props, scope), now);
         registry.rescue = mailboxAttentionNormalizeRescue_({
           active: true, preset, threadIds: selected.map(item => item.dto.id), completedIds: [],
-          scannedCount: scanned.scannedCount, startedAt: now, updatedAt: now,
+          scannedCount: scanned.scannedCount, startedAt: now, cohortDay, updatedAt: now,
         });
+        metricsEvent = 'rescue_started';
+        metricsData = { selectedCount: selected.length, cohortStartedAt: now, cohortDay };
       }
     } else if (action === 'complete') {
       if (!registry.rescue.active) return mailboxBacklogRescueEmptyResult_(registry);
@@ -4814,19 +5134,34 @@ function mailboxBacklogRescue_(payload, session) {
         saved = registry;
         unchanged = true;
       } else {
+        const cohortStartedAt = registry.rescue.startedAt;
+        const cohortDay = registry.rescue.cohortDay;
+        const firstDecision = registry.rescue.completedIds.length === 0;
+        const firstDecisionMs = firstDecision ? Math.max(0, Date.now() - cohortStartedAt) : 0;
+        const sessionCompleted = registry.rescue.completedIds.length + 1 >= registry.rescue.threadIds.length;
         registry.rescue.completedIds.push(threadId);
         registry.rescue.updatedAt = Date.now();
         if (registry.rescue.completedIds.length >= registry.rescue.threadIds.length) {
           registry.rescue = mailboxAttentionNormalizeRescue_({});
         }
+        metricsEvent = 'rescue_decision';
+        metricsData = {
+          firstDecision, firstDecisionMs, sessionCompleted,
+          cohortStartedAt, cohortDay,
+        };
       }
     } else if (action === 'finish') {
       if (!registry.rescue.active) return mailboxBacklogRescueEmptyResult_(registry);
+      const cohortStartedAt = registry.rescue.startedAt;
+      const cohortDay = registry.rescue.cohortDay;
       registry.rescue = mailboxAttentionNormalizeRescue_({});
+      metricsEvent = 'rescue_stopped';
+      metricsData = { cohortStartedAt, cohortDay };
     }
     if (!unchanged) {
       registry.revision += 1;
       saved = mailboxAttentionWriteRegistry_(props, scope, registry);
+      if (metricsEvent) mailboxMetricsRecordLockedBestEffort_(props, scope, metricsEvent, metricsData);
     }
   } finally {
     lock.releaseLock();
