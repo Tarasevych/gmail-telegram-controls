@@ -59,6 +59,9 @@ pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps
 # One guarded immutable version plus one unique staging /exec URL; stable stays v29.
 pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -StageOnly
 
+# Only with exact one-time recovery evidence for the recorded 400 and a fresh read-only reconciliation.
+pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -AcknowledgeDefiniteStagingRejection
+
 # Only after real Telegram WebView acceptance of the returned staging URL.
 pwsh -NoProfile -File .\apps-script\tools\release_apps_script_v30_product_v36.ps1 -Promote
 

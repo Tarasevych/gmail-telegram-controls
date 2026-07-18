@@ -32,6 +32,14 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - v35 closes the previously documented soft-to-digest product gap locally. Durable retirement and retry recovery are covered by functional tests, but real Telegram WebView/delivery acceptance and a guarded release remain pending; production v29 is unchanged.
 - Product v36 now has a fail-closed immutable-v30 staging helper and a clean live read-only preflight. This is not a production outage: stable production remains v29 until a fresh unique staging URL passes real Telegram WebView acceptance. If either Google create request has an ambiguous outcome, the durable release journal deliberately blocks replay and requires read-only reconciliation instead of another POST.
 
+## 2026-07-18 — v30 staging deployment create HTTP 400
+
+- Phase: first and only guarded product-v36 `-StageOnly` run after commit `b70f1057e85383a513a3d78df99cee48b5bfacea` was pushed and live preflight passed.
+- Result: immutable v30 was created and its five exact hashes were verified. Staging deployment creation returned definite HTTP 400; stable production stayed v29 and no retry was issued.
+- Read-only preserved state: stable v29; HEAD product v36; immutable v30 product v36; no matching staging deployment; journal `staging_create_reserved`.
+- Root cause: `deployments.create` requires a top-level deployment configuration, while the helper used the nested update request shape. This is a helper defect, not an Apps Script runtime or Gmail production crash.
+- Recovery: the body is corrected and tested. A one-time evidence file binds the captured HTTP 400 to the exact script, v30 hash, helper commit, reservation timestamp, and malformed request shape; acknowledgement fails without that evidence. After a fresh preserved-state check, make at most one corrected staging-create attempt. Never create another immutable version.
+
 ## 2026-07-18 — resolved v36 onboarding isolation defect
 
 - Phase: standalone system-Chrome rendered QA of the integrated v30–v35 candidate at desktop and 390×844 mobile sizes.

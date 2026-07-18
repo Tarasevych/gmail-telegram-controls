@@ -5,15 +5,16 @@ param(
   [switch]$PreflightOnly,
   [switch]$StageOnly,
   [switch]$Promote,
-  [switch]$CleanupStaging
+  [switch]$CleanupStaging,
+  [switch]$AcknowledgeDefiniteStagingRejection
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$selectedModes = @($PreflightOnly, $StageOnly, $Promote, $CleanupStaging | Where-Object { $_ }).Count
+$selectedModes = @($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $AcknowledgeDefiniteStagingRejection | Where-Object { $_ }).Count
 if ($selectedModes -ne 1) {
-  throw 'Choose exactly one mode: PreflightOnly, StageOnly, Promote, or CleanupStaging.'
+  throw 'Choose exactly one mode: PreflightOnly, StageOnly, Promote, CleanupStaging, or AcknowledgeDefiniteStagingRejection.'
 }
 
 $ScriptId = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS'
@@ -24,6 +25,8 @@ $ReleaseDescription = 'Telegram Gmail product v36: integrated neuroinclusive P1'
 $StagingDescription = 'Telegram Gmail product v36 immutable WebView staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-v30-product-v36-release.json'
+$LegacyRejectionEvidencePath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-v30-staging-create-http400.json'
+$LegacyRejectionEvidenceId = 'v30-staging-create-http400-20260718T061533Z'
 
 $ExpectedOldHashes = @{
   Code         = 'ceb4db221b9c17aa2eeac4b0b3f88fa7c9e5a4389822f7e61f149fe798a1cad4'
@@ -89,6 +92,17 @@ function Test-HttpNotFound($ErrorRecord) {
   $response = $ErrorRecord.Exception.Response
   if ($null -eq $response) { return $false }
   try { return [int]$response.StatusCode -eq 404 } catch { return $false }
+}
+
+function Get-HttpStatusCode($ErrorRecord) {
+  $response = $ErrorRecord.Exception.Response
+  if ($null -eq $response) { return 0 }
+  try { return [int]$response.StatusCode } catch { return 0 }
+}
+
+function Test-DefiniteClientRejection($ErrorRecord) {
+  $status = Get-HttpStatusCode $ErrorRecord
+  return $status -ge 400 -and $status -lt 500 -and $status -notin @(408, 409, 425, 429)
 }
 
 function Get-ImmutableOrNull([string]$BaseUri, [int]$VersionNumber, [int]$Attempts = 1) {
@@ -163,7 +177,12 @@ function Read-ReleaseJournal {
   return $journal
 }
 
-function Write-ReleaseJournal([string]$State, [string]$StagingDeploymentId = '') {
+function Write-ReleaseJournal(
+  [string]$State,
+  [string]$StagingDeploymentId = '',
+  [int]$DefiniteHttpStatus = 0,
+  [string]$EvidenceId = ''
+) {
   $directory = Split-Path -Parent $JournalPath
   [IO.Directory]::CreateDirectory($directory) | Out-Null
   $payload = [ordered]@{
@@ -173,11 +192,34 @@ function Write-ReleaseJournal([string]$State, [string]$StagingDeploymentId = '')
     candidateMailAppHash = $ExpectedCandidateHashes.MailApp
     state = $State
     stagingDeploymentId = $StagingDeploymentId
+    definiteHttpStatus = $DefiniteHttpStatus
+    evidenceId = $EvidenceId
     updatedAt = [DateTimeOffset]::UtcNow.ToString('o')
   } | ConvertTo-Json -Depth 4
   $temporary = "$JournalPath.tmp"
   [IO.File]::WriteAllText($temporary, $payload, [Text.UTF8Encoding]::new($false))
   Move-Item -LiteralPath $temporary -Destination $JournalPath -Force
+}
+
+function Read-LegacyDefiniteStagingRejectionEvidence($Journal) {
+  if (-not (Test-Path -LiteralPath $LegacyRejectionEvidencePath)) {
+    throw 'The one-time definite staging rejection evidence is absent.'
+  }
+  try {
+    $evidence = Get-Content -Raw -LiteralPath $LegacyRejectionEvidencePath | ConvertFrom-Json
+  } catch {
+    throw 'The one-time definite staging rejection evidence is corrupt.'
+  }
+  if ([int]$evidence.schema -ne 1 -or [string]$evidence.evidenceId -ne $LegacyRejectionEvidenceId -or
+      [string]$evidence.scriptId -ne $ScriptId -or [int]$evidence.version -ne $ExpectedNewVersion -or
+      [string]$evidence.candidateMailAppHash -ne $ExpectedCandidateHashes.MailApp -or
+      [string]$evidence.helperCommit -ne 'b70f1057e85383a513a3d78df99cee48b5bfacea' -or
+      [string]$evidence.journalReservationUpdatedAt -ne [string]$Journal.updatedAt -or
+      [int]$evidence.httpStatus -ne 400 -or [string]$evidence.classification -ne 'definite_client_rejection' -or
+      [string]$evidence.requestShape -ne 'nested_deploymentConfig') {
+    throw 'The one-time definite staging rejection evidence does not match this exact failed attempt.'
+  }
+  return $evidence
 }
 
 function Get-JournalState($Journal) {
@@ -297,6 +339,36 @@ try {
     return
   }
 
+  if ($AcknowledgeDefiniteStagingRejection) {
+    if ($stableVersion -ne $ExpectedOldVersion) {
+      throw "Rejection acknowledgement requires stable v$ExpectedOldVersion."
+    }
+    if ($null -eq $immutable) { throw 'Rejection acknowledgement requires verified immutable v30.' }
+    Assert-FileSetAndHashes $immutable $ExpectedCandidateHashes "Immutable version $ExpectedNewVersion"
+    if ($staging.Count) { throw 'Rejection acknowledgement requires no matching staging deployment.' }
+    if ((Get-JournalState $journal) -ne 'staging_create_reserved') {
+      throw 'Rejection acknowledgement requires a staging_create_reserved journal.'
+    }
+    $legacyEvidence = Read-LegacyDefiniteStagingRejectionEvidence $journal
+    if (-not (Test-DefiniteClientRejection ([pscustomobject]@{
+      Exception = [pscustomobject]@{ Response = [pscustomobject]@{ StatusCode = [int]$legacyEvidence.httpStatus } }
+    }))) {
+      throw 'The recorded legacy HTTP status is not an allowlisted definite client rejection.'
+    }
+    Write-ReleaseJournal 'staging_create_rejected' '' ([int]$legacyEvidence.httpStatus) ([string]$legacyEvidence.evidenceId)
+    [pscustomobject]@{
+      ok = $true
+      mode = 'acknowledge_definite_staging_rejection'
+      stableVersion = $ExpectedOldVersion
+      immutableVersion = $ExpectedNewVersion
+      stagingDeploymentAbsent = $true
+      journalState = 'staging_create_rejected'
+      definiteHttpStatus = [int]$legacyEvidence.httpStatus
+      evidenceId = [string]$legacyEvidence.evidenceId
+    } | ConvertTo-Json -Depth 4
+    return
+  }
+
   if ($StageOnly) {
     if ($stableVersion -ne $ExpectedOldVersion) {
       throw "StageOnly requires stable v$ExpectedOldVersion; it is already v$stableVersion."
@@ -347,8 +419,17 @@ try {
       $staging = @(Get-ExactStagingDeployments $base)
       if ($staging.Count -gt 1) { throw 'Multiple exact staging deployments exist; refusing another create.' }
       if (-not $staging.Count) {
-        if ((Get-JournalState $journal) -eq 'staging_create_reserved') {
+        $stagingJournalState = Get-JournalState $journal
+        if ($stagingJournalState -eq 'staging_create_reserved') {
           throw 'A prior staging deployment create has an unresolved outcome; refusing another deployments.create.'
+        }
+        if ($stagingJournalState -eq 'staging_create_rejected') {
+          $recordedStatus = [int]$journal.definiteHttpStatus
+          if ($recordedStatus -lt 400 -or $recordedStatus -ge 500 -or $recordedStatus -in @(408, 409, 425, 429)) {
+            throw 'The staging rejection journal lacks an allowlisted definite HTTP status.'
+          }
+        } elseif ($stagingJournalState -ne 'version_verified') {
+          throw "Staging create is not permitted from journal state '$stagingJournalState'."
         }
         Write-ReleaseJournal 'staging_create_reserved'
         $journal = Read-ReleaseJournal
@@ -356,12 +437,9 @@ try {
         $createdStaging = $null
         try {
           $createdStaging = Invoke-GoogleJson POST "$base/deployments" @{
-            deploymentConfig = @{
-              scriptId = $ScriptId
-              versionNumber = $ExpectedNewVersion
-              manifestFileName = 'appsscript'
-              description = $StagingDescription
-            }
+            versionNumber = $ExpectedNewVersion
+            manifestFileName = 'appsscript'
+            description = $StagingDescription
           }
           if (-not [string]$createdStaging.deploymentId) {
             throw 'Apps Script returned a staging deployment without an ID.'
@@ -372,6 +450,10 @@ try {
           }
         } catch {
           $createDeploymentError = $_
+          if (Test-DefiniteClientRejection $_) {
+            Write-ReleaseJournal 'staging_create_rejected' '' (Get-HttpStatusCode $_) 'provider-response'
+            $journal = Read-ReleaseJournal
+          }
         }
         if ($null -ne $createdStaging -and [string]$createdStaging.deploymentId) {
           $staging = @($createdStaging)

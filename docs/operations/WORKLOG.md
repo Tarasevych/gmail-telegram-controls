@@ -186,3 +186,11 @@
 - Independent read-only review identified ambiguous-create replay, unreachable duplicate cleanup, and an over-escaped secret signature; all were fixed before release use.
 - Verification: release contracts 2/2 PASS; complete ordinary plus staging plus release matrix 364/364 PASS; PowerShell parse and `git diff --check` PASS; bounded changed-file secret/trailing-whitespace scan 0 hits.
 - Live read-only preflight at `2026-07-18T08:13:05+02:00` confirmed stable v29, HEAD exact v29, no immutable v30, no matching staging deployment, empty release journal, and exact candidate hashes. No Google, Gmail, Telegram, OAuth, browser-account, or phone mutation occurred.
+
+## 2026-07-18 — v30 created; staging create rejected before acceptance
+
+- The single guarded `-StageOnly` invocation created and hash-verified immutable v30, then Google returned a definite HTTP 400 for staging deployment creation. Stable production remained v29; no second POST was issued.
+- Read-only reconciliation confirmed stable v29, HEAD exact product v36, immutable v30 exact product v36, no matching staging deployment, and journal state `staging_create_reserved`.
+- Root cause is the request shape: Google documents a top-level `versionNumber`, `manifestFileName`, and `description` body for `deployments.create`; the helper sent the nested `deploymentConfig` shape that is valid for deployment update, not create.
+- The corrected helper uses the documented create body and records allowlisted definite 4xx responses plus their HTTP status as `staging_create_rejected`. The one-time legacy acknowledgement additionally requires an external recovery artifact bound to the exact script, v30 candidate hash, helper commit, original reservation timestamp, HTTP 400, failed request shape, and evidence ID.
+- Follow-up read-only review confirmed that an ambiguous staging outcome remains non-retryable, the legacy evidence cannot acknowledge a later reservation, and no remaining path can create immutable v30 twice. No concrete defect remained in this release slice.

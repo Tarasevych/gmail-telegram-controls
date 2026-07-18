@@ -43,6 +43,7 @@ test('v30 product-v36 release pins exact source and separate stable/staging iden
   assert.match(release, /Telegram Gmail product v36 immutable WebView staging/);
   assert.match(release, /Local\\TarasevychGmailNotifierAppsScriptV30ProductV36Release/);
   assert.match(release, /019f5d65-8209-7a00-b915-4a522dbcb612-v30-product-v36-release\.json/);
+  assert.match(release, /019f5d65-8209-7a00-b915-4a522dbcb612-v30-staging-create-http400\.json/);
 });
 
 test('v30 product-v36 release creates one immutable and one staging deployment before promotion', () => {
@@ -54,11 +55,18 @@ test('v30 product-v36 release creates one immutable and one staging deployment b
   assert.match(release, /if \(\$StageOnly\)[\s\S]*stableDeploymentUnchanged = \$true/);
   assert.match(release, /if \(\$Promote\)[\s\S]*Cannot promote without exactly one verified staging deployment/);
   assert.match(release, /if \(\$CleanupStaging\)[\s\S]*requires the stable deployment to be verified on v30/);
+  assert.match(release, /if \(\$AcknowledgeDefiniteStagingRejection\)[\s\S]*requires a staging_create_reserved journal/);
+  assert.match(release, /Read-LegacyDefiniteStagingRejectionEvidence \$journal/);
+  assert.match(release, /journalReservationUpdatedAt -ne \[string\]\$Journal\.updatedAt/);
   assert.ok(release.indexOf("Write-ReleaseJournal 'version_create_reserved'") < release.indexOf('Invoke-GoogleJson POST "$base/versions"'));
   assert.ok(release.indexOf("Write-ReleaseJournal 'staging_create_reserved'") < release.indexOf('Invoke-GoogleJson POST "$base/deployments"'));
   assert.match(release, /prior immutable v30 create has an unresolved outcome; refusing another versions\.create/);
   assert.match(release, /prior staging deployment create has an unresolved outcome; refusing another deployments\.create/);
   assert.match(release, /\$createdStaging = Invoke-GoogleJson POST "\$base\/deployments"/);
+  assert.match(release, /\$createdStaging = Invoke-GoogleJson POST "\$base\/deployments" @\{\s*versionNumber = \$ExpectedNewVersion\s*manifestFileName = 'appsscript'\s*description = \$StagingDescription\s*\}/);
+  assert.match(release, /Test-DefiniteClientRejection \$_[\s\S]*Write-ReleaseJournal 'staging_create_rejected'/);
+  assert.match(release, /if \(\$stagingJournalState -eq 'staging_create_rejected'\)[\s\S]*lacks an allowlisted definite HTTP status/);
+  assert.match(release, /elseif \(\$stagingJournalState -ne 'version_verified'\)/);
   assert.match(release, /if \(\$staging\.Count -gt 1 -and -not \$CleanupStaging\)/);
   assert.match(release, /foreach \(\$stagingDeployment in \$staging\)/);
   const command = `$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile('${releasePath.replace(/'/g, "''")}',[ref]$t,[ref]$e)|Out-Null;if($e.Count){$e|% Message;exit 1}`;
