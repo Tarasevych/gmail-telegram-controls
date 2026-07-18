@@ -18,6 +18,7 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Read-only verification immediately afterward: stable version 27, release state `fresh`, deployment ID unchanged, no immutable v28 discovered, exact local v28 hashes still match the release pins.
 - Preserved state: production v27 is healthy and unchanged; candidate source and release helper are pushed on `codex/neuroinclusive-v28`.
 - Decision: do not repeat the mutation in the same run. Continue only isolated local product work. A later recovery run must start with `-PreflightOnly` and may make at most one guarded attempt after re-verifying live state.
+- Resolution: a later recovery run re-audited live state and made its single permitted attempt. It succeeded, and post-deploy verification confirmed immutable production v28. The original HTTP 500 remains recorded as a transient provider failure, not an unresolved production crash.
 
 ## Known non-crash limitations
 

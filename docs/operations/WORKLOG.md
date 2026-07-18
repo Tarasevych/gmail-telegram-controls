@@ -37,3 +37,13 @@
 - No Apps Script POST or PUT was permitted during preflight; production remains v27 until the guarded release step.
 - The first guarded v28 deployment received Google Apps Script HTTP 500 before immutable v28 verification. The helper completed HEAD rollback; immediate read-only preflight confirmed stable v27 and release state `fresh`. No automatic retry was made.
 - While release was postponed, froze the independent P1 contract for low-energy/time presets, three low-pressure reply styles, durable send-later, soft/digest/urgent reminders, compassionate copy, privacy-preserving preferences, and three-screen onboarding. No frozen v28 source hash changed.
+
+## 2026-07-18 — v28 production deployment
+
+- Re-audited clean local/remote Git state, checkpoint, and process list; no duplicate v28 deployment was active.
+- Fresh read-only preflight again confirmed stable v27, release state `fresh`, and exact five-file v28 hashes.
+- The one permitted guarded retry succeeded: immutable Apps Script version 28 was created and the existing stable deployment was updated from v27 to v28.
+- Immediate post-deploy preflight returned `preflight_already_deployed`, `idempotent: true`, and the same immutable hashes.
+- Telegram webhook remained healthy: correct bot identity, `script.google.com` host, zero pending updates, no last error, and only `message`/`callback_query` updates.
+- Post-deploy regression passed 335/335, including the two v28 release-helper contracts.
+- A direct unauthenticated web-app GET returned HTTP 200. It intentionally exposed only the launch bridge, not mailbox or preview content; no account session or message was accessed.
