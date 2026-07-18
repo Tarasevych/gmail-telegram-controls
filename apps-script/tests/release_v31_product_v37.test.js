@@ -67,6 +67,10 @@ test('v31 product-v37 release creates one immutable and one staging deployment b
   assert.match(release, /Get-ImmutableOrNull \$base \$ExpectedPreviousVersion 2[\s\S]*ExpectedPreviousCandidateHashes/);
   assert.match(release, /previous_candidate_v30/);
   assert.match(release, /candidate_product_v37/);
+  assert.match(release, /Prior HEAD after failed staging upload/);
+  assert.match(release, /Candidate HEAD before rollback[\s\S]*if \(-not \$priorHeadIntact\)[\s\S]*Rolled-back prior HEAD/,
+    'a failed upload must read back exact prior or candidate HEAD before any rollback PUT');
+  assert.match(release, /Staging HEAD outcome is unresolved; no rollback PUT was attempted/);
   assert.match(release, /Rolled-back prior HEAD/);
   assert.match(release, /if \(\$stableVersion -notin @\(\$ExpectedOldVersion, \$ExpectedNewVersion\)\)/,
     'stable v30 must never be accepted as a promotion target for this helper');

@@ -75,6 +75,14 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Next safe action: commit and push the v37 compatibility fix, prepare a v31/product-v37 release helper that cannot promote v30, stage v31 once, and repeat the non-mutating phone test. Promotion remains forbidden until the account card and onboarding both pass on the same immutable version.
 - Update: the compatibility fix is preserved at `45262d02df023bd08c5b410dd30fe1b5e378c705`. The v31/product-v37 helper now passes its static contract and GET-only live preflight with stable v29, prior-v30 HEAD, no v31, and no v37 staging. The blocker remains open until the same immutable v31 passes real-phone onboarding.
 
+## 2026-07-18 — v31 staging HEAD upload HTTP 429
+
+- Phase: first and only guarded v31/product-v37 `-StageOnly` attempt after helper commit `bb41e6e883fa8c95392ebfe56b3aa49febeecbe8` was pushed and a fresh GET-only preflight passed.
+- Error: Google Apps Script API returned HTTP 429 `RESOURCE_EXHAUSTED` during the initial HEAD upload path.
+- Reconciliation: stable remains v29; HEAD remains exact immutable-v30 product-v36 source; immutable v31 is absent; product-v37 staging is absent; v31 journal is absent. No release create or stable promotion was accepted.
+- Recovery hardening: the helper no longer sends a blind rollback PUT after an upload error. It reads HEAD, accepts an exact prior state without writing, rolls back only an exact candidate state, and leaves an unreadable/unknown state unresolved for later GET-only reconciliation.
+- Decision: do not repeat the provider write in this phase. Continue only isolated local work and retry at most once after a later clean preflight and quota cooldown. Production is healthy and unchanged.
+
 ## 2026-07-18 — resolved v32 rendered-QA defects
 
 - Phase: local desktop and 390x844 Chrome preview of the send-later controls.

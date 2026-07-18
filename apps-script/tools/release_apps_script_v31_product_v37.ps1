@@ -454,7 +454,22 @@ try {
     } catch {
       $original = $_
       if (-not $immutableReady -and $headWasMutated) {
-        $null = Set-HeadAndAssertHashes $base @{ scriptId = $ScriptId; files = $head.files } $rollbackHashes 'Rolled-back prior HEAD'
+        $observedHead = $null
+        try {
+          $observedHead = Invoke-GoogleJson GET "$base/content"
+        } catch {
+          throw "Staging HEAD outcome is unresolved; no rollback PUT was attempted. Original error: $($original.Exception.Message)"
+        }
+        $priorHeadIntact = $false
+        try {
+          Assert-FileSetAndHashes $observedHead $rollbackHashes 'Prior HEAD after failed staging upload'
+          $priorHeadIntact = $true
+        } catch {
+          Assert-FileSetAndHashes $observedHead $ExpectedCandidateHashes 'Candidate HEAD before rollback'
+        }
+        if (-not $priorHeadIntact) {
+          $null = Set-HeadAndAssertHashes $base @{ scriptId = $ScriptId; files = $head.files } $rollbackHashes 'Rolled-back prior HEAD'
+        }
         throw "Staging failed before immutable v31 verification and HEAD rollback completed: $($original.Exception.Message)"
       }
       throw "Staging paused after immutable v31 was verified; never create another version automatically. Original error: $($original.Exception.Message)"
@@ -524,4 +539,3 @@ finally {
   if ($mutexHeld) { $mutex.ReleaseMutex() }
   $mutex.Dispose()
 }
-
