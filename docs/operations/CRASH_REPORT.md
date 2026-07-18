@@ -22,6 +22,8 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 
 ## Known non-crash limitations
 
+- Product v40 backlog rescue is a locally verified candidate only. Its targeted, ordinary, and rendered Chrome suites pass, but it has not been deployed or exercised against real mail. Production remains immutable Apps Script v32/product v38; this is an intentional release boundary, not a production outage.
+
 - The v28 P0 Focus View now has fresh localhost desktop and 390×844 rendered QA. Provider OAuth and real-message mutation paths were intentionally not exercised.
 - The repository is public. Runtime secrets, sessions, message content, and private QA captures must never be committed.
 - The energy/reminder preference slice is now immutable production v29. Scheduled reminder delivery, low-pressure reply templates, send-later, and onboarding remain later P1 phases; this is incomplete scope, not a production crash.

@@ -4638,6 +4638,12 @@
         focusBusy: false,
         attentionBusy: false,
         attentionPreferencesBusy: false,
+        backlogRescueBusy: false,
+        backlogRescue: {
+          active: false, preset: "five_minutes", threads: [], selectedCount: 0,
+          completedCount: 0, remainingCount: 0, scannedCount: 0,
+          startedAt: 0, updatedAt: 0, revision: 0
+        },
         attentionSaveTimer: 0,
         attentionInputTimer: 0,
         pendingAttentionUpdate: null,
@@ -4712,6 +4718,7 @@
         previewLabelIds: {},
         previewAttention: {
           revision: 0, entries: {}, resume: {},
+          rescue: { active: false, preset: "five_minutes", threadIds: [], completedIds: [], scannedCount: 0, startedAt: 0, updatedAt: 0 },
           preferences: {
             sessionPreset: "five_minutes", reminderMode: "soft", digestWindows: [540, 1080],
             timezone: "UTC", onboardingCompletedAt: 0, updatedAt: 0
@@ -5489,6 +5496,18 @@
               timezone: attentionPreferences.timezone === undefined ? undefined : safeText(attentionPreferences.timezone),
               completeOnboarding: attentionPreferences.completeOnboarding === true ? true : undefined,
               expectedRevision: Math.max(0, Math.floor(Number(attentionPreferences.expectedRevision || 0)))
+            }
+          };
+        }
+        if (op === "backlogRescue") {
+          var backlogRescue = input.payload || input;
+          return {
+            op: "backlogRescue",
+            connectionId: safeId(input.connectionId || backlogRescue.connectionId),
+            payload: {
+              action: safeText(backlogRescue.action, "load"),
+              threadId: safeId(backlogRescue.threadId),
+              expectedRevision: Math.max(0, Math.floor(Number(backlogRescue.expectedRevision || 0)))
             }
           };
         }
@@ -6816,6 +6835,7 @@
           state.focusRuleDeleteConfirmId = "";
           state.resumeRail = null;
           state.attentionPreferences = normalizeAttentionPreferences(null);
+          state.backlogRescue = normalizeBacklogRescue(null);
           initializeFromBootstrap(bootstrap || selected || {});
           try {
             var accountAttention = normalizeAttentionState(await rpc({
@@ -6823,9 +6843,11 @@
             }), "");
             state.resumeRail = accountAttention.resume;
             state.attentionPreferences = accountAttention.preferences;
+            state.backlogRescue = accountAttention.rescue;
           } catch (attentionError) {}
           setAccountPanelOpen(false, null, false);
           await loadThreads(true);
+          if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
           showSnackbar("Активний Gmail: " + safeText(state.account && state.account.email), { success: true });
           if (!state.attentionPreferences.onboardingCompletedAt) {
             setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
@@ -7122,7 +7144,32 @@
         thread.revision = revision || thread.revision;
         var preferences = normalizeAttentionPreferences(input.preferences);
         preferences.revision = revision || preferences.revision;
-        return { revision: revision, thread: thread, resume: normalizeResumeRail(input.resume), preferences: preferences };
+        return {
+          revision: revision, thread: thread, resume: normalizeResumeRail(input.resume),
+          preferences: preferences, rescue: normalizeBacklogRescue(input.rescue)
+        };
+      }
+
+      function normalizeBacklogRescue(value, threadsValue) {
+        var input = value || {};
+        var selectedCount = Math.max(0, Math.min(10, Math.floor(Number(input.selectedCount || 0))));
+        var completedCount = Math.max(0, Math.min(selectedCount, Math.floor(Number(input.completedCount || 0))));
+        var threads = (Array.isArray(threadsValue) ? threadsValue : [])
+          .slice(0, 10).map(normalizeThread).filter(function (thread) { return thread.id; });
+        return {
+          active: input.active === true && selectedCount > completedCount,
+          preset: ["low", "five_minutes", "three_threads", "untimed"].indexOf(safeText(input.preset)) !== -1
+            ? safeText(input.preset) : "five_minutes",
+          threads: threads,
+          selectedCount: selectedCount,
+          completedCount: completedCount,
+          remainingCount: Math.max(0, Math.min(10, Math.floor(Number(input.remainingCount == null
+            ? selectedCount - completedCount : input.remainingCount)))),
+          scannedCount: Math.max(0, Math.min(60, Math.floor(Number(input.scannedCount || 0)))),
+          startedAt: Math.max(0, Number(input.startedAt || 0)),
+          updatedAt: Math.max(0, Number(input.updatedAt || 0)),
+          revision: Math.max(0, Math.floor(Number(input.revision || 0)))
+        };
       }
 
       function normalizeThread(item) {
@@ -7322,7 +7369,12 @@
         };
         els.focusSessionBar.append(make("div", {
           className: "focus-session-copy",
-          text: copyByPreset[preferences.sessionPreset]
+          text: state.unifiedMode
+            ? "Оберіть одну Gmail-скриньку — короткі сесії ніколи не змішують акаунти."
+            : state.backlogRescue.active
+            ? state.backlogRescue.completedCount + " із " + state.backlogRescue.selectedCount +
+              " рішень готово. Можна зупинитися будь-коли."
+            : copyByPreset[preferences.sessionPreset]
         }));
         var controls = make("div", { className: "focus-session-controls" });
         var presetField = make("label", { className: "focus-session-field" });
@@ -7359,6 +7411,28 @@
         });
         reminderField.append(reminderSelect);
         controls.append(reminderField);
+        if (state.backlogRescue.active) {
+          controls.append(make("span", {
+            className: "focus-session-field",
+            text: "Переглянуто " + formatCount(state.backlogRescue.scannedCount) + " листів · залишилося " +
+              formatCount(state.backlogRescue.remainingCount)
+          }));
+          var finishRescue = make("button", {
+            className: "outline-button", type: "button", text: "Завершити сесію",
+            attrs: { "aria-label": "Завершити коротку сесію без змін інших листів" }
+          });
+          finishRescue.disabled = state.backlogRescueBusy;
+          finishRescue.addEventListener("click", function () { loadBacklogRescue("finish"); });
+          controls.append(finishRescue);
+        } else {
+          var startRescue = make("button", {
+            className: "primary-button", type: "button", text: "Підібрати короткий блок",
+            attrs: { "aria-label": "Підібрати короткий блок листів без автоматичних змін" }
+          });
+          startRescue.disabled = state.unifiedMode || state.backlogRescueBusy || state.attentionPreferencesBusy;
+          startRescue.addEventListener("click", function () { loadBacklogRescue("start"); });
+          controls.append(startRescue);
+        }
         els.focusSessionBar.append(controls);
       }
 
@@ -7369,7 +7443,7 @@
         var triageRank = { action: 4, waiting: 3, info: 2, later: 1, none: 0 };
         var focusLimit = normalizeAttentionPreferences(state.attentionPreferences).maxThreads;
         var visibleThreads = focusMode
-          ? state.threads.filter(function (thread) {
+          ? (state.backlogRescue.active ? state.backlogRescue.threads : state.threads.filter(function (thread) {
               return (thread.attention && ["action", "waiting"].indexOf(thread.attention.triage) !== -1) ||
                 (thread.focus && thread.focus.rank > 0);
             }).sort(function (left, right) {
@@ -7377,7 +7451,7 @@
                 (triageRank[left.attention && left.attention.triage || "none"] || 0) ||
                 Number(right.focus && right.focus.rank || 0) - Number(left.focus && left.focus.rank || 0) ||
                 right.timestamp - left.timestamp;
-            }).slice(0, focusLimit)
+            }).slice(0, focusLimit))
           : state.threads;
         els.listPane.setAttribute("aria-label", visibleListTitle);
         els.threadList.setAttribute("aria-label", "Список розмов: " + visibleListTitle);
@@ -7387,7 +7461,9 @@
         clear(els.threadList);
         if (!visibleThreads.length) {
           renderListState("empty", focusMode
-            ? "Тут з’являться важливі листи та розмови зі станом «Дія» або «Чекаю»."
+            ? (state.backlogRescue.active
+              ? "У цьому короткому блоці більше немає доступних листів. Можна завершити сесію."
+              : "Тут з’являться важливі листи та розмови зі станом «Дія» або «Чекаю». Натисніть «Підібрати короткий блок», щоб безпечно розібрати частину Вхідних.")
             : (state.query ? "За цим запитом нічого не знайдено." : "У цій папці немає листів."));
           return;
         }
@@ -7836,6 +7912,9 @@
             state.thread.attention = attentionState.thread;
             state.resumeRail = attentionState.resume;
             state.attentionPreferences = attentionState.preferences;
+            state.backlogRescue = Object.assign({}, state.backlogRescue, attentionState.rescue, {
+              threads: state.backlogRescue.threads
+            });
           }
           renderThread();
           if (state.thread.unread) {
@@ -7913,12 +7992,18 @@
           state.thread.attention = result.thread;
           state.resumeRail = result.resume;
           state.attentionPreferences = result.preferences;
+          state.backlogRescue = Object.assign({}, state.backlogRescue, result.rescue, {
+            threads: state.backlogRescue.threads
+          });
           state.threads = state.threads.map(function (thread) {
             if (thread.id !== state.thread.id || thread.accountId !== state.selectedConnectionId) return thread;
             return Object.assign({}, thread, { attention: result.thread });
           });
           if (!opts.silent) renderThread();
           else renderThreadList();
+          if (!opts.silent && result.thread.triage !== "none") {
+            await completeBacklogRescueThread(state.thread.id, state.selectedConnectionId);
+          }
           return true;
         } catch (error) {
           if (safeText(error && error.code) === "ATTENTION_CONFLICT") {
@@ -7929,6 +8014,9 @@
               state.thread.attention = fresh.thread;
               state.resumeRail = fresh.resume;
               state.attentionPreferences = fresh.preferences;
+              state.backlogRescue = Object.assign({}, state.backlogRescue, fresh.rescue, {
+                threads: state.backlogRescue.threads
+              });
             } catch (refreshError) {}
           }
           if (!opts.silent) showSnackbar(safeText(error.message, "Не вдалося зберегти стан фокусу."), { error: true });
@@ -7965,6 +8053,9 @@
           }), "");
           state.attentionPreferences = result.preferences;
           state.resumeRail = result.resume;
+          state.backlogRescue = Object.assign({}, state.backlogRescue, result.rescue, {
+            threads: state.backlogRescue.threads
+          });
           showSnackbar("Режим фокусу збережено.");
           return true;
         } catch (error) {
@@ -7974,6 +8065,58 @@
         } finally {
           state.attentionPreferencesBusy = false;
           renderThreadList();
+        }
+      }
+
+      async function loadBacklogRescue(action, options) {
+        var opts = options || {};
+        var connectionId = safeId(state.account && state.account.id);
+        if (!connectionId || state.unifiedMode || state.backlogRescueBusy) return false;
+        state.backlogRescueBusy = true;
+        renderThreadList();
+        try {
+          var data = await rpc({
+            op: "backlogRescue", connectionId: connectionId,
+            action: safeText(action, "load"),
+            expectedRevision: normalizeAttentionPreferences(state.attentionPreferences).revision
+          });
+          state.backlogRescue = normalizeBacklogRescue(data && data.rescue, data && data.threads);
+          state.attentionPreferences.revision = state.backlogRescue.revision;
+          if (action === "start" && !state.backlogRescue.active && !opts.silent) {
+            showSnackbar("У Вхідних немає листів для короткого блоку.");
+          } else if (action === "finish" && !opts.silent) {
+            showSnackbar("Коротку сесію завершено. Інші листи не змінено.", { success: true });
+          } else if (action === "start" && !opts.silent) {
+            showSnackbar("Короткий блок готовий. Жоден лист автоматично не змінено.", { success: true });
+          }
+          renderThreadList();
+          return true;
+        } catch (error) {
+          if (!opts.silent) showSnackbar(safeText(error && error.message,
+            "Не вдалося підготувати короткий блок."), { error: true });
+          return false;
+        } finally {
+          state.backlogRescueBusy = false;
+          renderThreadList();
+        }
+      }
+
+      async function completeBacklogRescueThread(threadId, connectionId) {
+        var id = safeId(threadId);
+        if (!state.backlogRescue.active || !id || safeId(connectionId) !== safeId(state.account && state.account.id)) {
+          return false;
+        }
+        try {
+          var data = await rpc({
+            op: "backlogRescue", connectionId: connectionId, action: "complete", threadId: id,
+            expectedRevision: normalizeAttentionPreferences(state.attentionPreferences).revision
+          });
+          state.backlogRescue = normalizeBacklogRescue(data && data.rescue, data && data.threads);
+          state.attentionPreferences.revision = state.backlogRescue.revision;
+          renderThreadList();
+          return true;
+        } catch (error) {
+          return false;
         }
       }
 
@@ -9454,6 +9597,7 @@
             });
           }
           if (action === "unsubscribe" && data && data.openUrl) openSafeUrl(data.openUrl, true);
+          if (!actionOptions.silentSuccess) await completeBacklogRescueThread(threadId, connectionId);
           if (!actionOptions.silentSuccess) haptic("success");
           return data || true;
         } catch (error) {
@@ -14546,6 +14690,7 @@
               }), "");
               state.resumeRail = savedAttention.resume;
               state.attentionPreferences = savedAttention.preferences;
+              state.backlogRescue = savedAttention.rescue;
             } catch (attentionError) {
               state.resumeRail = null;
             }
@@ -14570,6 +14715,7 @@
             return;
           }
           await loadThreads(true);
+          if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
           state.routeReady = true;
           if (!state.attentionPreferences.onboardingCompletedAt) {
             setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
@@ -14875,6 +15021,28 @@
         };
       }
 
+      function previewBacklogRescueResult() {
+        var rescue = state.previewAttention.rescue || {};
+        var selected = Array.isArray(rescue.threadIds) ? rescue.threadIds.slice(0, 10) : [];
+        var completed = Array.isArray(rescue.completedIds) ? rescue.completedIds.slice(0, 10) : [];
+        var completedSet = new Set(completed);
+        var remaining = selected.filter(function (id) { return !completedSet.has(id); });
+        return {
+          rescue: {
+            active: rescue.active === true && remaining.length > 0,
+            preset: safeText(rescue.preset, "five_minutes"),
+            selectedCount: selected.length, completedCount: completed.length,
+            remainingCount: remaining.length, scannedCount: Math.max(0, Number(rescue.scannedCount || 0)),
+            startedAt: Math.max(0, Number(rescue.startedAt || 0)),
+            updatedAt: Math.max(0, Number(rescue.updatedAt || 0)),
+            revision: state.previewAttention.revision
+          },
+          threads: remaining.map(function (id) {
+            return PREVIEW_THREADS.find(function (thread) { return safeId(thread.id) === safeId(id); });
+          }).filter(Boolean)
+        };
+      }
+
       function previewRpc(request) {
         return new Promise(function (resolve, reject) {
           window.setTimeout(function () {
@@ -14978,6 +15146,7 @@
                 threadId: payload.threadId, triage: "none", nextAction: "", readingProgress: 0,
                 draftId: "", updatedAt: 0
               };
+              var previewRescueState = previewBacklogRescueResult();
               resolve({
                 revision: state.previewAttention.revision,
                 thread: payload.threadId ? Object.assign({}, previewAttention, { revision: state.previewAttention.revision }) : null,
@@ -14997,6 +15166,7 @@
                     { key: "urgent_only", label: "Лише термінове" }
                   ]
                 }),
+                rescue: previewRescueState.rescue,
                 triageOptions: [
                   { key: "action", label: "Дія", rank: 4 }, { key: "waiting", label: "Чекаю", rank: 3 },
                   { key: "info", label: "Інфо", rank: 2 }, { key: "later", label: "Пізніше", rank: 1 }
@@ -15037,7 +15207,8 @@
                 preferences: Object.assign({}, state.previewAttention.preferences, {
                   revision: state.previewAttention.revision,
                   maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[nextPreviewPreset]
-                })
+                }),
+                rescue: previewBacklogRescueResult().rescue
               });
               return;
             }
@@ -15066,8 +15237,42 @@
                 preferences: Object.assign({}, state.previewAttention.preferences, {
                   revision: state.previewAttention.revision,
                   maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[state.previewAttention.preferences.sessionPreset] || 3
-                })
+                }),
+                rescue: previewBacklogRescueResult().rescue
               });
+              return;
+            }
+            if (op === "backlogRescue") {
+              var previewRescueAction = safeText(payload.action, "load");
+              var previewRescue = state.previewAttention.rescue;
+              if (previewRescueAction === "start" && !previewRescue.active) {
+                var previewLimit = { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[
+                  state.previewAttention.preferences.sessionPreset
+                ] || 3;
+                var previewIds = PREVIEW_THREADS.filter(function (thread) { return !thread.draft; })
+                  .slice(0, previewLimit).map(function (thread) { return safeId(thread.id); });
+                var previewNow = Date.now();
+                state.previewAttention.rescue = {
+                  active: previewIds.length > 0, preset: state.previewAttention.preferences.sessionPreset,
+                  threadIds: previewIds, completedIds: [], scannedCount: Math.min(60, PREVIEW_THREADS.length),
+                  startedAt: previewNow, updatedAt: previewNow
+                };
+                if (previewIds.length) state.previewAttention.revision += 1;
+              } else if (previewRescueAction === "complete" && previewRescue.active &&
+                  previewRescue.threadIds.indexOf(payload.threadId) !== -1 &&
+                  previewRescue.completedIds.indexOf(payload.threadId) === -1) {
+                previewRescue.completedIds.push(payload.threadId);
+                previewRescue.updatedAt = Date.now();
+                if (previewRescue.completedIds.length >= previewRescue.threadIds.length) previewRescue.active = false;
+                state.previewAttention.revision += 1;
+              } else if (previewRescueAction === "finish" && previewRescue.active) {
+                state.previewAttention.rescue = {
+                  active: false, preset: state.previewAttention.preferences.sessionPreset,
+                  threadIds: [], completedIds: [], scannedCount: 0, startedAt: 0, updatedAt: 0
+                };
+                state.previewAttention.revision += 1;
+              }
+              resolve(previewBacklogRescueResult());
               return;
             }
             if (op === "list" || op === "unifiedList") {

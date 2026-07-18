@@ -107,6 +107,8 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   MAX_FOCUS_MATCH_CHARS: 240,
   ATTENTION_PROPERTY_PREFIX: 'MAILBOX_ATTENTION_V1_',
   MAX_ATTENTION_THREADS: 120,
+  MAX_RESCUE_SCAN_THREADS: 60,
+  MAX_RESCUE_THREADS: 10,
   MAX_NEXT_ACTION_CHARS: 320,
   DRAFT_OPERATION_INDEX_PROPERTY: 'MAILBOX_DRAFT_OPERATION_INDEX_V1',
   DRAFT_OPERATION_PREFIX: 'MAILBOX_DRAFT_OPERATION_V1_',
@@ -1675,6 +1677,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'attentionState') return mailboxAttentionState_(payload, session);
   if (op === 'attentionUpdate') return mailboxAttentionUpdate_(payload, session);
   if (op === 'attentionPreferences') return mailboxAttentionPreferences_(payload, session);
+  if (op === 'backlogRescue') return mailboxBacklogRescue_(payload, session);
   if (op === 'label') return mailboxModifyUserLabels_(payload);
   if (op === 'action') return mailboxApplyAction_(payload);
   if (op === 'saveDraft') return mailboxSaveDraft_(payload);
@@ -1699,7 +1702,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1787,7 +1790,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1850,7 +1853,7 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
   if (['saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
@@ -4390,6 +4393,47 @@ function mailboxAttentionNormalizeResume_(value) {
   };
 }
 
+function mailboxAttentionNormalizeRescue_(value) {
+  const item = value || {};
+  const threadIds = Array.from(new Set((Array.isArray(item.threadIds) ? item.threadIds : [])
+    .slice(0, MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_THREADS)
+    .map(threadId => mailboxRequireGmailId_(threadId, 'threadId'))));
+  const selected = new Set(threadIds);
+  const completedIds = Array.from(new Set((Array.isArray(item.completedIds) ? item.completedIds : [])
+    .slice(0, MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_THREADS)
+    .map(threadId => mailboxRequireGmailId_(threadId, 'threadId'))))
+    .filter(threadId => selected.has(threadId));
+  const active = item.active === true && threadIds.length > 0 && completedIds.length < threadIds.length;
+  return {
+    active,
+    preset: mailboxEnum_(item.preset,
+      Object.keys(MAILBOX_ATTENTION_SESSION_PRESETS_), 'five_minutes'),
+    threadIds: active ? threadIds : [],
+    completedIds: active ? completedIds : [],
+    scannedCount: active
+      ? mailboxBoundedInteger_(item.scannedCount, threadIds.length, threadIds.length,
+        MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_SCAN_THREADS, 'кількості переглянутих листів')
+      : 0,
+    startedAt: active ? mailboxSafeTimestamp_(item.startedAt) : 0,
+    updatedAt: active ? mailboxSafeTimestamp_(item.updatedAt) : 0,
+  };
+}
+
+function mailboxAttentionRescueDto_(registry) {
+  const rescue = mailboxAttentionNormalizeRescue_(registry && registry.rescue);
+  return {
+    active: rescue.active,
+    preset: rescue.preset,
+    selectedCount: rescue.threadIds.length,
+    completedCount: rescue.completedIds.length,
+    remainingCount: Math.max(0, rescue.threadIds.length - rescue.completedIds.length),
+    scannedCount: rescue.scannedCount,
+    startedAt: rescue.startedAt,
+    updatedAt: rescue.updatedAt,
+    revision: mailboxSafeCount_(registry && registry.revision),
+  };
+}
+
 function mailboxAttentionValidateRegistry_(value, scope) {
   const input = value || {};
   if (!mailboxIsPlainObject_(input) || Number(input.v) !== 1 ||
@@ -4407,6 +4451,7 @@ function mailboxAttentionValidateRegistry_(value, scope) {
     entries,
     resume: mailboxAttentionNormalizeResume_(input.resume),
     preferences: mailboxAttentionPreferencesNormalize_(input.preferences),
+    rescue: mailboxAttentionNormalizeRescue_(input.rescue),
   };
 }
 
@@ -4419,6 +4464,7 @@ function mailboxAttentionInitialRegistry_(scope) {
     entries: [],
     resume: mailboxAttentionNormalizeResume_({}),
     preferences: mailboxAttentionPreferencesNormalize_({}),
+    rescue: mailboxAttentionNormalizeRescue_({}),
   };
 }
 
@@ -4476,6 +4522,7 @@ function mailboxAttentionStateDto_(registry, threadId) {
     thread: threadId ? mailboxAttentionThreadDto_(registry, threadId) : null,
     resume: Object.assign({}, registry.resume),
     preferences: mailboxAttentionPreferencesDto_(registry),
+    rescue: mailboxAttentionRescueDto_(registry),
   };
 }
 
@@ -4597,6 +4644,206 @@ function mailboxAttentionPreferences_(payload, session) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function mailboxBacklogRescueEmptyResult_(registry) {
+  return {
+    rescue: mailboxAttentionRescueDto_(registry),
+    threads: [],
+  };
+}
+
+function mailboxBacklogRescueRank_(thread) {
+  const triage = String(thread && thread.attention && thread.attention.triage || 'none');
+  const triageRank = Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_TRIAGE_, triage)
+    ? MAILBOX_ATTENTION_TRIAGE_[triage].rank : 0;
+  const focusRank = mailboxSafeCount_(thread && thread.focus && thread.focus.rank);
+  const labels = new Set((thread && thread.labelIds || []).map(String));
+  return triageRank * 1000 + focusRank * 100 + (labels.has('IMPORTANT') ? 20 : 0) +
+    (labels.has('UNREAD') ? 10 : 0);
+}
+
+function mailboxBacklogRescueOrder_(pendingItems) {
+  return (pendingItems || []).slice().sort((leftItem, rightItem) => {
+    const left = leftItem && leftItem.dto || {};
+    const right = rightItem && rightItem.dto || {};
+    const leftTimestamp = Number(left.timestamp || 0) || Number.MAX_SAFE_INTEGER;
+    const rightTimestamp = Number(right.timestamp || 0) || Number.MAX_SAFE_INTEGER;
+    return mailboxBacklogRescueRank_(right) - mailboxBacklogRescueRank_(left) ||
+      leftTimestamp - rightTimestamp || String(left.id || '').localeCompare(String(right.id || ''));
+  });
+}
+
+function mailboxBacklogRescueScan_() {
+  const collected = [];
+  let pageToken = '';
+  while (collected.length < MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_SCAN_THREADS) {
+    const parameters = [
+      'maxResults=' + MAILBOX_CLIENT_CONFIG_.MAX_PAGE_SIZE,
+      'labelIds=INBOX',
+    ];
+    if (pageToken) parameters.push('pageToken=' + encodeURIComponent(pageToken));
+    const response = gmailApiRequest_('/threads?' + parameters.join('&'), { method: 'get' });
+    const references = (response.threads || []).slice(0, MAILBOX_CLIENT_CONFIG_.MAX_PAGE_SIZE);
+    const metadataQuery = mailboxMetadataQuery_(['From', 'To', 'Cc', 'Date', 'Subject', 'Message-ID']);
+    const resources = mailboxFetchThreadMetadataBatch_(references, metadataQuery);
+    references.forEach((reference, index) => {
+      if (resources[index] && collected.length < MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_SCAN_THREADS) {
+        collected.push(mailboxThreadSummaryFromResource_(reference, resources[index]));
+      }
+    });
+    pageToken = mailboxSafeOpaqueToken_(response.nextPageToken, 1024);
+    if (!pageToken || !references.length) break;
+  }
+  const focusRegistry = mailboxFocusRegistryForCurrentSession_();
+  const attentionRegistry = mailboxAttentionRegistryForCurrentSession_();
+  const accountContext = mailboxCurrentSessionContext_ && mailboxCurrentSessionContext_.connectionId
+    ? mailboxMultiVisibleAccounts_(mailboxCurrentSessionContext_)
+      .find(item => item.id === mailboxCurrentSessionContext_.connectionId)
+    : null;
+  collected.forEach(item => {
+    if (focusRegistry) item.dto.focus = mailboxFocusEvaluate_(focusRegistry, item.dto);
+    if (attentionRegistry) item.dto.attention = mailboxAttentionThreadDto_(attentionRegistry, item.dto.id);
+    if (accountContext) {
+      item.dto.account = {
+        id: accountContext.id, email: accountContext.email, name: accountContext.name,
+        avatarUrl: accountContext.avatarUrl,
+      };
+    }
+  });
+  return { items: mailboxBacklogRescueOrder_(collected), scannedCount: collected.length };
+}
+
+function mailboxBacklogRescueFinalizePending_(pendingItems) {
+  const items = pendingItems || [];
+  const summariesUk = mailboxTranslateSummariesUk_(items.map(item => item.summarySource));
+  return items.map((item, index) => mailboxFinalizeThreadSummary_(item.dto, summariesUk[index]));
+}
+
+function mailboxHydrateThreadSummariesByIds_(threadIds) {
+  const references = (threadIds || []).slice(0, MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_THREADS)
+    .map(id => ({ id: mailboxRequireGmailId_(id, 'threadId') }));
+  if (!references.length) return [];
+  const metadataQuery = mailboxMetadataQuery_(['From', 'To', 'Cc', 'Date', 'Subject', 'Message-ID']);
+  const resources = mailboxFetchThreadMetadataBatch_(references, metadataQuery);
+  const pending = references.reduce((items, reference, index) => {
+    if (!resources[index]) return items;
+    items.push(mailboxThreadSummaryFromResource_(reference, resources[index]));
+    return items;
+  }, []);
+  const summariesUk = mailboxTranslateSummariesUk_(pending.map(item => item.summarySource));
+  const focusRegistry = mailboxFocusRegistryForCurrentSession_();
+  const attentionRegistry = mailboxAttentionRegistryForCurrentSession_();
+  const accountContext = mailboxCurrentSessionContext_ && mailboxCurrentSessionContext_.connectionId
+    ? mailboxMultiVisibleAccounts_(mailboxCurrentSessionContext_)
+      .find(item => item.id === mailboxCurrentSessionContext_.connectionId)
+    : null;
+  return pending.map((item, index) => {
+    const dto = mailboxFinalizeThreadSummary_(item.dto, summariesUk[index]);
+    if (dto.labelIds.indexOf('INBOX') === -1) return null;
+    if (focusRegistry) dto.focus = mailboxFocusEvaluate_(focusRegistry, dto);
+    if (attentionRegistry) dto.attention = mailboxAttentionThreadDto_(attentionRegistry, dto.id);
+    if (accountContext) {
+      dto.account = {
+        id: accountContext.id, email: accountContext.email, name: accountContext.name,
+        avatarUrl: accountContext.avatarUrl,
+      };
+    }
+    return dto;
+  }).filter(Boolean);
+}
+
+function mailboxBacklogRescueLoad_(registry) {
+  const rescue = mailboxAttentionNormalizeRescue_(registry.rescue);
+  if (!rescue.active) return mailboxBacklogRescueEmptyResult_(registry);
+  const completed = new Set(rescue.completedIds);
+  const remainingIds = rescue.threadIds.filter(threadId => !completed.has(threadId));
+  const hydrated = mailboxHydrateThreadSummariesByIds_(remainingIds);
+  const byId = new Map(hydrated.map(thread => [thread.id, thread]));
+  return {
+    rescue: mailboxAttentionRescueDto_(registry),
+    threads: remainingIds.map(threadId => byId.get(threadId)).filter(Boolean),
+  };
+}
+
+function mailboxBacklogRescue_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['action', 'threadId', 'expectedRevision']);
+  const action = mailboxEnum_(payload.action, ['start', 'load', 'complete', 'finish'], 'load');
+  const scope = mailboxAttentionScope_(session);
+  const initial = mailboxAttentionReadRegistry_(null, scope);
+  if (action === 'load') return mailboxBacklogRescueLoad_(initial);
+  if (action === 'start' && initial.rescue.active) return mailboxBacklogRescueLoad_(initial);
+
+  let scanned = { items: [], scannedCount: 0 };
+  if (action === 'start') scanned = mailboxBacklogRescueScan_();
+  const threadId = action === 'complete'
+    ? mailboxRequireGmailId_(payload.threadId, 'threadId') : '';
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw mailboxError_('BUSY', 'Коротка сесія зараз оновлюється.');
+  let saved;
+  let unchanged = false;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const registry = mailboxAttentionReadRegistry_(props, scope);
+    const expectedRevision = mailboxSafeCount_(payload.expectedRevision);
+    if (expectedRevision !== registry.revision) {
+      throw mailboxError_('ATTENTION_CONFLICT', 'Коротка сесія вже змінилася. Оновіть її й повторіть дію.');
+    }
+    if (action === 'start') {
+      if (registry.rescue.active) {
+        saved = registry;
+        unchanged = true;
+      } else {
+        const preset = registry.preferences.sessionPreset;
+        const limit = Math.min(MAILBOX_ATTENTION_SESSION_PRESETS_[preset].maxThreads,
+          MAILBOX_CLIENT_CONFIG_.MAX_RESCUE_THREADS);
+        const selected = scanned.items.slice(0, limit);
+        if (!selected.length) return mailboxBacklogRescueEmptyResult_(registry);
+        const now = Date.now();
+        registry.rescue = mailboxAttentionNormalizeRescue_({
+          active: true, preset, threadIds: selected.map(item => item.dto.id), completedIds: [],
+          scannedCount: scanned.scannedCount, startedAt: now, updatedAt: now,
+        });
+      }
+    } else if (action === 'complete') {
+      if (!registry.rescue.active) return mailboxBacklogRescueEmptyResult_(registry);
+      if (registry.rescue.threadIds.indexOf(threadId) === -1) {
+        throw mailboxError_('INVALID_ATTENTION', 'Цей лист не входить до поточної короткої сесії.');
+      }
+      if (registry.rescue.completedIds.indexOf(threadId) !== -1) {
+        saved = registry;
+        unchanged = true;
+      } else {
+        registry.rescue.completedIds.push(threadId);
+        registry.rescue.updatedAt = Date.now();
+        if (registry.rescue.completedIds.length >= registry.rescue.threadIds.length) {
+          registry.rescue = mailboxAttentionNormalizeRescue_({});
+        }
+      }
+    } else if (action === 'finish') {
+      if (!registry.rescue.active) return mailboxBacklogRescueEmptyResult_(registry);
+      registry.rescue = mailboxAttentionNormalizeRescue_({});
+    }
+    if (!unchanged) {
+      registry.revision += 1;
+      saved = mailboxAttentionWriteRegistry_(props, scope, registry);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+  if (unchanged) return mailboxBacklogRescueLoad_(saved);
+  if (action === 'start') {
+    const rescue = mailboxAttentionNormalizeRescue_(saved.rescue);
+    const finalized = mailboxBacklogRescueFinalizePending_(scanned.items.filter(item =>
+      rescue.threadIds.indexOf(item.dto.id) !== -1
+    ));
+    const byId = new Map(finalized.map(thread => [thread.id, thread]));
+    return {
+      rescue: mailboxAttentionRescueDto_(saved),
+      threads: rescue.threadIds.map(id => byId.get(id)).filter(Boolean),
+    };
+  }
+  return mailboxBacklogRescueLoad_(saved);
 }
 
 function mailboxAttentionRegistryForCurrentSession_() {

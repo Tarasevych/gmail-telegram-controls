@@ -1,5 +1,16 @@
 # Work log
 
+## 2026-07-18 — product v40 bounded backlog rescue
+
+- Continued from exact preserved product-v39 commit `5e7c1f70b01814d0cd14a45abcbe6dfa8d2f3efb` on isolated branch `codex/neuroinclusive-v40-backlog-rescue`; production remains immutable Apps Script v32/product v38.
+- Added an explicit Focus action that scans at most 60 Inbox threads read-only and selects only 1, 3, or at most 10 according to the account's energy preset.
+- Ranking prefers explicit triage, user focus priority, Gmail importance, unread state, and older mail without treating message content as instructions.
+- Added compassionate `N із M` progress, an explicit stop action, exact-session reload, and completion only after an explicit triage choice or a confirmed Gmail action. Automatic mark-read on open does not advance progress.
+- Rescue state is isolated by Telegram user and Gmail connection. Unified/mixed-account mode cannot start it. Durable storage contains only thread IDs, completed IDs, preset, counts, revisions, and timestamps; no sender, subject, snippet, summary, body, attachment metadata, or secret is persisted.
+- Metadata is fetched in at most two parallel 30-thread batches. Only selected previews are translated, and no Gmail/translation network request runs under ScriptLock.
+- Verification: targeted MailApp/MailClient contracts pass 214/214; ordinary mutable-product matrix passes 362/362; standalone system-Chrome rendered QA passes 22/22 at desktop and 390×844 mobile sizes with exact row bounds, progress-after-action, reachable controls, no horizontal overflow, and no application console errors.
+- Private QA evidence remains outside Git in the thread visualization directory. No live Gmail, Telegram, OAuth, Apps Script, provider, browser-account, or phone mutation occurred.
+
 ## 2026-07-18 — product v39 trustworthy summary evidence
 
 - Continued from the verified stable product v38 checkpoint on a new isolated branch; production Apps Script remains immutable v32 and no release helper or deployment was created.

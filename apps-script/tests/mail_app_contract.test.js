@@ -2934,6 +2934,49 @@ test('energy presets and reminder modes keep Focus compassionate bounded and acc
     'neuroinclusive copy must not shame users for unfinished mail');
 });
 
+test('backlog rescue is explicit bounded restorable and never turns Focus into an infinite inbox', () => {
+  assert.match(uiSource, /op === "backlogRescue"/);
+  assert.match(uiSource, /function normalizeBacklogRescue\(value, threadsValue\)/);
+  assert.match(uiSource, /Підібрати короткий блок/);
+  assert.match(uiSource, /із " \+ state\.backlogRescue\.selectedCount/);
+  assert.match(uiSource, /Можна зупинитися будь-коли/);
+  assert.match(uiSource, /Завершити сесію/);
+  assert.match(uiSource, /Жоден лист автоматично не змінено/);
+  assert.match(uiSource, /короткі сесії ніколи не змішують акаунти/);
+  assert.match(uiSource, /startRescue\.disabled = state\.unifiedMode/,
+    'a mixed-account feed must not start an ambiguous rescue session');
+  assert.match(uiSource, /state\.backlogRescue\.active \? state\.backlogRescue\.threads/,
+    'an active rescue session must render its exact bounded server selection');
+  assert.match(uiSource, /slice\(0, 10\)\.map\(normalizeThread\)/,
+    'the client must reject an oversized rescue payload');
+
+  const rescueSource = sourceBetween(
+    '      async function loadBacklogRescue(action, options) {',
+    '      function scheduleReadingProgress(scroll) {'
+  );
+  assert.match(rescueSource, /connectionId: connectionId/,
+    'rescue operations must preserve the exact active Gmail connection');
+  assert.match(rescueSource, /expectedRevision: normalizeAttentionPreferences\(state\.attentionPreferences\)\.revision/,
+    'rescue mutations must use optimistic account-scoped revisions');
+  assert.match(rescueSource, /op: "backlogRescue"[\s\S]*action: "complete"[\s\S]*threadId: id/);
+  assert.doesNotMatch(rescueSource, /localStorage|sessionStorage|subject|sender|bodyText|summaryUk/,
+    'rescue persistence must not copy email content into browser storage');
+
+  const actionSource = sourceBetween(
+    '      async function changeThreadAction(action, explicitThreadId, options) {',
+    '      function actionSuccessMessage(action) {'
+  );
+  assert.match(actionSource, /var data = await rpc[\s\S]*await completeBacklogRescueThread\(threadId, connectionId\)/,
+    'rescue progress may advance only after the requested Gmail action succeeds');
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchSource, /state\.backlogRescue = normalizeBacklogRescue\(null\)/);
+  assert.match(switchSource, /op: "attentionState", connectionId: requested[\s\S]*accountAttention\.rescue/,
+    'switching Gmail accounts must clear the old rescue and restore only the selected account session');
+});
+
 test('three-screen onboarding is accessible explicit and isolated per Gmail account', () => {
   for (const id of ['onboardingLayer', 'onboardingStepOne', 'onboardingStepTwo', 'onboardingStepThree',
     'skipOnboarding', 'onboardingBack', 'onboardingNext', 'openOnboardingSettings']) {

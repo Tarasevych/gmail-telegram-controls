@@ -7310,6 +7310,117 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
     'preference storage must never retain email content');
 });
 
+test('bounded backlog rescue scans read-only and persists only account-scoped thread ids and progress', () => {
+  const references = [
+    { id: 'thread_old_unread' }, { id: 'thread_important' }, { id: 'thread_plain' },
+    { id: 'thread_focus' }, { id: 'thread_action' },
+  ];
+  const harness = makeContext({
+    urlFetch: url => {
+      const match = String(url).match(/\/threads\/([^?]+)/);
+      assert.ok(match, `rescue metadata request must target one exact thread: ${url}`);
+      const id = decodeURIComponent(match[1]);
+      const index = references.findIndex(item => item.id === id);
+      const labels = ['INBOX'];
+      if (id === 'thread_old_unread') labels.push('UNREAD');
+      if (id === 'thread_important') labels.push('IMPORTANT');
+      return jsonResponse({
+        id, historyId: String(index + 1),
+        messages: [{
+          id: `message_${id}`, threadId: id,
+          internalDate: String(1710000000000 + index * 1000), labelIds: labels,
+          snippet: `Private preview ${id}`,
+          payload: { headers: [
+            { name: 'From', value: `Private Sender ${index} <sender${index}@example.com>` },
+            { name: 'To', value: 'tarasevych.pavlo@gmail.com' },
+            { name: 'Date', value: 'Wed, 15 Jul 2026 13:09:00 +0200' },
+            { name: 'Subject', value: `Private subject ${id}` },
+          ] },
+        }],
+      });
+    },
+    languageTranslate: value => value.replace(/Private preview/g, 'Приватний підсумок'),
+  });
+  const token = openOwnerSession(harness);
+  harness.setGmail((requestPath, requestOptions) => {
+    assert.equal(String(requestOptions.method || 'get').toLowerCase(), 'get',
+      'starting a rescue session must never mutate Gmail');
+    if (requestPath.startsWith('/threads?')) {
+      return { threads: references, resultSizeEstimate: references.length };
+    }
+    throw new Error(`Unexpected rescue Gmail call: ${requestPath}`);
+  });
+
+  resultData(rpc(harness, token, 'focusThread', {
+    threadId: 'thread_focus', priority: 'critical', color: '#d93025', note: '',
+  }));
+  const attention = resultData(rpc(harness, token, 'attentionUpdate', {
+    threadId: 'thread_action', triage: 'action', expectedRevision: 0,
+  }));
+  assert.equal(attention.revision, 1);
+
+  const started = resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'start', expectedRevision: 1,
+  }));
+  assert.equal(started.rescue.active, true);
+  assert.equal(started.rescue.selectedCount, 3);
+  assert.equal(started.rescue.completedCount, 0);
+  assert.equal(started.rescue.scannedCount, 5);
+  assert.equal(started.rescue.revision, 2);
+  assert.deepEqual(Array.from(started.threads, item => item.id), [
+    'thread_action', 'thread_focus', 'thread_important',
+  ], 'explicit triage, focus priority and Gmail importance should lead the bounded block');
+  assert.ok(harness.languageCalls.length <= 1,
+    'the bounded block should translate only the selected previews in one chunk');
+  assert.doesNotMatch(harness.languageCalls.map(call => call.value).join('\n'), /thread_plain|thread_old_unread/,
+    'scanned but unselected previews must not consume translation work');
+  assert.ok(harness.gmailCalls.every(call => String(call.options.method || 'get').toLowerCase() === 'get'));
+  assert.ok(harness.fetchAllBatches.flat().every(call => String(call.method || 'get').toLowerCase() === 'get'));
+
+  const attentionKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_ATTENTION_V1_'));
+  const stored = harness.propertyValues[attentionKey];
+  assert.match(stored, /thread_action/);
+  assert.doesNotMatch(stored, /Private subject|Private Sender|Private preview|Приватний підсумок|example\.com/,
+    'durable rescue state must contain no sender, subject, snippet, summary or body content');
+
+  assert.equal(resultFailed(rpc(harness, token, 'backlogRescue', {
+    action: 'complete', threadId: 'thread_not_selected', expectedRevision: 2,
+  })).code, 'INVALID_ATTENTION');
+  const completed = resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'complete', threadId: 'thread_action', expectedRevision: 2,
+  }));
+  assert.equal(completed.rescue.completedCount, 1);
+  assert.equal(completed.rescue.remainingCount, 2);
+  assert.equal(completed.rescue.revision, 3);
+  assert.deepEqual(Array.from(completed.threads, item => item.id), ['thread_focus', 'thread_important']);
+
+  const originalConnectionId = started.threads[0].account.id;
+  const tenantRegistry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 ||
+    JSON.stringify(harness.context.mailboxMultiInitialRegistry_(OWNER_ID)));
+  tenantRegistry.connections.push({
+    id: 'gmail-owner-rescue-second', zoneId: 'zone-owner', provider: 'google_oauth',
+    email: 'rescue.second@example.com', displayName: 'Rescue second', avatarUrl: '', status: 'active',
+    connectedByUserId: OWNER_ID, connectedAt: Date.now(), tokenGeneration: 1,
+  });
+  tenantRegistry.revision += 1;
+  harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 = JSON.stringify(tenantRegistry);
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: 'gmail-owner-rescue-second' }));
+  assert.equal(resultData(rpc(harness, token, 'attentionState', {})).rescue.active, false,
+    'a sibling Gmail account must never inherit the active rescue session');
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: originalConnectionId }));
+  assert.equal(resultData(rpc(harness, token, 'attentionState', {})).rescue.remainingCount, 2,
+    'returning to the original Gmail account must restore only its own rescue progress');
+
+  const finished = resultData(rpc(harness, token, 'backlogRescue', {
+    action: 'finish', expectedRevision: 3,
+  }));
+  assert.equal(finished.rescue.active, false);
+  assert.equal(finished.rescue.selectedCount, 0);
+  assert.equal(finished.rescue.revision, 4);
+  assert.equal(finished.threads.length, 0);
+});
+
 test('Telegram priority callbacks update only the exact user account and Gmail thread', () => {
   const harness = makeContext();
   const sessionToken = openOwnerSession(harness);
