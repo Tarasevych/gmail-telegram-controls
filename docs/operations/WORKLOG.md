@@ -295,3 +295,12 @@
 - Independent review found and drove fixes for stale preference responses across account switching, evidence links targeting a collapsed minimal original, duplicated minimal handoff controls, and rollback after a failed account switch. Final rereview reported no findings.
 - Verification: targeted contracts 220/220 PASS; ordinary matrix 368/368 PASS; desktop and 390×844 preview checks confirm one selector, three minimal primary actions, one-click original, analytical evidence, vertical scrolling, and no horizontal overflow. QA port 8774 is closed.
 - No Gmail message, draft, label, OAuth grant, Telegram zone/card, Apps Script deployment, provider account, browser account, or phone state was changed.
+
+## 2026-07-18 — product v43 isolated owner staging
+
+- Added and pushed the guarded staging-only release lane in commit `759f681`. It has no production promotion path and passed its 3/3 contracts plus the complete 371/371 ordinary product-and-staging matrix.
+- Created exact immutable Apps Script v36 and one separate staging deployment `AKfycbwsvrzCSnypeI8MASLeiev0Km8t0f2MXNKv7hApCSdvwEb3eftZ1k2ITDtMXiX5HWuE`. Apps Script HEAD was restored to exact v35 immediately after creation.
+- GET-only reconciliation reports stable version 35, `headState: stable_v35`, `immutableReady: true`, exactly one staging deployment, and journal state `staging_verified`; all five candidate hashes match.
+- Published a temporary noindex Telegram-initData bridge and exposed it only through the owner chat button `🧪 Пошта v43`. The public bridge returns HTTP 200 and is pinned to the isolated staging deployment.
+- Telegram Desktop opened the v43 Mini App successfully with valid Telegram launch data. Further automated interaction stopped when concurrent user input was detected. ADB reported no connected device, so no phone automation was attempted and the owner test surface remains active.
+- Production remains immutable Apps Script v35. No Gmail message, draft, label, OAuth grant, provider account, or unrelated Telegram zone was changed. Cleanup is intentionally pending until owner testing is finished.
