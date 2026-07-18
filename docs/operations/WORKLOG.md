@@ -78,3 +78,15 @@
 - The protected bot token was read only inside the local keyring process and was never printed, copied, or committed.
 - An unauthenticated web-app GET returned HTTP 200 and the expected launch bridge, with no mailbox address or mail content exposed.
 - No OAuth/migration was repeated and no Gmail message, Telegram card, attachment, Drive/Box object, provider grant, browser account, or phone state was mutated during post-deploy verification.
+
+## 2026-07-18 — v30 low-pressure reply starters
+
+- Created `codex/neuroinclusive-v30` from the verified production-v29 evidence commit; production remains v29.
+- Added exactly three Ukrainian reply starters: `Коротко`, `Професійно`, and `Тепло`.
+- Starters are deterministic editable templates with explicit placeholders. They do not claim AI generation, do not invent facts or commitments, and say that nothing is sent automatically.
+- A starter can populate only an empty reply/reply-all editor. Existing text disables all starter buttons and cannot be overwritten.
+- Choosing a starter enters the existing revision-aware Gmail draft autosave lifecycle; the starter code has no direct `saveDraft` or `sendDraft` path.
+- Targeted regression passed 203/203; ordinary full regression passed 336/336.
+- Chrome preview DOM QA opened the reply editor, verified all three unique buttons, inserted the `Тепло` template, confirmed exact editable text and overwrite protection, and verified 390 px body/panel width with no horizontal overflow.
+- Chrome's captured bitmap showed the underlying fixed reader despite `dialog open`, a visible 390 px panel, and valid DOM geometry. This screenshot inconsistency is not used as visual proof; the DOM and functional evidence remain recorded, and production was not changed.
+- No real Gmail draft/message, Telegram card, OAuth grant, attachment, provider object, browser account, or phone state was mutated.
