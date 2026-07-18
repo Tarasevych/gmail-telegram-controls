@@ -56,3 +56,23 @@
 - `Checkpoint 019f5d65-8209-7a00-b915-4a522dbcb612` у recovery-артефактах залишається відмічений як завершений по v28-pass, heartbeat `gmail-telegram-adhd-v28` не знайдено як активний, тимчасові процеси від цього проходу не ідентифіковано.
 - Зафіксовано, що далі без ручних Google-циклів/OTP/CAPTCHA виконувати production go-live на v28-нульовій лінії неможливо; наступний безпечний крок — узгоджений release-бандл для поточного production baseline (v35) або окремий контрольний v28-branch.
 - Набір змін поки не розгортено в продакшн, збережено в git-артефактах для відкотів і ревізії.
+
+### Фактична run-фіксація (2026-07-18T19:56Z)
+
+- `git status --short --branch`: відхилень локально немає, збережено зчитаний артефакт `docs/audit/v45-nonworking-functions-fix-list.md` у статусі untracked; віддалений шлях відсутній від ризикованих налаштувань.
+- `git remote -v`: `origin https://github.com/Tarasevych/gmail-telegram-controls.git` (read/write).
+- `git log --oneline --decorate -n 5`:
+  - HEAD `ca0a38a` (`chore(v45): sync v29-v32 preflight hash fixtures and complete v28 continuation log`)
+  - гілка `origin/codex/neuroinclusive-v45-gentle-milestones` збігається.
+- `PreflightOnly` перевірки:
+  - `deploy_apps_script_v28.ps1`/`deploy_apps_script_v29.ps1` → `Stable deployment is unsupported future v35; refusing all v28/v29 release actions.`
+  - `release_apps_script_v30_product_v36.ps1`/`release_apps_script_v31_product_v37.ps1`/`release_apps_script_v32_product_v38.ps1` → `Stable deployment is unsupported v35.`
+  - `stage_apps_script_v36.ps1` → `Stable deployment is v35, expected immutable v29.`
+- Локальні тести:
+  - `node --test apps-script/tests/*.test.js` → 405 PASS, 0 FAIL (12.6 c).
+- Реальна перевірка бот-інтерфейсу (read-only):
+  - `python update_bot_menu.py --inspect` → menu button `🧪 Пошта v43` для `chat_id=427886279`, `@TarasevychGmailNotifierBot` (це `v43` staging-маршрут `https://tarasevych.github.io/gmail-telegram-controls/v43-staging-acceptance-20260718.html`).
+  - `getMe` + `getMyCommands` через захищений Telegram token: бот валідний, список команд порожній.
+- Логи/проблеми:
+  - Всі production-релізні helper-и v27/v30/v31/v32/v36 блокує `stable v35` без ручного перетягування відповідного helper bundle.
+  - `migrate_telegram_markup.py` у read-only середовищі не виконано з причин відсутнього Python-пакету `telethon`.
