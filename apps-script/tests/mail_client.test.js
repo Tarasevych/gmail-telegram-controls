@@ -8047,3 +8047,335 @@ test('Box source refresh journals old and new grants and fails closed after ambi
     'the possibly consumed refresh token must remain in protected cleanup storage'
   );
 });
+
+test('send-later persists a content-free account-bound schedule and cancels by revision', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const operationId = 'scheduled-send-operation-0001';
+  const draftId = 'draft_scheduled_0001';
+  let messageIdHeader = '<scheduled-0001@example.test>';
+  let draftReads = 0;
+  harness.setGmail((requestPath, options) => {
+    assert.equal(String(options.method || 'get').toLowerCase(), 'get');
+    if (requestPath === `/drafts/${draftId}?format=full`) {
+      draftReads += 1;
+      return { id: draftId, message: { id: 'message_scheduled_0001', threadId: 'thread_scheduled_0001',
+        payload: { headers: [{ name: 'Message-ID', value: messageIdHeader }] } } };
+    }
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  const dueAt = Date.now() + 10 * 60 * 1000;
+  const request = { draftId, clientOperationId: operationId, dueAt, timezone: 'Europe/Brussels' };
+  const scheduled = resultData(rpc(harness, token, 'scheduleDraftSend', request));
+  assert.equal(scheduled.state, 'scheduled');
+  assert.equal(scheduled.revision, 1);
+  assert.equal(draftReads, 1);
+  const rows = Object.entries(harness.propertyValues)
+    .filter(([key]) => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_'));
+  assert.equal(rows.length, 1);
+  const durable = JSON.parse(rows[0][1]);
+  assert.equal(durable.userId, OWNER_ID);
+  assert.equal(durable.connectionId, 'gmail-owner');
+  assert.equal(durable.draftId, draftId);
+  assert.equal(durable.messageIdHeader, messageIdHeader);
+  assert.equal(JSON.stringify(durable).includes('recipient@example.com'), false);
+  assert.equal(JSON.stringify(durable).includes('message body'), false);
+  assert.equal(resultData(rpc(harness, token, 'scheduleDraftSend', request)).revision, 1);
+  assert.equal(draftReads, 1, 'an idempotent retry must use the durable row without depending on the draft still existing');
+  assert.equal(resultFailed(rpc(harness, token, 'scheduleDraftSend', {
+    ...request, dueAt: dueAt + 60000,
+  })).code, 'OPERATION_CONFLICT');
+  harness.propertyValues.MAILBOX_SCHEDULED_SEND_V1_corrupt = '{broken';
+  assert.equal(resultData(rpc(harness, token, 'scheduledSendState')).items.length, 1,
+    'one corrupt prefixed row must not block a valid tenant schedule');
+  messageIdHeader = '<scheduled-0001-edited@example.test>';
+  const rescheduled = resultData(rpc(harness, token, 'rescheduleDraftSend', {
+    clientOperationId: operationId,
+    expectedRevision: scheduled.revision,
+    dueAt: dueAt + 120000,
+    timezone: 'Europe/Brussels',
+  }));
+  assert.equal(rescheduled.state, 'scheduled');
+  assert.equal(rescheduled.revision, 2);
+  assert.equal(JSON.parse(rows[0][1]).messageIdHeader, '<scheduled-0001@example.test>',
+    'the captured fixture snapshot must stay immutable');
+  assert.equal(JSON.parse(harness.propertyValues[rows[0][0]]).messageIdHeader, messageIdHeader);
+  const cancelled = resultData(rpc(harness, token, 'cancelScheduledSend', {
+    clientOperationId: operationId, expectedRevision: rescheduled.revision,
+  }));
+  assert.equal(cancelled.state, 'cancelled');
+  assert.equal(cancelled.revision, 3);
+  const overdue = JSON.parse(harness.propertyValues[rows[0][0]]);
+  overdue.dueAt = 1;
+  overdue.requestHash = harness.context.mailboxOperationRequestHash_(
+    { draftId, dueAt: 1, timezone: 'Europe/Brussels' }, []
+  );
+  harness.propertyValues[rows[0][0]] = JSON.stringify(overdue);
+  assert.equal(resultData(rpc(harness, token, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId, dueAt: 1, timezone: 'Europe/Brussels',
+  })).state, 'cancelled', 'an overdue exact retry must return the durable result before future-window validation');
+  assert.equal(harness.gmailCalls.every(call => String(call.options.method || 'get') === 'get'), true);
+});
+
+test('send-later worker sends one exact draft and never repeats a confirmed POST', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const operationId = 'scheduled-send-operation-0002';
+  const draftId = 'draft_scheduled_0002';
+  const threadId = 'thread_scheduled_0002';
+  const messageIdHeader = '<scheduled-0002@example.test>';
+  let sendPosts = 0;
+  const draft = { id: draftId, message: { id: 'message_scheduled_0002', threadId,
+    payload: { headers: [{ name: 'Message-ID', value: messageIdHeader }] } } };
+  harness.setGmail((requestPath) => {
+    if (requestPath === `/drafts/${draftId}?format=full`) return draft;
+    if (requestPath === '/drafts/send') {
+      sendPosts += 1;
+      const schedule = Object.entries(harness.propertyValues)
+        .filter(([key]) => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_'))
+        .map(([, value]) => JSON.parse(value))[0];
+      assert.equal(schedule.state, 'sending');
+      const operation = Object.entries(harness.propertyValues)
+        .filter(([key]) => key.startsWith('MAILBOX_DRAFT_OPERATION_V1_'))
+        .map(([, value]) => JSON.parse(value))[0];
+      assert.equal(operation.state, 'dispatching');
+      return { id: 'sent_scheduled_0002', threadId, historyId: 'history_scheduled_0002', labelIds: ['SENT'] };
+    }
+    if (requestPath.startsWith('/messages?maxResults=10&includeSpamTrash=true&q=')) return { messages: [] };
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  resultData(rpc(harness, token, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId, dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  }));
+  const scheduleKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_'));
+  const due = JSON.parse(harness.propertyValues[scheduleKey]);
+  due.dueAt = Date.now() - 1;
+  due.nextRetryAt = due.dueAt;
+  harness.propertyValues[scheduleKey] = JSON.stringify(due);
+  const first = harness.context.mailboxProcessDueScheduledSends_(3);
+  assert.deepEqual(JSON.parse(JSON.stringify(first)), { attempted: 1, completed: 1, failed: 0, pending: 0 });
+  assert.equal(sendPosts, 1);
+  assert.equal(JSON.parse(harness.propertyValues[scheduleKey]).state, 'sent');
+  assert.equal(harness.context.mailboxProcessDueScheduledSends_(3).attempted, 0);
+  assert.equal(sendPosts, 1);
+});
+
+test('send-later uncertain Gmail outcome remains readback-only until Sent proves completion', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const operationId = 'scheduled-send-operation-0003';
+  const draftId = 'draft_scheduled_0003';
+  const threadId = 'thread_scheduled_0003';
+  const messageIdHeader = '<scheduled-0003@example.test>';
+  const draft = { id: draftId, message: { id: 'draft_message_0003', threadId,
+    payload: { headers: [{ name: 'Message-ID', value: messageIdHeader }] } } };
+  let sendPosts = 0;
+  let sentSearches = 0;
+  let gmailAccepted = false;
+  harness.setGmail((requestPath) => {
+    if (requestPath === `/drafts/${draftId}?format=full`) {
+      if (gmailAccepted) {
+        const error = new Error('draft disappeared after Gmail accepted send');
+        error.gmailHttpStatus = 404;
+        throw error;
+      }
+      return draft;
+    }
+    if (requestPath === '/drafts/send') {
+      sendPosts += 1;
+      gmailAccepted = true;
+      const error = new Error('transport lost after Gmail accepted send');
+      error.gmailOutcomeUncertain = true;
+      throw error;
+    }
+    if (requestPath.startsWith('/messages?maxResults=10&includeSpamTrash=true&q=')) {
+      sentSearches += 1;
+      return sentSearches === 1 ? { messages: [] } : { messages: [{ id: 'sent_scheduled_0003', threadId }] };
+    }
+    if (requestPath === '/messages/sent_scheduled_0003?format=metadata&metadataHeaders=Message-ID') {
+      return { id: 'sent_scheduled_0003', threadId, historyId: 'history_scheduled_0003', labelIds: ['SENT'],
+        payload: { headers: [{ name: 'Message-ID', value: messageIdHeader }] } };
+    }
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  resultData(rpc(harness, token, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId, dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  }));
+  const scheduleKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_'));
+  let row = JSON.parse(harness.propertyValues[scheduleKey]);
+  row.dueAt = Date.now() - 1;
+  row.nextRetryAt = row.dueAt;
+  harness.propertyValues[scheduleKey] = JSON.stringify(row);
+  assert.equal(harness.context.mailboxProcessDueScheduledSends_(1).failed, 1);
+  assert.equal(sendPosts, 1);
+  row = JSON.parse(harness.propertyValues[scheduleKey]);
+  assert.equal(row.state, 'sending');
+  assert.equal(row.phase, 'readback_only');
+  row.leaseUntil = 0;
+  row.nextRetryAt = Date.now() - 1;
+  harness.propertyValues[scheduleKey] = JSON.stringify(row);
+  assert.equal(harness.context.mailboxProcessDueScheduledSends_(1).completed, 1);
+  assert.equal(sendPosts, 1);
+  assert.equal(JSON.parse(harness.propertyValues[scheduleKey]).state, 'sent');
+});
+
+test('send-later isolation hides another Telegram user schedule and changed drafts never send', () => {
+  const harness = makeContext();
+  const ownerToken = openOwnerSession(harness);
+  const operationId = 'scheduled-send-operation-0004';
+  const draftId = 'draft_scheduled_0004';
+  const originalMessageId = '<scheduled-0004@example.test>';
+  let changed = false;
+  let sendPosts = 0;
+  harness.setGmail(requestPath => {
+    if (requestPath === `/drafts/${draftId}?format=full`) {
+      return { id: draftId, message: { id: 'draft_message_0004', threadId: 'thread_scheduled_0004',
+        payload: { headers: [{ name: 'Message-ID', value: changed ? '<changed@example.test>' : originalMessageId }] } } };
+    }
+    if (requestPath === '/drafts/send') { sendPosts += 1; return {}; }
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  const scheduled = resultData(rpc(harness, ownerToken, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId, dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  }));
+  const registry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 ||
+    JSON.stringify(harness.context.mailboxMultiInitialRegistry_(OWNER_ID)));
+  const ownerMember = registry.members.find(item => item.userId === OWNER_ID);
+  registry.members.push({
+    ...ownerMember,
+    userId: '427886280',
+    role: 'responder',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+  registry.revision += 1;
+  harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 = JSON.stringify(registry);
+  const otherOpened = resultData(harness.context.mailboxOpenSession(telegramInitData('427886280')));
+  const otherToken = String(otherOpened.sessionToken || otherOpened.session || otherOpened.token);
+  assert.deepEqual(JSON.parse(JSON.stringify(resultData(rpc(harness, otherToken, 'scheduledSendState')).items)), []);
+  assert.equal(resultFailed(rpc(harness, otherToken, 'cancelScheduledSend', {
+    clientOperationId: operationId, expectedRevision: scheduled.revision,
+  })).code, 'NOT_FOUND');
+  const scheduleKey = Object.keys(harness.propertyValues)
+    .find(key => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_'));
+  const row = JSON.parse(harness.propertyValues[scheduleKey]);
+  row.dueAt = Date.now() - 1;
+  row.nextRetryAt = row.dueAt;
+  harness.propertyValues[scheduleKey] = JSON.stringify(row);
+  changed = true;
+  assert.equal(harness.context.mailboxProcessDueScheduledSends_(1).completed, 1);
+  assert.equal(sendPosts, 0);
+  const final = JSON.parse(harness.propertyValues[scheduleKey]);
+  assert.equal(final.state, 'needs_review');
+  assert.equal(final.errorCode, 'DRAFT_CHANGED');
+});
+
+test('minute worker includes bounded send-later processing without adding another trigger', () => {
+  const timerStart = codeSource.indexOf('function checkNewMail_()');
+  const timerEnd = codeSource.indexOf('\nfunction runMultiAccountMailChecks_', timerStart);
+  const timer = codeSource.slice(timerStart, timerEnd);
+  assert.match(timer, /mailboxProcessDueScheduledSends_\(3\)/);
+  assert.equal((codeSource.match(/\.everyMinutes\(CONFIG\.POLL_MINUTES\)/g) || []).length, 1);
+});
+
+test('send-later storage failure accepts no work and an expired claim cannot outlive its lease token', () => {
+  const draftId = 'draft_scheduled_fencing_1';
+  const operationId = 'scheduled-send-operation-fencing-0001';
+  const draft = { id: draftId, message: { id: 'draft_message_fencing_1', threadId: 'thread_fencing_1',
+    payload: { headers: [{ name: 'Message-ID', value: '<scheduled-fencing@example.test>' }] } } };
+  const rejected = makeContext({
+    propertySet: key => {
+      if (key.startsWith('MAILBOX_SCHEDULED_SEND_V1_')) throw new Error('synthetic storage pressure');
+    },
+  });
+  rejected.setGmail(requestPath => {
+    if (requestPath === `/drafts/${draftId}?format=full`) return draft;
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  const rejectedToken = openOwnerSession(rejected);
+  assert.equal(resultFailed(rpc(rejected, rejectedToken, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId,
+    dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  })).code, 'STORAGE_FULL');
+  assert.equal(Object.keys(rejected.propertyValues)
+    .some(key => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_')), false);
+  assert.equal(rejected.gmailCalls.every(call => String(call.options.method || 'get') === 'get'), true);
+
+  const harness = makeContext();
+  harness.setGmail(requestPath => {
+    if (requestPath === `/drafts/${draftId}?format=full`) return draft;
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  const token = openOwnerSession(harness);
+  resultData(rpc(harness, token, 'scheduleDraftSend', {
+    draftId, clientOperationId: operationId,
+    dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  }));
+  const key = Object.keys(harness.propertyValues)
+    .find(name => name.startsWith('MAILBOX_SCHEDULED_SEND_V1_'));
+  let row = JSON.parse(harness.propertyValues[key]);
+  row.dueAt = Date.now() - 1;
+  row.nextRetryAt = row.dueAt;
+  harness.propertyValues[key] = JSON.stringify(row);
+  const firstClaim = harness.context.mailboxClaimScheduledSend_(key, Date.now());
+  row = JSON.parse(harness.propertyValues[key]);
+  row.leaseUntil = Date.now() - 1;
+  row.nextRetryAt = row.leaseUntil;
+  harness.propertyValues[key] = JSON.stringify(row);
+  const secondClaim = harness.context.mailboxClaimScheduledSend_(key, Date.now());
+  assert.notEqual(firstClaim.operationToken, secondClaim.operationToken);
+  assert.throws(
+    () => harness.context.mailboxRenewScheduledSendClaim_(firstClaim),
+    error => error && error.mailboxCode === 'OPERATION_CONFLICT'
+  );
+  assert.equal(harness.gmailCalls.filter(call => String(call.options.method || 'get') !== 'get').length, 0);
+});
+
+test('send-later separates active quota from compactable terminal history and validates real timezones', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const scope = harness.context.mailboxScheduledSendScope_({ userId: OWNER_ID, connectionId: 'gmail-owner' });
+  for (let index = 0; index < 40; index += 1) {
+    const operationId = `terminal-schedule-operation-${String(index).padStart(4, '0')}`;
+    const draftId = `terminal_draft_${String(index).padStart(4, '0')}`;
+    const key = harness.context.mailboxScheduledSendKey_(scope.id, operationId);
+    harness.propertyValues[key] = JSON.stringify({
+      v: 1, operationId, userId: OWNER_ID, connectionId: 'gmail-owner', draftId,
+      messageIdHeader: `<terminal-${index}@example.test>`,
+      requestHash: harness.context.mailboxOperationRequestHash_({ draftId, dueAt: 1, timezone: 'UTC' }, []),
+      dueAt: 1, timezone: 'UTC', state: 'cancelled', revision: 1, phase: '', operationToken: '',
+      leaseUntil: 0, attempts: 0, nextRetryAt: 0, result: null, errorCode: '',
+      createdAt: Date.now() - 100000 + index, updatedAt: Date.now() - 100000 + index, reserve: '',
+    });
+  }
+  const draftId = 'draft_after_terminal_history_1';
+  harness.setGmail(requestPath => {
+    if (requestPath === `/drafts/${draftId}?format=full`) {
+      return { id: draftId, message: { id: 'message_after_terminal_history_1', threadId: 'thread_after_terminal_history_1',
+        payload: { headers: [{ name: 'Message-ID', value: '<after-terminal-history@example.test>' }] } } };
+    }
+    throw new Error(`Unexpected Gmail request: ${requestPath}`);
+  });
+  assert.equal(resultData(rpc(harness, token, 'scheduleDraftSend', {
+    draftId, clientOperationId: 'active-after-terminal-history-0001',
+    dueAt: Date.now() + 120000, timezone: 'Europe/Brussels',
+  })).state, 'scheduled');
+  assert.equal(Object.keys(harness.propertyValues)
+    .filter(key => key.startsWith('MAILBOX_SCHEDULED_SEND_V1_')).length, 40,
+    'the oldest compactable terminal row should yield one slot without consuming active quota');
+
+  const invalidTimezone = makeContext({
+    formatDate: (date, timezone) => {
+      if (timezone === 'Europe/Atlantis') throw new Error('invalid timezone');
+      return new Date(date).toISOString();
+    },
+  });
+  const invalidToken = openOwnerSession(invalidTimezone);
+  assert.equal(resultFailed(rpc(invalidTimezone, invalidToken, 'scheduleDraftSend', {
+    draftId: 'draft_invalid_timezone_1', clientOperationId: 'invalid-timezone-operation-0001',
+    dueAt: Date.now() + 120000, timezone: 'Europe/Atlantis',
+  })).code, 'INVALID_REQUEST');
+  assert.equal(invalidTimezone.gmailCalls.length, 0);
+});

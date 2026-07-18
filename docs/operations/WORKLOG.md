@@ -1,5 +1,17 @@
 # Work log
 
+## 2026-07-18 — v31 durable send-later backend candidate
+
+- Branched `codex/neuroinclusive-v31-send-later` from the exact verified production-v29 evidence commit; the undeployed v30 reply UI was not mixed into this backend phase.
+- Added account-bound schedule, list, reschedule, and cancel RPCs with optimistic revision checks and explicit `viewer`/`responder` role boundaries.
+- Added a bounded Script Properties journal containing only Telegram user ID, Gmail connection ID, draft ID, stable Message-ID, due time, timezone, state, revision, lease/retry metadata, and final Gmail IDs. No mail content or attachment metadata is persisted.
+- Added the send-later worker to the existing one-minute trigger; no second trigger or migration was created. Each run processes at most three rows.
+- Reused the existing draft-send operation journal for at-most-once Gmail delivery. After an uncertain POST, retries use Sent readback even when Gmail has already removed the draft, and never issue a second POST.
+- Added two-minute lease fencing, bounded exponential retry, eight-attempt `needs_review`, exact-account access revalidation, draft Message-ID change detection, global/per-account caps, terminal retention, and fail-closed storage verification.
+- Independent read-only review found and resolved overdue idempotency, terminal-quota starvation, corrupt-row tenant isolation, and real-timezone validation edges.
+- Send-later targeted regression: 7/7 passed. Full ordinary functional regression: 342/342 passed. `git diff --check` passed.
+- Production remains immutable Apps Script v29. No deployment, OAuth, migration, trigger mutation, real Gmail draft/message, Telegram card, attachment, provider object, browser account, or phone state was changed.
+
 ## 2026-07-18 — v28 start
 
 - Verified production v27 release state and frozen source hashes read-only.

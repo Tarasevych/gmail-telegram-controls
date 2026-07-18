@@ -527,6 +527,13 @@ function checkNewMail_() {
     console.error('Bot-managed snooze processing failed: ' + error);
   }
   try {
+    if (typeof mailboxProcessDueScheduledSends_ === 'function') {
+      mailboxProcessDueScheduledSends_(3);
+    }
+  } catch (error) {
+    console.error('Scheduled draft send processing failed: ' + error);
+  }
+  try {
     if (typeof mailboxProcessGoogleRevocations_ === 'function') mailboxProcessGoogleRevocations_(1);
   } catch (error) {
     console.error('Gmail OAuth revocation cleanup failed: ' + error);

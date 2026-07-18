@@ -25,3 +25,4 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - The v28 P0 Focus View now has fresh localhost desktop and 390×844 rendered QA. Provider OAuth and real-message mutation paths were intentionally not exercised.
 - The repository is public. Runtime secrets, sessions, message content, and private QA captures must never be committed.
 - The energy/reminder preference slice is now immutable production v29. Scheduled reminder delivery, low-pressure reply templates, send-later, and onboarding remain later P1 phases; this is incomplete scope, not a production crash.
+- The v31 send-later backend is a locally verified candidate only. Its UI controls, real Telegram WebView proof, immutable release helper, guarded deployment, and controlled post-deploy acceptance are intentionally pending; production v29 cannot schedule sends yet.

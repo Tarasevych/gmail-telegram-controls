@@ -110,6 +110,15 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   DRAFT_OPERATION_PREFIX: 'MAILBOX_DRAFT_OPERATION_V1_',
   DRAFT_OPERATION_LIMIT: 80,
   DRAFT_OPERATION_TERMINAL_TTL_MS: 24 * 60 * 60 * 1000,
+  SCHEDULED_SEND_PREFIX: 'MAILBOX_SCHEDULED_SEND_V1_',
+  SCHEDULED_SEND_LIMIT: 40,
+  SCHEDULED_SEND_SCOPE_LIMIT: 20,
+  SCHEDULED_SEND_TERMINAL_LIMIT: 40,
+  SCHEDULED_SEND_MAX_ATTEMPTS: 8,
+  SCHEDULED_SEND_LEASE_MS: 2 * 60 * 1000,
+  SCHEDULED_SEND_MIN_DELAY_MS: 60 * 1000,
+  SCHEDULED_SEND_MAX_DELAY_MS: 365 * 24 * 60 * 60 * 1000,
+  SCHEDULED_SEND_TERMINAL_TTL_MS: 24 * 60 * 60 * 1000,
   // v2 invalidates v1 entries that could contain the generic Ukrainian
   // fallback after a batch delimiter was normalized by LanguageApp.
   TRANSLATION_CACHE_PREFIX: 'mailbox.translation.uk.v2.',
@@ -1668,6 +1677,10 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'action') return mailboxApplyAction_(payload);
   if (op === 'saveDraft') return mailboxSaveDraft_(payload);
   if (op === 'sendDraft') return mailboxSendDraft_(payload);
+  if (op === 'scheduledSendState') return mailboxScheduledSendState_(payload, session);
+  if (op === 'scheduleDraftSend') return mailboxScheduleDraftSend_(payload, session);
+  if (op === 'rescheduleDraftSend') return mailboxRescheduleDraftSend_(payload, session);
+  if (op === 'cancelScheduledSend') return mailboxCancelScheduledSend_(payload, session);
   if (op === 'ackOperation') return mailboxAcknowledgeDraftOperation_(payload);
   throw mailboxError_('UNKNOWN_OPERATION', 'Ця поштова операція не підтримується.');
 }
@@ -1684,7 +1697,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1771,7 +1784,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1785,6 +1798,12 @@ function mailboxBootstrap_(payload, session) {
       permanentDelete: false,
       unsubscribe: true,
       snooze: mailboxSnoozeCapabilities_(),
+      sendLater: {
+        enabled: true,
+        minimumDelayMs: MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MIN_DELAY_MS,
+        maximumDelayMs: MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MAX_DELAY_MS,
+        maxActivePerAccount: MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_SCOPE_LIMIT,
+      },
       attachments: {
         download: true,
         draft: true,
@@ -1828,8 +1847,8 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
-  if (['saveDraft', 'sendDraft', 'ackOperation'].indexOf(op) !== -1) return 'responder';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
 }
@@ -7573,6 +7592,501 @@ function mailboxSendDraft_(payload) {
     throw mailboxSendPending_();
   }
   return { draftId, message: sent };
+}
+
+/**
+ * Durable send-later journal. Records contain routing metadata only; the Gmail
+ * draft remains authoritative for recipients, content and attachments.
+ */
+function mailboxScheduledSendScope_(sessionValue) {
+  const session = sessionValue || mailboxCurrentSessionContext_ || {};
+  const userId = String(session.userId || '');
+  const connectionId = String(session.connectionId || '');
+  if (!/^\d{1,24}$/.test(userId) || !/^gmail-[A-Za-z0-9_-]{1,80}$/.test(connectionId)) {
+    throw mailboxError_('FORBIDDEN', 'Не вдалося визначити точну поштову зону для відкладеного надсилання.');
+  }
+  return { userId, connectionId, id: 'telegram:' + userId + '|gmail:' + connectionId };
+}
+
+function mailboxScheduledSendStates_() {
+  return ['scheduled', 'sending', 'sent', 'cancelled', 'needs_review', 'failed_terminal'];
+}
+
+function mailboxScheduledSendKey_(scopeIdValue, operationIdValue) {
+  return MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_PREFIX +
+    mailboxDigestText_([String(scopeIdValue || ''), String(operationIdValue || '')].join('|'));
+}
+
+function mailboxScheduledSendTimezone_(value) {
+  const timezone = String(value || 'UTC');
+  if (timezone.length > 80 || !/^[A-Za-z0-9_+\-/]{1,80}$/.test(timezone)) {
+    throw mailboxError_('INVALID_REQUEST', 'Некоректний часовий пояс відкладеного надсилання.');
+  }
+  try { Utilities.formatDate(new Date(0), timezone, 'yyyy'); }
+  catch (error) {
+    throw mailboxError_('INVALID_REQUEST', 'Вибраний часовий пояс не підтримується.');
+  }
+  return timezone;
+}
+
+function mailboxScheduledSendEpoch_(value) {
+  const dueAt = Number(value);
+  if (!Number.isInteger(dueAt) || dueAt <= 0) {
+    throw mailboxError_('INVALID_REQUEST', 'Некоректний час відкладеного надсилання.');
+  }
+  return dueAt;
+}
+
+function mailboxScheduledSendDueAt_(value, nowValue) {
+  const dueAt = mailboxScheduledSendEpoch_(value);
+  const now = Number(nowValue || Date.now());
+  if (dueAt < now + MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MIN_DELAY_MS ||
+      dueAt > now + MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MAX_DELAY_MS) {
+    throw mailboxError_('INVALID_REQUEST', 'Оберіть час від однієї хвилини до одного року вперед.');
+  }
+  return dueAt;
+}
+
+function mailboxScheduledSendPersistable_(value) {
+  const record = value || {};
+  return {
+    v: 1,
+    operationId: String(record.operationId || ''),
+    userId: String(record.userId || ''),
+    connectionId: String(record.connectionId || ''),
+    draftId: String(record.draftId || ''),
+    messageIdHeader: String(record.messageIdHeader || ''),
+    requestHash: String(record.requestHash || ''),
+    dueAt: Number(record.dueAt || 0),
+    timezone: String(record.timezone || 'UTC'),
+    state: String(record.state || ''),
+    revision: Number(record.revision || 0),
+    phase: String(record.phase || ''),
+    operationToken: String(record.operationToken || ''),
+    leaseUntil: Number(record.leaseUntil || 0),
+    attempts: Number(record.attempts || 0),
+    nextRetryAt: Number(record.nextRetryAt || 0),
+    result: record.result && mailboxIsPlainObject_(record.result)
+      ? mailboxCanonicalOperationValue_(record.result) : null,
+    errorCode: mailboxSafeText_(record.errorCode, 64),
+    createdAt: Number(record.createdAt || 0),
+    updatedAt: Number(record.updatedAt || 0),
+    reserve: ['scheduled', 'sending'].indexOf(String(record.state || '')) !== -1
+      ? String(record.reserve || '') : '',
+  };
+}
+
+function mailboxValidateScheduledSend_(keyValue, value) {
+  const key = String(keyValue || '');
+  const raw = value || {};
+  const record = mailboxScheduledSendPersistable_(value);
+  const scope = 'telegram:' + record.userId + '|gmail:' + record.connectionId;
+  const valid = raw.v === 1 && /^\d{1,24}$/.test(record.userId) &&
+    /^gmail-[A-Za-z0-9_-]{1,80}$/.test(record.connectionId) &&
+    /^[A-Za-z0-9_-]{16,128}$/.test(record.operationId) &&
+    key === mailboxScheduledSendKey_(scope, record.operationId) &&
+    Boolean(mailboxSafeGmailId_(record.draftId)) &&
+    Boolean(mailboxSafeMessageIdHeader_(record.messageIdHeader)) &&
+    /^[A-Za-z0-9_-]{43}$/.test(record.requestHash) &&
+    mailboxScheduledSendStates_().indexOf(record.state) !== -1 &&
+    ['', 'claimed', 'retry', 'readback_only'].indexOf(record.phase) !== -1 &&
+    (!record.operationToken || /^[A-Za-z0-9_-]{16,80}$/.test(record.operationToken)) &&
+    /^[A-Za-z0-9_+\-/]{1,80}$/.test(record.timezone) &&
+    Number.isInteger(record.dueAt) && record.dueAt > 0 &&
+    Number.isInteger(record.revision) && record.revision > 0 &&
+    Number.isInteger(record.attempts) && record.attempts >= 0 &&
+    Number.isInteger(record.leaseUntil) && record.leaseUntil >= 0 &&
+    Number.isInteger(record.nextRetryAt) && record.nextRetryAt >= 0 &&
+    Number.isFinite(record.createdAt) && record.createdAt > 0 &&
+    Number.isFinite(record.updatedAt) && record.updatedAt > 0;
+  if (!valid) throw mailboxError_('SERVER_CONFIG', 'Журнал відкладених листів пошкоджений.');
+  return Object.assign({ _key: key }, record);
+}
+
+function mailboxReadScheduledSends_(properties) {
+  const all = properties.getProperties() || {};
+  return Object.keys(all).filter(key =>
+    key.indexOf(MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_PREFIX) === 0
+  ).sort().map(key => {
+    let parsed = null;
+    try { parsed = JSON.parse(String(all[key] || '')); } catch (error) { parsed = null; }
+    try { return mailboxValidateScheduledSend_(key, parsed); }
+    catch (error) {
+      console.error('Ignoring corrupt scheduled-send record ' + mailboxDigestText_(key));
+      return null;
+    }
+  }).filter(Boolean);
+}
+
+function mailboxScheduledSendLock_(callback) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxError_('BUSY', 'Інша відкладена операція ще завершується. Спробуйте ще раз.');
+  }
+  try { return callback(PropertiesService.getScriptProperties()); }
+  finally { lock.releaseLock(); }
+}
+
+function mailboxPersistScheduledSendLocked_(properties, recordValue, deletedKeysValue) {
+  const record = recordValue;
+  const deletedKeys = Array.from(new Set((deletedKeysValue || []).map(String)));
+  const serialized = JSON.stringify(mailboxScheduledSendPersistable_(record));
+  try {
+    assertTelegramPropertyValueFits_(record._key, serialized);
+    assertTelegramPropertyStoreFits_(properties, { [record._key]: serialized }, deletedKeys);
+  } catch (error) {
+    throw mailboxError_('STORAGE_FULL', 'Сховище відкладених листів тимчасово заповнене.');
+  }
+  deletedKeys.forEach(key => { try { properties.deleteProperty(key); } catch (error) {} });
+  const undeleted = deletedKeys.find(key => properties.getProperty(key) !== null);
+  if (undeleted) throw mailboxError_('STORAGE_FULL', 'Не вдалося звільнити журнал відкладених листів.');
+  try { properties.setProperty(record._key, serialized); } catch (error) {}
+  if (String(properties.getProperty(record._key) || '') !== serialized) {
+    throw mailboxError_('STORAGE_FULL', 'Не вдалося надійно зберегти відкладене надсилання.');
+  }
+  return Object.assign({ _key: record._key }, mailboxScheduledSendPersistable_(record));
+}
+
+function mailboxScheduledSendDto_(record) {
+  return {
+    operationId: record.operationId,
+    draftId: record.draftId,
+    dueAt: record.dueAt,
+    timezone: record.timezone,
+    state: record.state,
+    revision: record.revision,
+    attempts: record.attempts,
+    errorCode: record.errorCode,
+    result: record.result ? {
+      messageId: mailboxSafeGmailId_(record.result.messageId),
+      threadId: mailboxSafeGmailId_(record.result.threadId),
+      historyId: mailboxSafeOpaqueToken_(record.result.historyId, 128),
+    } : null,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
+function mailboxScheduledSendState_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, []);
+  const scope = mailboxScheduledSendScope_(session);
+  const records = mailboxReadScheduledSends_(PropertiesService.getScriptProperties())
+    .filter(record => record.userId === scope.userId && record.connectionId === scope.connectionId)
+    .sort((left, right) => left.dueAt - right.dueAt || left.createdAt - right.createdAt);
+  return { items: records.map(mailboxScheduledSendDto_) };
+}
+
+function mailboxScheduleDraftSend_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['draftId', 'clientOperationId', 'dueAt', 'timezone']);
+  const scope = mailboxScheduledSendScope_(session);
+  const draftId = mailboxRequireGmailId_(payload.draftId, 'draftId');
+  const operationId = mailboxRequireClientOperationId_(payload.clientOperationId);
+  const dueAt = mailboxScheduledSendEpoch_(payload.dueAt);
+  const timezone = mailboxScheduledSendTimezone_(payload.timezone);
+  const requestHash = mailboxOperationRequestHash_({ draftId, dueAt, timezone }, []);
+  const key = mailboxScheduledSendKey_(scope.id, operationId);
+  const existingDto = mailboxScheduledSendLock_(properties => {
+    const existing = mailboxReadScheduledSends_(properties).find(record => record._key === key);
+    if (!existing) return null;
+    if (existing.requestHash !== requestHash) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Цей ідентифікатор уже належить іншому плануванню.');
+    }
+    return mailboxScheduledSendDto_(existing);
+  });
+  if (existingDto) return existingDto;
+  mailboxScheduledSendDueAt_(dueAt);
+  const draft = gmailApiRequest_('/drafts/' + encodeURIComponent(draftId) + '?format=full', { method: 'get' });
+  const messageIdHeader = mailboxDraftMessageIdHeader_(draft);
+  if (!messageIdHeader) {
+    throw mailboxError_('INVALID_DRAFT', 'Спочатку збережіть чернетку перед плануванням.');
+  }
+  return mailboxScheduledSendLock_(properties => {
+    const now = Date.now();
+    let records = mailboxReadScheduledSends_(properties);
+    const existing = records.find(record => record._key === key);
+    if (existing) {
+      if (existing.requestHash !== requestHash) {
+        throw mailboxError_('OPERATION_CONFLICT', 'Цей ідентифікатор уже належить іншому плануванню.');
+      }
+      return mailboxScheduledSendDto_(existing);
+    }
+    const duplicateDraft = records.find(record => record.userId === scope.userId &&
+      record.connectionId === scope.connectionId && record.draftId === draftId &&
+      ['scheduled', 'sending'].indexOf(record.state) !== -1);
+    if (duplicateDraft) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Цю чернетку вже заплановано до надсилання.');
+    }
+    const deletedKeys = records.filter(record =>
+      ['sent', 'cancelled', 'needs_review', 'failed_terminal'].indexOf(record.state) !== -1 &&
+      now - record.updatedAt > MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_TERMINAL_TTL_MS
+    ).map(record => record._key);
+    records = records.filter(record => deletedKeys.indexOf(record._key) === -1);
+    const compactable = records.filter(record =>
+      ['sent', 'cancelled', 'failed_terminal'].indexOf(record.state) !== -1
+    ).sort((left, right) => left.updatedAt - right.updatedAt);
+    while (compactable.length >= MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_TERMINAL_LIMIT) {
+      const oldest = compactable.shift();
+      deletedKeys.push(oldest._key);
+      records = records.filter(record => record._key !== oldest._key);
+    }
+    const activeCount = records.filter(record =>
+      ['scheduled', 'sending', 'needs_review'].indexOf(record.state) !== -1
+    ).length;
+    const scopeCount = records.filter(record => record.userId === scope.userId &&
+      record.connectionId === scope.connectionId &&
+      ['scheduled', 'sending', 'needs_review'].indexOf(record.state) !== -1).length;
+    if (activeCount >= MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_LIMIT ||
+        scopeCount >= MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_SCOPE_LIMIT) {
+      throw mailboxError_('STORAGE_FULL', 'Досягнуто ліміт активних відкладених листів.');
+    }
+    const record = {
+      _key: key, v: 1, operationId, userId: scope.userId, connectionId: scope.connectionId,
+      draftId, messageIdHeader, requestHash, dueAt, timezone, state: 'scheduled', revision: 1,
+      phase: '', operationToken: '', leaseUntil: 0, attempts: 0, nextRetryAt: dueAt,
+      result: null, errorCode: '', createdAt: now, updatedAt: now, reserve: 'x'.repeat(768),
+    };
+    return mailboxScheduledSendDto_(mailboxPersistScheduledSendLocked_(properties, record, deletedKeys));
+  });
+}
+
+function mailboxRescheduleDraftSend_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['clientOperationId', 'expectedRevision', 'dueAt', 'timezone']);
+  const scope = mailboxScheduledSendScope_(session);
+  const operationId = mailboxRequireClientOperationId_(payload.clientOperationId);
+  const dueAt = mailboxScheduledSendDueAt_(payload.dueAt);
+  const timezone = mailboxScheduledSendTimezone_(payload.timezone);
+  const expectedRevision = Number(payload.expectedRevision);
+  if (!Number.isInteger(expectedRevision)) {
+    throw mailboxError_('OPERATION_CONFLICT', 'Час надсилання вже змінився. Оновіть список.');
+  }
+  const snapshot = mailboxScheduledSendLock_(properties => {
+    const key = mailboxScheduledSendKey_(scope.id, operationId);
+    const record = mailboxReadScheduledSends_(properties).find(item => item._key === key);
+    if (!record) throw mailboxError_('NOT_FOUND', 'Відкладене надсилання не знайдено.');
+    if (record.revision !== expectedRevision || record.state !== 'scheduled') {
+      throw mailboxError_('OPERATION_CONFLICT', 'Лист уже змінився або обробляється. Оновіть список.');
+    }
+    return { draftId: record.draftId, revision: record.revision };
+  });
+  const draft = gmailApiRequest_(
+    '/drafts/' + encodeURIComponent(snapshot.draftId) + '?format=full',
+    { method: 'get' }
+  );
+  const messageIdHeader = mailboxDraftMessageIdHeader_(draft);
+  if (!messageIdHeader) throw mailboxError_('INVALID_DRAFT', 'Чернетка більше не готова до планування.');
+  return mailboxScheduledSendLock_(properties => {
+    const records = mailboxReadScheduledSends_(properties);
+    const key = mailboxScheduledSendKey_(scope.id, operationId);
+    const record = records.find(item => item._key === key);
+    if (!record) throw mailboxError_('NOT_FOUND', 'Відкладене надсилання не знайдено.');
+    if (expectedRevision !== record.revision) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Час надсилання вже змінився. Оновіть список.');
+    }
+    if (record.state !== 'scheduled') {
+      throw mailboxError_('OPERATION_CONFLICT', 'Лист уже обробляється й не може бути перепланований.');
+    }
+    record.dueAt = dueAt;
+    record.timezone = timezone;
+    record.messageIdHeader = messageIdHeader;
+    record.requestHash = mailboxOperationRequestHash_({ draftId: record.draftId, dueAt, timezone }, []);
+    record.revision += 1;
+    record.nextRetryAt = dueAt;
+    record.updatedAt = Date.now();
+    return mailboxScheduledSendDto_(mailboxPersistScheduledSendLocked_(properties, record, []));
+  });
+}
+
+function mailboxCancelScheduledSend_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['clientOperationId', 'expectedRevision']);
+  const scope = mailboxScheduledSendScope_(session);
+  const operationId = mailboxRequireClientOperationId_(payload.clientOperationId);
+  return mailboxScheduledSendLock_(properties => {
+    const records = mailboxReadScheduledSends_(properties);
+    const key = mailboxScheduledSendKey_(scope.id, operationId);
+    const record = records.find(item => item._key === key);
+    if (!record) throw mailboxError_('NOT_FOUND', 'Відкладене надсилання не знайдено.');
+    const revision = Number(payload.expectedRevision);
+    if (!Number.isInteger(revision) || revision !== record.revision) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Стан відкладеного листа вже змінився. Оновіть список.');
+    }
+    if (record.state !== 'scheduled') {
+      throw mailboxError_('OPERATION_CONFLICT', 'Лист уже обробляється; скасування більше не гарантоване.');
+    }
+    record.state = 'cancelled';
+    record.revision += 1;
+    record.nextRetryAt = 0;
+    record.reserve = '';
+    record.updatedAt = Date.now();
+    return mailboxScheduledSendDto_(mailboxPersistScheduledSendLocked_(properties, record, []));
+  });
+}
+
+function mailboxScheduledSendRetryDelay_(attempts) {
+  return Math.min(60 * 60 * 1000, Math.pow(2, Math.max(0, Number(attempts || 1) - 1)) * 60 * 1000);
+}
+
+function mailboxClaimScheduledSend_(keyValue, nowValue) {
+  const key = String(keyValue || '');
+  const now = Number(nowValue || Date.now());
+  return mailboxScheduledSendLock_(properties => {
+    const record = mailboxReadScheduledSends_(properties).find(item => item._key === key);
+    if (!record) return null;
+    const eligible = (record.state === 'scheduled' && record.dueAt <= now) ||
+      (record.state === 'sending' && record.leaseUntil <= now && record.nextRetryAt <= now);
+    if (!eligible) return null;
+    if (record.attempts >= MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MAX_ATTEMPTS) {
+      record.state = 'needs_review';
+      record.errorCode = 'RETRY_EXHAUSTED';
+      record.reserve = '';
+      record.revision += 1;
+      record.updatedAt = now;
+      mailboxPersistScheduledSendLocked_(properties, record, []);
+      return null;
+    }
+    record.state = 'sending';
+    record.phase = record.phase === 'readback_only' ? 'readback_only' : 'claimed';
+    record.operationToken = Utilities.getUuid();
+    record.leaseUntil = now + MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_LEASE_MS;
+    record.nextRetryAt = record.leaseUntil;
+    record.attempts += 1;
+    record.revision += 1;
+    record.updatedAt = now;
+    return mailboxPersistScheduledSendLocked_(properties, record, []);
+  });
+}
+
+function mailboxRenewScheduledSendClaim_(claimValue) {
+  const claim = claimValue || {};
+  return mailboxScheduledSendLock_(properties => {
+    const record = mailboxReadScheduledSends_(properties).find(item => item._key === claim._key);
+    if (!record || record.state !== 'sending' ||
+        record.operationToken !== claim.operationToken || record.revision !== claim.revision) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Відкладене надсилання вже обробляє інший процес.');
+    }
+    record.leaseUntil = Date.now() + MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_LEASE_MS;
+    record.nextRetryAt = record.leaseUntil;
+    record.updatedAt = Date.now();
+    return mailboxPersistScheduledSendLocked_(properties, record, []);
+  });
+}
+
+function mailboxFinishScheduledSend_(claimValue, stateValue, resultValue, errorCodeValue) {
+  const claim = claimValue || {};
+  return mailboxScheduledSendLock_(properties => {
+    const record = mailboxReadScheduledSends_(properties).find(item => item._key === claim._key);
+    if (!record || record.state !== 'sending' || record.operationToken !== claim.operationToken) {
+      throw mailboxError_('OPERATION_CONFLICT', 'Результат відкладеного надсилання вже застарів.');
+    }
+    record.state = String(stateValue || 'needs_review');
+    record.result = resultValue && mailboxIsPlainObject_(resultValue) ? resultValue : null;
+    record.errorCode = mailboxSafeText_(errorCodeValue, 64);
+    record.operationToken = '';
+    record.leaseUntil = 0;
+    record.nextRetryAt = 0;
+    record.reserve = '';
+    record.revision += 1;
+    record.updatedAt = Date.now();
+    return mailboxPersistScheduledSendLocked_(properties, record, []);
+  });
+}
+
+function mailboxReleaseScheduledSend_(claimValue, error) {
+  const claim = claimValue || {};
+  return mailboxScheduledSendLock_(properties => {
+    const record = mailboxReadScheduledSends_(properties).find(item => item._key === claim._key);
+    if (!record || record.state !== 'sending' || record.operationToken !== claim.operationToken) return null;
+    const code = mailboxSafeText_(error && error.mailboxCode || 'REQUEST_FAILED', 64);
+    if (record.attempts >= MAILBOX_CLIENT_CONFIG_.SCHEDULED_SEND_MAX_ATTEMPTS) {
+      record.state = 'needs_review';
+      record.reserve = '';
+      record.nextRetryAt = 0;
+    } else {
+      record.phase = code === 'SEND_PENDING' ? 'readback_only' : 'retry';
+      record.nextRetryAt = Date.now() + mailboxScheduledSendRetryDelay_(record.attempts);
+    }
+    record.errorCode = code;
+    record.operationToken = '';
+    record.leaseUntil = 0;
+    record.revision += 1;
+    record.updatedAt = Date.now();
+    return mailboxPersistScheduledSendLocked_(properties, record, []);
+  });
+}
+
+function mailboxProcessScheduledSendClaim_(claimValue) {
+  let claim = claimValue;
+  const session = { userId: claim.userId, connectionId: claim.connectionId };
+  try {
+    return mailboxWithConnection_(session, claim.connectionId, 'responder', () => {
+      claim = mailboxRenewScheduledSendClaim_(claim);
+      if (claim.phase === 'readback_only') {
+        const reconciled = mailboxSendDraft_({
+          draftId: claim.draftId,
+          clientOperationId: claim.operationId,
+        });
+        return mailboxFinishScheduledSend_(claim, 'sent', {
+          messageId: reconciled.message.id,
+          threadId: reconciled.message.threadId,
+          historyId: reconciled.message.historyId,
+        }, '');
+      }
+      let draft;
+      try {
+        draft = gmailApiRequest_('/drafts/' + encodeURIComponent(claim.draftId) + '?format=full', { method: 'get' });
+      } catch (error) {
+        if (Number(error && error.gmailHttpStatus || 0) === 404) {
+          return mailboxFinishScheduledSend_(claim, 'needs_review', null, 'DRAFT_MISSING');
+        }
+        throw error;
+      }
+      if (mailboxDraftMessageIdHeader_(draft) !== claim.messageIdHeader) {
+        return mailboxFinishScheduledSend_(claim, 'needs_review', null, 'DRAFT_CHANGED');
+      }
+      const response = mailboxSendDraft_({
+        draftId: claim.draftId,
+        clientOperationId: claim.operationId,
+      });
+      return mailboxFinishScheduledSend_(claim, 'sent', {
+        messageId: response.message.id,
+        threadId: response.message.threadId,
+        historyId: response.message.historyId,
+      }, '');
+    });
+  } catch (error) {
+    const terminal = ['FORBIDDEN', 'NOT_FOUND', 'REAUTH_REQUIRED', 'INVALID_DRAFT', 'OPERATION_CONFLICT']
+      .indexOf(String(error && error.mailboxCode || '')) !== -1;
+    if (terminal) return mailboxFinishScheduledSend_(claim, 'needs_review', null, error.mailboxCode);
+    mailboxReleaseScheduledSend_(claim, error);
+    throw error;
+  }
+}
+
+function mailboxProcessDueScheduledSends_(limitValue) {
+  const limit = Math.max(0, Math.min(Number(limitValue) || 3, 5));
+  const properties = PropertiesService.getScriptProperties();
+  const now = Date.now();
+  const candidates = mailboxReadScheduledSends_(properties).filter(record =>
+    (record.state === 'scheduled' && record.dueAt <= now) ||
+    (record.state === 'sending' && record.leaseUntil <= now && record.nextRetryAt <= now)
+  ).sort((left, right) => left.nextRetryAt - right.nextRetryAt || left.dueAt - right.dueAt);
+  let attempted = 0;
+  let completed = 0;
+  let failed = 0;
+  candidates.slice(0, limit).forEach(candidate => {
+    let claim = null;
+    try { claim = mailboxClaimScheduledSend_(candidate._key, Date.now()); }
+    catch (error) { failed += 1; return; }
+    if (!claim) return;
+    attempted += 1;
+    try {
+      const result = mailboxProcessScheduledSendClaim_(claim);
+      if (result && ['sent', 'needs_review', 'failed_terminal'].indexOf(result.state) !== -1) completed += 1;
+    } catch (error) {
+      failed += 1;
+      console.error('Scheduled draft send retry failed for ' + claim.operationId + ': ' + error);
+    }
+  });
+  return { attempted, completed, failed, pending: Math.max(0, candidates.length - attempted) };
 }
 
 function mailboxNormalizeCompose_(payload, sending) {

@@ -43,6 +43,8 @@ Every suggestion shows `AI-чернетка`, confidence, and which original mes
 - A worker performs Gmail readback before retrying an uncertain send and never issues a second send POST after confirmation.
 - Telegram and Mini App display the same authoritative schedule state.
 
+The v31 backend candidate implements the durable journal and worker independently from the still-unreleased v30 reply UI. It stores no recipient, subject, body, reply text, attachment name, or attachment bytes. The exact Gmail draft and its RFC Message-ID remain authoritative. The minute worker revalidates `responder` access for the recorded Telegram user and Gmail connection, uses a two-minute fenced lease, processes at most three rows per run, and delegates the actual send to the existing at-most-once draft operation journal. UI scheduling controls and real WebView acceptance remain a later release gate.
+
 ## Reminder modes
 
 | Mode | Behaviour |
@@ -91,6 +93,6 @@ No subject, sender, body, attachment name, AI summary, or reply text is stored i
 1. Deploy and verify frozen v28 P0.
 2. Add isolated preference storage and interactive session presets. **Implemented and locally verified in v29.**
 3. Add gentle reply styles as editable Gmail drafts.
-4. Add durable scheduled-send journal and worker with readback.
+4. Add durable scheduled-send journal and worker with readback. **Backend candidate implemented and locally verified in v31; UI and release proof remain pending.**
 5. Add reminder modes and three-screen onboarding.
 6. Run ordinary regression, desktop/mobile/phone QA, guarded release, and post-deploy synchronization checks.
