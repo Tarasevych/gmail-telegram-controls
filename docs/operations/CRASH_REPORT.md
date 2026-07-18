@@ -27,6 +27,8 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - The energy/reminder preference slice is now immutable production v29. Scheduled reminder delivery, low-pressure reply templates, send-later, and onboarding remain later P1 phases; this is incomplete scope, not a production crash.
 - The v31 send-later backend plus v32 Mini App controls are locally verified candidates only. Real Telegram WebView proof, immutable release helper, guarded deployment, and controlled post-deploy acceptance are intentionally pending; production v29 cannot schedule sends yet.
 - The v33 onboarding candidate is functionally verified but still needs rendered desktop/mobile QA and real Telegram WebView proof before any release helper or deployment. The four failures from the unfiltered test glob are immutable historical release-pin fixtures comparing v27–v29 hashes with the current mutable candidate, not runtime regressions; the supported functional matrix passes 344/344.
+- The v34 reminder-delivery candidate is local and undeployed. Its ordinary functional matrix passes 354/354 and the independent review is clear, but real Telegram delivery/callback acceptance is intentionally pending until a guarded combined release; this is a release gate, not a production outage.
+- Codex Security scanning remains intentionally frozen after repeated policy-filter interruptions. The open v27 browser tab is static and must not be interpreted as a running or hung security process. Functional tests and positive expected-denial isolation checks continue without attack-path or exploit-style scans.
 
 ## 2026-07-18 — resolved v32 rendered-QA defects
 

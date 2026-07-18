@@ -57,6 +57,7 @@ Acceptance:
 ## Current preserved progress
 
 - Production: immutable v29 energy-aware Focus preferences.
-- Separate preserved candidates: v30 low-pressure reply starters; v31/v32 durable send-later backend and UI; v33 three-screen per-account onboarding.
-- v33 stores only bounded preference metadata, never message bodies, and passes the 344-test functional matrix.
-- Remaining before a combined release: compassionate reminder delivery with quiet-hour deferral and suppression callbacks, rendered/Telegram WebView QA for the combined candidate, an immutable release helper, read-only preflight, and one guarded deployment.
+- Separate preserved candidates: v30 low-pressure reply starters; v31/v32 durable send-later backend and UI; v33 three-screen per-account onboarding; v34 compassionate reminder delivery.
+- v33 stores only bounded preference metadata. v34 stores only IDs, states, revisions, and timestamps; neither stores message bodies, summaries, attachment names, or subjects in the reminder ledger.
+- v34 passes the 354-test ordinary functional matrix and independent read-only review. It defers every mode through quiet hours and provides exact-account `Пізніше` / suppression callbacks with at-most-once Telegram delivery boundaries.
+- Remaining before a combined release: real Telegram WebView/delivery acceptance, automatic soft-to-digest continuation if retained as a product requirement, an immutable release helper, read-only preflight, one guarded deployment, and controlled post-deploy synchronization checks.

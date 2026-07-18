@@ -48,6 +48,16 @@ const CONFIG = Object.freeze({
   TELEGRAM_MAIL_BROWSE_PREVIOUS_TOKEN_LIMIT: 3,
   TELEGRAM_MAIL_DELIVERY_RESERVATION_MS: 5 * 60 * 1000,
   TELEGRAM_MAIL_RECONCILE_ACTIVE_HARD_LIMIT: 24,
+  MAIL_REMINDER_LEDGER_HARD_LIMIT: 72,
+  MAIL_REMINDER_ACCOUNT_ACTIVE_LIMIT: 24,
+  MAIL_REMINDER_USER_TOTAL_LIMIT: 48,
+  MAIL_REMINDER_SCAN_LIMIT: 12,
+  MAIL_REMINDER_LEASE_MS: 2 * 60 * 1000,
+  MAIL_REMINDER_SOFT_DELAY_MS: 24 * 60 * 60 * 1000,
+  MAIL_REMINDER_URGENT_DELAY_MS: 2 * 60 * 60 * 1000,
+  MAIL_REMINDER_LATER_DELAY_MS: 24 * 60 * 60 * 1000,
+  MAIL_REMINDER_SUPPRESSION_TTL_MS: 365 * 24 * 60 * 60 * 1000,
+  MAIL_REMINDER_MAX_ATTEMPTS: 8,
   TELEGRAM_CARD_MOVE_MAX_ATTEMPTS: 6,
   // Gmail's public API can search native snoozed mail but does not expose a
   // mutable snooze endpoint. These limits therefore protect the bot-managed
@@ -106,6 +116,7 @@ const BOT_UI = Object.freeze({
   MAILBOX_MULTI_PREFIX: 'm2.',
   FOCUS_MULTI_PREFIX: 'pf2.',
   FOCUS_RULE_MULTI_PREFIX: 'r2.',
+  REMINDER_PREFIX: 'rm2.',
   NOOP_ACTION: 'mail.noop',
 });
 
@@ -532,6 +543,9 @@ function checkNewMail_() {
     }
   } catch (error) {
     console.error('Scheduled draft send processing failed: ' + error);
+  }
+  try { processCompassionateMailReminders_(2); } catch (error) {
+    console.error('Compassionate reminder processing failed: ' + error);
   }
   try {
     if (typeof mailboxProcessGoogleRevocations_ === 'function') mailboxProcessGoogleRevocations_(1);
@@ -1251,6 +1265,7 @@ function doPost(e) {
       parseTelegramMailBrowseCallback_(callbackData) ||
       parseTelegramFocusCallback_(callbackData) ||
       parseTelegramFocusRuleCallback_(callbackData) ||
+      parseMailReminderCallback_(callbackData) ||
       callbackData === BOT_UI.BROWSE_ACTION
     );
     const deferredCallbackToast = nativeMailboxCallback ||
@@ -2199,12 +2214,13 @@ function routeTenantUpdate_(update, userId) {
   const mailbox = callback ? parseMailboxCallback_(data) : null;
   const focus = callback ? parseTelegramFocusCallback_(data) : null;
   const focusRule = callback ? parseTelegramFocusRuleCallback_(data) : null;
+  const reminder = callback ? parseMailReminderCallback_(data) : null;
   const content = callback ? parseMailboxContentCallback_(data) : null;
   const attachment = callback ? parseAttachmentCallback_(data) : null;
   const connectionId = String(mailbox && mailbox.connectionId || focus && focus.connectionId ||
     focusRule && focusRule.connectionId || content && content.connectionId ||
     attachment && attachment.connectionId || '');
-  if (!callback || !connectionId) {
+  if (!callback || (!connectionId && !reminder)) {
     routeTenantBootstrapUpdate_(update, userId);
     return;
   }
@@ -2215,7 +2231,9 @@ function routeTenantUpdate_(update, userId) {
   }
   try {
     const replyTo = callback.message && callback.message.message_id;
-    const result = focusRule
+    const result = reminder
+      ? executeMailReminderCallback_(callback, reminder, String(userId))
+      : focusRule
       ? handleTelegramFocusRuleCallback_(callback, focusRule, String(userId))
       : focus
       ? executeTelegramFocusCallback_(callback, focus, {
@@ -3213,6 +3231,456 @@ function executeTelegramFocusCallback_(query, focusCallback, principalValue) {
   });
 }
 
+function mailReminderIndexName_() {
+  return 'MAIL_REMINDER_INDEX_V1';
+}
+
+function mailReminderId_(userId, connectionId, threadId) {
+  return hashMessageId_(String(userId) + ':' + String(connectionId) + ':' + String(threadId));
+}
+
+function mailReminderPropertyKey_(reminderId) {
+  const id = String(reminderId || '');
+  return /^[a-f0-9]{16}$/.test(id) ? 'MAIL_REMINDER_V1_' + id : '';
+}
+
+function mailReminderCallbackData_(action, reminderId, revisionValue) {
+  const code = action === 'later' ? 'l' : action === 'suppress' ? 's' : '';
+  const id = String(reminderId || '');
+  const revision = Math.max(1, Math.floor(Number(revisionValue || 0)));
+  if (!code || !/^[a-f0-9]{16}$/.test(id) || !Number.isSafeInteger(revision)) {
+    throw new Error('Некоректна кнопка нагадування.');
+  }
+  return BOT_UI.REMINDER_PREFIX + code + '.' + id + '.' + revision.toString(36);
+}
+
+function parseMailReminderCallback_(value) {
+  const escaped = BOT_UI.REMINDER_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = String(value || '').match(new RegExp('^' + escaped + '([ls])\\.([a-f0-9]{16})\\.([1-9a-z][0-9a-z]{0,6})$'));
+  if (!match) return null;
+  return { action: match[1] === 'l' ? 'later' : 'suppress', reminderId: match[2], revision: parseInt(match[3], 36) };
+}
+
+function mailReminderReadRecord_(properties, reminderId) {
+  const props = properties || PropertiesService.getScriptProperties();
+  const key = mailReminderPropertyKey_(reminderId);
+  if (!key) return null;
+  let value = null;
+  try { value = JSON.parse(props.getProperty(key) || 'null'); } catch (error) { value = null; }
+  if (!value || Number(value.v) !== 1 || String(value.reminderId || '') !== String(reminderId) ||
+      !/^\d{1,24}$/.test(String(value.userId || '')) || !/^-?\d{1,24}$/.test(String(value.chatId || '')) ||
+      !/^gmail-[A-Za-z0-9_-]{1,80}$/.test(String(value.connectionId || '')) ||
+      !/^[A-Za-z0-9_-]{5,64}$/.test(String(value.threadId || '')) ||
+      !/^[A-Za-z0-9_-]{5,64}$/.test(String(value.messageId || '')) ||
+      !Number.isInteger(Number(value.revision || 0)) || Number(value.revision || 0) < 1 ||
+      ['pending', 'reserved', 'dispatching', 'delivered', 'suppressed', 'uncertain'].indexOf(String(value.state || '')) === -1) return null;
+  return value;
+}
+
+function mailReminderCanonicalIndex_(props) {
+  const prefix = 'MAIL_REMINDER_V1_';
+  const values = props.getProperties();
+  return Object.keys(values).filter(key => {
+    if (!key.startsWith(prefix)) return false;
+    return Boolean(mailReminderReadRecord_(props, key.slice(prefix.length)));
+  }).sort();
+}
+
+function mailReminderWriteLocked_(props, record) {
+  const key = mailReminderPropertyKey_(record && record.reminderId);
+  if (!key) throw new Error('Некоректний запис нагадування.');
+  // The stored index is only a cache. Rebuild from prefixed records so a
+  // previous partial record/index write cannot bypass global or account caps.
+  let index = mailReminderCanonicalIndex_(props).filter(item => item !== key);
+  index.push(key);
+  const evicted = [];
+  const activeStates = new Set(['pending', 'reserved', 'dispatching', 'uncertain']);
+  const rowFor = item => item === key ? record
+    : mailReminderReadRecord_(props, String(item).replace(/^MAIL_REMINDER_V1_/, ''));
+  const accountActiveCount = index.reduce((count, item) => {
+    const row = rowFor(item);
+    return count + (row && row.userId === record.userId && row.connectionId === record.connectionId &&
+      activeStates.has(row.state) ? 1 : 0);
+  }, 0);
+  if (accountActiveCount > CONFIG.MAIL_REMINDER_ACCOUNT_ACTIVE_LIMIT) {
+    throw new Error('Для цього Gmail-акаунта забагато активних нагадувань.');
+  }
+  const userTotalCount = index.reduce((count, item) => {
+    const row = rowFor(item);
+    return count + (row && row.userId === record.userId ? 1 : 0);
+  }, 0);
+  // Keep a fixed reserve for other Telegram owners. Never achieve fairness by
+  // deleting a still-active delivered or suppressed tombstone.
+  if (userTotalCount > CONFIG.MAIL_REMINDER_USER_TOTAL_LIMIT) {
+    throw new Error('Особисте сховище нагадувань заповнене; місце для інших користувачів зарезервовано.');
+  }
+  if (index.length > CONFIG.MAIL_REMINDER_LEDGER_HARD_LIMIT) {
+    const activeMessageIds = new Set(telegramCardIndex_(props, 'TELEGRAM_MAIL_CARD_INDEX').map(cardKey => {
+      try { return JSON.parse(props.getProperty(cardKey) || 'null'); } catch (error) { return null; }
+    }).filter(card => card && card.state === 'active').map(card => String(card.gmailMessageId || '')));
+    const now = Date.now();
+    const removable = index.filter(item => {
+      if (item === key) return false;
+      const row = rowFor(item);
+      if (!row || activeMessageIds.has(String(row.messageId || ''))) return false;
+      if (['delivered', 'uncertain'].indexOf(row.state) !== -1) return true;
+      return row.state === 'suppressed' && now - Number(row.updatedAt || 0) > CONFIG.MAIL_REMINDER_SUPPRESSION_TTL_MS;
+    });
+    while (index.length > CONFIG.MAIL_REMINDER_LEDGER_HARD_LIMIT && removable.length) {
+      const remove = removable.shift();
+      index = index.filter(item => item !== remove);
+      evicted.push(remove);
+    }
+  }
+  if (index.length > CONFIG.MAIL_REMINDER_LEDGER_HARD_LIMIT) {
+    throw new Error('Сховище нагадувань тимчасово заповнене.');
+  }
+  const indexJson = JSON.stringify(index);
+  const recordJson = JSON.stringify(record);
+  const previousRecordJson = props.getProperty(key);
+  assertTelegramPropertyValueFits_(mailReminderIndexName_(), indexJson);
+  assertTelegramPropertyValueFits_(key, recordJson);
+  assertTelegramPropertyStoreFits_(props, { [mailReminderIndexName_()]: indexJson, [key]: recordJson }, evicted);
+  props.setProperty(key, recordJson);
+  try {
+    props.setProperty(mailReminderIndexName_(), indexJson);
+  } catch (error) {
+    // The canonical scan above will still count this record on the next write.
+    // Best-effort rollback keeps the cache and record aligned immediately.
+    if (previousRecordJson === null || previousRecordJson === undefined) deleteScriptProperty_(props, key);
+    else props.setProperty(key, previousRecordJson);
+    throw error;
+  }
+  evicted.forEach(item => deleteScriptProperty_(props, item));
+  return record;
+}
+
+function mailReminderMinuteInTimezone_(date, timezone) {
+  const hour = Number(Utilities.formatDate(date, timezone, 'H'));
+  const minute = Number(Utilities.formatDate(date, timezone, 'm'));
+  return hour * 60 + minute;
+}
+
+function mailReminderInQuietHours_(minute) {
+  return minute >= CONFIG.QUIET_HOURS_START * 60 || minute < CONFIG.QUIET_HOURS_END * 60;
+}
+
+function mailReminderDigestWindowOpen_(minute, windows) {
+  return (Array.isArray(windows) ? windows : []).some(windowMinute => {
+    const delta = (minute - Number(windowMinute) + 1440) % 1440;
+    return delta >= 0 && delta < 10;
+  });
+}
+
+function mailReminderCandidate_(card, now) {
+  const userId = String(card && card.userId || card && card.chatId || '');
+  const chatId = String(card && card.chatId || '');
+  const connectionId = String(card && card.connectionId || '');
+  const threadId = String(card && card.gmailThreadId || '');
+  const messageId = String(card && card.gmailMessageId || '');
+  if (!/^\d{1,24}$/.test(userId) || !/^\d{1,24}$/.test(chatId) || !constantTimeEqual_(userId, chatId) ||
+      !/^gmail-[A-Za-z0-9_-]{1,80}$/.test(connectionId) ||
+      !/^[A-Za-z0-9_-]{5,64}$/.test(threadId) || !/^[A-Za-z0-9_-]{5,64}$/.test(messageId)) return null;
+  return withMailboxConnectionContext_(userId, connectionId, 'viewer', () => {
+    const attentionScope = mailboxAttentionScope_(mailboxCurrentSessionContext_);
+    const attention = mailboxAttentionReadRegistry_(null, attentionScope);
+    const preferences = mailboxAttentionPreferencesNormalize_(attention.preferences);
+    if (!preferences.onboardingCompletedAt) return null;
+    const entry = attention.entries.find(item => item.threadId === threadId);
+    const message = getGmailMessage_(messageId);
+    const labels = new Set((message && message.labelIds || []).map(String));
+    if (labels.has('TRASH') || labels.has('SPAM')) return null;
+    const focusRegistry = mailboxFocusReadRegistry_(null, mailboxFocusScope_(mailboxCurrentSessionContext_));
+    const focus = mailboxFocusEvaluate_(focusRegistry, {
+      id: threadId,
+      sender: { email: senderEmail_(message && message.from) },
+      subject: String(message && message.subject || ''),
+      labelIds: Array.from(labels),
+    });
+    const explicitlyActionable = Boolean(entry && ['action', 'later'].indexOf(entry.triage) !== -1);
+    const priorityActionable = Number(focus && focus.rank || 0) >= 2;
+    if (!explicitlyActionable && !priorityActionable) return null;
+    if (preferences.reminderMode === 'urgent_only' && String(focus && focus.priority || '') !== 'critical') return null;
+    const timezone = preferences.timezone || 'UTC';
+    const minute = mailReminderMinuteInTimezone_(new Date(now), timezone);
+    if (mailReminderInQuietHours_(minute)) return null;
+    const manualFocus = (focusRegistry.manual || []).find(item => item.threadId === threadId);
+    const matchedRule = focus && focus.ruleId
+      ? (focusRegistry.rules || []).find(item => item.id === focus.ruleId) : null;
+    const baseAt = Math.max(
+      0,
+      Math.max(Number(card.createdAt || 0), Number(card.updatedAt || 0)),
+      Number(entry && entry.updatedAt || 0),
+      Number(manualFocus && manualFocus.updatedAt || 0),
+      Number(matchedRule && matchedRule.updatedAt || 0)
+    );
+    if (preferences.reminderMode === 'soft' && now < baseAt + CONFIG.MAIL_REMINDER_SOFT_DELAY_MS) return null;
+    if (preferences.reminderMode === 'urgent_only' && now < baseAt + CONFIG.MAIL_REMINDER_URGENT_DELAY_MS) return null;
+    if (preferences.reminderMode === 'digest' && !mailReminderDigestWindowOpen_(minute, preferences.digestWindows)) return null;
+    return {
+      v: 1,
+      reminderId: mailReminderId_(userId, connectionId, threadId),
+      userId, chatId, connectionId, threadId, messageId,
+      state: 'pending', mode: preferences.reminderMode, revision: 1,
+      nextEligibleAt: now, attempts: 0, createdAt: now, updatedAt: now,
+      subject: String(message && message.subject || '').slice(0, 180),
+      accountEmail: String((mailboxMultiReadRegistry_().connections || []).find(item => item.id === connectionId)?.email || '').slice(0, 254),
+    };
+  });
+}
+
+function reserveMailReminder_(candidate, now) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return null;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let existing = mailReminderReadRecord_(props, candidate.reminderId);
+    if (existing && existing.state === 'suppressed') return null;
+    if (existing && existing.state === 'uncertain') return null;
+    if (existing && existing.state === 'delivered' && existing.messageId === candidate.messageId) return null;
+    if (existing && existing.state === 'delivered' && existing.messageId !== candidate.messageId) {
+      const previousRevision = Number(existing.revision || 0);
+      const firstCreatedAt = Number(existing.createdAt || candidate.createdAt || now);
+      existing = Object.assign({}, candidate, {
+        revision: previousRevision,
+        attempts: 0,
+        createdAt: firstCreatedAt,
+      });
+      delete existing.deliveredAt;
+      delete existing.telegramMessageId;
+      delete existing.deliveryKind;
+    }
+    if (existing && Number(existing.nextEligibleAt || 0) > now) return null;
+    if (existing && ['reserved', 'dispatching'].indexOf(existing.state) !== -1 &&
+        now - Number(existing.updatedAt || 0) < CONFIG.MAIL_REMINDER_LEASE_MS) return null;
+    if (existing && existing.state === 'dispatching') {
+      existing.state = 'uncertain';
+      existing.revision += 1;
+      existing.updatedAt = now;
+      mailReminderWriteLocked_(props, existing);
+      return null;
+    }
+    if (existing && Number(existing.attempts || 0) >= CONFIG.MAIL_REMINDER_MAX_ATTEMPTS) {
+      existing.state = 'uncertain';
+      existing.revision += 1;
+      existing.updatedAt = now;
+      existing.lastError = 'Вичерпано безпечний ліміт повторів Telegram.';
+      mailReminderWriteLocked_(props, existing);
+      return null;
+    }
+    const token = telegramMailDeliveryReservationId_();
+    const stored = Object.assign({}, existing || candidate, {
+      state: 'reserved', leaseToken: token,
+      revision: Math.max(0, Number(existing && existing.revision || 0)) + 1,
+      attempts: Math.max(0, Number(existing && existing.attempts || 0)) + 1,
+      updatedAt: now,
+    });
+    delete stored.subject;
+    delete stored.accountEmail;
+    mailReminderWriteLocked_(props, stored);
+    return { record: stored, leaseToken: token, subject: candidate.subject, accountEmail: candidate.accountEmail };
+  } finally { lock.releaseLock(); }
+}
+
+function markMailReminderDispatching_(claim) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return null;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const stored = mailReminderReadRecord_(props, claim && claim.record && claim.record.reminderId);
+    if (!stored || stored.state !== 'reserved' || stored.leaseToken !== String(claim && claim.leaseToken || '')) return null;
+    stored.state = 'dispatching';
+    stored.updatedAt = Date.now();
+    mailReminderWriteLocked_(props, stored);
+    claim.record = stored;
+    return claim;
+  } finally { lock.releaseLock(); }
+}
+
+function finishMailReminder_(claim, result, error) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return null;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const stored = mailReminderReadRecord_(props, claim.record.reminderId);
+    if (!stored || stored.state !== 'dispatching' || stored.leaseToken !== claim.leaseToken) return null;
+    delete stored.leaseToken;
+    stored.revision += 1;
+    stored.updatedAt = Date.now();
+    if (error) {
+      const exhausted = Number(stored.attempts || 0) >= CONFIG.MAIL_REMINDER_MAX_ATTEMPTS;
+      stored.state = error.telegramOutcomeUncertain || exhausted ? 'uncertain' : 'pending';
+      stored.nextEligibleAt = stored.state === 'uncertain' ? 0 : Date.now() + Math.min(6 * 60 * 60 * 1000, stored.attempts * 15 * 60 * 1000);
+      stored.lastError = String(error && error.message || error).slice(0, 180);
+    } else {
+      stored.state = 'delivered';
+      stored.deliveredAt = Date.now();
+      stored.telegramMessageId = Number(result && result.message_id || 0);
+      stored.deliveryKind = result && result.mailReminderDigest ? 'digest' : 'single';
+      stored.nextEligibleAt = 0;
+      delete stored.lastError;
+    }
+    return mailReminderWriteLocked_(props, stored);
+  } finally { lock.releaseLock(); }
+}
+
+function sendClaimedMailReminder_(claim) {
+  const subject = escapeHtml_(claim.subject || 'Лист, до якого можна повернутися');
+  const account = claim.accountEmail ? '\n📮 <code>' + escapeHtml_(claim.accountEmail) + '</code>' : '';
+  const text = '<b>🌿 М’яке нагадування</b>\n\n' + subject + account +
+    '\n\nМожна зробити лише один маленький крок або відкласти без провини.';
+  const keyboard = JSON.stringify({ inline_keyboard: [
+    [{ text: '📖 Відкрити лист', web_app: { url: mailboxAppUrl_('thread', claim.record.threadId, claim.record.messageId) } }],
+    [
+      { text: '🕘 Пізніше', callback_data: mailReminderCallbackData_('later', claim.record.reminderId, claim.record.revision + 1) },
+      { text: '🔕 Не нагадувати про цей лист', callback_data: mailReminderCallbackData_('suppress', claim.record.reminderId, claim.record.revision + 1) },
+    ],
+  ] });
+  return sendTelegramText_(text, keyboard, { chatId: claim.record.chatId, silent: false });
+}
+
+function sendClaimedMailReminderDigest_(claims) {
+  const items = (Array.isArray(claims) ? claims : []).slice(0, 3);
+  if (!items.length) throw new Error('Дайджест нагадувань порожній.');
+  const text = '<b>🌿 Спокійний дайджест</b>\n\n' + items.map((claim, index) =>
+    (index + 1) + '. ' + escapeHtml_(claim.subject || 'Лист, до якого можна повернутися') +
+    (claim.accountEmail ? '\n   📮 <code>' + escapeHtml_(claim.accountEmail) + '</code>' : '')
+  ).join('\n\n') + '\n\nОберіть лише один посильний крок. Решта може зачекати.';
+  const rows = [];
+  items.forEach((claim, index) => {
+    rows.push([{
+      text: '📖 ' + (index + 1) + '. Відкрити',
+      web_app: { url: mailboxAppUrl_('thread', claim.record.threadId, claim.record.messageId) },
+    }]);
+    rows.push([
+      { text: '🕘 ' + (index + 1) + '. Пізніше', callback_data: mailReminderCallbackData_('later', claim.record.reminderId, claim.record.revision + 1) },
+      { text: '🔕 ' + (index + 1) + '. Не нагадувати', callback_data: mailReminderCallbackData_('suppress', claim.record.reminderId, claim.record.revision + 1) },
+    ]);
+  });
+  return sendTelegramText_(text, JSON.stringify({ inline_keyboard: rows }), {
+    chatId: items[0].record.chatId,
+    silent: false,
+  });
+}
+
+function processCompassionateMailReminders_(limitValue) {
+  if (typeof mailboxAttentionReadRegistry_ !== 'function' || typeof mailboxFocusReadRegistry_ !== 'function') {
+    return { attempted: 0, delivered: 0 };
+  }
+  const maximum = Math.max(1, Math.min(Number(limitValue || 2), 3));
+  const now = Date.now();
+  const newestByThread = new Map();
+  readTelegramMailCardSyncRecords_().filter(card => card && card.state === 'active').forEach(card => {
+    const key = String(card.userId || card.chatId || '') + ':' + String(card.connectionId || '') + ':' +
+      String(card.gmailThreadId || '');
+    const previous = newestByThread.get(key);
+    const cardAt = Math.max(Number(card.createdAt || 0), Number(card.updatedAt || 0));
+    const previousAt = previous
+      ? Math.max(Number(previous.createdAt || 0), Number(previous.updatedAt || 0)) : 0;
+    if (!previous || cardAt > previousAt) {
+      newestByThread.set(key, card);
+    }
+  });
+  const allCards = Array.from(newestByThread.values());
+  const scanLimit = Math.min(CONFIG.MAIL_REMINDER_SCAN_LIMIT, allCards.length);
+  const start = allCards.length ? (Math.floor(now / 60000) * CONFIG.MAIL_REMINDER_SCAN_LIMIT) % allCards.length : 0;
+  const cards = [];
+  for (let offset = 0; offset < scanLimit; offset += 1) cards.push(allCards[(start + offset) % allCards.length]);
+  let attempted = 0;
+  let delivered = 0;
+  const digestClaimsByChat = new Map();
+  for (let index = 0; index < cards.length && attempted < maximum; index += 1) {
+    let candidate = null;
+    try { candidate = mailReminderCandidate_(cards[index], now); }
+    catch (error) { console.error('Reminder candidate skipped: ' + error); }
+    if (!candidate) continue;
+    const claim = reserveMailReminder_(candidate, now);
+    if (!claim) continue;
+    attempted += 1;
+    if (claim.record.mode === 'digest') {
+      const key = String(claim.record.userId) + ':' + String(claim.record.chatId);
+      const batch = digestClaimsByChat.get(key) || [];
+      batch.push(claim);
+      digestClaimsByChat.set(key, batch);
+      continue;
+    }
+    try {
+      const dispatching = markMailReminderDispatching_(claim);
+      if (!dispatching) continue;
+      const result = sendClaimedMailReminder_(dispatching);
+      finishMailReminder_(dispatching, result, null);
+      delivered += 1;
+    } catch (error) {
+      finishMailReminder_(claim, null, error);
+    }
+  }
+  digestClaimsByChat.forEach(claims => {
+    const dispatching = claims.map(markMailReminderDispatching_).filter(Boolean);
+    if (!dispatching.length) return;
+    try {
+      const result = sendClaimedMailReminderDigest_(dispatching);
+      const digestResult = Object.assign({}, result || {}, { mailReminderDigest: true });
+      dispatching.forEach(claim => finishMailReminder_(claim, digestResult, null));
+      delivered += dispatching.length;
+    } catch (error) {
+      dispatching.forEach(claim => finishMailReminder_(claim, null, error));
+    }
+  });
+  return { attempted, delivered };
+}
+
+function executeMailReminderCallback_(query, callback, userIdValue) {
+  const userId = String(userIdValue || '');
+  const chatId = String(telegramCallbackChatId_(query && query.message));
+  if (!/^\d{1,24}$/.test(userId) || !constantTimeEqual_(userId, String(query && query.from && query.from.id || ''))) {
+    throw new Error('Це нагадування належить іншому Telegram-користувачу.');
+  }
+  let changed = null;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error('Нагадування зараз оновлюється.');
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const stored = mailReminderReadRecord_(props, callback.reminderId);
+    if (!stored || !constantTimeEqual_(stored.userId, userId) || !constantTimeEqual_(stored.chatId, chatId)) {
+      throw new Error('Нагадування не знайдено або воно належить іншому чату.');
+    }
+    if (stored.state !== 'delivered' || Number(callback.revision || 0) !== Number(stored.revision || 0)) {
+      throw new Error('Ця кнопка застаріла; стан нагадування вже змінено.');
+    }
+    if (Number(stored.telegramMessageId || 0) !==
+        Number(query && query.message && query.message.message_id || 0)) {
+      throw new Error('Ця кнопка належить до іншого циклу нагадування.');
+    }
+    stored.state = callback.action === 'later' ? 'pending' : 'suppressed';
+    stored.nextEligibleAt = callback.action === 'later' ? Date.now() + CONFIG.MAIL_REMINDER_LATER_DELAY_MS : 0;
+    stored.revision += 1;
+    stored.updatedAt = Date.now();
+    changed = mailReminderWriteLocked_(props, stored);
+  } finally { lock.releaseLock(); }
+  try {
+    if (changed.deliveryKind === 'digest') {
+      const markup = query && query.message && query.message.reply_markup;
+      const rows = markup && Array.isArray(markup.inline_keyboard) ? markup.inline_keyboard : [];
+      const remaining = rows.filter(row => !(row || []).some(button => {
+        const parsed = parseMailReminderCallback_(String(button && button.callback_data || ''));
+        return parsed && parsed.reminderId === callback.reminderId;
+      }));
+      if (rows.length && remaining.length !== rows.length) {
+        telegramRequest_('editMessageReplyMarkup', {
+          chat_id: chatId,
+          message_id: Number(query && query.message && query.message.message_id || 0),
+          reply_markup: telegramMailBrowseMarkup_(remaining),
+        });
+      }
+    } else {
+      telegramRequest_('deleteMessage', { chat_id: chatId, message_id: Number(query && query.message && query.message.message_id || 0) });
+    }
+  } catch (error) { console.error('Could not hide handled reminder: ' + error); }
+  return { message: callback.action === 'later'
+    ? 'Нагадаю не раніше завтра; тихі години не перериваються'
+    : 'Нагадування для цієї гілки вимкнено', reminder: changed };
+}
+
 function routeTelegramUpdate_(update) {
   if (update.callback_query) {
     hydrateTelegramCallbackMarkup_(update.callback_query);
@@ -3241,6 +3709,10 @@ function routeTelegramUpdate_(update) {
     }
     if (action === BOT_UI.UNSUBSCRIBE_UNAVAILABLE_ACTION) {
       return { message: 'Цей відправник не підтримує безпечну відписку' };
+    }
+    const reminderCallback = parseMailReminderCallback_(action);
+    if (reminderCallback) {
+      return executeMailReminderCallback_(update.callback_query, reminderCallback, mailboxOwnerId_());
     }
     const scopedContent = parseMailboxContentCallback_(action);
     if (scopedContent) {

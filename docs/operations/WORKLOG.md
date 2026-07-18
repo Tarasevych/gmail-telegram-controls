@@ -114,3 +114,15 @@
 - Targeted MailApp/MailClient contracts passed 211/211. The ordinary functional regression excluding immutable historical release-pin tests passed 344/344. Inline scripts remain syntactically valid; `git diff --check` passed and the bounded changed-file secret scan found 0 matches.
 - The broad raw glob also ran historical v27–v29 deployment-pin tests against mutable working files: 351 functional tests passed and four release-fixture checks failed for expected historical hashes/path layout. Those fixtures were not edited because doing so would weaken immutable rollback evidence.
 - No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.
+
+## 2026-07-18 — v34 compassionate reminder-delivery candidate
+
+- Created `codex/neuroinclusive-v34-reminder-delivery` from the verified v33 onboarding commit. Production remains immutable Apps Script v29; no release helper or deployment was created.
+- Added a bounded content-free reminder ledger and reused the existing minute worker. `М’яко`, `Дайджест`, and `Лише термінове` defer through 22:00–08:00 quiet hours; critical status never bypasses them.
+- Reminder delivery is private-chat and exact Gmail-connection scoped. Telegram creates are reserved before dispatch; ambiguous transport becomes an at-most-once tombstone and is never automatically replayed.
+- Every reminder exposes `Пізніше` and `Не нагадувати про цей лист`. Callbacks bind the Telegram user, private chat, exact Telegram message ID, monotonic cycle revision, and content-free reminder ID.
+- Digest delivery groups only the same Telegram user/chat and removes only the handled row. A new Gmail message in the same thread can form a later cycle without reusing an old button.
+- Capacity is bounded to 24 active rows per Gmail connection, 48 total rows per Telegram user, and 72 globally. Canonical prefix scans recover a missing index and preserve 24 global slots for other users without evicting live delivered/suppressed evidence.
+- Independent read-only review found and verified fixes for callback ABA, cross-user capacity exhaustion, index partial-write recovery, recent-update timing, and accepted-delivery rollback.
+- Verification: targeted reminder/mail actions 135/135 PASS; ordinary functional matrix 354/354 PASS; `git diff --check` and changed-file secret scan are release gates before commit.
+- No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.

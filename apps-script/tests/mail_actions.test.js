@@ -5632,3 +5632,431 @@ test('Box OAuth result text is escaped and bounded, and no helper path can echo 
     Object.assign(context, originals);
   }
 });
+
+test('compassionate reminder callbacks are bounded opaque and round-trip exactly', () => {
+  const reminderId = '0123456789abcdef';
+  for (const action of ['later', 'suppress']) {
+    const data = context.mailReminderCallbackData_(action, reminderId, 7);
+    assert.ok(Buffer.byteLength(data, 'utf8') <= 64);
+    assert.deepEqual({ ...context.parseMailReminderCallback_(data) }, { action, reminderId, revision: 7 });
+  }
+  assert.equal(context.parseMailReminderCallback_('rm2.l.not-a-record'), null);
+  assert.throws(() => context.mailReminderCallbackData_('delete', reminderId), /Некоректна/);
+});
+
+test('reminder delivery ledger reserves before Telegram and quarantines an expired or uncertain create', () => {
+  const memory = memoryProperties();
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    const candidate = {
+      v: 1, reminderId: '1111111111111111', userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-reminder-unit', threadId: 'thread_reminder_unit',
+      messageId: 'message_reminder_unit', state: 'pending', mode: 'soft',
+      revision: 1, nextEligibleAt: 1, attempts: 0, createdAt: 1, updatedAt: 1,
+      subject: 'Не зберігати тему', accountEmail: 'account@example.com',
+    };
+    const now = Date.now();
+    const first = context.reserveMailReminder_(candidate, now);
+    assert.ok(first && first.leaseToken);
+    assert.equal(context.reserveMailReminder_(candidate, now), null,
+      'a live claim must suppress a concurrent Telegram create');
+    const stored = context.mailReminderReadRecord_(null, candidate.reminderId);
+    assert.equal(stored.state, 'reserved');
+    assert.equal(JSON.stringify(stored).includes(candidate.subject), false,
+      'durable reminder state must not retain mail content');
+    assert.equal(JSON.stringify(stored).includes(candidate.accountEmail), false,
+      'durable reminder state must not retain the account address');
+
+    stored.updatedAt = now - 2 * 60 * 1000 - 1;
+    memory.store[context.mailReminderPropertyKey_(candidate.reminderId)] = JSON.stringify(stored);
+    const reclaimed = context.reserveMailReminder_(candidate, now);
+    assert.ok(reclaimed && reclaimed.leaseToken !== first.leaseToken,
+      'a crash before Telegram dispatch is safe to reclaim');
+    context.markMailReminderDispatching_(reclaimed);
+    const dispatching = context.mailReminderReadRecord_(null, candidate.reminderId);
+    dispatching.updatedAt = now - 2 * 60 * 1000 - 1;
+    memory.store[context.mailReminderPropertyKey_(candidate.reminderId)] = JSON.stringify(dispatching);
+    assert.equal(context.reserveMailReminder_(candidate, now), null);
+    assert.equal(context.mailReminderReadRecord_(null, candidate.reminderId).state, 'uncertain',
+      'an expired dispatch boundary must never be replayed automatically');
+
+    const secondCandidate = { ...candidate, reminderId: '2222222222222222' };
+    const second = context.reserveMailReminder_(secondCandidate, now);
+    context.markMailReminderDispatching_(second);
+    const uncertainError = new Error('transport lost');
+    uncertainError.telegramOutcomeUncertain = true;
+    context.finishMailReminder_(second, null, uncertainError);
+    assert.equal(context.mailReminderReadRecord_(null, secondCandidate.reminderId).state, 'uncertain');
+
+    const evolving = { ...candidate, reminderId: '5555555555555555', messageId: 'message_old_unit' };
+    const oldClaim = context.reserveMailReminder_(evolving, now);
+    context.markMailReminderDispatching_(oldClaim);
+    context.finishMailReminder_(oldClaim, { message_id: 81 }, null);
+    assert.equal(context.reserveMailReminder_(evolving, now), null,
+      'the same Gmail message receives at most one reminder');
+    const oldDelivered = context.mailReminderReadRecord_(null, evolving.reminderId);
+    const newer = { ...evolving, messageId: 'message_new_unit', updatedAt: now + 1 };
+    const newerClaim = context.reserveMailReminder_(newer, now + 1);
+    assert.ok(newerClaim,
+      'a genuinely new message in the thread may receive a new reminder');
+    context.markMailReminderDispatching_(newerClaim);
+    context.finishMailReminder_(newerClaim, { message_id: 82 }, null);
+    const newDelivered = context.mailReminderReadRecord_(null, evolving.reminderId);
+    assert.ok(newDelivered.revision > oldDelivered.revision,
+      'a new message cycle must never reuse an older callback revision');
+    assert.throws(() => context.executeMailReminderCallback_(
+      { from: { id: 427886279 }, message: { message_id: 81, chat: { id: 427886279, type: 'private' } } },
+      { action: 'later', reminderId: evolving.reminderId, revision: newDelivered.revision },
+      '427886279'
+    ), /іншого циклу/,
+    'even a forged current revision must be bound to the delivered Telegram message');
+
+    const exhausted = { ...candidate, reminderId: '6666666666666666', attempts: 8, revision: 8 };
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), exhausted);
+    assert.equal(context.reserveMailReminder_(exhausted, now + 2), null);
+    assert.equal(context.mailReminderReadRecord_(null, exhausted.reminderId).state, 'uncertain',
+      'definite Telegram failures must stop after the bounded retry limit');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('Later and suppress callbacks update only the owning Telegram reminder and never touch Gmail', () => {
+  const memory = memoryProperties();
+  const telegramCalls = [];
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+    telegramRequest_: context.telegramRequest_,
+    getGmailMessage_: context.getGmailMessage_,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.telegramRequest_ = (method, payload) => {
+      telegramCalls.push({ method, payload });
+      return true;
+    };
+    context.getGmailMessage_ = () => { throw new Error('Gmail must not be read by reminder controls'); };
+    const reminderId = '3333333333333333';
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), {
+      v: 1, reminderId, userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-reminder-owner', threadId: 'thread_reminder_owner',
+      messageId: 'message_reminder_owner', state: 'delivered', mode: 'soft',
+      revision: 1, nextEligibleAt: 0, attempts: 1, createdAt: 1, updatedAt: 1,
+      telegramMessageId: 77, deliveryKind: 'single',
+    });
+    const query = {
+      from: { id: 427886279 },
+      message: { message_id: 77, chat: { id: 427886279, type: 'private' } },
+    };
+    const later = context.executeMailReminderCallback_(query, { action: 'later', reminderId, revision: 1 }, '427886279');
+    assert.match(later.message, /завтра/);
+    const delayed = context.mailReminderReadRecord_(null, reminderId);
+    assert.equal(delayed.state, 'pending');
+    assert.ok(delayed.nextEligibleAt > Date.now() + 23 * 60 * 60 * 1000);
+    assert.equal(telegramCalls[0].method, 'deleteMessage');
+
+    assert.throws(() => context.executeMailReminderCallback_(
+      { ...query, from: { id: 999999999 } },
+      { action: 'suppress', reminderId, revision: 2 },
+      '999999999'
+    ), /іншому чату|належить/);
+    assert.throws(() => context.executeMailReminderCallback_(query,
+      { action: 'suppress', reminderId, revision: 1 }, '427886279'), /застаріла/);
+    delayed.state = 'delivered';
+    delayed.revision = 3;
+    delayed.deliveryKind = 'single';
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), delayed);
+    context.executeMailReminderCallback_(query, { action: 'suppress', reminderId, revision: 3 }, '427886279');
+    assert.equal(context.mailReminderReadRecord_(null, reminderId).state, 'suppressed');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('reminder worker is bounded quiet-hour aware and reuses the existing minute trigger', () => {
+  const timerStart = code.indexOf('function checkNewMail_()');
+  const reminderWorker = code.indexOf('processCompassionateMailReminders_(2)', timerStart);
+  const inboxPoll = code.indexOf("runMailCheck_('timer')", timerStart);
+  assert.ok(reminderWorker > timerStart && reminderWorker < inboxPoll);
+  assert.equal(context.mailReminderInQuietHours_(21 * 60 + 59), false);
+  assert.equal(context.mailReminderInQuietHours_(22 * 60), true);
+  assert.equal(context.mailReminderInQuietHours_(7 * 60 + 59), true);
+  assert.equal(context.mailReminderInQuietHours_(8 * 60), false);
+  assert.equal(context.mailReminderDigestWindowOpen_(9 * 60 + 4, [9 * 60]), true);
+  assert.equal(context.mailReminderDigestWindowOpen_(9 * 60 + 9, [9 * 60]), true);
+  assert.equal(context.mailReminderDigestWindowOpen_(9 * 60 + 10, [9 * 60]), false);
+  assert.match(code, /Лист, до якого можна повернутися|М’яке нагадування/);
+  assert.doesNotMatch(code, /ви знову не|ви пропустили|провалили інбокс|серія втрачена/i);
+});
+
+test('urgent-only reminders require explicit critical focus and every mode defers during quiet hours', () => {
+  const originals = {
+    withMailboxConnectionContext_: context.withMailboxConnectionContext_,
+    mailboxAttentionScope_: context.mailboxAttentionScope_,
+    mailboxAttentionReadRegistry_: context.mailboxAttentionReadRegistry_,
+    mailboxAttentionPreferencesNormalize_: context.mailboxAttentionPreferencesNormalize_,
+    getGmailMessage_: context.getGmailMessage_,
+    mailboxFocusReadRegistry_: context.mailboxFocusReadRegistry_,
+    mailboxFocusScope_: context.mailboxFocusScope_,
+    mailboxFocusEvaluate_: context.mailboxFocusEvaluate_,
+    mailboxMultiReadRegistry_: context.mailboxMultiReadRegistry_,
+    mailReminderId_: context.mailReminderId_,
+    Utilities: context.Utilities,
+  };
+  const preferences = {
+    onboardingCompletedAt: 1,
+    reminderMode: 'urgent_only',
+    digestWindows: [540],
+    timezone: 'Europe/Brussels',
+  };
+  let focus = { priority: 'high', rank: 3 };
+  let hour = 9;
+  let entryUpdatedAt = 0;
+  try {
+    vm.runInContext('var mailboxCurrentSessionContext_ = {};', context);
+    context.withMailboxConnectionContext_ = (_user, _connection, _role, callback) => callback();
+    context.mailboxAttentionScope_ = () => ({ userId: '427886279', connectionId: 'gmail-unit' });
+    context.mailboxAttentionReadRegistry_ = () => ({
+      preferences,
+      entries: [{ threadId: 'thread_unit_123', triage: 'action', updatedAt: entryUpdatedAt }],
+    });
+    context.mailboxAttentionPreferencesNormalize_ = value => value;
+    context.getGmailMessage_ = () => ({
+      id: 'message_unit_123', threadId: 'thread_unit_123',
+      from: 'Worker <worker@example.com>', subject: 'Важлива відповідь', labelIds: ['INBOX'],
+    });
+    context.mailboxFocusReadRegistry_ = () => ({});
+    context.mailboxFocusScope_ = () => ({});
+    context.mailboxFocusEvaluate_ = () => focus;
+    context.mailboxMultiReadRegistry_ = () => ({ connections: [{ id: 'gmail-unit', email: 'unit@example.com' }] });
+    context.mailReminderId_ = () => '4444444444444444';
+    context.Utilities = { formatDate: (_date, _timezone, pattern) => pattern === 'H' ? String(hour) : '0' };
+    const now = Date.now();
+    const card = {
+      userId: '427886279', chatId: '427886279', connectionId: 'gmail-unit',
+      gmailThreadId: 'thread_unit_123', gmailMessageId: 'message_unit_123',
+      createdAt: now - 3 * 60 * 60 * 1000,
+    };
+    assert.equal(context.mailReminderCandidate_(card, now), null,
+      'high priority is not enough in urgent-only mode');
+    focus = { priority: 'critical', rank: 4 };
+    assert.equal(context.mailReminderCandidate_(card, now).mode, 'urgent_only');
+    assert.equal(context.mailReminderCandidate_({ ...card, updatedAt: now - 30 * 60 * 1000 }, now), null,
+      'a newer card update must restart the delay even when createdAt is populated');
+    entryUpdatedAt = now - 30 * 60 * 1000;
+    assert.equal(context.mailReminderCandidate_(card, now), null,
+      'a newly assigned Action state must restart the compassionate delay');
+    entryUpdatedAt = 0;
+    hour = 23;
+    assert.equal(context.mailReminderCandidate_(card, now), null,
+      'even critical reminders must defer rather than merely become silent at night');
+    assert.equal(context.mailReminderCandidate_({ ...card, chatId: '-1001234567890' }, now), null,
+      'reminders are private-user only and can never fall back from a group chat to the owner chat');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('digest mode groups bounded reminders into one Telegram create with per-thread controls', () => {
+  const calls = [];
+  const originals = {
+    sendTelegramText_: context.sendTelegramText_,
+    mailboxAppUrl_: context.mailboxAppUrl_,
+  };
+  try {
+    context.mailboxAppUrl_ = (_view, threadId) => 'https://example.test/mail#' + threadId;
+    context.sendTelegramText_ = (text, markup, options) => {
+      calls.push({ text, markup: JSON.parse(markup), options });
+      return { message_id: 91 };
+    };
+    const claims = ['a', 'b'].map((suffix, index) => ({
+      subject: 'Лист ' + suffix,
+      accountEmail: index ? 'work@example.com' : 'home@example.com',
+      record: {
+        chatId: '427886279', threadId: 'thread_digest_' + suffix,
+        messageId: 'message_digest_' + suffix,
+        reminderId: index ? 'bbbbbbbbbbbbbbbb' : 'aaaaaaaaaaaaaaaa',
+      },
+    }));
+    assert.equal(context.sendClaimedMailReminderDigest_(claims).message_id, 91);
+    assert.equal(calls.length, 1, 'one digest window must create one Telegram message');
+    assert.match(calls[0].text, /Спокійний дайджест/);
+    assert.match(calls[0].text, /Лист a[\s\S]*Лист b/);
+    const buttons = calls[0].markup.inline_keyboard.flat();
+    assert.equal(buttons.filter(button => button.web_app).length, 2);
+    assert.equal(buttons.filter(button => context.parseMailReminderCallback_(button.callback_data)).length, 4);
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('handling one digest row preserves every other reminder control', () => {
+  const memory = memoryProperties();
+  const calls = [];
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+    telegramRequest_: context.telegramRequest_,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.telegramRequest_ = (method, payload) => { calls.push({ method, payload }); return true; };
+    const rows = [];
+    for (const [index, reminderId] of ['7777777777777777', '8888888888888888'].entries()) {
+      context.mailReminderWriteLocked_(memory.service.getScriptProperties(), {
+        v: 1, reminderId, userId: '427886279', chatId: '427886279',
+        connectionId: 'gmail-digest-owner', threadId: 'thread_digest_' + index,
+        messageId: 'message_digest_' + index, state: 'delivered', mode: 'digest', revision: 2,
+        nextEligibleAt: 0, attempts: 1, createdAt: 1, updatedAt: 1,
+        telegramMessageId: 99, deliveryKind: 'digest',
+      });
+      rows.push([{ text: 'Open ' + index, web_app: { url: 'https://example.test/' + index } }]);
+      rows.push([{ text: 'Later ' + index,
+        callback_data: context.mailReminderCallbackData_('later', reminderId, 2) }]);
+    }
+    const query = {
+      from: { id: 427886279 },
+      message: { message_id: 99, chat: { id: 427886279, type: 'private' }, reply_markup: { inline_keyboard: rows } },
+    };
+    context.executeMailReminderCallback_(query,
+      { action: 'later', reminderId: '7777777777777777', revision: 2 }, '427886279');
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].method, 'editMessageReplyMarkup');
+    const remaining = JSON.parse(calls[0].payload.reply_markup).inline_keyboard.flat();
+    assert.equal(remaining.some(button => String(button.callback_data || '').includes('7777777777777777')), false);
+    assert.equal(remaining.some(button => String(button.callback_data || '').includes('8888888888888888')), true,
+      'the sibling digest item must stay actionable');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('capacity never evicts a delivered tombstone while its Gmail card is active', () => {
+  const memory = memoryProperties();
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    const reminderKeys = [];
+    const cardKeys = [];
+    for (let index = 0; index < 72; index += 1) {
+      const reminderId = index.toString(16).padStart(16, '0');
+      const reminderKey = context.mailReminderPropertyKey_(reminderId);
+      const messageId = 'message_capacity_' + String(index).padStart(2, '0');
+      const cardKey = 'CARD_CAPACITY_' + index;
+      reminderKeys.push(reminderKey);
+      cardKeys.push(cardKey);
+      const owner = index < 48 ? '427886279' : '527886279';
+      memory.store[reminderKey] = JSON.stringify({
+        v: 1, reminderId, userId: owner, chatId: owner,
+        connectionId: index < 48 ? 'gmail-capacity-owner' : 'gmail-capacity-family', threadId: 'thread_capacity_' + String(index).padStart(2, '0'),
+        messageId, state: 'delivered', mode: 'soft', revision: 2,
+        nextEligibleAt: 0, attempts: 1, createdAt: 1, updatedAt: 1,
+      });
+      memory.store[cardKey] = JSON.stringify({ state: 'active', gmailMessageId: messageId });
+    }
+    memory.store.MAIL_REMINDER_INDEX_V1 = JSON.stringify(reminderKeys);
+    memory.store.TELEGRAM_MAIL_CARD_INDEX = JSON.stringify(cardKeys);
+    const next = {
+      v: 1, reminderId: 'ffffffffffffffff', userId: '627886279', chatId: '627886279',
+      connectionId: 'gmail-capacity-third', threadId: 'thread_capacity_new',
+      messageId: 'message_capacity_new', state: 'pending', mode: 'soft', revision: 1,
+      nextEligibleAt: 1, attempts: 0, createdAt: 1, updatedAt: 1,
+    };
+    assert.throws(() => context.mailReminderWriteLocked_(memory.service.getScriptProperties(), next), /заповнене/);
+    assert.ok(memory.store[reminderKeys[0]], 'active dedupe evidence must remain intact');
+    delete memory.store[cardKeys[0]];
+    memory.store.TELEGRAM_MAIL_CARD_INDEX = JSON.stringify(cardKeys.slice(1));
+    assert.equal(context.mailReminderWriteLocked_(memory.service.getScriptProperties(), next).reminderId,
+      next.reminderId, 'an inactive delivered row may be compacted safely');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('canonical reminder scan enforces a per-user reserve even when the cached index lost entries', () => {
+  const memory = memoryProperties();
+  const props = memory.service.getScriptProperties();
+  for (let index = 0; index < 48; index += 1) {
+    const reminderId = (index + 100).toString(16).padStart(16, '0');
+    memory.store[context.mailReminderPropertyKey_(reminderId)] = JSON.stringify({
+      v: 1, reminderId, userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-orphan-owner', threadId: 'thread_orphan_' + index,
+      messageId: 'message_orphan_' + index, state: 'delivered', mode: 'soft', revision: 2,
+      nextEligibleAt: 0, attempts: 1, createdAt: 1, updatedAt: 1,
+    });
+  }
+  memory.store.MAIL_REMINDER_INDEX_V1 = '[]';
+  const extra = {
+    v: 1, reminderId: 'eeeeeeeeeeeeeeee', userId: '427886279', chatId: '427886279',
+    connectionId: 'gmail-orphan-owner', threadId: 'thread_orphan_extra',
+    messageId: 'message_orphan_extra', state: 'pending', mode: 'soft', revision: 1,
+    nextEligibleAt: 1, attempts: 0, createdAt: 1, updatedAt: 1,
+  };
+  assert.throws(() => context.mailReminderWriteLocked_(props, extra), /заповнене/,
+    'orphaned prefixed records must still count toward the fair-use quota');
+});
+
+test('index-cache failure restores the prior reminder tombstone after an accepted delivery', () => {
+  const memory = memoryProperties();
+  const reminderId = 'dddddddddddddddd';
+  const key = context.mailReminderPropertyKey_(reminderId);
+  const previous = {
+    v: 1, reminderId, userId: '427886279', chatId: '427886279',
+    connectionId: 'gmail-index-owner', threadId: 'thread_index_owner',
+    messageId: 'message_index_owner', state: 'dispatching', mode: 'soft', revision: 2,
+    nextEligibleAt: 0, attempts: 1, createdAt: 1, updatedAt: 1,
+  };
+  memory.store[key] = JSON.stringify(previous);
+  memory.store.MAIL_REMINDER_INDEX_V1 = JSON.stringify([key]);
+  const base = memory.service.getScriptProperties();
+  const failing = {
+    ...base,
+    setProperty(name, value) {
+      if (name === 'MAIL_REMINDER_INDEX_V1') throw new Error('synthetic index failure');
+      base.setProperty(name, value);
+    },
+  };
+  const delivered = { ...previous, state: 'delivered', revision: 3, telegramMessageId: 88 };
+  assert.throws(() => context.mailReminderWriteLocked_(failing, delivered), /synthetic index failure/);
+  assert.deepEqual(JSON.parse(memory.store[key]), previous,
+    'a cache write failure must not erase or replace the pre-dispatch authoritative row');
+});
+
+test('active reminder capacity is isolated per Telegram user and Gmail connection', () => {
+  const memory = memoryProperties();
+  const originals = { PropertiesService: context.PropertiesService, LockService: context.LockService };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    const props = memory.service.getScriptProperties();
+    const record = (index, connectionId) => ({
+      v: 1, reminderId: index.toString(16).padStart(16, '0'),
+      userId: '427886279', chatId: '427886279', connectionId,
+      threadId: 'thread_active_' + String(index).padStart(2, '0'),
+      messageId: 'message_active_' + String(index).padStart(2, '0'),
+      state: 'pending', mode: 'soft', revision: 1,
+      nextEligibleAt: 1, attempts: 0, createdAt: 1, updatedAt: 1,
+    });
+    for (let index = 1; index <= 24; index += 1) {
+      context.mailReminderWriteLocked_(props, record(index, 'gmail-active-a'));
+    }
+    assert.throws(() => context.mailReminderWriteLocked_(props, record(25, 'gmail-active-a')),
+      /забагато активних/);
+    assert.equal(context.mailReminderWriteLocked_(props, record(26, 'gmail-active-b')).connectionId,
+      'gmail-active-b');
+  } finally {
+    Object.assign(context, originals);
+  }
+});

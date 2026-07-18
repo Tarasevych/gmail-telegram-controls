@@ -96,5 +96,7 @@ No subject, sender, body, attachment name, AI summary, or reply text is stored i
 2. Add isolated preference storage and interactive session presets. **Implemented and locally verified in v29.**
 3. Add gentle reply styles as editable Gmail drafts.
 4. Add durable scheduled-send journal and worker with readback. **Backend v31 and Mini App controls v32 are implemented and locally verified; real Telegram WebView and release proof remain pending.**
-5. Add reminder modes and three-screen onboarding.
+5. Add reminder modes and three-screen onboarding. **Three-screen onboarding v33 and content-free compassionate reminder delivery v34 are implemented and locally verified; real Telegram WebView acceptance and release proof remain pending.**
 6. Run ordinary regression, desktop/mobile/phone QA, guarded release, and post-deploy synchronization checks.
+
+The v34 candidate implements one neutral standalone `М’яко` reminder per Gmail message cycle. It does not emit a second standalone reminder before user action; automatic soft-to-digest continuation remains deferred to a later explicitly tested slice.
