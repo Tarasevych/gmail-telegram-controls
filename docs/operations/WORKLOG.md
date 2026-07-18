@@ -126,3 +126,12 @@
 - Independent read-only review found and verified fixes for callback ABA, cross-user capacity exhaustion, index partial-write recovery, recent-update timing, and accepted-delivery rollback.
 - Verification: targeted reminder/mail actions 135/135 PASS; ordinary functional matrix 354/354 PASS; `git diff --check` and changed-file secret scan are release gates before commit.
 - No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.
+
+## 2026-07-18 — v35 soft-to-digest continuation candidate
+
+- Created `codex/neuroinclusive-v35-soft-digest-continuation` from the verified v34 commit. Production remains immutable Apps Script v29 and no live provider state was changed.
+- Completed the research contract for `М’яко`: one standalone neutral reminder, then only grouped delivery in the selected digest windows while the thread remains untouched.
+- Fresh attention, manual focus, matched-rule, or mail-card activity stops continuation. Candidate and scoped registry revisions are re-read under the same ScriptLock before every initial or retry reservation, including removal-only changes with no remaining timestamp.
+- The previous standalone Telegram message ID is stored as content-free retirement metadata until idempotent deletion is confirmed. A crash or definite retry cannot lose it; a bounded worker finishes cleanup later.
+- Every `soft_digest` retry rechecks the selected digest window. A Telegram create accepted before a local marker failure becomes uncertain and is never converted into an automatic duplicate.
+- Targeted mail-action contracts pass 139/139 and the complete ordinary functional matrix passes 359/359. No subject, sender, body, summary, attachment name, OAuth secret, or token was added to the ledger.

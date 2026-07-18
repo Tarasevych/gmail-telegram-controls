@@ -54,6 +54,7 @@ const CONFIG = Object.freeze({
   MAIL_REMINDER_SCAN_LIMIT: 12,
   MAIL_REMINDER_LEASE_MS: 2 * 60 * 1000,
   MAIL_REMINDER_SOFT_DELAY_MS: 24 * 60 * 60 * 1000,
+  MAIL_REMINDER_SOFT_DIGEST_DELAY_MS: 24 * 60 * 60 * 1000,
   MAIL_REMINDER_URGENT_DELAY_MS: 2 * 60 * 60 * 1000,
   MAIL_REMINDER_LATER_DELAY_MS: 24 * 60 * 60 * 1000,
   MAIL_REMINDER_SUPPRESSION_TTL_MS: 365 * 24 * 60 * 60 * 1000,
@@ -3423,9 +3424,42 @@ function mailReminderCandidate_(card, now) {
       userId, chatId, connectionId, threadId, messageId,
       state: 'pending', mode: preferences.reminderMode, revision: 1,
       nextEligibleAt: now, attempts: 0, createdAt: now, updatedAt: now,
+      activityAt: baseAt,
+      digestWindowOpen: mailReminderDigestWindowOpen_(minute, preferences.digestWindows),
+      focusRuleId: String(focus && focus.ruleId || ''),
+      attentionRevision: Number(attention.revision || 0),
+      focusRevision: Number(focusRegistry.revision || 0),
       subject: String(message && message.subject || '').slice(0, 180),
       accountEmail: String((mailboxMultiReadRegistry_().connections || []).find(item => item.id === connectionId)?.email || '').slice(0, 254),
     };
+  });
+}
+
+function mailReminderFreshActivityAtLocked_(props, candidate) {
+  return withMailboxConnectionContext_(candidate.userId, candidate.connectionId, 'viewer', () => {
+    const attention = mailboxAttentionReadRegistry_(props, mailboxAttentionScope_(mailboxCurrentSessionContext_));
+    const focusRegistry = mailboxFocusReadRegistry_(props, mailboxFocusScope_(mailboxCurrentSessionContext_));
+    if (Number(attention.revision || 0) !== Number(candidate.attentionRevision || 0) ||
+        Number(focusRegistry.revision || 0) !== Number(candidate.focusRevision || 0)) {
+      // A removal has no object timestamp to compare. Any scoped registry
+      // revision change therefore invalidates the pre-lock eligibility view.
+      return Number.MAX_SAFE_INTEGER;
+    }
+    const entry = (attention.entries || []).find(item => item.threadId === candidate.threadId);
+    const manual = (focusRegistry.manual || []).find(item => item.threadId === candidate.threadId);
+    const rule = candidate.focusRuleId
+      ? (focusRegistry.rules || []).find(item => item.id === candidate.focusRuleId) : null;
+    const card = readTelegramMailCardSyncRecordById_(
+      candidate.messageId, props, candidate.connectionId, candidate.chatId
+    );
+    return Math.max(
+      Number(candidate.activityAt || 0),
+      Number(entry && entry.updatedAt || 0),
+      Number(manual && manual.updatedAt || 0),
+      Number(rule && rule.updatedAt || 0),
+      Number(card && card.createdAt || 0),
+      Number(card && card.updatedAt || 0)
+    );
   });
 }
 
@@ -3435,10 +3469,39 @@ function reserveMailReminder_(candidate, now) {
   try {
     const props = PropertiesService.getScriptProperties();
     let existing = mailReminderReadRecord_(props, candidate.reminderId);
+    let previousTelegramMessageId = Number(existing && existing.previousTelegramMessageId || 0);
     if (existing && existing.state === 'suppressed') return null;
     if (existing && existing.state === 'uncertain') return null;
-    if (existing && existing.state === 'delivered' && existing.messageId === candidate.messageId) return null;
+    if (existing && existing.state === 'delivered' && existing.messageId === candidate.messageId) {
+      const actedAfterDelivery = Number(candidate.activityAt || 0) > Number(existing.activityAt || 0);
+      const mayContinueInDigest = ['soft', 'soft_digest'].indexOf(String(existing.mode || '')) !== -1;
+      const digestDue = Boolean(candidate.digestWindowOpen) &&
+        now >= Number(existing.deliveredAt || existing.updatedAt || 0) + CONFIG.MAIL_REMINDER_SOFT_DIGEST_DELAY_MS;
+      if (actedAfterDelivery || !mayContinueInDigest || !digestDue || previousTelegramMessageId) return null;
+      let freshActivityAt = 0;
+      try { freshActivityAt = mailReminderFreshActivityAtLocked_(props, candidate); }
+      catch (error) {
+        console.error('Soft reminder continuation deferred because fresh activity could not be verified: ' + error);
+        return null;
+      }
+      if (freshActivityAt > Number(existing.activityAt || 0)) return null;
+      previousTelegramMessageId = Number(existing.telegramMessageId || 0);
+      existing = Object.assign({}, existing, {
+        state: 'pending',
+        mode: 'soft_digest',
+        nextEligibleAt: now,
+        attempts: 0,
+        activityAt: freshActivityAt,
+        activityAttentionRevision: Number(candidate.attentionRevision || 0),
+        activityFocusRevision: Number(candidate.focusRevision || 0),
+        previousTelegramMessageId,
+      });
+      delete existing.deliveredAt;
+      delete existing.telegramMessageId;
+      delete existing.deliveryKind;
+    }
     if (existing && existing.state === 'delivered' && existing.messageId !== candidate.messageId) {
+      if (previousTelegramMessageId) return null;
       const previousRevision = Number(existing.revision || 0);
       const firstCreatedAt = Number(existing.createdAt || candidate.createdAt || now);
       existing = Object.assign({}, candidate, {
@@ -3450,6 +3513,35 @@ function reserveMailReminder_(candidate, now) {
       delete existing.telegramMessageId;
       delete existing.deliveryKind;
     }
+    if (existing && existing.mode === 'soft_digest' &&
+        ['pending', 'reserved'].indexOf(existing.state) !== -1) {
+      let freshActivityAt = 0;
+      try { freshActivityAt = mailReminderFreshActivityAtLocked_(props, candidate); }
+      catch (error) {
+        console.error('Soft digest retry deferred because fresh activity could not be verified: ' + error);
+        return null;
+      }
+      const revisionsChanged =
+        Number(candidate.attentionRevision || 0) !== Number(existing.activityAttentionRevision || 0) ||
+        Number(candidate.focusRevision || 0) !== Number(existing.activityFocusRevision || 0);
+      if (freshActivityAt > Number(existing.activityAt || 0) || revisionsChanged) {
+        existing.state = 'delivered';
+        existing.mode = 'soft';
+        existing.nextEligibleAt = 0;
+        existing.activityAt = freshActivityAt;
+        existing.revision += 1;
+        existing.updatedAt = now;
+        if (previousTelegramMessageId) {
+          existing.telegramMessageId = previousTelegramMessageId;
+          existing.deliveryKind = 'single';
+          delete existing.previousTelegramMessageId;
+        }
+        delete existing.leaseToken;
+        mailReminderWriteLocked_(props, existing);
+        return null;
+      }
+    }
+    if (existing && existing.mode === 'soft_digest' && !candidate.digestWindowOpen) return null;
     if (existing && Number(existing.nextEligibleAt || 0) > now) return null;
     if (existing && ['reserved', 'dispatching'].indexOf(existing.state) !== -1 &&
         now - Number(existing.updatedAt || 0) < CONFIG.MAIL_REMINDER_LEASE_MS) return null;
@@ -3477,8 +3569,18 @@ function reserveMailReminder_(candidate, now) {
     });
     delete stored.subject;
     delete stored.accountEmail;
+    delete stored.digestWindowOpen;
+    delete stored.focusRuleId;
+    delete stored.attentionRevision;
+    delete stored.focusRevision;
     mailReminderWriteLocked_(props, stored);
-    return { record: stored, leaseToken: token, subject: candidate.subject, accountEmail: candidate.accountEmail };
+    return {
+      record: stored,
+      leaseToken: token,
+      subject: candidate.subject,
+      accountEmail: candidate.accountEmail,
+      previousTelegramMessageId,
+    };
   } finally { lock.releaseLock(); }
 }
 
@@ -3524,6 +3626,21 @@ function finishMailReminder_(claim, result, error) {
   } finally { lock.releaseLock(); }
 }
 
+function finishAcceptedMailReminder_(claim, result) {
+  let persistenceError = null;
+  try {
+    const completed = finishMailReminder_(claim, result, null);
+    if (completed) return completed;
+    persistenceError = new Error('Telegram accepted the reminder but its delivered marker was not persisted.');
+  } catch (error) {
+    persistenceError = error;
+  }
+  persistenceError.telegramOutcomeUncertain = true;
+  try { finishMailReminder_(claim, null, persistenceError); }
+  catch (error) { console.error('Could not quarantine an accepted reminder after persistence failure: ' + error); }
+  throw persistenceError;
+}
+
 function sendClaimedMailReminder_(claim) {
   const subject = escapeHtml_(claim.subject || 'Лист, до якого можна повернутися');
   const account = claim.accountEmail ? '\n📮 <code>' + escapeHtml_(claim.accountEmail) + '</code>' : '';
@@ -3563,10 +3680,56 @@ function sendClaimedMailReminderDigest_(claims) {
   });
 }
 
+function retirePreviousReminderMessage_(claim) {
+  const messageId = Number(claim && (claim.previousTelegramMessageId ||
+    claim.record && claim.record.previousTelegramMessageId) || 0);
+  const chatId = String(claim && claim.record && claim.record.chatId || '');
+  if (!messageId || !/^\d{1,24}$/.test(chatId)) return false;
+  try {
+    telegramRequest_('deleteMessage', { chat_id: chatId, message_id: messageId });
+    return clearRetiredPreviousReminderMessage_(claim.record, messageId);
+  } catch (error) {
+    if (telegramDeleteAlreadyApplied_(error)) {
+      return clearRetiredPreviousReminderMessage_(claim.record, messageId);
+    }
+    console.error('Could not retire the previous soft reminder: ' + error);
+    return false;
+  }
+}
+
+function clearRetiredPreviousReminderMessage_(recordValue, messageIdValue) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return false;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const stored = mailReminderReadRecord_(props, recordValue && recordValue.reminderId);
+    if (!stored || Number(stored.previousTelegramMessageId || 0) !== Number(messageIdValue || 0)) return false;
+    delete stored.previousTelegramMessageId;
+    stored.updatedAt = Date.now();
+    mailReminderWriteLocked_(props, stored);
+    return true;
+  } finally { lock.releaseLock(); }
+}
+
+function retirePendingPreviousReminderMessages_(limitValue) {
+  const props = PropertiesService.getScriptProperties();
+  const limit = Math.max(1, Math.min(Number(limitValue || 2), 3));
+  let retired = 0;
+  for (const key of mailReminderCanonicalIndex_(props)) {
+    if (retired >= limit) break;
+    const row = mailReminderReadRecord_(props, String(key).replace(/^MAIL_REMINDER_V1_/, ''));
+    if (!row || row.state !== 'delivered' || !Number(row.previousTelegramMessageId || 0)) continue;
+    if (retirePreviousReminderMessage_({ record: row })) retired += 1;
+  }
+  return retired;
+}
+
 function processCompassionateMailReminders_(limitValue) {
   if (typeof mailboxAttentionReadRegistry_ !== 'function' || typeof mailboxFocusReadRegistry_ !== 'function') {
     return { attempted: 0, delivered: 0 };
   }
+  try { retirePendingPreviousReminderMessages_(2); }
+  catch (error) { console.error('Could not retire previous soft reminders: ' + error); }
   const maximum = Math.max(1, Math.min(Number(limitValue || 2), 3));
   const now = Date.now();
   const newestByThread = new Map();
@@ -3597,7 +3760,7 @@ function processCompassionateMailReminders_(limitValue) {
     const claim = reserveMailReminder_(candidate, now);
     if (!claim) continue;
     attempted += 1;
-    if (claim.record.mode === 'digest') {
+    if (['digest', 'soft_digest'].indexOf(claim.record.mode) !== -1) {
       const key = String(claim.record.userId) + ':' + String(claim.record.chatId);
       const batch = digestClaimsByChat.get(key) || [];
       batch.push(claim);
@@ -3608,7 +3771,8 @@ function processCompassionateMailReminders_(limitValue) {
       const dispatching = markMailReminderDispatching_(claim);
       if (!dispatching) continue;
       const result = sendClaimedMailReminder_(dispatching);
-      finishMailReminder_(dispatching, result, null);
+      finishAcceptedMailReminder_(dispatching, result);
+      retirePreviousReminderMessage_(dispatching);
       delivered += 1;
     } catch (error) {
       finishMailReminder_(claim, null, error);
@@ -3617,14 +3781,23 @@ function processCompassionateMailReminders_(limitValue) {
   digestClaimsByChat.forEach(claims => {
     const dispatching = claims.map(markMailReminderDispatching_).filter(Boolean);
     if (!dispatching.length) return;
+    let result = null;
     try {
-      const result = sendClaimedMailReminderDigest_(dispatching);
-      const digestResult = Object.assign({}, result || {}, { mailReminderDigest: true });
-      dispatching.forEach(claim => finishMailReminder_(claim, digestResult, null));
-      delivered += dispatching.length;
+      result = sendClaimedMailReminderDigest_(dispatching);
     } catch (error) {
       dispatching.forEach(claim => finishMailReminder_(claim, null, error));
+      return;
     }
+    const digestResult = Object.assign({}, result || {}, { mailReminderDigest: true });
+    dispatching.forEach(claim => {
+      try {
+        finishAcceptedMailReminder_(claim, digestResult);
+        retirePreviousReminderMessage_(claim);
+        delivered += 1;
+      } catch (error) {
+        console.error('Accepted digest reminder was quarantined: ' + error);
+      }
+    });
   });
   return { attempted, delivered };
 }

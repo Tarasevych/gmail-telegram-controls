@@ -29,6 +29,7 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - The v33 onboarding candidate is functionally verified but still needs rendered desktop/mobile QA and real Telegram WebView proof before any release helper or deployment. The four failures from the unfiltered test glob are immutable historical release-pin fixtures comparing v27–v29 hashes with the current mutable candidate, not runtime regressions; the supported functional matrix passes 344/344.
 - The v34 reminder-delivery candidate is local and undeployed. Its ordinary functional matrix passes 354/354 and the independent review is clear, but real Telegram delivery/callback acceptance is intentionally pending until a guarded combined release; this is a release gate, not a production outage.
 - Codex Security scanning remains intentionally frozen after repeated policy-filter interruptions. The open v27 browser tab is static and must not be interpreted as a running or hung security process. Functional tests and positive expected-denial isolation checks continue without attack-path or exploit-style scans.
+- v35 closes the previously documented soft-to-digest product gap locally. Durable retirement and retry recovery are covered by functional tests, but real Telegram WebView/delivery acceptance and a guarded release remain pending; production v29 is unchanged.
 
 ## 2026-07-18 — resolved v32 rendered-QA defects
 

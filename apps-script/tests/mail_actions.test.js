@@ -3966,6 +3966,7 @@ test('retention deletes a scoped tenant card in its own Telegram chat before for
     PropertiesService: context.PropertiesService,
     LockService: context.LockService,
     telegramRequest_: context.telegramRequest_,
+    mailReminderFreshActivityAtLocked_: context.mailReminderFreshActivityAtLocked_,
   };
   try {
     context.PropertiesService = memory.service;
@@ -5721,6 +5722,139 @@ test('reminder delivery ledger reserves before Telegram and quarantines an expir
     assert.equal(context.reserveMailReminder_(exhausted, now + 2), null);
     assert.equal(context.mailReminderReadRecord_(null, exhausted.reminderId).state, 'uncertain',
       'definite Telegram failures must stop after the bounded retry limit');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('soft reminders continue only through a later digest window until fresh user activity', () => {
+  const memory = memoryProperties();
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+    telegramRequest_: context.telegramRequest_,
+  };
+  const telegramCalls = [];
+  let freshActivityOverride = 0;
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.telegramRequest_ = (method, payload) => { telegramCalls.push({ method, payload }); return true; };
+    context.mailReminderFreshActivityAtLocked_ = (_props, value) => Math.max(
+      Number(value.activityAt || 0), freshActivityOverride
+    );
+    const now = Date.now();
+    const candidate = {
+      v: 1, reminderId: 'abababababababab', userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-soft-digest', threadId: 'thread_soft_digest',
+      messageId: 'message_soft_digest', state: 'pending', mode: 'soft', revision: 1,
+      nextEligibleAt: now, attempts: 0, createdAt: now, updatedAt: now,
+      activityAt: now - 24 * 60 * 60 * 1000, digestWindowOpen: false,
+      subject: 'М’яке продовження', accountEmail: 'owner@example.com',
+    };
+    const first = context.reserveMailReminder_(candidate, now);
+    context.markMailReminderDispatching_(first);
+    context.finishMailReminder_(first, { message_id: 81 }, null);
+    const delivered = context.mailReminderReadRecord_(null, candidate.reminderId);
+    const nextWindow = delivered.deliveredAt + 24 * 60 * 60 * 1000 + 1;
+
+    assert.equal(context.reserveMailReminder_({ ...candidate, digestWindowOpen: false }, nextWindow), null,
+      'soft mode must never create another standalone reminder outside a digest window');
+    const digestClaim = context.reserveMailReminder_({ ...candidate, digestWindowOpen: true }, nextWindow);
+    assert.equal(digestClaim.record.mode, 'soft_digest');
+    assert.equal(digestClaim.previousTelegramMessageId, 81);
+    assert.equal(context.mailReminderReadRecord_(null, candidate.reminderId).previousTelegramMessageId, 81,
+      'the old standalone message retirement must survive a crash or definite retry');
+    assert.equal('digestWindowOpen' in context.mailReminderReadRecord_(null, candidate.reminderId), false,
+      'the transient scheduling decision must not be persisted');
+    context.markMailReminderDispatching_(digestClaim);
+    context.finishMailReminder_(digestClaim, { message_id: 82, mailReminderDigest: true }, null);
+    assert.equal(context.retirePendingPreviousReminderMessages_(1), 1,
+      'a later worker must finish durable retirement after the delivery execution exits');
+    const digestDelivered = context.mailReminderReadRecord_(null, candidate.reminderId);
+    assert.equal(digestDelivered.previousTelegramMessageId, undefined,
+      'confirmed idempotent deletion clears the durable retirement marker');
+    assert.equal(telegramCalls[0].method, 'deleteMessage');
+    assert.equal(telegramCalls[0].payload.chat_id, '427886279');
+    assert.equal(telegramCalls[0].payload.message_id, 81);
+
+    const delayedDigest = { ...digestDelivered, state: 'pending', nextEligibleAt: 0, revision: digestDelivered.revision + 1 };
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), delayedDigest);
+    assert.equal(context.reserveMailReminder_({ ...candidate, digestWindowOpen: false }, nextWindow + 1), null,
+      'Later and definite retry paths must still wait for a configured digest window');
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), digestDelivered);
+
+    const afterAction = nextWindow + 24 * 60 * 60 * 1000 + 1;
+    freshActivityOverride = candidate.activityAt + 1;
+    assert.equal(context.reserveMailReminder_({ ...candidate, digestWindowOpen: true }, afterAction), null,
+      'fresh activity arriving after candidate creation must stop continuation inside the reservation lock');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('accepted Telegram reminder becomes uncertain when its delivered marker cannot persist', () => {
+  const original = context.finishMailReminder_;
+  const calls = [];
+  try {
+    context.finishMailReminder_ = (_claim, result, error) => {
+      calls.push({ result, error });
+      if (calls.length === 1) throw new Error('synthetic delivered-marker failure');
+      return { state: error && error.telegramOutcomeUncertain ? 'uncertain' : 'pending' };
+    };
+    assert.throws(() => context.finishAcceptedMailReminder_(
+      { record: { reminderId: 'cdcdcdcdcdcdcdcd' }, leaseToken: 'lease' },
+      { message_id: 91 }
+    ), /synthetic delivered-marker failure/);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].error.telegramOutcomeUncertain, true,
+      'post-create persistence loss must never become a definite retry');
+  } finally {
+    context.finishMailReminder_ = original;
+  }
+});
+
+test('under-lock activity verification invalidates removal through scoped registry revisions', () => {
+  const helper = code.match(/function mailReminderFreshActivityAtLocked_\([\s\S]*?\n}\n/);
+  assert.ok(helper, 'the under-lock activity helper must remain present');
+  assert.match(helper[0], /attention\.revision[\s\S]*candidate\.attentionRevision/);
+  assert.match(helper[0], /focusRegistry\.revision[\s\S]*candidate\.focusRevision/);
+  assert.match(helper[0], /return Number\.MAX_SAFE_INTEGER/,
+    'a removed entry has no timestamp, so a scoped revision change must invalidate the candidate');
+});
+
+test('fresh activity cancels every pending soft-digest retry and restores the prior reminder', () => {
+  const memory = memoryProperties();
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+    mailReminderFreshActivityAtLocked_: context.mailReminderFreshActivityAtLocked_,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.mailReminderFreshActivityAtLocked_ = () => 100;
+    const reminderId = 'acacacacacacacac';
+    context.mailReminderWriteLocked_(memory.service.getScriptProperties(), {
+      v: 1, reminderId, userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-soft-retry', threadId: 'thread_soft_retry', messageId: 'message_soft_retry',
+      state: 'pending', mode: 'soft_digest', revision: 5, nextEligibleAt: 0, attempts: 1,
+      createdAt: 1, updatedAt: 1, activityAt: 100,
+      activityAttentionRevision: 1, activityFocusRevision: 1, previousTelegramMessageId: 81,
+    });
+    const candidate = {
+      v: 1, reminderId, userId: '427886279', chatId: '427886279',
+      connectionId: 'gmail-soft-retry', threadId: 'thread_soft_retry', messageId: 'message_soft_retry',
+      state: 'pending', mode: 'soft', revision: 1, nextEligibleAt: 0, attempts: 0,
+      createdAt: 1, updatedAt: 1, activityAt: 100, digestWindowOpen: true,
+      attentionRevision: 2, focusRevision: 1,
+    };
+    assert.equal(context.reserveMailReminder_(candidate, Date.now()), null);
+    const restored = context.mailReminderReadRecord_(null, reminderId);
+    assert.equal(restored.state, 'delivered');
+    assert.equal(restored.mode, 'soft');
+    assert.equal(restored.telegramMessageId, 81);
+    assert.equal(restored.previousTelegramMessageId, undefined);
   } finally {
     Object.assign(context, originals);
   }
