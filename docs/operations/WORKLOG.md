@@ -240,3 +240,10 @@
 - v32 GET-only preflight passed and the single guarded StageOnly attempt created exact immutable v32 plus its separate staging deployment while stable stayed v29. Real Huawei Telegram WebView then showed the exact Gmail identity and zero-scroll controls: Support `[229,891][619,985]`, Rules `[634,891][1022,985]`; Support opened `Крок 1 із 3` without saving or completing onboarding.
 - Temporary v38 acceptance bridge commits on `main` are `5c16b77` add and `4e29470` remove; the path returns HTTP 404. The owner menu is restored exactly to `📬 Пошта` with the production GitHub Pages URL. Phone WebView was closed without a preference write. The v32 promotion gate is cleared pending one final exact GET-only reconciliation.
 - Final reconciliation passed and the guarded helper promoted stable directly from v29 to exact immutable v32/product v38. A production phone-pass through the ordinary `📬 Пошта` menu repeated exact-account, zero-scroll Support/Rules, and onboarding-open checks without saving preferences. The separate staging deployment was then deleted; final preflight reports stable v32, exact candidate HEAD/immutable, journal `cleaned`, and no staging deployment.
+# 2026-07-18 — v34 automatic Mini App session compaction
+
+- Reproduced the repeated `Досягнуто ліміт активних сеансів пошти` incident without reading or mutating Gmail.
+- Production v33 was confirmed live and exact; the reported fallback UI did not expose its recovery token/button.
+- Added a six-family per-Telegram-user bound. Fresh launches retire only that user's oldest abandoned families and preserve at least one existing parallel session under global pressure. Other Telegram users are never evicted.
+- Verification: MailClient 140/140 PASS; ordinary functional matrix 361/361 PASS; `git diff --check` PASS.
+- Added a separately pinned v34 release helper whose acceptance journal binds both MailClient and MailApp hashes.

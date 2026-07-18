@@ -111,3 +111,9 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Immediate resolution: explicit owner-only cleanup retained three newest owner sessions and preserved the other user, leaving 20 free slots. Temporary HEAD code was removed and exact immutable v32 restored; stable production never changed.
 - Preventive fix: a two-minute one-use recovery bearer permits only the same Telegram user to explicitly retire their older families. Cross-user eviction and silent active eviction remain forbidden.
 - Status: immediate incident resolved; permanent hotfix tested locally and awaiting an exact product-v38 release lane.
+# 2026-07-18 — repeated Mini App session-capacity failure after v33
+
+- Symptom: a parallel manual Telegram launch showed `Не вдалося відкрити пошту` and only `Перезапустити Mini App`.
+- Cause: refresh families survive WebView closure for 24 hours; the global 24-family registry can therefore represent abandoned launches rather than 24 live windows. The fallback page also lacked the v33 recovery token.
+- Resolution candidate: v34 automatically compacts only the launching Telegram user's oldest families, keeps six parallel families, and preserves all foreign-user families.
+- Gmail, OAuth, Telegram cards, account zones, and messages were not touched during diagnosis or local testing.

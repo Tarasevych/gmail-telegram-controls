@@ -943,67 +943,99 @@ test('separate Mini App instances retain independent bounded refresh families', 
   assert.equal(new Set(after.map(item => item.fid)).size, 2);
 });
 
-test('refresh family storage rejects active eviction and compacts only expired families', () => {
+test('fresh launches retain six parallel same-user families and retire only that user oldest sessions', () => {
   const harness = makeContext();
   const { context, propertyValues } = harness;
+  const sessions = [];
   for (let index = 0; index < 24; index += 1) {
-    resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    sessions.push(resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
       query_id: `AAE-family-capacity-${index}`,
-    })));
+    }))));
   }
-  const full = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
-  const activeIds = full.map(item => item.fid);
-  assert.equal(full.length, 24);
+  const bounded = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  assert.equal(bounded.length, 6);
+  assert.deepEqual(
+    bounded.map(item => item.fid),
+    sessions.slice(-6).map(item =>
+      JSON.parse(Buffer.from(item.refreshToken.split('.')[1], 'base64url').toString('utf8')).fid
+    ),
+    'only the six newest parallel families for the same Telegram user remain'
+  );
+  assert.throws(
+    () => context.mailboxRequireSession_(sessions[0].sessionToken),
+    error => error && error.mailboxCode === 'SESSION_EXPIRED',
+    'the retired oldest bearer must no longer authorize RPC'
+  );
+  assert.equal(context.mailboxRequireSession_(sessions.at(-1).sessionToken).ownerId, OWNER_ID);
   assert.ok(
     Buffer.byteLength(propertyValues.MAILBOX_REFRESH_FAMILIES_V1, 'utf8') < 8500,
-    'the maximum active family registry must fit one Script Property value'
+    'the bounded same-user family registry must fit one Script Property value'
   );
+
+  const fullHarness = makeContext();
+  resultData(fullHarness.context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-cross-user-seed',
+  })));
+  const seed = JSON.parse(fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1)[0];
+  const foreignRows = Array.from({ length: 24 }, (_, index) => ({
+    ...seed,
+    fid: crypto.randomBytes(32).toString('base64url'),
+    sub: String(1500000000 + index),
+    iat: seed.iat - index,
+    exp: seed.exp - index,
+    jti: crypto.randomBytes(32).toString('base64url'),
+    sessionKey: `mailbox.session.v1.${crypto.randomBytes(32).toString('base64url')}`,
+  }));
+  fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1 = JSON.stringify(foreignRows);
+  const fullIds = foreignRows.map(item => item.fid);
   assert.equal(
-    resultFailed(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    resultFailed(fullHarness.context.mailboxOpenSession(telegramInitData(OWNER_ID, {
       query_id: 'AAE-family-over-capacity',
     }))).code,
     'SESSION_CAPACITY'
   );
   assert.deepEqual(
-    JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1).map(item => item.fid),
-    activeIds,
-    'an active family must never be silently evicted'
+    JSON.parse(fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1).map(item => item.fid),
+    fullIds,
+    'a fresh user must never evict another Telegram user family'
   );
 
   const nowSeconds = Math.floor(Date.now() / 1000);
+  const full = JSON.parse(fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
   full[0].exp = nowSeconds - 1;
   full[0].iat = full[0].exp - 24 * 60 * 60;
-  propertyValues.MAILBOX_REFRESH_FAMILIES_V1 = JSON.stringify(full);
-  resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+  fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1 = JSON.stringify(full);
+  resultData(fullHarness.context.mailboxOpenSession(telegramInitData(OWNER_ID, {
     query_id: 'AAE-family-after-expiry',
   })));
-  const compacted = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
+  const compacted = JSON.parse(fullHarness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
   assert.equal(compacted.length, 24);
-  assert.equal(compacted.some(item => item.fid === activeIds[0]), false);
-  activeIds.slice(1).forEach(fid => assert.ok(compacted.some(item => item.fid === fid)));
+  assert.equal(compacted.some(item => item.fid === fullIds[0]), false);
+  fullIds.slice(1).forEach(fid => assert.ok(compacted.some(item => item.fid === fid)));
 
   assert.match(clientSource, /assertTelegramPropertyValueFits_\(/);
   assert.match(clientSource, /assertTelegramPropertyStoreFits_\(/);
 });
 
-test('explicit capacity recovery keeps other users and newest parallel owner sessions', () => {
+test('explicit capacity recovery replaces only the caller final old family under global pressure', () => {
   const harness = makeContext();
   const { context, propertyValues } = harness;
-  const ownerSessions = [];
-  for (let index = 0; index < 23; index += 1) {
-    ownerSessions.push(resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
-      query_id: `AAE-owner-capacity-${index}`,
-    }))));
-  }
-  const otherUserId = '1051792511';
-  const otherSession = resultData(context.mailboxOpenSession(telegramInitData(otherUserId, {
-    query_id: 'AAE-other-user-capacity',
+  const ownerSession = resultData(context.mailboxOpenSession(telegramInitData(OWNER_ID, {
+    query_id: 'AAE-owner-capacity-existing',
   })));
+  const ownerFamily = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1)[0];
+  const foreignRows = Array.from({ length: 23 }, (_, index) => ({
+    ...ownerFamily,
+    fid: crypto.randomBytes(32).toString('base64url'),
+    sub: String(1500000000 + index),
+    iat: ownerFamily.iat - index - 1,
+    exp: ownerFamily.exp - index - 1,
+    jti: crypto.randomBytes(32).toString('base64url'),
+    sessionKey: `mailbox.session.v1.${crypto.randomBytes(32).toString('base64url')}`,
+  }));
+  propertyValues.MAILBOX_REFRESH_FAMILIES_V1 = JSON.stringify([ownerFamily, ...foreignRows]);
   const before = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
-  const otherFamily = before.find(item => item.sub === otherUserId);
-  const newestOwnerFamilies = before.filter(item => item.sub === OWNER_ID)
-    .slice(-2)
-    .map(item => item.fid);
+  const otherFamilies = before.filter(item => item.sub !== OWNER_ID).map(item => item.fid);
 
   const blockedInitData = telegramInitData(OWNER_ID, {
     query_id: 'AAE-owner-capacity-blocked',
@@ -1019,11 +1051,12 @@ test('explicit capacity recovery keeps other users and newest parallel owner ses
   assert.ok(recovered.sessionToken);
   assert.ok(recovered.refreshToken);
   const after = JSON.parse(propertyValues.MAILBOX_REFRESH_FAMILIES_V1);
-  assert.equal(after.length, 4, 'two previous owner sessions plus the new one and other user remain');
-  assert.ok(after.some(item => item.fid === otherFamily.fid), 'another user family must remain exact');
-  newestOwnerFamilies.forEach(fid => assert.ok(after.some(item => item.fid === fid)));
-  assert.equal(context.mailboxRequireSession_(otherSession.sessionToken).ownerId, otherUserId);
-  assert.equal(context.mailboxRequireSession_(ownerSessions.at(-1).sessionToken).ownerId, OWNER_ID);
+  assert.equal(after.length, 24, 'the old owner family is replaced while all other users remain');
+  assert.deepEqual(after.filter(item => item.sub !== OWNER_ID).map(item => item.fid), otherFamilies);
+  assert.throws(
+    () => context.mailboxRequireSession_(ownerSession.sessionToken),
+    error => error && error.mailboxCode === 'SESSION_EXPIRED'
+  );
   assert.equal(resultFailed(context.mailboxRecoverSessionCapacity(
     blocked.capacityRecoveryToken
   )).code, 'SESSION_EXPIRED', 'the recovery bearer must be one-use');
