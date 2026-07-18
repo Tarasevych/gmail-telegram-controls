@@ -38,3 +38,19 @@ valid for its absolute 24-hour lifetime.
 The guarded v34 release helper pins immutable v33, immutable v32, the exact v34
 candidate hashes, a single staging deployment, and an acceptance journal bound
 to both the MailApp and MailClient hashes.
+
+## Production result
+
+- Candidate commit: `541798dd32fe9baf6f56349ac5384e11b159dabb`, pushed before provider mutation.
+- Immutable Apps Script v34 was created exactly once.
+- One temporary staging deployment was created and verified.
+- Stable deployment advanced atomically from v33 to v34.
+- The staging deployment was deleted.
+- Final read-only preflight: `stableVersion=34`, `headState=candidate_v34`,
+  `immutableReady=true`, `stagingCount=0`, `journalState=cleaned`.
+- Exact deployed MailClient SHA-256:
+  `6114e89601899ca0c83f017354302569885af78078e9bb5e63d088ca09f5e6a5`.
+
+The already-rendered error page cannot replace its own HTML. One restart or a
+fresh `📬 Пошта` launch is required to enter v34; that launch performs the
+same-user compaction automatically.

@@ -117,3 +117,4 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Cause: refresh families survive WebView closure for 24 hours; the global 24-family registry can therefore represent abandoned launches rather than 24 live windows. The fallback page also lacked the v33 recovery token.
 - Resolution candidate: v34 automatically compacts only the launching Telegram user's oldest families, keeps six parallel families, and preserves all foreign-user families.
 - Gmail, OAuth, Telegram cards, account zones, and messages were not touched during diagnosis or local testing.
+- Production resolution: Apps Script v34 is stable and exact; the temporary staging deployment is removed. The already-open error page needs one restart/fresh launch, after which automatic same-user compaction prevents the abandoned-family recurrence.

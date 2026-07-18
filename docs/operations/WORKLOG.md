@@ -247,3 +247,4 @@
 - Added a six-family per-Telegram-user bound. Fresh launches retire only that user's oldest abandoned families and preserve at least one existing parallel session under global pressure. Other Telegram users are never evicted.
 - Verification: MailClient 140/140 PASS; ordinary functional matrix 361/361 PASS; `git diff --check` PASS.
 - Added a separately pinned v34 release helper whose acceptance journal binds both MailClient and MailApp hashes.
+- Candidate `541798d` was pushed before provider mutation. Immutable v34 was created once, one staging deployment was verified, stable advanced v33 → v34, and staging was removed. Final preflight: stable 34, exact candidate HEAD/immutable, zero staging, journal `cleaned`.
