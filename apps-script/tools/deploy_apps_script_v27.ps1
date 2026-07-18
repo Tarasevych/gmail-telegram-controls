@@ -23,10 +23,10 @@ $ExpectedOldHashes = @{
   appsscript   = '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedCandidateHashes = @{
-  Code         = 'ceb4db221b9c17aa2eeac4b0b3f88fa7c9e5a4389822f7e61f149fe798a1cad4'
-  MultiAccount = '2d675b49ca7783d033e154eedddb60d0ef5af296ec9fbc5d0fdadc061f13b622'
-  MailClient   = '8612ff3833b57df29525a6c3b29c3394db15798f32224c610ccffdf6e492ee5e'
-  MailApp      = 'b47faceadb617b15eaef425955423d868f0d22ea46c54527f89270dcf7bf09ad'
+  Code         = 'a767e717d17a1d50a3ecd373078bef59782f8fa7293d0b61787dae0aeac70b3e'
+  MultiAccount = '524cd5f5e7e57ff2313036da77afc3a57bd03d397e56232e32c2cbf34debaf13'
+  MailClient   = 'b777e9b13fcf2a46472cfa0c9da0530ef91ae11f7bef28237c8468d116f68884'
+  MailApp      = '29b5c7883706be9cc77625367dfb8ca3aa99e58c635f47fba048be633ebded70'
   appsscript   = '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 

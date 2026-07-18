@@ -42,3 +42,17 @@
 1. Застосувати зміни в git (включно з оновленням deployment v29 expected-хешів), перевірити `git diff --check` та `git status --short`.
 2. Одноразово вирівняти `codex/neuroinclusive-v45-gentle-milestones` з origin через `git push -u origin HEAD:codex/neuroinclusive-v45-gentle-milestones`.
 3. Після підтвердженого локального/релізного блоку: зафіксувати checkpoint-ноту як завершену для цього проходу та прибрати підтверджені тимчасові процеси (ті, що були створені цим проходом, якщо такі з’являться).
+
+## Факт стану на 2026-07-18
+
+- Продовжено з бази `gmail-telegram-v45-gentle-milestones` з урахуванням попереднього досвіду `v44`/`v43`/`v42`/`v41`/`v40` без змішування конфігурацій Gmail та Telegram-архівних потоків.
+- Локально виконано `node --test apps-script/tests/*.test.js` — 405 passed, 0 failed.
+- `PreflightOnly` для v27/v30/v31/v32 та v36 відтворювано не проходить через production baseline `stableVersion = v35`:
+  - `deploy_apps_script_v27.ps1` → `Stable deployment is unsupported future v35; refusing all v27 release actions.`
+  - `release_apps_script_v30_product_v36.ps1` → `Stable deployment is unsupported v35.`
+  - `release_apps_script_v31_product_v37.ps1` → `Stable deployment is unsupported v35.`
+  - `release_apps_script_v32_product_v38.ps1` → `Stable deployment is unsupported v35.`
+  - `stage_apps_script_v36.ps1` → `Stable deployment is v35, expected immutable v29.`
+- `Checkpoint 019f5d65-8209-7a00-b915-4a522dbcb612` у recovery-артефактах залишається відмічений як завершений по v28-pass, heartbeat `gmail-telegram-adhd-v28` не знайдено як активний, тимчасові процеси від цього проходу не ідентифіковано.
+- Зафіксовано, що далі без ручних Google-циклів/OTP/CAPTCHA виконувати production go-live на v28-нульовій лінії неможливо; наступний безпечний крок — узгоджений release-бандл для поточного production baseline (v35) або окремий контрольний v28-branch.
+- Набір змін поки не розгортено в продакшн, збережено в git-артефактах для відкотів і ревізії.
