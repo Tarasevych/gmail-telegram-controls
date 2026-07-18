@@ -28,3 +28,10 @@
 - Browser console contained no application errors; only expected Telegram WebApp compatibility warnings in plain preview mode.
 - Ordinary regression: 333/333 passed. Focus/MailClient targeted regression: 200/200 passed.
 - Production version 27 was not changed. No real Gmail message, Telegram card, OAuth grant, attachment, or provider data was mutated.
+
+## 2026-07-18 — v28 release freeze
+
+- Added a separate `deploy_apps_script_v28.ps1`; immutable v27 rollback hashes and exact v28 candidate hashes are pinned independently from the older helpers.
+- v28 release-contract tests pass 2/2 and confirm fail-closed future-version, mutex, parse, and no-embedded-secret guards.
+- Read-only `-PreflightOnly` passed with stable version 27, release state `fresh`, and the expected deployment ID.
+- No Apps Script POST or PUT was permitted during preflight; production remains v27 until the guarded release step.
