@@ -4383,6 +4383,7 @@
       <div class="account-panel-actions">
         <button class="account-connect-button" id="connectGoogleAccount" type="button">＋ Додати Gmail-акаунт</button>
         <a class="account-connect-button" id="continueGoogleOAuth" href="#" target="_blank" rel="noopener noreferrer" hidden>Продовжити в Google</a>
+        <button class="outline-button" id="signOutMailboxSession" type="button">Вийти з цього сеансу</button>
       </div>
       <div class="workspace-access" id="workspaceAccessPanel" aria-live="polite"></div>
       <section class="gmail-metadata-panel" id="gmailMetadataPanel" aria-labelledby="gmailMetadataTitle">
@@ -4890,6 +4891,7 @@
         session: null,
         refreshToken: null,
         renewPromise: null,
+        sessionClosing: false,
         account: { name: "Павло Тарасевич", email: "", initial: "П" },
         accounts: [],
         accountSettings: { unifiedConnectionIds: [], notificationConnectionIds: [], notificationMode: "all" },
@@ -5085,7 +5087,7 @@
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
           "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelNav", "drawerScrim", "listPane", "listTitle",
           "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
-          "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
+          "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "signOutMailboxSession", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
           "onboardingLayer", "onboardingDialog", "onboardingProgress", "onboardingTitle", "onboardingDescription", "onboardingStepOne", "onboardingStepTwo", "onboardingStepThree", "onboardingDigestWindow", "onboardingDigestSelect", "onboardingQuietHours", "onboardingSummary", "skipOnboarding", "onboardingBack", "onboardingNext",
           "handoffLayer", "handoffDialog", "handoffTitle", "handoffDescription", "closeHandoff", "handoffAccount", "handoffTitleInput", "handoffDeadlineRow", "handoffDeadline", "handoffStartRow", "handoffStart", "handoffEndRow", "handoffEnd", "handoffTimezoneRow", "handoffTimezone", "handoffEvidence", "handoffOriginal", "cancelHandoff", "confirmHandoff",
           "snoozeScrim", "snoozePanel", "closeSnoozeButton", "snoozeLaterToday", "snoozeTomorrowMorning", "snoozeNextMonday",
@@ -5670,6 +5672,76 @@
         });
       }
 
+      function callCloseMailboxSession(sessionToken, refreshToken) {
+        if (state.preview) return Promise.resolve({ ok: true, data: { signedOut: true } });
+        return new Promise(function (resolve, reject) {
+          if (!window.google || !google.script || !google.script.run || !sessionToken || !refreshToken ||
+              typeof google.script.run.mailboxCloseSession !== "function") {
+            reject(new Error("Завершення поточного сеансу недоступне."));
+            return;
+          }
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(function (error) {
+              reject(new Error(safeText(error && error.message, "Не вдалося завершити поточний сеанс.")));
+            })
+            .mailboxCloseSession(sessionToken, refreshToken);
+        });
+      }
+
+      async function prepareComposeForSessionClose() {
+        if (!state.compose) return true;
+        syncComposeFromFields();
+        var attachmentJobs = composeAttachmentJobs();
+        var pending = composePendingKind();
+        if (attachmentJobs.length || state.composeBusy || state.composeScheduleLoading || pending === "send") {
+          if (state.composeMinimized) restoreCompose();
+          showSnackbar(attachmentJobs.length
+            ? "Спочатку завершіть або скасуйте локальні вкладення — вони ще не збережені в Gmail."
+            : pending === "send" ? "Спочатку перевірте результат надсилання листа."
+            : "Спочатку дочекайтеся завершення операції з чернеткою.", { error: true });
+          return false;
+        }
+        if (state.compose.dirty || state.composeSaveInFlight || pending === "draft") {
+          var saved = await saveDraft({ quiet: false, background: false });
+          if (!saved || !state.compose || state.compose.dirty || state.composeSaveInFlight || composePendingKind()) {
+            if (state.composeMinimized) restoreCompose();
+            showSnackbar("Вихід зупинено: чернетка ще не підтверджена Gmail.", { error: true });
+            return false;
+          }
+        }
+        return true;
+      }
+
+      async function signOutMailboxSession() {
+        if (!state.session || !state.refreshToken || state.accountManagementBusy || state.sessionClosing) return;
+        if (!await prepareComposeForSessionClose()) return;
+        state.accountManagementBusy = true;
+        state.sessionClosing = true;
+        els.signOutMailboxSession.disabled = true;
+        try {
+          if (state.renewPromise) {
+            try { await state.renewPromise; } catch (error) { /* Refresh bearer still identifies the family. */ }
+          }
+          var sessionAtClose = state.session;
+          var refreshAtClose = state.refreshToken;
+          var result = normalizeResponse(await callCloseMailboxSession(sessionAtClose, refreshAtClose));
+          if (!result || result.signedOut !== true) throw new Error("Сервер не підтвердив завершення сеансу.");
+          state.session = null;
+          state.refreshToken = null;
+          state.renewPromise = null;
+          setAccountPanelOpen(false, null, false);
+          showBootError("Поточний сеанс завершено. Gmail-акаунти залишилися підключеними.", { signedOut: true });
+          if (tg && typeof tg.close === "function") window.setTimeout(function () { tg.close(); }, 250);
+        } catch (error) {
+          showSnackbar(safeText(error && error.message, "Не вдалося завершити поточний сеанс."), { error: true });
+        } finally {
+          state.sessionClosing = false;
+          state.accountManagementBusy = false;
+          els.signOutMailboxSession.disabled = false;
+        }
+      }
+
       async function recoverSessionCapacity(recoveryToken) {
         setBootLoading();
         try {
@@ -5687,6 +5759,11 @@
       }
 
       function renewMailboxSession() {
+        if (state.sessionClosing) {
+          var closing = new Error("Сеанс пошти завершується.");
+          closing.code = "SESSION_CLOSING";
+          return Promise.reject(closing);
+        }
         if (state.renewPromise) return state.renewPromise;
         if (!state.refreshToken) {
           var unavailable = new Error("Токен поновлення сесії відсутній.");
@@ -6310,7 +6387,8 @@
         var content = make("div", { className: "state-content" });
         var symbol = make("div", { className: "state-icon error" }, svgIcon("alert", 24));
         content.append(symbol);
-        content.append(make("h2", { text: opts.sessionExpired
+        content.append(make("h2", { text: opts.signedOut
+          ? "Ви вийшли з пошти" : opts.sessionExpired
           ? "Сеанс пошти завершився"
           : opts.sessionCapacity ? "Забагато відкритих сеансів" : "Не вдалося відкрити пошту" }));
         content.append(make("p", { text: safeText(message, "Спробуйте відкрити Mini App ще раз.") }));
@@ -6329,9 +6407,16 @@
         var retry = make("button", {
           className: opts.sessionCapacity && opts.recoveryToken ? "outline-button" : "primary-button",
           type: "button",
-          text: "Перезапустити Mini App"
+          text: opts.sessionCapacity || opts.signedOut ? "Закрити й відкрити пошту з меню" : "Перезапустити Mini App"
         });
-        retry.addEventListener("click", restartMailboxApp);
+        retry.addEventListener("click", function () {
+          if (opts.sessionCapacity || opts.signedOut) {
+            if (tg && typeof tg.close === "function") tg.close();
+            else if (typeof window.close === "function") window.close();
+            return;
+          }
+          restartMailboxApp();
+        });
         content.append(retry);
         bootState.append(content);
         bootState.hidden = false;
@@ -15562,6 +15647,7 @@
         });
         els.closeAccountPanel.addEventListener("click", function () { setAccountPanelOpen(false, null, true); });
         els.connectGoogleAccount.addEventListener("click", connectGoogleMailbox);
+        els.signOutMailboxSession.addEventListener("click", signOutMailboxSession);
         els.refreshGmailMetadata.addEventListener("click", loadGmailMetadata);
         els.refreshFocusSettings.addEventListener("click", loadFocusSettings);
         els.openOnboardingSettings.addEventListener("click", function (event) {

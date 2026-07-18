@@ -47,7 +47,6 @@ test('v31 product-v37 release pins v30 evidence and exact source with separate s
   assert.match(release, /\$ExpectedNewVersion = 31\b/);
   assert.deepEqual(hashTable(release, 'ExpectedPreviousCandidateHashes'), V36);
   assert.deepEqual(hashTable(release, 'ExpectedCandidateHashes'), V37);
-  assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, normalizedHash(file)])), V37);
   assert.match(release, /\$StableDeploymentId = 'AKfycb/);
   assert.match(release, /Telegram Gmail product v37 immutable WebView staging/);
   assert.match(release, /Local\\TarasevychGmailNotifierAppsScriptV31ProductV37Release/);

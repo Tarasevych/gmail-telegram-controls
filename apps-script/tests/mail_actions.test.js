@@ -358,10 +358,10 @@ test('mail cards use native callbacks for actions and show conditional unsubscri
   const buttons = keyboard.inline_keyboard.flat();
   const texts = buttons.map(button => button.text);
   assert.ok(texts.includes('🗄 Архівувати'));
-  assert.ok(texts.includes('🗑 Видалити'));
-  assert.ok(texts.includes('🚫 Спам'));
+  assert.ok(texts.includes('⚠️ До кошика'));
+  assert.ok(texts.includes('⚠️ У спам'));
   assert.ok(texts.includes('🔕 Відписатися'));
-  for (const text of ['🗄 Архівувати', '🗑 Видалити', '🚫 Спам', '🔕 Відписатися', '📎 Оригінал .eml']) {
+  for (const text of ['🗄 Архівувати', '⚠️ До кошика', '⚠️ У спам', '🔕 Відписатися', '📎 Оригінал .eml']) {
     const button = buttons.find(item => item.text === text);
     assert.ok(button.callback_data, `${text} must use callback_data`);
     assert.equal(button.web_app, undefined, `${text} must not open a Mini App`);

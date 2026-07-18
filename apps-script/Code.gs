@@ -9214,23 +9214,22 @@ function buildMailKeyboard_(gmailUrl, senderEmail, otpCodes, gmailMessageId, uns
         callback_data: mailboxCallbackData_(labels.has('UNREAD') ? 'read' : 'unread', gmailMessageId, connectionId),
       },
     ]);
-    rows.push([{
-      text: labels.has('IMPORTANT') ? '❕ Зняти важливість' : '❗ Позначити важливим',
-      callback_data: mailboxCallbackData_(labels.has('IMPORTANT') ? 'notImportant' : 'important', gmailMessageId, connectionId),
-    }]);
     rows.push([
+      {
+        text: labels.has('IMPORTANT') ? '❕ Зняти важливість' : '❗ Важливий',
+        callback_data: mailboxCallbackData_(labels.has('IMPORTANT') ? 'notImportant' : 'important', gmailMessageId, connectionId),
+      },
       {
         text: '🗄 Архівувати',
         callback_data: mailboxCallbackData_('archive', gmailMessageId, connectionId),
       },
-      {
-        text: '🗑 Видалити',
-        callback_data: mailboxCallbackData_('trash', gmailMessageId, connectionId),
-      },
     ]);
     const moderation = [{
-      text: '🚫 Спам',
+      text: '⚠️ У спам',
       callback_data: mailboxCallbackData_('spam', gmailMessageId, connectionId),
+    }, {
+      text: '⚠️ До кошика',
+      callback_data: mailboxCallbackData_('trash', gmailMessageId, connectionId),
     }];
     let unsubscribeButtonAdded = false;
     if (unsubscribe && unsubscribe.available) {
@@ -9256,6 +9255,10 @@ function buildMailKeyboard_(gmailUrl, senderEmail, otpCodes, gmailMessageId, uns
       });
     }
     rows.push(moderation);
+    if (unsubscribeButtonAdded || moderation.length > 2) {
+      const unsubscribeAction = moderation.splice(2);
+      if (unsubscribeAction.length) rows.push(unsubscribeAction);
+    }
   }
   let serialized = JSON.stringify({ inline_keyboard: rows });
   if (utf8ByteLength_(serialized) > CONFIG.TELEGRAM_MAIL_REPLY_MARKUP_MAX_BYTES && unsubscribeWebButton) {

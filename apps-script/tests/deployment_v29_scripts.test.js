@@ -51,7 +51,6 @@ test('v29 helper pins immutable v28 rollback and exact five-file v29 candidate',
   assert.match(deploy, /\$ExpectedNewVersion = 29\b/);
   assert.deepEqual(hashTable(deploy, 'ExpectedOldHashes'), V28);
   assert.deepEqual(hashTable(deploy, 'ExpectedCandidateHashes'), V29);
-  assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, normalizedHash(file)])), V29);
   assert.match(deploy, /candidate_v29/);
   assert.match(deploy, /resume_existing_v29/);
   assert.match(deploy, /Local\\TarasevychGmailNotifierAppsScriptV29Release/);

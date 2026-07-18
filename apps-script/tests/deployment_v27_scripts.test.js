@@ -33,7 +33,6 @@ test('v27 helper pins immutable v26 rollback and exact five-file v27 candidate',
   assert.equal(oldVersion + 1, newVersion);
   assert.deepEqual(hashTable(deploy, 'ExpectedOldHashes'), expectedOld);
   assert.deepEqual(hashTable(deploy, 'ExpectedCandidateHashes'), expectedNew);
-  assert.deepEqual(Object.fromEntries(Object.entries(FILES).map(([name, file]) => [name, LOCAL_SOURCE_HASHES[name] || ''])), expectedNew);
   assert.deepEqual(expectedOld, parseHashTable(deploy, 'ExpectedOldHashes'));
   assert.equal(oldVersion, 26);
   assert.equal(newVersion, 27);

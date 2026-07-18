@@ -849,7 +849,8 @@ test('expired mailbox sessions are classified, cleared, and never retried with t
   assert.match(restartSource, /window\.top\.location\.href = bridgeUrl/);
   assert.match(restartSource, /window\.location\.replace\(bridgeUrl\)/);
   assert.match(restartSource, /tg\.close\(\)/);
-  assert.match(restartSource, /retry\.addEventListener\("click", restartMailboxApp\)/);
+  assert.match(restartSource, /retry\.addEventListener\("click", function \(\) \{/);
+  assert.match(restartSource, /restartMailboxApp\(\)/);
   assert.doesNotMatch(restartSource, /retry\.addEventListener\("click", boot\)/);
   assert.doesNotMatch(restartSource, /window\.location\.reload\(\)/);
 
@@ -2846,6 +2847,24 @@ test('Google Drive attachment accounts are independently connectable and switcha
   assert.match(previewSource, /if \(op === "sourceAccounts"\)/);
   assert.match(previewSource, /source-drive-preview-work/);
   assert.match(previewSource, /prompt=select_account%20consent/);
+});
+
+test('account panel closes only the current Mini App session', () => {
+  assert.match(uiSource, /id="signOutMailboxSession"[^>]*>Вийти з цього сеансу</);
+  assert.match(uiSource, /function callCloseMailboxSession\(sessionToken, refreshToken\)/);
+  assert.match(uiSource, /\.mailboxCloseSession\(sessionToken, refreshToken\)/);
+  const signOutSource = sourceBetween(
+    '      async function signOutMailboxSession() {',
+    '      async function recoverSessionCapacity(recoveryToken) {'
+  );
+  assert.match(signOutSource, /await prepareComposeForSessionClose\(\)/);
+  assert.match(signOutSource, /result\.signedOut !== true/);
+  assert.match(signOutSource, /state\.session = null/);
+  assert.match(signOutSource, /state\.refreshToken = null/);
+  assert.match(signOutSource, /state\.sessionClosing = true/);
+  assert.match(signOutSource, /Gmail-акаунти залишилися підключеними/);
+  assert.doesNotMatch(signOutSource, /disconnectGmail|sourceDisconnect|archive|trash|sendDraft/);
+  assert.match(uiSource, /signOutMailboxSession\.addEventListener\("click", signOutMailboxSession\)/);
 });
 
 test('Gmail zones expose invitation roles and an inline revocable disconnect flow', () => {

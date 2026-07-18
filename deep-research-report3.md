@@ -76,3 +76,26 @@
 - Логи/проблеми:
   - Всі production-релізні helper-и v27/v30/v31/v32/v36 блокує `stable v35` без ручного перетягування відповідного helper bundle.
   - `migrate_telegram_markup.py` у read-only середовищі не виконано з причин відсутнього Python-пакету `telethon`.
+
+## Факт стану на 2026-07-18T20:20Z
+- Відновлення продовжено в v45-лінії на базі `C:\Users\t\Documents\Telegram\gmail-telegram-v45-gentle-milestones`; робоче дерево було синхронізоване з `origin/codex/neuroinclusive-v45-gentle-milestones`.
+- `git status --short --branch` в момент проходу: чисте.
+- `node --test apps-script/tests/*.test.js`: 405 passed, 0 failed, 0 skipped, 0 todo.
+- `PreflightOnly` виконано для v28/v29 deploy + v30/v31/v32 release + v36 stage helper-ів, але всі завершилися блокером через production `stable=35` та застарілі pinned baseline-константи в helper-пакеті.
+- Read-only Telegram/WebApp перевірка: menu `🧪 Пошта v43` для `@TarasevychGmailNotifierBot`, `chat_id=427886279`, веб-роут `https://tarasevych.github.io/gmail-telegram-controls/v43-staging-acceptance-20260718.html`, GitHub Pages 200 OK.
+- Чекпоінт `019f5d65-8209-7a00-b915-4a522dbcb612` у цій гілці залишається завершеним для останнього зафіксованого v28-pass; активного `gmail-telegram-adhd-v28` heartbeat у цій сесії не ідентифіковано.
+- Безпечно: не виконувалися Gmail mutations, OAuth/consent/OTP/CAPTCHA потоки, нові Telegram зміни або прод-замінювання користувацьких даних.
+
+
+## Product v45 / Apps Script v37 production release — 2026-07-18
+
+- Source of truth: `gmail-telegram-v45-gentle-milestones`, branch `codex/neuroinclusive-v45-gentle-milestones`.
+- Consolidated exact-session logout from the stable v35 lineage, v44 co-processing/presence, and v45 gentle-milestone work without re-running OAuth or changing Gmail messages.
+- Local contracts: 407/407 passed; current release-helper tests: 2/2; `git diff --check`: passed.
+- Immutable Apps Script v37 promoted to stable deployment `AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z`; previous production v35 remains the documented rollback target.
+- Final PreflightOnly: stableVersion 37, headState candidate_v37, immutableReady true, legacyStagingCount 0, stagingCount 0, journalState cleaned.
+- Telegram owner menu restored to `📬 Пошта` and the production Pages bridge; live Telegram Desktop verification confirmed inbox loading, the exact account `tarasevych.pavlo@gmail.com`, folders, separated Gmail zones, and `Вийти з цього сеансу`.
+- Gmail-mutating controls were not clicked against arbitrary real mail. Their behavior is covered by the passing contract suite.
+- UX finding: Telegram may refocus an already-open Mini App WebView after menu URL changes. Close the old Mini App before acceptance to avoid visually auditing stale HTML.
+- Non-blocking platform warning: GitHub Pages Actions currently reports Node 20 actions being forced onto Node 24.
+

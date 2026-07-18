@@ -273,6 +273,32 @@ function mailboxRecoverSessionCapacity(recoveryToken) {
 }
 
 /**
+ * Explicitly close only the currently authenticated Mini App session.
+ * Gmail connections, Google OAuth grants, other Telegram users, and sibling
+ * Mini App windows remain untouched.
+ */
+function mailboxCloseSession(sessionToken, refreshToken) {
+  try {
+    const token = String(sessionToken || '');
+    const refreshClaims = mailboxVerifyRefreshToken_(refreshToken);
+    let session = null;
+    try { session = mailboxRequireSession_(token); } catch (error) { session = null; }
+    if (session && (!constantTimeEqual_(String(session.ownerId || ''), String(refreshClaims.sub || '')) ||
+        !constantTimeEqual_(String(session.familyId || ''), String(refreshClaims.fid || '')))) {
+      throw mailboxError_('FORBIDDEN', 'Сеанс і токен оновлення належать різним родинам.');
+    }
+    mailboxRevokeSessionFamily_(
+      String(refreshClaims.sub || ''),
+      String(refreshClaims.fid || ''),
+      session ? mailboxSessionKey_(token) : ''
+    );
+    return mailboxOk_({ signedOut: true });
+  } catch (error) {
+    return mailboxFailure_(error, 'UNAUTHORIZED');
+  }
+}
+
+/**
  * Rotate a valid owner-bound refresh credential into a fresh RPC session.
  * The old credential is never persisted or returned through a URL; the Mini
  * App replaces its in-memory copy with the newly signed token below.
@@ -10281,6 +10307,44 @@ function mailboxPersistSessionFamily_(
       }
     }
     retiredSessionKeys.forEach(mailboxRemoveSessionCacheBestEffort_);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxRevokeSessionFamily_(ownerIdValue, familyIdValue, sessionKeyValue) {
+  const ownerId = String(ownerIdValue || '');
+  const familyId = String(familyIdValue || '');
+  const expectedSessionKey = String(sessionKeyValue || '');
+  if (!/^\d{1,24}$/.test(ownerId) || !/^[A-Za-z0-9_-]{43}$/.test(familyId)) {
+    throw mailboxError_('UNAUTHORIZED', 'Поточний сеанс пошти недійсний.');
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxError_('BUSY', 'Сеанс пошти вже завершується. Спробуйте ще раз.');
+  }
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const families = mailboxReadRefreshFamilies_(properties, Math.floor(Date.now() / 1000));
+    const retiredSessionKeys = [];
+    const next = families.filter(record => {
+      const matches = constantTimeEqual_(String(record.sub || ''), ownerId) &&
+        constantTimeEqual_(String(record.fid || ''), familyId);
+      if (matches) retiredSessionKeys.push(String(record.sessionKey || ''));
+      return !matches;
+    });
+    if (next.length === families.length) {
+      if (expectedSessionKey) mailboxRemoveSessionCacheBestEffort_(expectedSessionKey);
+      return;
+    }
+    const serialized = JSON.stringify(next);
+    mailboxAssertRefreshFamilyStorage_(properties, serialized);
+    properties.setProperty(MAILBOX_CLIENT_CONFIG_.REFRESH_FAMILIES_PROPERTY, serialized);
+    retiredSessionKeys.forEach(mailboxRemoveSessionCacheBestEffort_);
+    if (expectedSessionKey && retiredSessionKeys.indexOf(expectedSessionKey) === -1) {
+      mailboxRemoveSessionCacheBestEffort_(expectedSessionKey);
+    }
   } finally {
     lock.releaseLock();
   }
