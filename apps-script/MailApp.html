@@ -2595,12 +2595,91 @@
     }
 
     .compose-footer {
+      position: relative;
       justify-content: flex-end;
       border-top: 1px solid var(--border);
     }
 
     .compose-footer .attach-button {
       margin-right: auto;
+    }
+
+    .send-later-control {
+      position: relative;
+      display: flex;
+      min-width: 0;
+    }
+
+    .send-later-panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      z-index: 8;
+      display: grid;
+      width: min(340px, calc(100vw - 32px));
+      max-height: min(460px, calc(100dvh - 100px));
+      overflow: auto;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+    }
+
+    .send-later-panel[hidden] {
+      display: none;
+    }
+
+    .send-later-panel h3,
+    .send-later-panel p {
+      margin: 0;
+    }
+
+    .send-later-panel h3 {
+      font-size: 15px;
+    }
+
+    .send-later-note,
+    .send-later-status {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .send-later-status[data-state="scheduled"] {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .send-later-presets,
+    .send-later-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .send-later-form {
+      display: grid;
+      gap: 8px;
+    }
+
+    .send-later-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .send-later-form input {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
     }
 
     .compose-source-layer {
@@ -3464,6 +3543,46 @@
         padding-right: 8px;
         padding-left: 8px;
       }
+
+      .compose-footer {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .compose-footer .attach-button {
+        grid-row: 1 / span 2;
+        grid-column: 1;
+        margin-right: 0;
+      }
+
+      .compose-footer #saveDraftButton {
+        grid-row: 1;
+        grid-column: 2 / span 2;
+      }
+
+      .compose-footer .send-later-control {
+        grid-row: 2;
+        grid-column: 2;
+      }
+
+      .compose-footer .send-later-panel {
+        position: fixed;
+        right: 12px;
+        bottom: 62px;
+        left: 12px;
+        width: auto;
+        max-height: calc(100dvh - 86px);
+      }
+
+      .compose-footer .send-later-control > button,
+      .compose-footer #sendButton {
+        width: 100%;
+      }
+
+      .compose-footer #sendButton {
+        grid-row: 2;
+        grid-column: 3;
+      }
     }
 
     @media (max-height: 560px) {
@@ -4023,6 +4142,28 @@
         <label class="sr-only" for="attachmentFolderInput">Вибрати папку для вкладення</label>
         <input class="sr-only" id="attachmentFolderInput" type="file" multiple webkitdirectory aria-label="Вибрати папку для вкладення">
         <button class="outline-button" id="saveDraftButton" type="button">Зберегти чернетку</button>
+        <div class="send-later-control">
+          <button class="outline-button" id="sendLaterButton" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sendLaterPanel">Надіслати пізніше</button>
+          <section class="send-later-panel" id="sendLaterPanel" role="group" aria-labelledby="sendLaterTitle" hidden>
+            <h3 id="sendLaterTitle">Коли надіслати?</h3>
+            <p class="send-later-note">Час не вибирається автоматично. До запуску можна скасувати або змінити план.</p>
+            <p class="send-later-status" id="sendLaterStatus" aria-live="polite">Оберіть зручний час.</p>
+            <div class="send-later-presets" aria-label="Швидкий вибір часу">
+              <button class="outline-button" id="sendLaterTomorrow" type="button">Завтра о 08:00</button>
+              <button class="outline-button" id="sendLaterNextWorkday" type="button">Наступний робочий день о 09:00</button>
+            </div>
+            <form class="send-later-form" id="sendLaterForm">
+              <label for="sendLaterDateTime">Дата й час
+                <input id="sendLaterDateTime" type="datetime-local" required step="60">
+              </label>
+              <div class="send-later-actions">
+                <button class="primary-button" id="confirmSendLater" type="submit">Запланувати</button>
+                <button class="text-button" id="cancelScheduledSend" type="button" hidden>Скасувати заплановане</button>
+                <button class="text-button" id="closeSendLater" type="button">Закрити</button>
+              </div>
+            </form>
+          </section>
+        </div>
         <button class="primary-button" id="sendButton" type="button">Надіслати</button>
       </footer>
       <div class="compose-source-layer" id="composeSourceLayer" hidden>
@@ -4274,6 +4415,7 @@
         composeSaveQueued: false,
         composeAutosaveTimer: 0,
         composeMinimized: false,
+        composeScheduleLoading: false,
         composeCloseDialogOpen: false,
         composeSourceOpen: false,
         composeSourceProvider: "device",
@@ -4318,6 +4460,7 @@
         previewDriveConnected: true,
         previewActiveDriveSourceId: "source-drive-preview-personal",
         previewActiveBoxSourceId: "source-box-preview-personal",
+        previewScheduledSends: [],
         preview: isLocalPreview()
       };
 
@@ -4367,7 +4510,7 @@
           "composeTextColor", "composeBackgroundColor", "inlineImageInput", "composeLinkButton", "composeLinkForm", "composeLinkUrl", "cancelComposeLink", "ccField", "bccField",
           "showCcButton", "showBccButton", "hideCcButton", "hideBccButton", "replyAttachmentsOption", "includeOriginalAttachments", "replyAttachmentsHint", "composeAttachments", "attachButton",
           "composeTableButton", "composeTablePanel", "composeTableRows", "composeTableColumns", "composeTableBorderStyle", "composeTableBorderWidth", "composeTableBorderColor", "insertComposeTableButton", "cancelComposeTable",
-          "attachmentInput", "attachmentFolderInput", "saveDraftButton", "sendButton", "composeSourceLayer", "composeSourceDialog", "closeComposeSource",
+          "attachmentInput", "attachmentFolderInput", "saveDraftButton", "sendLaterButton", "sendLaterPanel", "sendLaterStatus", "sendLaterTomorrow", "sendLaterNextWorkday", "sendLaterForm", "sendLaterDateTime", "confirmSendLater", "cancelScheduledSend", "closeSendLater", "sendButton", "composeSourceLayer", "composeSourceDialog", "closeComposeSource",
           "composeSourceDeviceTab", "composeSourceDriveTab", "composeSourceBoxTab", "composeSourcePublicTab", "composeSourceDevicePanel", "composeSourceDrivePanel", "composeSourceBoxPanel", "composeSourcePublicPanel",
           "chooseDeviceAttachment", "chooseDeviceFolder", "composeDriveAccount", "composeDriveConnect", "composeDriveContinue", "composeDriveRefresh", "composeDriveSearchForm", "composeDriveQuery", "composeDriveStatus", "composeDriveResults",
           "composeBoxDisconnected", "composeBoxConnected", "composeBoxAccount", "composeBoxConnect", "composeBoxConnectionStatus", "composeBoxIdentity", "composeBoxCapacity",
@@ -5306,6 +5449,43 @@
             payload: {
               draftId: safeId(input.draftId),
               clientOperationId: safeClientOperationId(input.clientOperationId)
+            }
+          };
+        }
+        if (op === "scheduledSendState") {
+          return { op: op, connectionId: safeId(input.connectionId), payload: {} };
+        }
+        if (op === "scheduleDraftSend") {
+          return {
+            op: op,
+            connectionId: safeId(input.connectionId),
+            payload: {
+              draftId: safeId(input.draftId),
+              clientOperationId: safeClientOperationId(input.clientOperationId),
+              dueAt: Math.floor(Number(input.dueAt || 0)),
+              timezone: safeText(input.timezone, "UTC")
+            }
+          };
+        }
+        if (op === "rescheduleDraftSend") {
+          return {
+            op: op,
+            connectionId: safeId(input.connectionId),
+            payload: {
+              clientOperationId: safeClientOperationId(input.clientOperationId),
+              expectedRevision: Math.max(1, Math.floor(Number(input.expectedRevision || 0))),
+              dueAt: Math.floor(Number(input.dueAt || 0)),
+              timezone: safeText(input.timezone, "UTC")
+            }
+          };
+        }
+        if (op === "cancelScheduledSend") {
+          return {
+            op: op,
+            connectionId: safeId(input.connectionId),
+            payload: {
+              clientOperationId: safeClientOperationId(input.clientOperationId),
+              expectedRevision: Math.max(1, Math.floor(Number(input.expectedRevision || 0)))
             }
           };
         }
@@ -9384,6 +9564,9 @@
           forwardSource: null,
           draftOperationId: "",
           sendOperationId: "",
+          scheduleOperationId: "",
+          scheduledSend: null,
+          scheduleCheckFailed: false,
           pendingKind: "",
           pendingSaveSnapshot: null,
           closeAfterSave: false,
@@ -9427,6 +9610,9 @@
           forwardSource: null,
           draftOperationId: "",
           sendOperationId: "",
+          scheduleOperationId: "",
+          scheduledSend: null,
+          scheduleCheckFailed: false,
           pendingKind: "",
           pendingSaveSnapshot: null,
           closeAfterSave: false,
@@ -9506,8 +9692,18 @@
         return pendingKind === "draft" || pendingKind === "send" ? pendingKind : "";
       }
 
+      function composeScheduledSendActive() {
+        var schedule = state.compose && state.compose.scheduledSend;
+        return Boolean(schedule && (schedule.state === "scheduled" || schedule.state === "sending"));
+      }
+
+      function composeScheduleUnknown() {
+        return Boolean(state.compose && state.compose.scheduleCheckFailed);
+      }
+
       function composeLocked() {
-        return Boolean(state.composeBusy || composePendingKind() === "send");
+        return Boolean(state.composeBusy || state.composeScheduleLoading || composeScheduleUnknown() ||
+          composePendingKind() === "send" || composeScheduledSendActive());
       }
 
       function composeAttachmentsLocked() {
@@ -9776,6 +9972,8 @@
         state.composeSessionId = newClientOperationId();
         state.composeAttachmentSequence = 0;
         state.composeAttachmentFlushScheduled = false;
+        state.composeScheduleLoading = false;
+        els.sendLaterDateTime.value = "";
         state.composeBusy = true;
         var composeMode = mode || "compose";
         try {
@@ -10821,6 +11019,7 @@
         setOptionalRecipientField("bcc", Boolean(draft.bcc), false);
         renderReplyAttachmentsOption();
         renderComposeAttachments();
+        renderSendLaterState();
         setComposeBusy(state.composeBusy);
         updateComposeLifecycleControls();
       }
@@ -11123,9 +11322,12 @@
         state.composeSessionId = newClientOperationId();
         state.composeAttachmentSequence = 0;
         state.composeAttachmentFlushScheduled = false;
+        els.sendLaterDateTime.value = "";
         state.compose = normalizeDraft(value, "draft");
+        state.composeScheduleLoading = true;
         renderCompose();
         showCompose();
+        loadComposeScheduledSend({ alreadyLoading: true });
       }
 
       async function saveDraft(options) {
@@ -11199,6 +11401,8 @@
             if (state.compose === composeAtStart) {
               var currentRevision = Number(composeAtStart.revision || 0);
               if (currentRevision === snapshot.revision) {
+                canonical.scheduleOperationId = composeAtStart.scheduleOperationId;
+                canonical.scheduledSend = composeAtStart.scheduledSend;
                 canonical.inlineAttachments = mergeCanonicalInlineAttachments(
                   canonical.inlineAttachments,
                   composeAtStart.inlineAttachments,
@@ -11291,8 +11495,304 @@
         }
       }
 
+      function normalizeScheduledSend(value) {
+        var item = value || {};
+        var operationId = safeClientOperationId(item.operationId);
+        var draftId = safeId(item.draftId);
+        var stateName = safeText(item.state).toLowerCase();
+        if (!operationId || !draftId ||
+            ["scheduled", "sending", "sent", "cancelled", "needs_review", "failed_terminal"].indexOf(stateName) === -1) {
+          return null;
+        }
+        return {
+          operationId: operationId,
+          draftId: draftId,
+          dueAt: Math.max(0, Math.floor(Number(item.dueAt || 0))),
+          timezone: safeText(item.timezone, "UTC"),
+          state: stateName,
+          revision: Math.max(1, Math.floor(Number(item.revision || 1))),
+          attempts: Math.max(0, Math.floor(Number(item.attempts || 0))),
+          errorCode: safeText(item.errorCode),
+          result: item.result && typeof item.result === "object" ? {
+            messageId: safeId(item.result.messageId),
+            threadId: safeId(item.result.threadId),
+            historyId: safeText(item.result.historyId)
+          } : null,
+          createdAt: Math.max(0, Math.floor(Number(item.createdAt || 0))),
+          updatedAt: Math.max(0, Math.floor(Number(item.updatedAt || 0)))
+        };
+      }
+
+      function composeTimezone() {
+        try {
+          var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (/^[A-Za-z0-9_+\-/]{1,80}$/.test(timezone)) return timezone;
+        } catch (error) {}
+        return "UTC";
+      }
+
+      function localDateTimeInputValue(epochValue) {
+        var date = new Date(Number(epochValue || Date.now()));
+        if (!Number.isFinite(date.getTime())) return "";
+        var local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 16);
+      }
+
+      function tomorrowAt(hour) {
+        var date = new Date();
+        date.setDate(date.getDate() + 1);
+        date.setHours(hour, 0, 0, 0);
+        return date.getTime();
+      }
+
+      function nextWorkdayAt(hour) {
+        var date = new Date();
+        do { date.setDate(date.getDate() + 1); }
+        while (date.getDay() === 0 || date.getDay() === 6);
+        date.setHours(hour, 0, 0, 0);
+        return date.getTime();
+      }
+
+      function scheduledSendLabel(schedule) {
+        if (!schedule) return "Оберіть зручний час.";
+        var when = schedule.dueAt ? formatSnoozeDateTime(schedule.dueAt) : "час не визначено";
+        if (schedule.state === "scheduled") return "Заплановано: " + when + ". До запуску можна змінити або скасувати.";
+        if (schedule.state === "sending") return "Gmail уже обробляє надсилання. Скасування більше не гарантоване.";
+        if (schedule.state === "sent") return "Надіслано. Стан підтверджено Gmail.";
+        if (schedule.state === "cancelled") return "Заплановане надсилання скасовано. Чернетку можна редагувати.";
+        if (schedule.state === "needs_review") return "Потрібна перевірка: автоматичне надсилання зупинено без повторного POST.";
+        return "Автоматичне надсилання зупинено. Перевірте чернетку.";
+      }
+
+      function renderSendLaterState() {
+        if (!els.sendLaterPanel) return;
+        var schedule = normalizeScheduledSend(state.compose && state.compose.scheduledSend);
+        if (state.compose && state.compose.scheduledSend && !schedule) state.compose.scheduledSend = null;
+        var scheduleUnknown = composeScheduleUnknown();
+        var busy = Boolean(state.composeBusy || state.composeScheduleLoading);
+        var selectedDueAt = !schedule && els.sendLaterDateTime.value
+          ? new Date(els.sendLaterDateTime.value).getTime()
+          : 0;
+        els.sendLaterStatus.textContent = state.composeScheduleLoading
+          ? "Перевіряю актуальний стан у Gmail…"
+          : scheduleUnknown
+          ? "Не вдалося підтвердити стан. Редагування й надсилання заблоковано до повторної перевірки."
+          : selectedDueAt > Date.now()
+          ? "Обрано " + formatSnoozeDateTime(selectedDueAt) + ". Натисніть «Запланувати», щоб підтвердити."
+          : scheduledSendLabel(schedule);
+        els.sendLaterStatus.dataset.state = schedule ? schedule.state : "none";
+        els.cancelScheduledSend.hidden = !(schedule && schedule.state === "scheduled");
+        els.confirmSendLater.textContent = scheduleUnknown
+          ? "Перевірити стан"
+          : schedule && schedule.state === "scheduled"
+          ? "Змінити час"
+          : "Запланувати";
+        var cannotSchedule = Boolean(busy || (schedule && schedule.state === "sending"));
+        els.confirmSendLater.disabled = Boolean(busy || (schedule && schedule.state === "sending"));
+        els.sendLaterDateTime.disabled = Boolean(cannotSchedule || scheduleUnknown);
+        els.sendLaterTomorrow.disabled = Boolean(cannotSchedule || scheduleUnknown);
+        els.sendLaterNextWorkday.disabled = Boolean(cannotSchedule || scheduleUnknown);
+        els.cancelScheduledSend.disabled = busy;
+        els.sendLaterButton.textContent = schedule && schedule.state === "scheduled"
+          ? "Заплановано"
+          : "Надіслати пізніше";
+        if (schedule && schedule.dueAt && !els.sendLaterDateTime.matches(":focus")) {
+          els.sendLaterDateTime.value = localDateTimeInputValue(schedule.dueAt);
+        }
+      }
+
+      function setSendLaterPanelOpen(open, restoreFocus) {
+        var active = Boolean(open && state.compose);
+        els.sendLaterPanel.hidden = !active;
+        els.sendLaterButton.setAttribute("aria-expanded", active ? "true" : "false");
+        if (active) {
+          var minimum = Date.now() + 60000;
+          els.sendLaterDateTime.min = localDateTimeInputValue(minimum);
+          renderSendLaterState();
+          window.setTimeout(function () { els.sendLaterDateTime.focus(); }, 0);
+        } else if (restoreFocus && els.sendLaterButton && !els.sendLaterButton.disabled) {
+          els.sendLaterButton.focus();
+        }
+      }
+
+      async function loadComposeScheduledSend(options) {
+        var opts = options || {};
+        var composeAtStart = state.compose;
+        if (!composeAtStart || !composeAtStart.id || (state.composeScheduleLoading && !opts.alreadyLoading)) return null;
+        if (!opts.alreadyLoading) state.composeScheduleLoading = true;
+        setComposeBusy(state.composeBusy);
+        try {
+          var data = await rpc({
+            op: "scheduledSendState",
+            connectionId: safeId(composeAtStart.connectionId)
+          });
+          if (state.compose !== composeAtStart) return null;
+          var matches = (data && Array.isArray(data.items) ? data.items : []).map(normalizeScheduledSend)
+            .filter(function (item) { return item && item.draftId === composeAtStart.id; })
+            .sort(function (left, right) {
+              var leftActive = left.state === "scheduled" || left.state === "sending" ? 1 : 0;
+              var rightActive = right.state === "scheduled" || right.state === "sending" ? 1 : 0;
+              return rightActive - leftActive || right.updatedAt - left.updatedAt;
+            });
+          composeAtStart.scheduledSend = matches[0] || null;
+          composeAtStart.scheduleCheckFailed = false;
+          composeAtStart.scheduleOperationId = composeAtStart.scheduledSend &&
+              (composeAtStart.scheduledSend.state === "scheduled" || composeAtStart.scheduledSend.state === "sending")
+            ? composeAtStart.scheduledSend.operationId
+            : "";
+          return composeAtStart.scheduledSend;
+        } catch (error) {
+          if (state.compose === composeAtStart) {
+            composeAtStart.scheduleCheckFailed = true;
+            showSnackbar(safeText(error.message, "Не вдалося перевірити відкладене надсилання."), { error: true });
+          }
+          return null;
+        } finally {
+          if (state.compose === composeAtStart) {
+            state.composeScheduleLoading = false;
+            setComposeBusy(state.composeBusy);
+          }
+        }
+      }
+
+      function validateComposeForDelivery() {
+        syncComposeFromFields();
+        if (!safeText(state.compose && state.compose.to)) {
+          showSnackbar("Вкажіть одержувача.", { error: true });
+          els.composeTo.focus();
+          return false;
+        }
+        if (!safeText(state.compose && state.compose.body) && !(state.compose && state.compose.attachments.length)) {
+          showSnackbar("Додайте текст або вкладення.", { error: true });
+          els.composeBody.focus();
+          return false;
+        }
+        return true;
+      }
+
+      async function scheduleComposeAt(epochValue) {
+        if (!state.compose || state.composeBusy || state.composeScheduleLoading || composeScheduleUnknown()) return false;
+        var dueAt = Math.floor(Number(epochValue || 0));
+        if (!Number.isSafeInteger(dueAt) || dueAt < Date.now() + 60000) {
+          showSnackbar("Оберіть час щонайменше через одну хвилину.", { error: true });
+          els.sendLaterDateTime.focus();
+          return false;
+        }
+        if (composeAttachmentJobs().length) {
+          showSnackbar("Дочекайтеся завершення вкладень або скасуйте їх перед плануванням.", { error: true });
+          return false;
+        }
+        var composeAtStart = state.compose;
+        var currentSchedule = normalizeScheduledSend(composeAtStart.scheduledSend);
+        var rescheduling = Boolean(currentSchedule && currentSchedule.state === "scheduled");
+        if (currentSchedule && currentSchedule.state === "sending") {
+          showSnackbar("Gmail уже обробляє надсилання; час змінити не можна.");
+          return false;
+        }
+        if (!rescheduling && !validateComposeForDelivery()) return false;
+        state.composeBusy = true;
+        setComposeBusy(true);
+        try {
+          if (!rescheduling) {
+            var saved = await saveDraft({ quiet: true });
+            while (saved && state.compose && state.compose.dirty && !composePendingKind()) {
+              saved = await saveDraft({ quiet: true });
+            }
+            if (!saved || !state.compose || composePendingKind() || !state.compose.id) return false;
+            composeAtStart = state.compose;
+          }
+          currentSchedule = normalizeScheduledSend(composeAtStart.scheduledSend);
+          var request;
+          if (currentSchedule && currentSchedule.state === "scheduled") {
+            request = {
+              op: "rescheduleDraftSend",
+              connectionId: safeId(composeAtStart.connectionId),
+              clientOperationId: currentSchedule.operationId,
+              expectedRevision: currentSchedule.revision,
+              dueAt: dueAt,
+              timezone: composeTimezone()
+            };
+          } else {
+            if (currentSchedule) composeAtStart.scheduleOperationId = "";
+            if (!safeClientOperationId(composeAtStart.scheduleOperationId)) {
+              composeAtStart.scheduleOperationId = newClientOperationId();
+            }
+            request = {
+              op: "scheduleDraftSend",
+              connectionId: safeId(composeAtStart.connectionId),
+              draftId: safeId(composeAtStart.id),
+              clientOperationId: composeAtStart.scheduleOperationId,
+              dueAt: dueAt,
+              timezone: composeTimezone()
+            };
+          }
+          var result = normalizeScheduledSend(await rpc(request));
+          if (!result || result.state !== "scheduled") throw new Error("Сервер не підтвердив планування.");
+          if (state.compose === composeAtStart) composeAtStart.scheduledSend = result;
+          setSendLaterPanelOpen(false, false);
+          finishCloseCompose();
+          showSnackbar("Лист заплановано на " + formatSnoozeDateTime(result.dueAt), { success: true });
+          haptic("success");
+          loadThreads(true);
+          return true;
+        } catch (error) {
+          showSnackbar(safeText(error.message, "Не вдалося запланувати лист."), { error: true });
+          haptic("error");
+          return false;
+        } finally {
+          state.composeBusy = false;
+          setComposeBusy(false);
+        }
+      }
+
+      async function cancelComposeScheduledSend() {
+        var composeAtStart = state.compose;
+        var schedule = normalizeScheduledSend(composeAtStart && composeAtStart.scheduledSend);
+        if (!composeAtStart || !schedule || schedule.state !== "scheduled" || state.composeBusy) return false;
+        state.composeBusy = true;
+        setComposeBusy(true);
+        try {
+          var result = normalizeScheduledSend(await rpc({
+            op: "cancelScheduledSend",
+            connectionId: safeId(composeAtStart.connectionId),
+            clientOperationId: schedule.operationId,
+            expectedRevision: schedule.revision
+          }));
+          if (!result || result.state !== "cancelled") throw new Error("Сервер не підтвердив скасування.");
+          if (state.compose === composeAtStart) {
+            composeAtStart.scheduledSend = result;
+            composeAtStart.scheduleOperationId = "";
+          }
+          setSendLaterPanelOpen(false, true);
+          showSnackbar("Заплановане надсилання скасовано. Чернетку можна редагувати.", { success: true });
+          haptic("success");
+          return true;
+        } catch (error) {
+          showSnackbar(safeText(error.message, "Не вдалося скасувати планування."), { error: true });
+          return false;
+        } finally {
+          state.composeBusy = false;
+          setComposeBusy(false);
+        }
+      }
+
       async function sendCompose() {
         if (!state.compose || state.composeBusy) return;
+        if (state.composeScheduleLoading) {
+          showSnackbar("Перевіряю, чи чернетку вже заплановано.");
+          return;
+        }
+        if (state.compose && state.compose.scheduleCheckFailed) {
+          setSendLaterPanelOpen(true);
+          showSnackbar("Спочатку повторно перевірте стан відкладеного надсилання.", { error: true });
+          return;
+        }
+        if (state.compose && state.compose.scheduledSend &&
+            (state.compose.scheduledSend.state === "scheduled" || state.compose.scheduledSend.state === "sending")) {
+          setSendLaterPanelOpen(true);
+          showSnackbar("Спочатку явно скасуйте заплановане надсилання.");
+          return;
+        }
         if (composeAttachmentJobs().length) {
           showSnackbar("Дочекайтеся завершення локальної обробки вкладень або скасуйте їх. Незавершені файли не надсилаються.", { error: true });
           return;
@@ -11381,7 +11881,9 @@
       function setComposeBusy(busy) {
         var networkBusy = Boolean(busy);
         var pendingKind = composePendingKind();
+        var scheduleLocked = Boolean(state.composeScheduleLoading || composeScheduleUnknown() || composeScheduledSendActive());
         var locked = Boolean(networkBusy || pendingKind === "send");
+        locked = Boolean(locked || scheduleLocked);
         var saving = Boolean(state.composeSaveInFlight || pendingKind === "draft");
         var attachmentsLocked = composeAttachmentsLocked();
         els.composeSheet.setAttribute("aria-busy", networkBusy || state.composeSaveInFlight ? "true" : "false");
@@ -11393,8 +11895,9 @@
         ].forEach(function (node) { node.disabled = locked; });
         els.closeComposeButton.disabled = false;
         els.minimizeComposeButton.disabled = false;
-        els.saveDraftButton.disabled = Boolean(networkBusy || saving || pendingKind === "send");
-        els.sendButton.disabled = Boolean(networkBusy || saving || composeAttachmentJobs().length);
+        els.saveDraftButton.disabled = Boolean(networkBusy || saving || pendingKind === "send" || scheduleLocked);
+        els.sendLaterButton.disabled = Boolean(networkBusy || saving || state.composeScheduleLoading || composeAttachmentJobs().length);
+        els.sendButton.disabled = Boolean(networkBusy || saving || scheduleLocked || composeAttachmentJobs().length);
         els.composeBody.setAttribute("contenteditable", locked ? "false" : "true");
         els.composeBody.setAttribute("aria-disabled", locked ? "true" : "false");
         els.composeFormatToolbar.querySelectorAll("button, input").forEach(function (node) { node.disabled = locked; });
@@ -11411,6 +11914,7 @@
         els.sendButton.textContent = networkBusy
           ? "Зачекайте…"
           : pendingKind === "send" ? "Перевірити надсилання" : "Надіслати";
+        renderSendLaterState();
         els.saveAndCloseComposeButton.disabled = Boolean(networkBusy || state.composeSaveInFlight || pendingKind === "send" || composeAttachmentJobs().length);
         els.discardComposeButton.disabled = Boolean(pendingKind === "send");
         updateComposeLifecycleControls();
@@ -11454,6 +11958,7 @@
         closeComposeCloseDialog(false);
         closeComposeLinkEditor(false);
         closeComposeTableEditor(false);
+        setSendLaterPanelOpen(false, false);
         if (state.composeSourceOpen) closeComposeSourceDialog(false);
         state.composeSelection = null;
         state.composeMinimized = true;
@@ -11540,6 +12045,7 @@
         closeComposeCloseDialog(false);
         closeComposeLinkEditor(false);
         closeComposeTableEditor(false);
+        setSendLaterPanelOpen(false, false);
         if (state.composeSourceOpen) closeComposeSourceDialog(false);
         state.composeSelection = null;
         cancelAllComposeAttachmentJobs();
@@ -11548,6 +12054,8 @@
         state.composeSessionId = "";
         state.composeAttachmentSequence = 0;
         state.composeAttachmentFlushScheduled = false;
+        state.composeScheduleLoading = false;
+        els.sendLaterDateTime.value = "";
         state.composeMinimized = false;
         state.composeSaveQueued = false;
         els.composeRestoreChip.hidden = true;
@@ -13240,6 +13748,32 @@
           setReplyOriginalAttachments(Boolean(event.target.checked));
         });
         els.saveDraftButton.addEventListener("click", function () { saveDraft(); });
+        els.sendLaterButton.addEventListener("click", function () {
+          setSendLaterPanelOpen(els.sendLaterPanel.hidden, false);
+        });
+        els.closeSendLater.addEventListener("click", function () { setSendLaterPanelOpen(false, true); });
+        els.sendLaterTomorrow.addEventListener("click", function () {
+          var dueAt = tomorrowAt(8);
+          els.sendLaterDateTime.value = localDateTimeInputValue(dueAt);
+          els.sendLaterStatus.textContent = "Обрано " + formatSnoozeDateTime(dueAt) + ". Натисніть «Запланувати», щоб підтвердити.";
+          els.sendLaterDateTime.focus();
+        });
+        els.sendLaterNextWorkday.addEventListener("click", function () {
+          var dueAt = nextWorkdayAt(9);
+          els.sendLaterDateTime.value = localDateTimeInputValue(dueAt);
+          els.sendLaterStatus.textContent = "Обрано " + formatSnoozeDateTime(dueAt) + ". Натисніть «Запланувати», щоб підтвердити.";
+          els.sendLaterDateTime.focus();
+        });
+        els.sendLaterForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          if (composeScheduleUnknown()) {
+            loadComposeScheduledSend();
+            return;
+          }
+          scheduleComposeAt(new Date(els.sendLaterDateTime.value).getTime());
+        });
+        els.sendLaterDateTime.addEventListener("input", renderSendLaterState);
+        els.cancelScheduledSend.addEventListener("click", cancelComposeScheduledSend);
         els.sendButton.addEventListener("click", sendCompose);
         els.moreMenu.addEventListener("keydown", handleActionMenuKeydown);
         document.addEventListener("click", function (event) {
@@ -13281,6 +13815,7 @@
               if (state.boxDisconnectDialogOpen) closeBoxDisconnectDialog(true);
               else if (state.composeCloseDialogOpen) closeComposeCloseDialog(true);
               else if (state.composeSourceOpen) closeComposeSourceDialog(true);
+              else if (!els.sendLaterPanel.hidden) setSendLaterPanelOpen(false, true);
               else requestCloseCompose();
             }
             return;
@@ -14253,6 +14788,68 @@
             }
             if (op === "sendDraft") {
               resolve({ draftId: payload.draftId, message: { id: "sent-preview", threadId: "sent-thread-preview" } });
+              return;
+            }
+            if (op === "scheduledSendState") {
+              resolve({ items: state.previewScheduledSends.filter(function (item) {
+                return safeId(item.connectionId) === safeId(request.connectionId);
+              }).map(function (item) {
+                var copy = Object.assign({}, item);
+                delete copy.connectionId;
+                return copy;
+              }) });
+              return;
+            }
+            if (op === "scheduleDraftSend") {
+              var previewScheduled = {
+                operationId: payload.clientOperationId,
+                draftId: payload.draftId,
+                dueAt: payload.dueAt,
+                timezone: payload.timezone,
+                state: "scheduled",
+                revision: 1,
+                attempts: 0,
+                errorCode: "",
+                result: null,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                connectionId: request.connectionId
+              };
+              state.previewScheduledSends = state.previewScheduledSends.filter(function (item) {
+                return !(item.operationId === previewScheduled.operationId && item.connectionId === previewScheduled.connectionId);
+              }).concat([previewScheduled]);
+              resolve(Object.assign({}, previewScheduled));
+              return;
+            }
+            if (op === "rescheduleDraftSend") {
+              var previewRescheduled = state.previewScheduledSends.find(function (item) {
+                return item.operationId === payload.clientOperationId && item.connectionId === request.connectionId;
+              });
+              if (!previewRescheduled || previewRescheduled.revision !== payload.expectedRevision || previewRescheduled.state !== "scheduled") {
+                var staleSchedule = new Error("Стан відкладеного листа вже змінився.");
+                staleSchedule.code = "OPERATION_CONFLICT";
+                throw staleSchedule;
+              }
+              previewRescheduled.dueAt = payload.dueAt;
+              previewRescheduled.timezone = payload.timezone;
+              previewRescheduled.revision += 1;
+              previewRescheduled.updatedAt = Date.now();
+              resolve(Object.assign({}, previewRescheduled));
+              return;
+            }
+            if (op === "cancelScheduledSend") {
+              var previewCancelled = state.previewScheduledSends.find(function (item) {
+                return item.operationId === payload.clientOperationId && item.connectionId === request.connectionId;
+              });
+              if (!previewCancelled || previewCancelled.revision !== payload.expectedRevision || previewCancelled.state !== "scheduled") {
+                var staleCancellation = new Error("Скасування більше не гарантоване.");
+                staleCancellation.code = "OPERATION_CONFLICT";
+                throw staleCancellation;
+              }
+              previewCancelled.state = "cancelled";
+              previewCancelled.revision += 1;
+              previewCancelled.updatedAt = Date.now();
+              resolve(Object.assign({}, previewCancelled));
               return;
             }
             resolve({ message: "Готово" });

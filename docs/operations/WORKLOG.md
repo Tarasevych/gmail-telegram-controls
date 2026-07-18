@@ -1,5 +1,18 @@
 # Work log
 
+## 2026-07-18 — v32 explicit send-later Mini App controls
+
+- Created `codex/neuroinclusive-v32-send-later-ui` from the exact verified v31 backend commit; the separate undeployed v30 reply-starter branch remains isolated.
+- Added an explicit `Надіслати пізніше` panel with two user-chosen presets, a local date/time field, schedule, reschedule, cancellation, and authoritative schedule-state reload for existing Gmail drafts.
+- A new schedule first validates the compose fields and obtains a confirmed canonical Gmail draft. The UI then calls only the account-bound v31 scheduling RPC; it never calls `sendDraft` while scheduling.
+- Preserved the schedule operation ID across canonical Gmail draft redraws so a lost response can retry the exact operation. Reschedule and cancel use the server revision.
+- Existing scheduled or sending drafts are edit-locked. Ordinary `Надіслати` cannot bypass an active schedule, and a failed schedule-state read locks editing/sending until an explicit successful recheck.
+- Scheduling closes the editor only after the server returns authoritative `scheduled`. Cancellation unlocks the draft only after authoritative `cancelled`.
+- Desktop and 390x844 Chrome rendered QA found and fixed an undefined date formatter and a mobile panel that overflowed 125 px beyond the left viewport. Final desktop and mobile panels stay within the viewport; mobile body width is exactly 390 px, the editor remains scrollable, and Escape closes only the schedule panel.
+- Final targeted regression: 210/210 passed. Final ordinary functional regression: 343/343 passed. `git diff --check` passed and the bounded changed-file secret scan found zero matches.
+- Private captures are outside Git under the thread visualization directory. Local QA port 8765 was stopped after verification.
+- Production remains immutable Apps Script v29. No deployment, OAuth, migration, trigger mutation, real Gmail draft/message, Telegram card, attachment, provider object, browser account, or phone state was changed.
+
 ## 2026-07-18 — v31 durable send-later backend candidate
 
 - Branched `codex/neuroinclusive-v31-send-later` from the exact verified production-v29 evidence commit; the undeployed v30 reply UI was not mixed into this backend phase.

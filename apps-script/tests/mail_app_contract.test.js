@@ -2889,6 +2889,69 @@ test('energy presets and reminder modes keep Focus compassionate bounded and acc
     'neuroinclusive copy must not shame users for unfinished mail');
 });
 
+test('send later saves a Gmail draft first and keeps scheduling explicit account-scoped and recoverable', () => {
+  for (const id of [
+    'sendLaterButton', 'sendLaterPanel', 'sendLaterDateTime', 'confirmSendLater', 'cancelScheduledSend'
+  ]) {
+    assert.match(uiSource, new RegExp(`id="${id}"`));
+  }
+  assert.match(uiSource, /Час не вибирається автоматично/);
+  assert.match(uiSource, /\.compose-footer \.send-later-panel \{[\s\S]*position: fixed;[\s\S]*right: 12px;[\s\S]*left: 12px;/,
+    'the mobile panel must anchor to the viewport instead of overflowing from its narrow grid column');
+
+  const translationSource = sourceBetween(
+    '      function translateRpcRequest(request) {',
+    '      function rpc(request) {'
+  );
+  for (const operation of ['scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend']) {
+    assert.match(translationSource, new RegExp(`op === "${operation}"`));
+  }
+  assert.match(translationSource, /scheduleDraftSend[\s\S]*connectionId: safeId\(input\.connectionId\)/);
+  assert.match(translationSource, /clientOperationId: safeClientOperationId\(input\.clientOperationId\)/);
+  assert.match(translationSource, /expectedRevision: Math\.max\(1, Math\.floor\(Number\(input\.expectedRevision \|\| 0\)\)\)/);
+
+  const openDraftSource = sourceBetween(
+    '      function openExistingDraft(value) {',
+    '      async function saveDraft(options) {'
+  );
+  assert.match(openDraftSource, /state\.composeScheduleLoading = true/);
+  assert.match(openDraftSource, /loadComposeScheduledSend\(\{ alreadyLoading: true \}\)/);
+
+  const saveSource = sourceBetween(
+    '      async function saveDraft(options) {',
+    '      function normalizeScheduledSend(value) {'
+  );
+  assert.match(saveSource, /canonical\.scheduleOperationId = composeAtStart\.scheduleOperationId/,
+    'a canonical Gmail draft redraw must preserve the retry identity of an uncertain schedule request');
+
+  const scheduleSource = sourceBetween(
+    '      async function scheduleComposeAt(epochValue) {',
+    '      async function cancelComposeScheduledSend() {'
+  );
+  assert.ok(scheduleSource.indexOf('await saveDraft({ quiet: true })') < scheduleSource.indexOf('op: "scheduleDraftSend"'),
+    'new schedules must persist a confirmed Gmail draft before the scheduling record');
+  assert.match(scheduleSource, /composeAtStart\.scheduleOperationId = newClientOperationId\(\)/);
+  assert.match(scheduleSource, /op: "rescheduleDraftSend"[\s\S]*expectedRevision: currentSchedule\.revision/);
+  assert.doesNotMatch(scheduleSource, /op: "sendDraft"/);
+
+  const sendSource = sourceBetween(
+    '      async function sendCompose() {',
+    '      function setComposeBusy(busy) {'
+  );
+  assert.match(sendSource, /scheduleCheckFailed/);
+  assert.match(sendSource, /state\.compose\.scheduledSend\.state === "scheduled"/);
+  assert.match(sendSource, /Спочатку явно скасуйте заплановане надсилання/);
+
+  const eventSource = sourceBetween(
+    '        els.saveDraftButton.addEventListener("click"',
+    '        els.moreMenu.addEventListener("keydown"'
+  );
+  assert.match(eventSource, /sendLaterTomorrow[\s\S]*sendLaterDateTime\.value = localDateTimeInputValue\(dueAt\)/);
+  assert.match(eventSource, /sendLaterForm\.addEventListener\("submit"[\s\S]*scheduleComposeAt\(/);
+  assert.doesNotMatch(eventSource, /sendLaterTomorrow[\s\S]{0,350}scheduleComposeAt\(/,
+    'a preset may fill the explicit form but cannot silently schedule a message');
+});
+
 test('preview draft save returns the current canonical nested draft contract', () => {
   const previewSource = sourceBetween(
     '      function previewRpc(request) {',

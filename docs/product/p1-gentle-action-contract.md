@@ -43,7 +43,9 @@ Every suggestion shows `AI-чернетка`, confidence, and which original mes
 - A worker performs Gmail readback before retrying an uncertain send and never issues a second send POST after confirmation.
 - Telegram and Mini App display the same authoritative schedule state.
 
-The v31 backend candidate implements the durable journal and worker independently from the still-unreleased v30 reply UI. It stores no recipient, subject, body, reply text, attachment name, or attachment bytes. The exact Gmail draft and its RFC Message-ID remain authoritative. The minute worker revalidates `responder` access for the recorded Telegram user and Gmail connection, uses a two-minute fenced lease, processes at most three rows per run, and delegates the actual send to the existing at-most-once draft operation journal. UI scheduling controls and real WebView acceptance remain a later release gate.
+The v31 backend candidate implements the durable journal and worker independently from the still-unreleased v30 reply UI. It stores no recipient, subject, body, reply text, attachment name, or attachment bytes. The exact Gmail draft and its RFC Message-ID remain authoritative. The minute worker revalidates `responder` access for the recorded Telegram user and Gmail connection, uses a two-minute fenced lease, processes at most three rows per run, and delegates the actual send to the existing at-most-once draft operation journal.
+
+The v32 Mini App candidate adds the explicit scheduling surface without changing that backend contract. Presets only fill the confirmation field; they do not schedule silently. A new schedule is accepted only after a canonical Gmail draft readback. Existing active schedules lock editing and direct send until explicit cancellation, while a failed state check fails closed and offers a retry. Desktop and 390x844 rendered QA pass. Real Telegram WebView acceptance remains the release gate.
 
 ## Reminder modes
 
@@ -93,6 +95,6 @@ No subject, sender, body, attachment name, AI summary, or reply text is stored i
 1. Deploy and verify frozen v28 P0.
 2. Add isolated preference storage and interactive session presets. **Implemented and locally verified in v29.**
 3. Add gentle reply styles as editable Gmail drafts.
-4. Add durable scheduled-send journal and worker with readback. **Backend candidate implemented and locally verified in v31; UI and release proof remain pending.**
+4. Add durable scheduled-send journal and worker with readback. **Backend v31 and Mini App controls v32 are implemented and locally verified; real Telegram WebView and release proof remain pending.**
 5. Add reminder modes and three-screen onboarding.
 6. Run ordinary regression, desktop/mobile/phone QA, guarded release, and post-deploy synchronization checks.
