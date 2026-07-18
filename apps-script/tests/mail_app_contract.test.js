@@ -1708,7 +1708,33 @@ test('the profile avatar exposes real server-backed Gmail connection and switchi
     '      function renderNavigation() {'
   );
   assert.match(accountSource, /Array\.isArray\(values\)/);
+  assert.match(accountSource,
+    /id: safeId\(account\.id \|\| \(bootstrap\.session && bootstrap\.session\.connectionId\)\)/,
+    'the active legacy profile must retain the server-provided opaque Gmail connection ID');
   assert.match(accountSource, /state\.accounts = normalizeAccounts\(bootstrap\.accounts, fallbackAccount\)/);
+
+  const normalizeAccountsSource = extractUiFunction('normalizeAccounts');
+  const fallbackContext = vm.createContext({
+    values: [],
+    primary: {
+      id: 'gmail-owner-live',
+      email: 'tarasevych.pavlo@gmail.com',
+      name: 'Павло Тарасевич',
+      connected: true,
+      current: true,
+    },
+    safeId: value => /^[A-Za-z0-9_-]{1,128}$/.test(String(value || '')) ? String(value) : '',
+    safeText: (value, fallback = '') => value == null || value === '' ? String(fallback || '') : String(value),
+    avatarInitial: () => 'П',
+    safeUrl: () => '',
+  });
+  vm.runInContext(
+    `${normalizeAccountsSource}\nresult = normalizeAccounts(values, primary);`,
+    fallbackContext
+  );
+  assert.equal(fallbackContext.result.length, 1);
+  assert.equal(fallbackContext.result[0].id, 'gmail-owner-live');
+  assert.equal(fallbackContext.result[0].current, true);
   assert.match(accountSource, /role: "listitem"/);
   assert.match(accountSource, /"data-account-id": account\.id/);
   assert.match(accountSource, /"data-account-current": account\.current \? "true" : "false"/);

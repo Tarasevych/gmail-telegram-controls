@@ -64,6 +64,16 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Recovery: owner chat menu button was restored exactly to its prior GitHub Pages URL, Apps Script HEAD was rolled back and read back as exact v29, and stable deployment remained immutable v29.
 - Next safe action: create/adopt one exact immutable candidate version and a separate uniquely addressed staging deployment, test that URL in Telegram WebView, then promote the same immutable version only if acceptance passes.
 
+## 2026-07-18 — v30 staging account-identity compatibility blocker
+
+- Phase: real Telegram WebView acceptance of immutable v30 through a temporary top-level staging bridge.
+- Initial false signal: bare staging `/exec` returned `Недійсний приватний ключ кнопки.` This was a test-route error, not a product failure. The canonical mailbox route rendered correctly, and the top-level bridge preserved Telegram `initData` as designed.
+- Runtime blocker: the account avatar identified `tarasevych.pavlo@gmail.com`, Gmail folders and labels were readable, and the exact Telegram owner zone loaded, but the account panel simultaneously said that no Gmail accounts were connected. `Підтримка` was visible and focusable yet could not open onboarding; the adjacent read-only `Правила` action worked.
+- Root cause: `mailboxBootstrap_` returned the active primary profile without `account.id`; its exact opaque identity existed only as `session.connectionId`. When the multi-account list was empty, the frontend fallback attempted to derive an ID from the email, which `safeId` correctly rejected. Onboarding then failed closed because `state.account.id` was empty.
+- Local resolution: the server now emits the authorized session connection ID on the primary account DTO, and the client independently falls back to `bootstrap.session.connectionId`. Targeted tests pass 212/212 and the ordinary functional matrix passes 360/360.
+- Preserved state: stable production is still v29. Immutable v30 and its staging deployment remain unpromoted evidence; no random Gmail mutation, OAuth consent, or preference write occurred. The temporary bridge and Telegram test messages were removed, and the production owner menu was verified exactly restored.
+- Next safe action: commit and push the v37 compatibility fix, prepare a v31/product-v37 release helper that cannot promote v30, stage v31 once, and repeat the non-mutating phone test. Promotion remains forbidden until the account card and onboarding both pass on the same immutable version.
+
 ## 2026-07-18 — resolved v32 rendered-QA defects
 
 - Phase: local desktop and 390x844 Chrome preview of the send-later controls.

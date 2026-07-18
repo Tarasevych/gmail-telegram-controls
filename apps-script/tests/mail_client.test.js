@@ -1172,6 +1172,8 @@ test('Snoozed combines native search with the bot label and both stay outside Ar
     throw new Error(`Unexpected Gmail request: ${requestPath}`);
   });
   const bootstrap = resultData(rpc(harness, token, 'bootstrap', {}));
+  assert.equal(bootstrap.account.id, bootstrap.session.connectionId,
+    'bootstrap must bind the legacy primary profile to the exact opaque Gmail connection');
   assert.ok(bootstrap.folders.some(folder => folder.key === 'snoozed'));
   assert.deepEqual(
     Array.from(

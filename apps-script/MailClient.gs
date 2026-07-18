@@ -1770,6 +1770,7 @@ function mailboxBootstrap_(payload, session) {
 
   return {
     account: {
+      id: mailboxSafeText_(session.connectionId, 96),
       emailAddress: mailboxSafeEmail_(profile.emailAddress),
       messagesTotal: mailboxSafeCount_(profile.messagesTotal),
       threadsTotal: mailboxSafeCount_(profile.threadsTotal),

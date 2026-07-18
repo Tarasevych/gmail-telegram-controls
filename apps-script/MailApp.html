@@ -6101,6 +6101,7 @@
         var bootstrap = data || {};
         var account = bootstrap.account || {};
         var fallbackAccount = {
+          id: safeId(account.id || (bootstrap.session && bootstrap.session.connectionId)),
           name: safeText(account.name, "Павло Тарасевич"),
           email: safeText(account.email || account.emailAddress),
           initial: avatarInitial(account.name || "Павло", account.email || account.emailAddress),
