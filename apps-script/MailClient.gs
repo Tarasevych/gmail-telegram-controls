@@ -25,6 +25,9 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   REFRESH_SIGNING_SECRET_PROPERTY: 'MAILBOX_REFRESH_SIGNING_SECRET',
   REFRESH_FAMILIES_PROPERTY: 'MAILBOX_REFRESH_FAMILIES_V1',
   REFRESH_FAMILY_LIMIT: 24,
+  SESSION_RECOVERY_PREFIX: 'mailbox.session-recovery.v1.',
+  SESSION_RECOVERY_SECONDS: 2 * 60,
+  SESSION_RECOVERY_KEEP_EXISTING: 2,
   // A 15 MiB binary attachment expands to about 20 MiB in base64. Requests
   // stay owner-authenticated and are still bounded before any Gmail write.
   MAX_REQUEST_CHARS: 22 * 1024 * 1024,
@@ -214,13 +217,14 @@ const MAILBOX_THREAD_ACTIONS_ = Object.freeze({
  * bound to that exact Telegram user and their isolated mailbox workspace.
  */
 function mailboxOpenSession(initData) {
+  let principal = null;
   try {
     const raw = String(initData || '');
     if (!raw || raw.length > 16384) {
       throw mailboxError_('UNAUTHORIZED', 'Telegram-команда відсутня або має некоректний формат.');
     }
     const user = validateTelegramMiniAppIdentity_(raw);
-    const principal = mailboxMultiPrincipal_(String(user.id || ''));
+    principal = mailboxMultiPrincipal_(String(user.id || ''));
     claimMailboxLaunchInitData_(raw);
 
     const sessionData = mailboxCreateSession_(principal.userId, principal.userId);
@@ -232,6 +236,28 @@ function mailboxOpenSession(initData) {
         username: mailboxSafeText_(user.username, 64),
       },
     }));
+  } catch (error) {
+    const failure = mailboxFailure_(error, 'UNAUTHORIZED');
+    if (principal && error && error.mailboxCode === 'SESSION_CAPACITY') {
+      try {
+        failure.capacityRecoveryToken = mailboxStoreSessionCapacityRecovery_(principal.userId);
+      } catch (recoveryError) {
+        console.error('Could not stage owner-bound mailbox session recovery.');
+      }
+    }
+    return failure;
+  }
+}
+
+/**
+ * Explicitly end only this Telegram user's older Mini App sessions and open a
+ * fresh one. The short-lived recovery bearer is one-use and never crosses
+ * users or Gmail connections.
+ */
+function mailboxRecoverSessionCapacity(recoveryToken) {
+  try {
+    const ownerId = mailboxConsumeSessionCapacityRecovery_(recoveryToken);
+    return mailboxOk_(mailboxCreateSession_(ownerId, ownerId, null, ownerId));
   } catch (error) {
     return mailboxFailure_(error, 'UNAUTHORIZED');
   }
@@ -9347,7 +9373,7 @@ function mailboxSentMessageDto_(message) {
   };
 }
 
-function mailboxCreateSession_(ownerIdValue, userIdValue, refreshClaims) {
+function mailboxCreateSession_(ownerIdValue, userIdValue, refreshClaims, recoveryOwnerIdValue) {
   const ownerId = String(ownerIdValue || '');
   const userId = String(userIdValue || '');
   if (!/^\d{1,24}$/.test(ownerId) || userId !== ownerId) {
@@ -9387,7 +9413,8 @@ function mailboxCreateSession_(ownerIdValue, userIdValue, refreshClaims) {
     credential.claims,
     token,
     session,
-    expiresInSeconds
+    expiresInSeconds,
+    recoveryOwnerIdValue
   );
   return {
     sessionToken: token,
@@ -9536,7 +9563,14 @@ function mailboxDecodeCanonicalBase64UrlBytes_(value) {
   return bytes;
 }
 
-function mailboxPersistSessionFamily_(presentedClaims, nextClaims, token, session, expiresInSeconds) {
+function mailboxPersistSessionFamily_(
+  presentedClaims,
+  nextClaims,
+  token,
+  session,
+  expiresInSeconds,
+  recoveryOwnerIdValue
+) {
   const sessionToken = String(token || '');
   const nextSessionKey = mailboxSessionKey_(sessionToken);
   const lock = LockService.getScriptLock();
@@ -9546,12 +9580,13 @@ function mailboxPersistSessionFamily_(presentedClaims, nextClaims, token, sessio
   try {
     const properties = PropertiesService.getScriptProperties();
     const nowSeconds = Math.floor(Date.now() / 1000);
-    const families = mailboxReadRefreshFamilies_(properties, nowSeconds);
+    let families = mailboxReadRefreshFamilies_(properties, nowSeconds);
     const familyId = String(nextClaims && nextClaims.fid || '');
     const index = families.findIndex(item =>
       constantTimeEqual_(String(item.fid || ''), familyId)
     );
     let previousSessionKey = '';
+    let retiredSessionKeys = [];
 
     if (presentedClaims) {
       if (index === -1) {
@@ -9579,10 +9614,33 @@ function mailboxPersistSessionFamily_(presentedClaims, nextClaims, token, sessio
       if (index !== -1) {
         throw mailboxError_('BUSY', 'Не вдалося створити унікальну родину сесії. Спробуйте ще раз.');
       }
+      const recoveryOwnerId = String(recoveryOwnerIdValue || '');
+      if (recoveryOwnerId) {
+        if (!constantTimeEqual_(recoveryOwnerId, String(nextClaims && nextClaims.sub || ''))) {
+          throw mailboxError_('FORBIDDEN', 'Відновлення сеансів не належить Telegram-користувачу.');
+        }
+        const ownFamilies = families
+          .map((item, indexValue) => ({ item, index: indexValue }))
+          .filter(entry => constantTimeEqual_(String(entry.item.sub || ''), recoveryOwnerId))
+          .sort((left, right) =>
+            Number(right.item.iat) - Number(left.item.iat) || right.index - left.index
+          )
+          .map(entry => entry.item);
+        const keep = new Set(ownFamilies
+          .slice(0, MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_KEEP_EXISTING)
+          .map(item => String(item.fid || '')));
+        retiredSessionKeys = ownFamilies
+          .filter(item => !keep.has(String(item.fid || '')))
+          .map(item => String(item.sessionKey || ''));
+        families = families.filter(item =>
+          !constantTimeEqual_(String(item.sub || ''), recoveryOwnerId) ||
+          keep.has(String(item.fid || ''))
+        );
+      }
       if (families.length >= MAILBOX_CLIENT_CONFIG_.REFRESH_FAMILY_LIMIT) {
         throw mailboxError_(
-          'STORAGE_FULL',
-          'Досягнуто ліміт активних сеансів пошти. Закрийте старий Mini App або спробуйте після завершення його сесії.'
+          'SESSION_CAPACITY',
+          'Досягнуто ліміт активних сеансів пошти. Можна явно завершити лише ваші старі сеанси й відкрити новий.'
         );
       }
     }
@@ -9615,6 +9673,52 @@ function mailboxPersistSessionFamily_(presentedClaims, nextClaims, token, sessio
         console.error('Could not remove rotated mailbox session cache entry.');
       }
     }
+    retiredSessionKeys.forEach(mailboxRemoveSessionCacheBestEffort_);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxStoreSessionCapacityRecovery_(ownerIdValue) {
+  const ownerId = String(ownerIdValue || '');
+  if (!/^\d{1,24}$/.test(ownerId)) {
+    throw mailboxError_('UNAUTHORIZED', 'Власник відновлення сеансу недійсний.');
+  }
+  const token = mailboxRandomToken_();
+  CacheService.getScriptCache().put(
+    MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_PREFIX + token,
+    JSON.stringify({ v: 1, sub: ownerId, at: Date.now() }),
+    MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_SECONDS
+  );
+  return token;
+}
+
+function mailboxConsumeSessionCapacityRecovery_(tokenValue) {
+  const token = String(tokenValue || '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+    throw mailboxError_('UNAUTHORIZED', 'Код відновлення сеансів недійсний.');
+  }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxError_('BUSY', 'Сеанси вже оновлюються. Спробуйте ще раз.');
+  }
+  try {
+    const cache = CacheService.getScriptCache();
+    const key = MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_PREFIX + token;
+    const raw = String(cache.get(key) || '');
+    cache.remove(key);
+    let record = null;
+    try { record = JSON.parse(raw); } catch (error) { record = null; }
+    const valid = mailboxIsPlainObject_(record) && record.v === 1 &&
+      /^\d{1,24}$/.test(String(record.sub || '')) &&
+      Number.isFinite(Number(record.at)) &&
+      Date.now() - Number(record.at) >= 0 &&
+      Date.now() - Number(record.at) <= MAILBOX_CLIENT_CONFIG_.SESSION_RECOVERY_SECONDS * 1000;
+    if (!valid) {
+      throw mailboxError_('SESSION_EXPIRED', 'Код відновлення сеансів завершився. Відкрийте Mini App знову.');
+    }
+    mailboxMultiAuthorizeUser_(String(record.sub), mailboxMultiPrincipal_(String(record.sub)).registry);
+    return String(record.sub);
   } finally {
     lock.releaseLock();
   }

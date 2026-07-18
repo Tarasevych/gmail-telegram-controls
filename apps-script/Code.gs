@@ -2508,7 +2508,11 @@ function serveMailboxLaunchPost_(e) {
     const message = opened && opened.error && opened.error.message
       ? String(opened.error.message)
       : 'Не вдалося перевірити Telegram-команду.';
-    return serveMailboxApp_({ launchError: message });
+    return serveMailboxApp_({
+      launchError: message,
+      launchErrorCode: opened && opened.error && opened.error.code,
+      capacityRecoveryToken: opened && opened.capacityRecoveryToken,
+    });
   }
 
   const token = String(opened.data.sessionToken || '');
@@ -2714,6 +2718,11 @@ function serveMailboxApp_(options) {
   template.mailboxLaunchNonce = /^[A-Za-z0-9_-]{40,128}$/.test(launchNonce) ? launchNonce : '';
   template.mailboxLaunchRouteB64 = mailboxTemplateBase64_(normalizeMailboxLaunchRoute_(input.route));
   template.mailboxLaunchErrorB64 = mailboxTemplateBase64_(String(input.launchError || '').slice(0, 500));
+  template.mailboxLaunchErrorCodeB64 = mailboxTemplateBase64_(String(input.launchErrorCode || '').slice(0, 64));
+  const capacityRecoveryToken = String(input.capacityRecoveryToken || '');
+  template.mailboxCapacityRecoveryToken = /^[A-Za-z0-9_-]{43}$/.test(capacityRecoveryToken)
+    ? capacityRecoveryToken
+    : '';
   return template
     .evaluate()
     .setTitle('Gmail сповіщення Павла')
