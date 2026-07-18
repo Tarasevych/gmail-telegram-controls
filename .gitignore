@@ -1,0 +1,23 @@
+# Local credentials and provider sessions
+.env
+.env.*
+!.env.example
+.clasp.json
+.clasprc.json
+*secret*
+*token*
+*.pem
+*.key
+*.p12
+*.dpapi
+
+# Generated and machine-local files
+__pycache__/
+node_modules/
+coverage/
+playwright-report/
+test-results/
+*.log
+*.tmp
+qa-*.png
+test-attachment.*

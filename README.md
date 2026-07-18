@@ -2,6 +2,8 @@
 
 Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 
+The repository now also preserves the sanitized Apps Script v27 production baseline under `apps-script/`. Product direction and verified audit evidence live under `docs/`. Runtime credentials, OAuth sessions, mailbox content, and deployment-local configuration are intentionally excluded from Git.
+
 The page contains no Gmail credentials, bot token, chat ID, or permanent
 mailbox credential. Telegram supplies signed `initData` at runtime. For the
 mail client, this top-level page removes Telegram metadata from browser history
