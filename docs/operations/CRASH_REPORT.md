@@ -106,3 +106,12 @@ Work must stop for CAPTCHA, OTP, a new Google OAuth consent belonging to a speci
 - Preserved state: both defects existed only in the local v32 candidate. Production v29, Gmail, Telegram, OAuth, provider data, and the connected phone were unchanged.
 - Remaining release gate: obtain real Telegram WebView proof without changing a real message, then create a separate immutable release helper. This limitation is not a production incident.
 - v30 reply-starter bitmap capture did not include the fixed compose overlay although DOM state proved the dialog open and interactive. No application console error occurred; only localhost Telegram SDK compatibility warnings were present. Treat the capture as unusable evidence and repeat visual proof on a real Telegram WebView or another supported capture surface before release.
+
+## 2026-07-18 — production Mini App refresh-family registry full
+
+- Symptom: `Досягнуто ліміт активних сеансів пошти` while opening Telegram Mini App in parallel.
+- Root cause: every fresh launch allocated a 24-hour refresh family in a global 24-row Script Property; WebView close did not revoke it, and the error incorrectly advised closing old windows.
+- Live scope: 23 owner families plus one other user. No family had expired at inspection time.
+- Immediate resolution: explicit owner-only cleanup retained three newest owner sessions and preserved the other user, leaving 20 free slots. Temporary HEAD code was removed and exact immutable v32 restored; stable production never changed.
+- Preventive fix: a two-minute one-use recovery bearer permits only the same Telegram user to explicitly retire their older families. Cross-user eviction and silent active eviction remain forbidden.
+- Status: immediate incident resolved; permanent hotfix tested locally and awaiting an exact product-v38 release lane.
