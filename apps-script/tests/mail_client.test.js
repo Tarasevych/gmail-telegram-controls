@@ -7197,6 +7197,57 @@ test('neuroinclusive triage next action and Resume Rail persist idempotently per
   assert.equal(refreshed.resume.query, 'from:worker@example.com');
 });
 
+test('energy and reminder preferences are bounded idempotent and isolated per Gmail connection', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const initial = resultData(rpc(harness, token, 'attentionState', {}));
+  assert.equal(initial.preferences.sessionPreset, 'five_minutes');
+  assert.equal(initial.preferences.reminderMode, 'soft');
+  assert.equal(initial.preferences.maxThreads, 3);
+  assert.equal(initial.preferences.sessionPresets.map(item => item.key).join(','),
+    'low,five_minutes,three_threads,untimed');
+  assert.equal(initial.preferences.reminderModes.map(item => item.key).join(','),
+    'soft,digest,urgent_only');
+
+  const low = resultData(rpc(harness, token, 'attentionPreferences', {
+    sessionPreset: 'low', reminderMode: 'digest', expectedRevision: 0,
+  }));
+  assert.equal(low.revision, 1);
+  assert.equal(low.preferences.sessionPreset, 'low');
+  assert.equal(low.preferences.maxThreads, 1);
+  assert.equal(low.preferences.reminderMode, 'digest');
+
+  const repeated = resultData(rpc(harness, token, 'attentionPreferences', {
+    sessionPreset: 'low', reminderMode: 'digest', expectedRevision: 1,
+  }));
+  assert.equal(repeated.revision, 1, 'an exact preference retry must be idempotent');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
+    sessionPreset: 'untimed', reminderMode: 'soft', expectedRevision: 0,
+  })).code, 'ATTENTION_CONFLICT');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
+    sessionPreset: 'endless', reminderMode: 'soft', expectedRevision: 1,
+  })).code, 'INVALID_ATTENTION');
+
+  const registry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 ||
+    JSON.stringify(harness.context.mailboxMultiInitialRegistry_(OWNER_ID)));
+  registry.connections.push({
+    id: 'gmail-owner-energy-second', zoneId: 'zone-owner', provider: 'google_oauth',
+    email: 'energy.second@example.com', displayName: 'Energy second', avatarUrl: '', status: 'active',
+    connectedByUserId: OWNER_ID, connectedAt: Date.now(), tokenGeneration: 1,
+  });
+  registry.revision += 1;
+  harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1 = JSON.stringify(registry);
+  resultData(rpc(harness, token, 'switchAccount', { connectionId: 'gmail-owner-energy-second' }));
+  const second = resultData(rpc(harness, token, 'attentionState', {}));
+  assert.equal(second.preferences.sessionPreset, 'five_minutes');
+  assert.equal(second.preferences.reminderMode, 'soft');
+
+  const keys = Object.keys(harness.propertyValues).filter(key => key.startsWith('MAILBOX_ATTENTION_V1_'));
+  assert.equal(keys.length, 1, 'reading default preferences must not create a second durable record');
+  assert.doesNotMatch(harness.propertyValues[keys[0]], /subject|sender|message body/i,
+    'preference storage must never retain email content');
+});
+
 test('Telegram priority callbacks update only the exact user account and Gmail thread', () => {
   const harness = makeContext();
   const sessionToken = openOwnerSession(harness);
@@ -7599,6 +7650,10 @@ test('Gmail disconnect hides the account before provider revocation and scrubs e
     lastChangedAt: Date.now(), nextCheckAt: Date.now() + 300000, failures: 0, errorCode: '',
   });
   harness.cacheValues.set(`mailbox.sendas.v1.${connectionId}`, 'cached-send-as');
+  const focusKey = harness.context.mailboxFocusPropertyKey_({ userId: OWNER_ID, connectionId });
+  const attentionKey = harness.context.mailboxAttentionPropertyKey_({ userId: OWNER_ID, connectionId });
+  harness.propertyValues[focusKey] = 'private-focus-state';
+  harness.propertyValues[attentionKey] = 'private-attention-preferences';
 
   assert.equal(resultData(rpc(harness, token, 'accountSettings', {})).accounts
     .find(item => item.id === connectionId).canDisconnect, true);
@@ -7614,6 +7669,8 @@ test('Gmail disconnect hides the account before provider revocation and scrubs e
   assert.equal(savedPreference.notificationConnectionIds.includes(connectionId), false);
   assert.equal(harness.propertyValues[`MAILBOX_GOOGLE_OAUTH_TOKEN_V1_${connectionId}`], undefined);
   assert.equal(harness.propertyValues[metadataSyncKey], undefined);
+  assert.equal(harness.propertyValues[focusKey], undefined);
+  assert.equal(harness.propertyValues[attentionKey], undefined);
   assert.equal(harness.cacheValues.has(`mailbox.sendas.v1.${connectionId}`), false);
   assert.deepEqual(JSON.parse(harness.propertyValues.MAILBOX_GOOGLE_REVOKE_QUEUE_V1), []);
   assert.equal(resultFailed(rpc(harness, token, 'disconnectGmail', { connectionId: 'gmail-owner' })).code, 'FORBIDDEN');

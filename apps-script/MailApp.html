@@ -948,6 +948,46 @@
       text-align: left;
     }
 
+    .focus-session-bar {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--primary) 4%, var(--bg));
+    }
+
+    .focus-session-copy {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .focus-session-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .focus-session-field {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .focus-session-field select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0 30px 0 9px;
+      background-color: var(--bg);
+      color: var(--text);
+      font: 600 11px/1 inherit;
+    }
+
     .resume-rail-copy {
       display: grid;
       gap: 2px;
@@ -3702,6 +3742,7 @@
         </button>
       </header>
       <div class="snooze-repair-notice" id="snoozeRepairNotice" role="status" hidden></div>
+      <section class="focus-session-bar" id="focusSessionBar" aria-label="Режим короткої сесії" hidden></section>
       <div class="thread-list" id="threadList" role="list" aria-label="Список розмов"></div>
     </section>
 
@@ -4203,10 +4244,15 @@
         actionBusy: false,
         focusBusy: false,
         attentionBusy: false,
+        attentionPreferencesBusy: false,
         attentionSaveTimer: 0,
         attentionInputTimer: 0,
         pendingAttentionUpdate: null,
         resumeRail: null,
+        attentionPreferences: {
+          sessionPreset: "five_minutes", reminderMode: "soft", maxThreads: 3,
+          revision: 0, sessionPresets: [], reminderModes: []
+        },
         limits: {
           maxIncomingAttachmentBytes: 15 * 1024 * 1024,
           maxOutgoingAttachmentBytes: 10 * 1024 * 1024,
@@ -4264,7 +4310,10 @@
         routeReady: false,
         sessionFailureShown: false,
         previewLabelIds: {},
-        previewAttention: { revision: 0, entries: {}, resume: {} },
+        previewAttention: {
+          revision: 0, entries: {}, resume: {},
+          preferences: { sessionPreset: "five_minutes", reminderMode: "soft", updatedAt: 0 }
+        },
         previewBoxConnected: false,
         previewDriveConnected: true,
         previewActiveDriveSourceId: "source-drive-preview-personal",
@@ -4307,7 +4356,7 @@
           "composeButton", "accountAvatar", "mobileSearchPanel", "mobileSearchBox",
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
           "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelNav", "drawerScrim", "listPane", "listTitle",
-          "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "threadList", "readerPane",
+          "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
           "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings",
           "snoozeScrim", "snoozePanel", "closeSnoozeButton", "snoozeLaterToday", "snoozeTomorrowMorning", "snoozeNextMonday",
           "snoozeCustomForm", "snoozeCustomDate", "snoozeCustomSubmit",
@@ -5019,6 +5068,18 @@
             op: "attentionState",
             connectionId: safeId(input.connectionId || attentionState.connectionId),
             payload: { threadId: safeId(attentionState.threadId) }
+          };
+        }
+        if (op === "attentionPreferences") {
+          var attentionPreferences = input.payload || input;
+          return {
+            op: "attentionPreferences",
+            connectionId: safeId(input.connectionId || attentionPreferences.connectionId),
+            payload: {
+              sessionPreset: safeText(attentionPreferences.sessionPreset),
+              reminderMode: safeText(attentionPreferences.reminderMode),
+              expectedRevision: Math.max(0, Math.floor(Number(attentionPreferences.expectedRevision || 0)))
+            }
           };
         }
         if (op === "attentionUpdate") {
@@ -6305,7 +6366,16 @@
           state.focusConfig = null;
           state.focusConfigAccountId = "";
           state.focusRuleDeleteConfirmId = "";
+          state.resumeRail = null;
+          state.attentionPreferences = normalizeAttentionPreferences(null);
           initializeFromBootstrap(bootstrap || selected || {});
+          try {
+            var accountAttention = normalizeAttentionState(await rpc({
+              op: "attentionState", connectionId: requested
+            }), "");
+            state.resumeRail = accountAttention.resume;
+            state.attentionPreferences = accountAttention.preferences;
+          } catch (attentionError) {}
           setAccountPanelOpen(false, null, false);
           await loadThreads(true);
           showSnackbar("Активний Gmail: " + safeText(state.account && state.account.email), { success: true });
@@ -6557,12 +6627,36 @@
         };
       }
 
+      function normalizeAttentionPreferences(value) {
+        var input = value || {};
+        var sessionPreset = ["low", "five_minutes", "three_threads", "untimed"].indexOf(safeText(input.sessionPreset)) !== -1
+          ? safeText(input.sessionPreset) : "five_minutes";
+        var reminderMode = ["soft", "digest", "urgent_only"].indexOf(safeText(input.reminderMode)) !== -1
+          ? safeText(input.reminderMode) : "soft";
+        var defaultLimits = { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 };
+        return {
+          sessionPreset: sessionPreset,
+          reminderMode: reminderMode,
+          maxThreads: Math.max(1, Math.min(10, Math.floor(Number(input.maxThreads || defaultLimits[sessionPreset])))),
+          updatedAt: Math.max(0, Number(input.updatedAt || 0)),
+          revision: Math.max(0, Math.floor(Number(input.revision || 0))),
+          sessionPresets: Array.isArray(input.sessionPresets) ? input.sessionPresets.slice(0, 4).map(function (item) {
+            return { key: safeText(item && item.key), label: safeText(item && item.label), maxThreads: Math.max(1, Math.min(10, Math.floor(Number(item && item.maxThreads || 1)))) };
+          }) : [],
+          reminderModes: Array.isArray(input.reminderModes) ? input.reminderModes.slice(0, 3).map(function (item) {
+            return { key: safeText(item && item.key), label: safeText(item && item.label) };
+          }) : []
+        };
+      }
+
       function normalizeAttentionState(value, threadId) {
         var input = value || {};
         var revision = Math.max(0, Math.floor(Number(input.revision || 0)));
         var thread = normalizeAttention(input.thread, threadId);
         thread.revision = revision || thread.revision;
-        return { revision: revision, thread: thread, resume: normalizeResumeRail(input.resume) };
+        var preferences = normalizeAttentionPreferences(input.preferences);
+        preferences.revision = revision || preferences.revision;
+        return { revision: revision, thread: thread, resume: normalizeResumeRail(input.resume), preferences: preferences };
       }
 
       function normalizeThread(item) {
@@ -6749,10 +6843,65 @@
         rows[nextIndex].focus();
       }
 
+      function renderFocusSessionBar(focusMode) {
+        clear(els.focusSessionBar);
+        els.focusSessionBar.hidden = !focusMode;
+        if (!focusMode) return;
+        var preferences = normalizeAttentionPreferences(state.attentionPreferences);
+        var copyByPreset = {
+          low: "Почнемо з одного листа. Цього достатньо.",
+          five_minutes: "Можна зупинитися після цього короткого блоку.",
+          three_threads: "Залишилося не більше трьох рішень.",
+          untimed: "Працюйте у своєму темпі."
+        };
+        els.focusSessionBar.append(make("div", {
+          className: "focus-session-copy",
+          text: copyByPreset[preferences.sessionPreset]
+        }));
+        var controls = make("div", { className: "focus-session-controls" });
+        var presetField = make("label", { className: "focus-session-field" });
+        presetField.append(make("span", { text: "Сьогоднішній темп" }));
+        var presetSelect = make("select", { attrs: { "aria-label": "Сьогоднішній темп" } });
+        [
+          ["low", "Мало сил"], ["five_minutes", "5 хвилин"],
+          ["three_threads", "3 листи"], ["untimed", "Без таймера"]
+        ].forEach(function (item) {
+          var option = make("option", { attrs: { value: item[0] }, text: item[1] });
+          option.selected = preferences.sessionPreset === item[0];
+          presetSelect.append(option);
+        });
+        presetSelect.disabled = state.attentionPreferencesBusy || state.attentionBusy;
+        presetSelect.addEventListener("change", function () {
+          updateAttentionPreferences({ sessionPreset: presetSelect.value });
+        });
+        presetField.append(presetSelect);
+        controls.append(presetField);
+
+        var reminderField = make("label", { className: "focus-session-field" });
+        reminderField.append(make("span", { text: "Нагадування" }));
+        var reminderSelect = make("select", { attrs: { "aria-label": "Режим нагадувань" } });
+        [
+          ["soft", "М’яко"], ["digest", "Дайджест"], ["urgent_only", "Лише термінове"]
+        ].forEach(function (item) {
+          var option = make("option", { attrs: { value: item[0] }, text: item[1] });
+          option.selected = preferences.reminderMode === item[0];
+          reminderSelect.append(option);
+        });
+        reminderSelect.disabled = state.attentionPreferencesBusy || state.attentionBusy;
+        reminderSelect.addEventListener("change", function () {
+          updateAttentionPreferences({ reminderMode: reminderSelect.value });
+        });
+        reminderField.append(reminderSelect);
+        controls.append(reminderField);
+        els.focusSessionBar.append(controls);
+      }
+
       function renderThreadList() {
         var visibleListTitle = updateListHeader();
         var focusMode = !state.currentLabelId && state.currentFolderId === "FOCUS";
+        renderFocusSessionBar(focusMode);
         var triageRank = { action: 4, waiting: 3, info: 2, later: 1, none: 0 };
+        var focusLimit = normalizeAttentionPreferences(state.attentionPreferences).maxThreads;
         var visibleThreads = focusMode
           ? state.threads.filter(function (thread) {
               return (thread.attention && ["action", "waiting"].indexOf(thread.attention.triage) !== -1) ||
@@ -6762,7 +6911,7 @@
                 (triageRank[left.attention && left.attention.triage || "none"] || 0) ||
                 Number(right.focus && right.focus.rank || 0) - Number(left.focus && left.focus.rank || 0) ||
                 right.timestamp - left.timestamp;
-            }).slice(0, 10)
+            }).slice(0, focusLimit)
           : state.threads;
         els.listPane.setAttribute("aria-label", visibleListTitle);
         els.threadList.setAttribute("aria-label", "Список розмов: " + visibleListTitle);
@@ -7194,6 +7343,7 @@
             var attentionState = normalizeAttentionState(responses[1], id);
             state.thread.attention = attentionState.thread;
             state.resumeRail = attentionState.resume;
+            state.attentionPreferences = attentionState.preferences;
           }
           renderThread();
           if (state.thread.unread) {
@@ -7270,6 +7420,7 @@
           var result = normalizeAttentionState(await rpc(request), state.thread.id);
           state.thread.attention = result.thread;
           state.resumeRail = result.resume;
+          state.attentionPreferences = result.preferences;
           state.threads = state.threads.map(function (thread) {
             if (thread.id !== state.thread.id || thread.accountId !== state.selectedConnectionId) return thread;
             return Object.assign({}, thread, { attention: result.thread });
@@ -7285,6 +7436,7 @@
               }), state.thread.id);
               state.thread.attention = fresh.thread;
               state.resumeRail = fresh.resume;
+              state.attentionPreferences = fresh.preferences;
             } catch (refreshError) {}
           }
           if (!opts.silent) showSnackbar(safeText(error.message, "Не вдалося зберегти стан фокусу."), { error: true });
@@ -7296,6 +7448,37 @@
             state.pendingAttentionUpdate = null;
             window.setTimeout(function () { updateAttention(pending, { silent: true }); }, 0);
           }
+        }
+      }
+
+      async function updateAttentionPreferences(changes) {
+        var connectionId = state.selectedConnectionId || safeId(state.account && state.account.id);
+        if (state.attentionPreferencesBusy || state.attentionBusy || !connectionId) return false;
+        var previous = normalizeAttentionPreferences(state.attentionPreferences);
+        var optimistic = normalizeAttentionPreferences(Object.assign({}, previous, changes || {}));
+        optimistic.revision = previous.revision;
+        state.attentionPreferences = optimistic;
+        state.attentionPreferencesBusy = true;
+        renderThreadList();
+        try {
+          var result = normalizeAttentionState(await rpc({
+            op: "attentionPreferences",
+            connectionId: connectionId,
+            sessionPreset: optimistic.sessionPreset,
+            reminderMode: optimistic.reminderMode,
+            expectedRevision: previous.revision
+          }), "");
+          state.attentionPreferences = result.preferences;
+          state.resumeRail = result.resume;
+          showSnackbar("Режим фокусу збережено.");
+          return true;
+        } catch (error) {
+          state.attentionPreferences = previous;
+          showSnackbar(safeText(error && error.message, "Не вдалося зберегти режим фокусу."), { error: true });
+          return false;
+        } finally {
+          state.attentionPreferencesBusy = false;
+          renderThreadList();
         }
       }
 
@@ -13187,6 +13370,7 @@
                 op: "attentionState", connectionId: state.account.id
               }), "");
               state.resumeRail = savedAttention.resume;
+              state.attentionPreferences = savedAttention.preferences;
             } catch (attentionError) {
               state.resumeRail = null;
             }
@@ -13619,10 +13803,50 @@
                 revision: state.previewAttention.revision,
                 thread: payload.threadId ? Object.assign({}, previewAttention, { revision: state.previewAttention.revision }) : null,
                 resume: Object.assign({}, state.previewAttention.resume),
+                preferences: Object.assign({}, state.previewAttention.preferences, {
+                  revision: state.previewAttention.revision,
+                  maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[state.previewAttention.preferences.sessionPreset] || 3,
+                  sessionPresets: [
+                    { key: "low", label: "Мало сил", maxThreads: 1 },
+                    { key: "five_minutes", label: "5 хвилин", maxThreads: 3 },
+                    { key: "three_threads", label: "3 листи", maxThreads: 3 },
+                    { key: "untimed", label: "Без таймера", maxThreads: 10 }
+                  ],
+                  reminderModes: [
+                    { key: "soft", label: "М’яко" },
+                    { key: "digest", label: "Дайджест" },
+                    { key: "urgent_only", label: "Лише термінове" }
+                  ]
+                }),
                 triageOptions: [
                   { key: "action", label: "Дія", rank: 4 }, { key: "waiting", label: "Чекаю", rank: 3 },
                   { key: "info", label: "Інфо", rank: 2 }, { key: "later", label: "Пізніше", rank: 1 }
                 ]
+              });
+              return;
+            }
+            if (op === "attentionPreferences") {
+              var nextPreviewPreset = ["low", "five_minutes", "three_threads", "untimed"].indexOf(payload.sessionPreset) !== -1
+                ? payload.sessionPreset : state.previewAttention.preferences.sessionPreset;
+              var nextPreviewReminder = ["soft", "digest", "urgent_only"].indexOf(payload.reminderMode) !== -1
+                ? payload.reminderMode : state.previewAttention.preferences.reminderMode;
+              if (nextPreviewPreset !== state.previewAttention.preferences.sessionPreset ||
+                  nextPreviewReminder !== state.previewAttention.preferences.reminderMode) {
+                state.previewAttention.revision += 1;
+              }
+              state.previewAttention.preferences = {
+                sessionPreset: nextPreviewPreset,
+                reminderMode: nextPreviewReminder,
+                updatedAt: Date.now()
+              };
+              resolve({
+                revision: state.previewAttention.revision,
+                thread: null,
+                resume: Object.assign({}, state.previewAttention.resume),
+                preferences: Object.assign({}, state.previewAttention.preferences, {
+                  revision: state.previewAttention.revision,
+                  maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[nextPreviewPreset]
+                })
               });
               return;
             }
@@ -13647,7 +13871,11 @@
               resolve({
                 revision: state.previewAttention.revision,
                 thread: state.previewAttention.entries[payload.threadId],
-                resume: state.previewAttention.resume
+                resume: state.previewAttention.resume,
+                preferences: Object.assign({}, state.previewAttention.preferences, {
+                  revision: state.previewAttention.revision,
+                  maxThreads: { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 }[state.previewAttention.preferences.sessionPreset] || 3
+                })
               });
               return;
             }

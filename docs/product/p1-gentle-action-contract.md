@@ -1,6 +1,6 @@
 # P1 gentle-action contract
 
-This contract turns the research recommendations into a bounded follow-up to the frozen v28 Focus View. It is intentionally documentation-only until v28 is deployed and verified.
+This contract turns the research recommendations into a bounded follow-up to the verified production-v28 Focus View. The first v29 slice implements the account-isolated session and reminder preferences; later sections remain release-ordered acceptance contracts.
 
 ## Product rules
 
@@ -89,7 +89,7 @@ No subject, sender, body, attachment name, AI summary, or reply text is stored i
 ## Release order
 
 1. Deploy and verify frozen v28 P0.
-2. Add isolated preference storage and read-only session presets.
+2. Add isolated preference storage and interactive session presets. **Implemented and locally verified in v29.**
 3. Add gentle reply styles as editable Gmail drafts.
 4. Add durable scheduled-send journal and worker with readback.
 5. Add reminder modes and three-screen onboarding.

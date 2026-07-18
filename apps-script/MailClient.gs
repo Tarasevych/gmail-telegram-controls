@@ -1663,6 +1663,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'focusThread') return mailboxFocusThread_(payload, session);
   if (op === 'attentionState') return mailboxAttentionState_(payload, session);
   if (op === 'attentionUpdate') return mailboxAttentionUpdate_(payload, session);
+  if (op === 'attentionPreferences') return mailboxAttentionPreferences_(payload, session);
   if (op === 'label') return mailboxModifyUserLabels_(payload);
   if (op === 'action') return mailboxApplyAction_(payload);
   if (op === 'saveDraft') return mailboxSaveDraft_(payload);
@@ -1683,7 +1684,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1770,7 +1771,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1827,7 +1828,7 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
   if (['saveDraft', 'sendDraft', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
@@ -4149,6 +4150,17 @@ const MAILBOX_ATTENTION_TRIAGE_ = Object.freeze({
   info: Object.freeze({ label: 'Інфо', rank: 2 }),
   later: Object.freeze({ label: 'Пізніше', rank: 1 }),
 });
+const MAILBOX_ATTENTION_SESSION_PRESETS_ = Object.freeze({
+  low: Object.freeze({ label: 'Мало сил', maxThreads: 1 }),
+  five_minutes: Object.freeze({ label: '5 хвилин', maxThreads: 3 }),
+  three_threads: Object.freeze({ label: '3 листи', maxThreads: 3 }),
+  untimed: Object.freeze({ label: 'Без таймера', maxThreads: 10 }),
+});
+const MAILBOX_ATTENTION_REMINDER_MODES_ = Object.freeze({
+  soft: 'М’яко',
+  digest: 'Дайджест',
+  urgent_only: 'Лише термінове',
+});
 
 function mailboxAttentionScope_(session) {
   const userId = String(session && session.userId || '');
@@ -4175,6 +4187,35 @@ function mailboxAttentionTriage_(value, allowNone) {
 
 function mailboxAttentionProgress_(value) {
   return mailboxBoundedInteger_(value, 0, 0, 100, 'прогресу читання');
+}
+
+function mailboxAttentionPreferencesNormalize_(value) {
+  const input = value || {};
+  return {
+    sessionPreset: mailboxEnum_(input.sessionPreset,
+      Object.keys(MAILBOX_ATTENTION_SESSION_PRESETS_), 'five_minutes'),
+    reminderMode: mailboxEnum_(input.reminderMode,
+      Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_), 'soft'),
+    updatedAt: mailboxSafeTimestamp_(input.updatedAt),
+  };
+}
+
+function mailboxAttentionPreferencesDto_(registry) {
+  const preferences = mailboxAttentionPreferencesNormalize_(registry && registry.preferences);
+  const preset = MAILBOX_ATTENTION_SESSION_PRESETS_[preferences.sessionPreset];
+  return Object.assign({}, preferences, {
+    revision: mailboxSafeCount_(registry && registry.revision),
+    maxThreads: preset.maxThreads,
+    sessionPresets: Object.keys(MAILBOX_ATTENTION_SESSION_PRESETS_).map(key => ({
+      key,
+      label: MAILBOX_ATTENTION_SESSION_PRESETS_[key].label,
+      maxThreads: MAILBOX_ATTENTION_SESSION_PRESETS_[key].maxThreads,
+    })),
+    reminderModes: Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_).map(key => ({
+      key,
+      label: MAILBOX_ATTENTION_REMINDER_MODES_[key],
+    })),
+  });
 }
 
 function mailboxAttentionNormalizeEntry_(value) {
@@ -4222,6 +4263,7 @@ function mailboxAttentionValidateRegistry_(value, scope) {
     revision: mailboxSafeCount_(input.revision),
     entries,
     resume: mailboxAttentionNormalizeResume_(input.resume),
+    preferences: mailboxAttentionPreferencesNormalize_(input.preferences),
   };
 }
 
@@ -4233,6 +4275,7 @@ function mailboxAttentionInitialRegistry_(scope) {
     revision: 0,
     entries: [],
     resume: mailboxAttentionNormalizeResume_({}),
+    preferences: mailboxAttentionPreferencesNormalize_({}),
   };
 }
 
@@ -4289,6 +4332,7 @@ function mailboxAttentionStateDto_(registry, threadId) {
     })),
     thread: threadId ? mailboxAttentionThreadDto_(registry, threadId) : null,
     resume: Object.assign({}, registry.resume),
+    preferences: mailboxAttentionPreferencesDto_(registry),
   };
 }
 
@@ -4353,6 +4397,44 @@ function mailboxAttentionUpdate_(payload, session) {
     registry.revision += 1;
     const saved = mailboxAttentionWriteRegistry_(props, scope, registry);
     return mailboxAttentionStateDto_(saved, threadId);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxAttentionPreferences_(payload, session) {
+  mailboxAssertAllowedKeys_(payload, ['sessionPreset', 'reminderMode', 'expectedRevision']);
+  if (payload.sessionPreset !== undefined &&
+      !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_SESSION_PRESETS_, String(payload.sessionPreset || ''))) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректний темп короткої сесії.');
+  }
+  if (payload.reminderMode !== undefined &&
+      !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_REMINDER_MODES_, String(payload.reminderMode || ''))) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректний режим нагадувань.');
+  }
+  const scope = mailboxAttentionScope_(session);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw mailboxError_('BUSY', 'Налаштування фокусу зараз оновлюються.');
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const registry = mailboxAttentionReadRegistry_(props, scope);
+    const expectedRevision = mailboxSafeCount_(payload.expectedRevision);
+    if (expectedRevision !== registry.revision) {
+      throw mailboxError_('ATTENTION_CONFLICT', 'Налаштування вже змінилися. Оновіть їх і повторіть дію.');
+    }
+    const previous = mailboxAttentionPreferencesNormalize_(registry.preferences);
+    const next = mailboxAttentionPreferencesNormalize_({
+      sessionPreset: payload.sessionPreset === undefined ? previous.sessionPreset : payload.sessionPreset,
+      reminderMode: payload.reminderMode === undefined ? previous.reminderMode : payload.reminderMode,
+      updatedAt: previous.updatedAt,
+    });
+    if (previous.sessionPreset === next.sessionPreset && previous.reminderMode === next.reminderMode) {
+      return mailboxAttentionStateDto_(registry, '');
+    }
+    next.updatedAt = Date.now();
+    registry.preferences = next;
+    registry.revision += 1;
+    return mailboxAttentionStateDto_(mailboxAttentionWriteRegistry_(props, scope, registry), '');
   } finally {
     lock.releaseLock();
   }

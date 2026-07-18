@@ -1500,6 +1500,19 @@ function mailboxMultiDisconnectGmail_(payload, session) {
     if (typeof mailboxMetadataSyncPropertyKey_ === 'function') {
       props.deleteProperty(mailboxMetadataSyncPropertyKey_(connectionId));
     }
+    const disconnectedUserIds = Array.from(new Set(registry.members
+      .filter(member => member.zoneId === access.connection.zoneId)
+      .map(member => String(member.userId || ''))
+      .filter(userId => /^\d{1,20}$/.test(userId))));
+    disconnectedUserIds.forEach(userId => {
+      const scope = { userId, connectionId };
+      if (typeof mailboxFocusPropertyKey_ === 'function') {
+        props.deleteProperty(mailboxFocusPropertyKey_(scope));
+      }
+      if (typeof mailboxAttentionPropertyKey_ === 'function') {
+        props.deleteProperty(mailboxAttentionPropertyKey_(scope));
+      }
+    });
     try {
       if (typeof MAILBOX_CLIENT_CONFIG_ === 'object' && MAILBOX_CLIENT_CONFIG_) {
         CacheService.getScriptCache().remove(MAILBOX_CLIENT_CONFIG_.SEND_AS_CACHE_KEY + '.' + connectionId);

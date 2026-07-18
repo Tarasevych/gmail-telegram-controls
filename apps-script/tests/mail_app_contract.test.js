@@ -2860,8 +2860,33 @@ test('Focus View exposes bounded triage next action Resume Rail and exactly thre
   }
   assert.doesNotMatch(actionBar, /Переслати|До кошика|mailboxMoveActionsForView|"Ще"/,
     'the low-energy primary bar must not exceed the three intentional actions');
-  assert.match(uiSource, /slice\(0, 10\)/, 'Focus queue must remain bounded');
+  assert.match(uiSource, /slice\(0, focusLimit\)/, 'Focus queue must follow the bounded energy preset');
   assert.match(uiSource, /scheduleReadingProgress\(scroll\)/);
+});
+
+test('energy presets and reminder modes keep Focus compassionate bounded and account-scoped', () => {
+  assert.match(uiSource, /id="focusSessionBar"/);
+  assert.match(uiSource, /op === "attentionPreferences"/);
+  assert.match(uiSource, /function normalizeAttentionPreferences\(value\)/);
+  assert.match(uiSource, /function updateAttentionPreferences\(changes\)/);
+  assert.match(uiSource, /connectionId: connectionId/,
+    'preference writes must preserve the exact selected Gmail connection');
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchSource, /state\.attentionPreferences = normalizeAttentionPreferences\(null\)/);
+  assert.match(switchSource, /op: "attentionState", connectionId: requested/,
+    'account switching must reload preferences from the exact new Gmail connection');
+  assert.match(uiSource, /low: "Почнемо з одного листа\. Цього достатньо\."/);
+  assert.match(uiSource, /five_minutes: "Можна зупинитися після цього короткого блоку\."/);
+  assert.match(uiSource, /three_threads: "Залишилося не більше трьох рішень\."/);
+  assert.match(uiSource, /untimed: "Працюйте у своєму темпі\."/);
+  for (const label of ['Мало сил', '5 хвилин', '3 листи', 'Без таймера', 'М’яко', 'Дайджест', 'Лише термінове']) {
+    assert.match(uiSource, new RegExp(label));
+  }
+  assert.doesNotMatch(uiSource, /ви знову не|ви пропустили|провалили інбокс|серія втрачена/i,
+    'neuroinclusive copy must not shame users for unfinished mail');
 });
 
 test('preview draft save returns the current canonical nested draft contract', () => {

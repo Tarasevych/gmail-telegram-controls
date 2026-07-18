@@ -47,3 +47,16 @@
 - Telegram webhook remained healthy: correct bot identity, `script.google.com` host, zero pending updates, no last error, and only `message`/`callback_query` updates.
 - Post-deploy regression passed 335/335, including the two v28 release-helper contracts.
 - A direct unauthenticated web-app GET returned HTTP 200. It intentionally exposed only the launch bridge, not mailbox or preview content; no account session or message was accessed.
+
+## 2026-07-18 — v29 P1 energy-aware Focus sessions
+
+- Created `codex/neuroinclusive-v29` from the verified production-v28 evidence commit; production was not changed.
+- Added bounded `Мало сил`, `5 хвилин`, `3 листи`, and `Без таймера` presets plus `М’яко`, `Дайджест`, and `Лише термінове` reminder preferences.
+- Persisted preferences in the existing attention registry, isolated by exact Telegram user ID and Gmail connection ID, with optimistic revision checks and idempotent updates.
+- Reloaded the exact new Gmail account preferences during account switching instead of retaining the previous account's UI state.
+- Extended Gmail disconnect cleanup to remove the disconnected account's private Focus and attention preference records.
+- Limited the visible Focus queue to the selected preset budget; `Мало сил` renders exactly one working thread and compassionate copy.
+- Targeted Focus/MailClient contracts passed 202/202. Full ordinary regression passed 335/335.
+- Chrome preview QA passed at desktop and 390×844. The mobile body width remained exactly 390 px with no horizontal overflow; the one-thread queue and `Дайджест` selection rendered correctly.
+- Browser logs contained no application errors. Two Telegram SDK compatibility warnings are expected because localhost preview is outside a current Telegram WebView.
+- Private QA captures remain outside Git under the thread visualization directory. No real Gmail message, Telegram card, OAuth grant, attachment, provider object, browser account, or phone state was mutated.
