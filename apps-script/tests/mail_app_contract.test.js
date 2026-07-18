@@ -2889,6 +2889,42 @@ test('energy presets and reminder modes keep Focus compassionate bounded and acc
     'neuroinclusive copy must not shame users for unfinished mail');
 });
 
+test('three-screen onboarding is accessible explicit and isolated per Gmail account', () => {
+  for (const id of ['onboardingLayer', 'onboardingStepOne', 'onboardingStepTwo', 'onboardingStepThree',
+    'skipOnboarding', 'onboardingBack', 'onboardingNext', 'openOnboardingSettings']) {
+    assert.match(uiSource, new RegExp(`id="${id}"`));
+  }
+  assert.equal((uiSource.match(/id="onboardingStep(?:One|Two|Three)"/g) || []).length, 3,
+    'onboarding must contain exactly three screens');
+  assert.match(uiSource, /"Крок " \+ step \+ " із 3"/);
+  assert.match(uiSource, />\s*Допомога\s*</);
+  assert.match(uiSource, />\s*Пропустити\s*</);
+  assert.match(uiSource, /function trapOnboardingFocus\(event\)/);
+  assert.match(uiSource, /if \(state\.onboardingOpen\)[\s\S]*trapOnboardingFocus\(event\)/);
+  assert.match(uiSource, /completeOnboarding:[\s\S]*true|completeOnboarding: true/);
+  assert.match(uiSource, /digestWindows: state\.onboardingDraft\.digestWindows/);
+  assert.match(uiSource, /timezone: state\.onboardingDraft\.timezone/);
+
+  const bootSource = sourceBetween(
+    '      async function boot() {',
+    '      function previewOpenSession() {'
+  );
+  assert.match(bootSource, /await loadThreads\(true\);[\s\S]*state\.routeReady = true;[\s\S]*!state\.attentionPreferences\.onboardingCompletedAt[\s\S]*setOnboardingOpen\(true/,
+    'first-run onboarding must wait for the exact account attention state');
+  assert.ok(bootSource.indexOf('setOnboardingOpen(true') < bootSource.indexOf('await openThread(initialRoute.threadId'),
+    'onboarding must gate automatic thread opening');
+
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      async function toggleAccountPreference(connectionId, kind, enabled) {'
+  );
+  assert.match(switchSource, /op: "attentionState", connectionId: requested/);
+  assert.match(switchSource, /!state\.attentionPreferences\.onboardingCompletedAt[\s\S]*setOnboardingOpen\(true/,
+    'each Gmail account must decide onboarding from its own saved preferences');
+  assert.doesNotMatch(uiSource, /ви знову не|ви пропустили|провалили|ледач/i,
+    'onboarding copy must remain non-shaming');
+});
+
 test('send later saves a Gmail draft first and keeps scheduling explicit account-scoped and recoverable', () => {
   for (const id of [
     'sendLaterButton', 'sendLaterPanel', 'sendLaterDateTime', 'confirmSendLater', 'cancelScheduledSend'

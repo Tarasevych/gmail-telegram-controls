@@ -4180,6 +4180,7 @@ const MAILBOX_ATTENTION_REMINDER_MODES_ = Object.freeze({
   digest: 'Дайджест',
   urgent_only: 'Лише термінове',
 });
+const MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_ = Object.freeze([540, 1080]);
 
 function mailboxAttentionScope_(session) {
   const userId = String(session && session.userId || '');
@@ -4210,11 +4211,22 @@ function mailboxAttentionProgress_(value) {
 
 function mailboxAttentionPreferencesNormalize_(value) {
   const input = value || {};
+  const digestWindows = Array.from(new Set((Array.isArray(input.digestWindows)
+    ? input.digestWindows : MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_)
+    .map(item => mailboxBoundedInteger_(item, 0, 0, 1439, 'часового вікна digest'))))
+    .sort((left, right) => left - right)
+    .slice(0, 2);
+  const timezone = input.timezone
+    ? mailboxScheduledSendTimezone_(input.timezone)
+    : 'UTC';
   return {
     sessionPreset: mailboxEnum_(input.sessionPreset,
       Object.keys(MAILBOX_ATTENTION_SESSION_PRESETS_), 'five_minutes'),
     reminderMode: mailboxEnum_(input.reminderMode,
       Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_), 'soft'),
+    digestWindows: digestWindows.length ? digestWindows : MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_.slice(),
+    timezone,
+    onboardingCompletedAt: mailboxSafeTimestamp_(input.onboardingCompletedAt),
     updatedAt: mailboxSafeTimestamp_(input.updatedAt),
   };
 }
@@ -4234,6 +4246,7 @@ function mailboxAttentionPreferencesDto_(registry) {
       key,
       label: MAILBOX_ATTENTION_REMINDER_MODES_[key],
     })),
+    quietHours: { startMinute: 22 * 60, endMinute: 8 * 60, label: '22:00–08:00' },
   });
 }
 
@@ -4422,7 +4435,9 @@ function mailboxAttentionUpdate_(payload, session) {
 }
 
 function mailboxAttentionPreferences_(payload, session) {
-  mailboxAssertAllowedKeys_(payload, ['sessionPreset', 'reminderMode', 'expectedRevision']);
+  mailboxAssertAllowedKeys_(payload, [
+    'sessionPreset', 'reminderMode', 'digestWindows', 'timezone', 'completeOnboarding', 'expectedRevision',
+  ]);
   if (payload.sessionPreset !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_SESSION_PRESETS_, String(payload.sessionPreset || ''))) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректний темп короткої сесії.');
@@ -4430,6 +4445,12 @@ function mailboxAttentionPreferences_(payload, session) {
   if (payload.reminderMode !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_REMINDER_MODES_, String(payload.reminderMode || ''))) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректний режим нагадувань.');
+  }
+  if (payload.digestWindows !== undefined && !Array.isArray(payload.digestWindows)) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректні часові вікна дайджесту.');
+  }
+  if (payload.completeOnboarding !== undefined && payload.completeOnboarding !== true) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректний стан знайомства із сервісом.');
   }
   const scope = mailboxAttentionScope_(session);
   const lock = LockService.getScriptLock();
@@ -4445,9 +4466,17 @@ function mailboxAttentionPreferences_(payload, session) {
     const next = mailboxAttentionPreferencesNormalize_({
       sessionPreset: payload.sessionPreset === undefined ? previous.sessionPreset : payload.sessionPreset,
       reminderMode: payload.reminderMode === undefined ? previous.reminderMode : payload.reminderMode,
+      digestWindows: payload.digestWindows === undefined ? previous.digestWindows : payload.digestWindows,
+      timezone: payload.timezone === undefined ? previous.timezone : payload.timezone,
+      onboardingCompletedAt: payload.completeOnboarding === true
+        ? (previous.onboardingCompletedAt || Date.now())
+        : previous.onboardingCompletedAt,
       updatedAt: previous.updatedAt,
     });
-    if (previous.sessionPreset === next.sessionPreset && previous.reminderMode === next.reminderMode) {
+    if (previous.sessionPreset === next.sessionPreset && previous.reminderMode === next.reminderMode &&
+        previous.timezone === next.timezone &&
+        previous.onboardingCompletedAt === next.onboardingCompletedAt &&
+        JSON.stringify(previous.digestWindows) === JSON.stringify(next.digestWindows)) {
       return mailboxAttentionStateDto_(registry, '');
     }
     next.updatedAt = Date.now();

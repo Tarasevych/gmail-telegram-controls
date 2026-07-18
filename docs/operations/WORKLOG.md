@@ -103,3 +103,14 @@
 - The protected bot token was read only inside the local keyring process and was never printed, copied, or committed.
 - An unauthenticated web-app GET returned HTTP 200 and the expected launch bridge, with no mailbox address or mail content exposed.
 - No OAuth/migration was repeated and no Gmail message, Telegram card, attachment, Drive/Box object, provider grant, browser account, or phone state was mutated during post-deploy verification.
+
+## 2026-07-18 — v33 three-screen neuroinclusive onboarding candidate
+
+- Created `codex/neuroinclusive-v33-reminders-onboarding` from the verified v32 send-later UI commit. Production remains immutable Apps Script v29; no release helper or deployment was created.
+- Added exactly three progressive screens: a bounded energy pace, one reminder mode with optional digest window, and an exact-account review. Stable `Допомога` and explicit `Пропустити` actions remain available.
+- The onboarding is keyboard trapped, does not close silently on Escape, and gates automatic thread opening only after the selected Gmail account's preference state has loaded.
+- Completion, digest windows, and timezone are stored in the existing content-free attention record, isolated by exact Telegram user ID plus Gmail connection ID. Completion time is generated once by the server and exact retries are idempotent.
+- Switching to another Gmail account reloads that account's preferences and opens onboarding only when that account has not completed it. A `Підтримка` control reopens the flow later without losing authorization.
+- Targeted MailApp/MailClient contracts passed 211/211. The ordinary functional regression excluding immutable historical release-pin tests passed 344/344. Inline scripts remain syntactically valid; `git diff --check` passed and the bounded changed-file secret scan found 0 matches.
+- The broad raw glob also ran historical v27–v29 deployment-pin tests against mutable working files: 351 functional tests passed and four release-fixture checks failed for expected historical hashes/path layout. Those fixtures were not edited because doing so would weaken immutable rollback evidence.
+- No Gmail message/draft, Telegram card, OAuth grant, migration, trigger, attachment, provider object, browser account, or phone state was changed.

@@ -1621,6 +1621,108 @@
       z-index: 28;
     }
 
+    .onboarding-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(19, 28, 45, .48);
+      backdrop-filter: blur(3px);
+    }
+
+    .onboarding-layer[hidden] { display: none; }
+
+    .onboarding-dialog {
+      display: grid;
+      width: min(520px, calc(100vw - 32px));
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      gap: 16px;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+    }
+
+    .onboarding-header,
+    .onboarding-actions,
+    .onboarding-help-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .onboarding-header { align-items: flex-start; }
+    .onboarding-header h2 { margin: 2px 0 4px; font-size: 22px; }
+    .onboarding-progress { color: var(--primary); font-size: 12px; font-weight: 800; }
+    .onboarding-copy { margin: 0; color: var(--muted); line-height: 1.5; }
+    .onboarding-step[hidden] { display: none; }
+
+    .onboarding-options {
+      display: grid;
+      gap: 8px;
+      margin: 14px 0 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .onboarding-option {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 10px;
+      min-height: 52px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .onboarding-option:has(input:checked) {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 8%, var(--bg));
+    }
+
+    .onboarding-option strong,
+    .onboarding-option span { display: block; }
+    .onboarding-option span { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .onboarding-option input { margin-top: 4px; }
+
+    .onboarding-digest-window {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .onboarding-digest-window select {
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .onboarding-summary {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .onboarding-summary p { margin: 0; }
+    .onboarding-actions { justify-content: flex-end; flex-wrap: wrap; }
+    .onboarding-help-row { justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .onboarding-help-row a { color: var(--primary); font-weight: 700; }
+
     .account-panel-header {
       display: flex;
       align-items: center;
@@ -3942,7 +4044,10 @@
       <section class="gmail-metadata-panel" id="focusSettingsPanel" aria-labelledby="focusSettingsTitle">
         <header class="gmail-metadata-panel-header">
           <h3 id="focusSettingsTitle">ADHD-фокус і пріоритети</h3>
-          <button class="workspace-button" id="refreshFocusSettings" type="button">Правила</button>
+          <div class="toolbar-group">
+            <button class="workspace-button" id="openOnboardingSettings" type="button">Підтримка</button>
+            <button class="workspace-button" id="refreshFocusSettings" type="button">Правила</button>
+          </div>
         </header>
         <div class="gmail-metadata-content" id="focusSettingsContent" aria-live="polite">
           <p class="account-panel-note">Створіть персональні правила кольору й важливості для активного Gmail-акаунта.</p>
@@ -3950,6 +4055,55 @@
       </section>
       <p class="account-panel-note">Кожна скринька має окремий Google OAuth-доступ і прив’язана до вашого Telegram ID. Пароль вводиться лише на сторінці Google. Поточний акаунт завжди позначено на картці.</p>
     </section>
+
+    <div class="onboarding-layer" id="onboardingLayer" hidden>
+      <section class="onboarding-dialog" id="onboardingDialog" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-describedby="onboardingDescription" tabindex="-1">
+        <header class="onboarding-header">
+          <div>
+            <div class="onboarding-progress" id="onboardingProgress">Крок 1 із 3</div>
+            <h2 id="onboardingTitle">Що допоможе сьогодні?</h2>
+            <p class="onboarding-copy" id="onboardingDescription">Оберіть посильний темп. Його можна змінити будь-коли.</p>
+          </div>
+        </header>
+        <div class="onboarding-step" id="onboardingStepOne">
+          <fieldset class="onboarding-options" aria-label="Темп роботи">
+            <label class="onboarding-option"><input type="radio" name="onboardingPreset" value="low"><span><strong>Мало сил</strong><span>Почнемо з одного листа. Цього достатньо.</span></span></label>
+            <label class="onboarding-option"><input type="radio" name="onboardingPreset" value="five_minutes"><span><strong>5 хвилин</strong><span>Короткий блок до трьох рішень.</span></span></label>
+            <label class="onboarding-option"><input type="radio" name="onboardingPreset" value="three_threads"><span><strong>3 листи</strong><span>Чітка межа без нескінченного інбоксу.</span></span></label>
+            <label class="onboarding-option"><input type="radio" name="onboardingPreset" value="untimed"><span><strong>Без таймера</strong><span>Працюйте у своєму темпі.</span></span></label>
+          </fieldset>
+        </div>
+        <div class="onboarding-step" id="onboardingStepTwo" hidden>
+          <fieldset class="onboarding-options" aria-label="Режим нагадувань">
+            <label class="onboarding-option"><input type="radio" name="onboardingReminder" value="soft"><span><strong>М’яко</strong><span>Одне нейтральне нагадування, потім без тиску.</span></span></label>
+            <label class="onboarding-option"><input type="radio" name="onboardingReminder" value="digest"><span><strong>Дайджест</strong><span>Зібрати нагадування у вибрані часові вікна.</span></span></label>
+            <label class="onboarding-option"><input type="radio" name="onboardingReminder" value="urgent_only"><span><strong>Лише термінове</strong><span>Тільки листи з вашим найвищим пріоритетом.</span></span></label>
+          </fieldset>
+          <label class="onboarding-digest-window" id="onboardingDigestWindow">Коли показувати дайджест
+            <select id="onboardingDigestSelect">
+              <option value="540">09:00</option>
+              <option value="1080">18:00</option>
+              <option value="540,1080">09:00 і 18:00</option>
+            </select>
+          </label>
+          <p class="onboarding-copy">Тихі години: <strong id="onboardingQuietHours">22:00–08:00</strong>. Вони завжди мають пріоритет.</p>
+        </div>
+        <div class="onboarding-step" id="onboardingStepThree" hidden>
+          <p class="onboarding-copy">Перевірте вибір. Пароль Google не зберігається й не передається Mini App.</p>
+          <div class="onboarding-summary" id="onboardingSummary" aria-live="polite"></div>
+        </div>
+        <footer>
+          <div class="onboarding-help-row">
+            <a href="https://support.google.com/mail/" target="_blank" rel="noopener noreferrer">Допомога</a>
+            <button class="text-button" id="skipOnboarding" type="button">Пропустити</button>
+          </div>
+          <div class="onboarding-actions">
+            <button class="outline-button" id="onboardingBack" type="button" hidden>Назад</button>
+            <button class="primary-button" id="onboardingNext" type="button">Далі</button>
+          </div>
+        </footer>
+      </section>
+    </div>
 
     <div class="attachment-preview-layer" id="attachmentPreviewLayer" hidden>
       <section class="attachment-preview-dialog" id="attachmentPreviewDialog" role="dialog" aria-modal="true" aria-labelledby="attachmentPreviewTitle" aria-describedby="attachmentPreviewStatus" tabindex="-1">
@@ -4392,8 +4546,14 @@
         resumeRail: null,
         attentionPreferences: {
           sessionPreset: "five_minutes", reminderMode: "soft", maxThreads: 3,
-          revision: 0, sessionPresets: [], reminderModes: []
+          digestWindows: [540, 1080], timezone: "UTC", onboardingCompletedAt: 0,
+          revision: 0, sessionPresets: [], reminderModes: [], quietHours: { startMinute: 1320, endMinute: 480, label: "22:00–08:00" }
         },
+        onboardingOpen: false,
+        onboardingStep: 1,
+        onboardingDraft: null,
+        onboardingBusy: false,
+        onboardingReturnFocus: null,
         limits: {
           maxIncomingAttachmentBytes: 15 * 1024 * 1024,
           maxOutgoingAttachmentBytes: 10 * 1024 * 1024,
@@ -4454,7 +4614,10 @@
         previewLabelIds: {},
         previewAttention: {
           revision: 0, entries: {}, resume: {},
-          preferences: { sessionPreset: "five_minutes", reminderMode: "soft", updatedAt: 0 }
+          preferences: {
+            sessionPreset: "five_minutes", reminderMode: "soft", digestWindows: [540, 1080],
+            timezone: "UTC", onboardingCompletedAt: 0, updatedAt: 0
+          }
         },
         previewBoxConnected: false,
         previewDriveConnected: true,
@@ -4500,7 +4663,8 @@
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
           "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelNav", "drawerScrim", "listPane", "listTitle",
           "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
-          "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings",
+          "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
+          "onboardingLayer", "onboardingDialog", "onboardingProgress", "onboardingTitle", "onboardingDescription", "onboardingStepOne", "onboardingStepTwo", "onboardingStepThree", "onboardingDigestWindow", "onboardingDigestSelect", "onboardingQuietHours", "onboardingSummary", "skipOnboarding", "onboardingBack", "onboardingNext",
           "snoozeScrim", "snoozePanel", "closeSnoozeButton", "snoozeLaterToday", "snoozeTomorrowMorning", "snoozeNextMonday",
           "snoozeCustomForm", "snoozeCustomDate", "snoozeCustomSubmit",
           "composeBackdrop", "composeSheet", "closeComposeButton", "minimizeComposeButton", "composeRestoreChip", "composeRestoreStatus",
@@ -5221,6 +5385,11 @@
             payload: {
               sessionPreset: safeText(attentionPreferences.sessionPreset),
               reminderMode: safeText(attentionPreferences.reminderMode),
+              digestWindows: Array.isArray(attentionPreferences.digestWindows)
+                ? attentionPreferences.digestWindows.slice(0, 2).map(function (item) { return Math.floor(Number(item || 0)); })
+                : undefined,
+              timezone: attentionPreferences.timezone === undefined ? undefined : safeText(attentionPreferences.timezone),
+              completeOnboarding: attentionPreferences.completeOnboarding === true ? true : undefined,
               expectedRevision: Math.max(0, Math.floor(Number(attentionPreferences.expectedRevision || 0)))
             }
           };
@@ -6559,6 +6728,9 @@
           setAccountPanelOpen(false, null, false);
           await loadThreads(true);
           showSnackbar("Активний Gmail: " + safeText(state.account && state.account.email), { success: true });
+          if (!state.attentionPreferences.onboardingCompletedAt) {
+            setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
+          }
         } catch (error) {
           showSnackbar(safeText(error && error.message, "Не вдалося перемкнути Gmail-акаунт."), { error: true });
         }
@@ -6814,9 +6986,24 @@
         var reminderMode = ["soft", "digest", "urgent_only"].indexOf(safeText(input.reminderMode)) !== -1
           ? safeText(input.reminderMode) : "soft";
         var defaultLimits = { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 };
+        var digestWindows = Array.from(new Set((Array.isArray(input.digestWindows) ? input.digestWindows : [540, 1080])
+          .map(function (item) { return Math.max(0, Math.min(1439, Math.floor(Number(item || 0)))); })))
+          .sort(function (left, right) { return left - right; })
+          .slice(0, 2);
+        var timezone = safeText(input.timezone, "UTC");
+        if (!/^[A-Za-z0-9_+\-/]{1,80}$/.test(timezone)) timezone = "UTC";
+        var quiet = input.quietHours || {};
         return {
           sessionPreset: sessionPreset,
           reminderMode: reminderMode,
+          digestWindows: digestWindows.length ? digestWindows : [540, 1080],
+          timezone: timezone,
+          onboardingCompletedAt: Math.max(0, Number(input.onboardingCompletedAt || 0)),
+          quietHours: {
+            startMinute: Math.max(0, Math.min(1439, Math.floor(Number(quiet.startMinute == null ? 1320 : quiet.startMinute)))),
+            endMinute: Math.max(0, Math.min(1439, Math.floor(Number(quiet.endMinute == null ? 480 : quiet.endMinute)))),
+            label: safeText(quiet.label, "22:00–08:00")
+          },
           maxThreads: Math.max(1, Math.min(10, Math.floor(Number(input.maxThreads || defaultLimits[sessionPreset])))),
           updatedAt: Math.max(0, Number(input.updatedAt || 0)),
           revision: Math.max(0, Math.floor(Number(input.revision || 0))),
@@ -7646,6 +7833,9 @@
             connectionId: connectionId,
             sessionPreset: optimistic.sessionPreset,
             reminderMode: optimistic.reminderMode,
+            digestWindows: optimistic.digestWindows,
+            timezone: optimistic.timezone,
+            completeOnboarding: Boolean(changes && changes.completeOnboarding),
             expectedRevision: previous.revision
           }), "");
           state.attentionPreferences = result.preferences;
@@ -9690,6 +9880,189 @@
       function composePendingKind() {
         var pendingKind = safeText(state.compose && state.compose.pendingKind).toLowerCase();
         return pendingKind === "draft" || pendingKind === "send" ? pendingKind : "";
+      }
+
+      function digestWindowValue(values) {
+        var windows = normalizeAttentionPreferences({ digestWindows: values }).digestWindows;
+        return windows.join(",");
+      }
+
+      function onboardingDraftFromPreferences() {
+        var preferences = normalizeAttentionPreferences(state.attentionPreferences);
+        return {
+          sessionPreset: preferences.sessionPreset,
+          reminderMode: preferences.reminderMode,
+          digestWindows: preferences.digestWindows.slice(),
+          timezone: composeTimezone()
+        };
+      }
+
+      function onboardingPresetLabel(value) {
+        return {
+          low: "Мало сил", five_minutes: "5 хвилин",
+          three_threads: "3 листи", untimed: "Без таймера"
+        }[safeText(value)] || "5 хвилин";
+      }
+
+      function onboardingReminderLabel(value) {
+        return {
+          soft: "М’яко", digest: "Дайджест", urgent_only: "Лише термінове"
+        }[safeText(value)] || "М’яко";
+      }
+
+      function onboardingWindowLabel(values) {
+        return (Array.isArray(values) ? values : []).map(function (minute) {
+          var hour = Math.floor(Number(minute || 0) / 60);
+          var remainder = Number(minute || 0) % 60;
+          return String(hour).padStart(2, "0") + ":" + String(remainder).padStart(2, "0");
+        }).join(" і ");
+      }
+
+      function setOnboardingIsolation(active) {
+        Array.from(document.body.children).forEach(function (node) {
+          if (node === els.onboardingLayer || node.tagName === "SCRIPT") return;
+          if (active) {
+            node.dataset.onboardingPreviousInert = node.inert ? "true" : "false";
+            node.inert = true;
+          } else {
+            node.inert = node.dataset.onboardingPreviousInert === "true";
+            delete node.dataset.onboardingPreviousInert;
+          }
+        });
+      }
+
+      function renderOnboarding() {
+        if (!state.onboardingOpen || !state.onboardingDraft) return;
+        var step = Math.max(1, Math.min(3, Number(state.onboardingStep || 1)));
+        state.onboardingStep = step;
+        var titles = ["Що допоможе сьогодні?", "Коли нагадувати?", "Готово"];
+        var descriptions = [
+          "Оберіть посильний темп. Його можна змінити будь-коли.",
+          "Оберіть один спокійний режим. Тихі години залишаються головними.",
+          "Перевірте вибір для цієї Gmail-скриньки."
+        ];
+        els.onboardingProgress.textContent = "Крок " + step + " із 3";
+        els.onboardingTitle.textContent = titles[step - 1];
+        els.onboardingDescription.textContent = descriptions[step - 1];
+        els.onboardingStepOne.hidden = step !== 1;
+        els.onboardingStepTwo.hidden = step !== 2;
+        els.onboardingStepThree.hidden = step !== 3;
+        els.onboardingBack.hidden = step === 1;
+        els.onboardingNext.textContent = state.onboardingBusy
+          ? "Зберігаю…"
+          : (step === 3 ? "Відкрити Фокус" : "Далі");
+        els.onboardingNext.disabled = state.onboardingBusy;
+        els.onboardingBack.disabled = state.onboardingBusy;
+        els.skipOnboarding.disabled = state.onboardingBusy;
+
+        els.onboardingDialog.querySelectorAll('input[name="onboardingPreset"]').forEach(function (input) {
+          input.checked = input.value === state.onboardingDraft.sessionPreset;
+          input.disabled = state.onboardingBusy;
+        });
+        els.onboardingDialog.querySelectorAll('input[name="onboardingReminder"]').forEach(function (input) {
+          input.checked = input.value === state.onboardingDraft.reminderMode;
+          input.disabled = state.onboardingBusy;
+        });
+        var windowValue = digestWindowValue(state.onboardingDraft.digestWindows);
+        if (["540", "1080", "540,1080"].indexOf(windowValue) === -1) windowValue = "540,1080";
+        els.onboardingDigestSelect.value = windowValue;
+        els.onboardingDigestSelect.disabled = state.onboardingBusy;
+        els.onboardingDigestWindow.hidden = state.onboardingDraft.reminderMode !== "digest";
+        els.onboardingQuietHours.textContent = normalizeAttentionPreferences(state.attentionPreferences).quietHours.label;
+
+        clear(els.onboardingSummary);
+        if (step === 3) {
+          var accountEmail = safeText(state.account && state.account.email, "Поточний Gmail-акаунт");
+          els.onboardingSummary.append(
+            make("p", {}, make("strong", { text: "Gmail: " }), document.createTextNode(accountEmail)),
+            make("p", {}, make("strong", { text: "Темп: " }), document.createTextNode(onboardingPresetLabel(state.onboardingDraft.sessionPreset))),
+            make("p", {}, make("strong", { text: "Нагадування: " }), document.createTextNode(onboardingReminderLabel(state.onboardingDraft.reminderMode))),
+            state.onboardingDraft.reminderMode === "digest"
+              ? make("p", {}, make("strong", { text: "Вікна: " }), document.createTextNode(onboardingWindowLabel(state.onboardingDraft.digestWindows)))
+              : make("span", { hidden: true }),
+            make("p", { text: "Зберігаються лише ці налаштування та технічні ідентифікатори. Пароль Google і вміст листів сюди не потрапляють." })
+          );
+        }
+      }
+
+      function setOnboardingOpen(open, options) {
+        var opts = options || {};
+        var active = Boolean(open && state.account && state.account.id);
+        if (active) {
+          state.onboardingReturnFocus = opts.invoker || document.activeElement;
+          state.onboardingDraft = onboardingDraftFromPreferences();
+          state.onboardingStep = Math.max(1, Math.min(3, Number(opts.step || 1)));
+          state.onboardingOpen = true;
+          state.onboardingBusy = false;
+          setAccountPanelOpen(false, null, false);
+          els.onboardingLayer.hidden = false;
+          setOnboardingIsolation(true);
+          renderOnboarding();
+          window.setTimeout(function () {
+            var selected = els.onboardingDialog.querySelector('input:checked');
+            (selected || els.onboardingNext).focus();
+          }, 0);
+          return;
+        }
+        state.onboardingOpen = false;
+        state.onboardingBusy = false;
+        els.onboardingLayer.hidden = true;
+        setOnboardingIsolation(false);
+        var returnTo = state.onboardingReturnFocus;
+        state.onboardingReturnFocus = null;
+        if (opts.restoreFocus && returnTo && returnTo.isConnected && !returnTo.disabled) returnTo.focus();
+      }
+
+      function trapOnboardingFocus(event) {
+        if (!state.onboardingOpen || event.key !== "Tab") return false;
+        var focusable = Array.from(els.onboardingDialog.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])'))
+          .filter(function (node) { return !node.hidden && node.getClientRects().length > 0; });
+        if (!focusable.length) return false;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+          return true;
+        }
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+          return true;
+        }
+        return false;
+      }
+
+      function updateOnboardingChoice(kind, value) {
+        if (!state.onboardingDraft || state.onboardingBusy) return;
+        if (kind === "preset") state.onboardingDraft.sessionPreset = safeText(value, "five_minutes");
+        if (kind === "reminder") state.onboardingDraft.reminderMode = safeText(value, "soft");
+        if (kind === "windows") {
+          state.onboardingDraft.digestWindows = safeText(value).split(",").map(function (item) { return Number(item); });
+        }
+        renderOnboarding();
+      }
+
+      async function completeOnboarding(options) {
+        if (!state.onboardingDraft || state.onboardingBusy) return false;
+        var opts = options || {};
+        state.onboardingBusy = true;
+        renderOnboarding();
+        var saved = await updateAttentionPreferences({
+          sessionPreset: state.onboardingDraft.sessionPreset,
+          reminderMode: state.onboardingDraft.reminderMode,
+          digestWindows: state.onboardingDraft.digestWindows,
+          timezone: state.onboardingDraft.timezone,
+          completeOnboarding: true
+        });
+        state.onboardingBusy = false;
+        if (!saved) {
+          renderOnboarding();
+          return false;
+        }
+        setOnboardingOpen(false, { restoreFocus: !opts.openFocus });
+        if (opts.openFocus) selectFolder("FOCUS");
+        return true;
       }
 
       function composeScheduledSendActive() {
@@ -13542,6 +13915,35 @@
         els.connectGoogleAccount.addEventListener("click", connectGoogleMailbox);
         els.refreshGmailMetadata.addEventListener("click", loadGmailMetadata);
         els.refreshFocusSettings.addEventListener("click", loadFocusSettings);
+        els.openOnboardingSettings.addEventListener("click", function (event) {
+          setOnboardingOpen(true, { step: 1, invoker: event.currentTarget });
+        });
+        els.onboardingDialog.querySelectorAll('input[name="onboardingPreset"]').forEach(function (input) {
+          input.addEventListener("change", function () { updateOnboardingChoice("preset", input.value); });
+        });
+        els.onboardingDialog.querySelectorAll('input[name="onboardingReminder"]').forEach(function (input) {
+          input.addEventListener("change", function () { updateOnboardingChoice("reminder", input.value); });
+        });
+        els.onboardingDigestSelect.addEventListener("change", function () {
+          updateOnboardingChoice("windows", els.onboardingDigestSelect.value);
+        });
+        els.onboardingBack.addEventListener("click", function () {
+          if (state.onboardingBusy) return;
+          state.onboardingStep = Math.max(1, state.onboardingStep - 1);
+          renderOnboarding();
+        });
+        els.onboardingNext.addEventListener("click", function () {
+          if (state.onboardingBusy) return;
+          if (state.onboardingStep < 3) {
+            state.onboardingStep += 1;
+            renderOnboarding();
+            return;
+          }
+          completeOnboarding({ openFocus: true });
+        });
+        els.skipOnboarding.addEventListener("click", function () {
+          completeOnboarding({ openFocus: false });
+        });
         els.continueGoogleOAuth.addEventListener("click", function (event) {
           var expiresAt = Number(els.continueGoogleOAuth.dataset.expiresAt || 0);
           if (!expiresAt || expiresAt <= Date.now()) {
@@ -13789,6 +14191,15 @@
           closeActionMenus();
         });
         document.addEventListener("keydown", function (event) {
+          if (state.onboardingOpen) {
+            if (event.key === "Tab") trapOnboardingFocus(event);
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              showSnackbar("Щоб не втратити вибір, натисніть «Пропустити» або завершіть три короткі кроки.");
+            }
+            return;
+          }
           if (!els.attachmentPreviewLayer.hidden) {
             if (event.key === "Tab") trapFocusInDialog(event, els.attachmentPreviewDialog);
             if (event.key === "Escape") {
@@ -13931,6 +14342,10 @@
           }
           await loadThreads(true);
           state.routeReady = true;
+          if (!state.attentionPreferences.onboardingCompletedAt) {
+            setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
+            return;
+          }
           if (initialRoute && initialRoute.view === "thread") {
             await openThread(initialRoute.threadId, true);
             openThreadRoutePanel(initialRoute);
@@ -14365,13 +14780,25 @@
                 ? payload.sessionPreset : state.previewAttention.preferences.sessionPreset;
               var nextPreviewReminder = ["soft", "digest", "urgent_only"].indexOf(payload.reminderMode) !== -1
                 ? payload.reminderMode : state.previewAttention.preferences.reminderMode;
+              var nextPreviewWindows = Array.isArray(payload.digestWindows) && payload.digestWindows.length
+                ? payload.digestWindows.slice(0, 2) : state.previewAttention.preferences.digestWindows;
+              var nextPreviewTimezone = safeText(payload.timezone, state.previewAttention.preferences.timezone || "UTC");
+              var nextPreviewOnboarding = payload.completeOnboarding === true
+                ? (state.previewAttention.preferences.onboardingCompletedAt || Date.now())
+                : state.previewAttention.preferences.onboardingCompletedAt;
               if (nextPreviewPreset !== state.previewAttention.preferences.sessionPreset ||
-                  nextPreviewReminder !== state.previewAttention.preferences.reminderMode) {
+                  nextPreviewReminder !== state.previewAttention.preferences.reminderMode ||
+                  nextPreviewTimezone !== state.previewAttention.preferences.timezone ||
+                  nextPreviewOnboarding !== state.previewAttention.preferences.onboardingCompletedAt ||
+                  JSON.stringify(nextPreviewWindows) !== JSON.stringify(state.previewAttention.preferences.digestWindows)) {
                 state.previewAttention.revision += 1;
               }
               state.previewAttention.preferences = {
                 sessionPreset: nextPreviewPreset,
                 reminderMode: nextPreviewReminder,
+                digestWindows: nextPreviewWindows,
+                timezone: nextPreviewTimezone,
+                onboardingCompletedAt: nextPreviewOnboarding,
                 updatedAt: Date.now()
               };
               resolve({

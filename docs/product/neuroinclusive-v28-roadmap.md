@@ -53,3 +53,10 @@ Acceptance:
 4. Add summary evidence/confidence contract.
 5. Add gentle replies, send later, reminder modes, and onboarding.
 6. Run desktop/mobile/phone functional QA; guarded v28 release only after exact preflight.
+
+## Current preserved progress
+
+- Production: immutable v29 energy-aware Focus preferences.
+- Separate preserved candidates: v30 low-pressure reply starters; v31/v32 durable send-later backend and UI; v33 three-screen per-account onboarding.
+- v33 stores only bounded preference metadata, never message bodies, and passes the 344-test functional matrix.
+- Remaining before a combined release: compassionate reminder delivery with quiet-hour deferral and suppression callbacks, rendered/Telegram WebView QA for the combined candidate, an immutable release helper, read-only preflight, and one guarded deployment.
