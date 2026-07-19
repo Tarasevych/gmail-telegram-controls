@@ -15,11 +15,11 @@ Build a safe, neuroinclusive Gmail client in Telegram for one owner and explicit
 - Desktop and mobile behavior are verified separately.
 - Real Gmail mutations are not performed on arbitrary mail; acceptance uses an owner-controlled test message or a read-only check.
 - OTP, CAPTCHA, new user-specific consent, and material manual choices remain owner intervention points.
-- Every Build has local tests, staging acceptance, production verification, a Git commit/tag, and rollback mapping.
+- Every Versie has local tests, staging acceptance, production verification, a Git commit/tag, and rollback mapping.
 
 ## Source of truth
 
-- Active code: the current Build branch.
+- Active code: the current Versie branch.
 - Latest verified public release: `main` plus its release branch/tag.
 - Current work: [ROADMAP.md](ROADMAP.md).
 - Current defects: [ISSUES.md](ISSUES.md).
@@ -29,13 +29,13 @@ Build a safe, neuroinclusive Gmail client in Telegram for one owner and explicit
 
 Public Git excludes bot tokens, OAuth client secrets, refresh/access tokens, authorization codes, cookies, Telegram `initData`, private chat IDs, email content, private attachments, and protected runtime properties. Git contains code, configuration templates, sanitized evidence, decisions, and the retrieval method for protected configuration without its values.
 
-## Definition of Done for a Build
+## Definition of Done for a Versie
 
 - all claimed contracts pass;
 - staging matches the exact commit;
 - manual OAuth gates are completed by the owner;
-- production points to this Build's immutable;
-- the Telegram menu opens the production Build;
+- production points to this Versie's immutable;
+- the Telegram menu opens the production Versie;
 - no obsolete staging deployment or temporary process remains;
 - UK/EN articles, the problem register, and roadmap are updated;
 - the release branch/tag is created after verification, not before it.

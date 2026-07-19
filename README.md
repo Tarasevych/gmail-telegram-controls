@@ -1,5 +1,33 @@
 # Gmail Telegram Controls
 
+<!-- lang:uk -->
+## Українською
+
+Головний Telegram Mini App для `@TarasevychGmailNotifierBot`.
+
+### Поточна лінія проєкту
+
+- Активна версія в розробці: **Versie 1 · 2026-07-19**.
+- Поточний public production залишається на раніше перевіреному Apps Script v37, доки Versie 1 не завершить acceptance.
+- Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.
+- Номери Apps Script immutable є технічними deployment ID, а не назвами продуктових версій.
+- Одночасно використовується одна активна гілка розробки; завершені release-гілки й теги є незмінними доказами.
+
+Путівник проєкту: [Українською](docs/uk/README.md) | [English](docs/en/README.md)
+
+Прямі реєстри: [Проблеми](docs/uk/ISSUES.md) | [План](docs/uk/ROADMAP.md) | [Історія Versie 1](docs/uk/releases/VERSIE-001-2026-07-19.md) | [Правило двомовної документації](docs/uk/BILINGUAL_DOCUMENTATION.md)
+
+Репозиторій зберігає очищені історичні Apps Script baseline у `apps-script/` та кумулятивного кандидата Versie 1. Напрям продукту й перевірені докази аудиту містяться в `docs/`. Runtime-облікові дані, OAuth-сесії, вміст поштових скриньок і deployment-local конфігурація навмисно виключені з Git.
+
+Ця сторінка не містить Gmail-облікових даних, bot token, chat ID або постійних облікових даних поштової скриньки. Telegram передає підписаний `initData` під час виконання. Для mail client ця головна сторінка видаляє Telegram metadata з історії браузера й передає `initData` до Apps Script через same-window form POST; значення ніколи не потрапляє до backend URL або client storage. Apps Script перевіряє підпис, власника, актуальність і одноразову replay claim, після чого повертає лише одноразовий launch nonce на 60 секунд. MailApp обмінює nonce на абсолютну 20-хвилинну RPC-сесію, що зберігається лише в JavaScript memory.
+
+Bridge має обмежувальну CSP, надсилає POST лише до `script.google.com` і відновлює deep-link state тільки з дозволених полів `view`, `folder`, `thread`, `message`, `filter` та `panel`. Telegram-поля `tgWebAppData`, platform і version fragment ніколи не копіюються до route. CSP також дозволяє JSONP-відповідь Google Apps Script з `script.google.com`/`script.googleusercontent.com` лише для тимчасового compatibility path старих карток.
+
+Нові картки листів використовують native Telegram `callback_data` для `.eml`, archive, trash, spam і RFC 8058 one-click unsubscribe, тому ці дії не відкривають цю сторінку. Сторінка зберігає backward compatibility зі старими картками: їхня дія запускається одразу без confirmation screen, вимагає одночасно private key і свіжий owner-bound Telegram `initData`, після чого автоматично закривається. Delete завжди переміщує лист до Gmail Trash і ніколи не виконує permanent deletion.
+
+<!-- lang:en -->
+## English
+
 Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 
 ## Current project line
@@ -12,7 +40,7 @@ Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 
 Project guide: [Українська](docs/uk/README.md) | [English](docs/en/README.md)
 
-Direct registers: [Problems / Проблеми](docs/uk/ISSUES.md) | [Roadmap / План](docs/uk/ROADMAP.md) | [Versie 1 history](docs/uk/releases/VERSIE-001-2026-07-19.md)
+Direct registers: [Problems](docs/en/ISSUES.md) | [Roadmap](docs/en/ROADMAP.md) | [Versie 1 history](docs/en/releases/VERSIE-001-2026-07-19.md) | [Bilingual documentation rule](docs/en/BILINGUAL_DOCUMENTATION.md)
 
 The repository preserves sanitized historical Apps Script baselines under `apps-script/` and the cumulative Versie 1 candidate. Product direction and verified audit evidence live under `docs/`. Runtime credentials, OAuth sessions, mailbox content, and deployment-local configuration are intentionally excluded from Git.
 
