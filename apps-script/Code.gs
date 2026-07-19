@@ -83,11 +83,11 @@ const CONFIG = Object.freeze({
   GMAIL_ACCOUNT: 'tarasevych.pavlo@gmail.com',
   WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec',
   CONTROL_PAGE_URL: 'https://tarasevych.github.io/gmail-telegram-controls/',
-  CONTROL_PAGE_REVISION: '20260716-6',
+  CONTROL_PAGE_REVISION: '20260719-1',
   // Apps Script can retain a warm doPost runtime for an unchanged deployment
   // URL. Bump this with each backend release so Telegram reaches the deployed
   // code instead of generating mail cards from an older runtime.
-  WEBHOOK_REVISION: '20260716-24',
+  WEBHOOK_REVISION: '20260719-25',
   QUIET_HOURS_START: 22,
   QUIET_HOURS_END: 8,
 });
@@ -574,6 +574,9 @@ function runMultiAccountMailChecks_(limitValue) {
   const props = PropertiesService.getScriptProperties();
   const registry = mailboxMultiReadRegistry_(props);
   const work = [];
+  const ownerId = String(mailboxOwnerId_());
+  const legacyEmail = String(CONFIG.GMAIL_ACCOUNT || '').trim().toLowerCase();
+  const scheduledMailboxes = new Set();
   (registry.preferences || []).forEach(preference => {
     const userId = String(preference.userId || '');
     const mode = String(preference.notifications || 'all');
@@ -587,6 +590,16 @@ function runMultiAccountMailChecks_(limitValue) {
         String(item.zoneId || '') === String(connection.zoneId || '') &&
         String(item.userId || '') === userId && String(item.status || '') === 'active');
       if (!connection || !member) return;
+      const connectionEmail = String(connection.email || '').trim().toLowerCase();
+      const mailboxKey = userId + ':' + connectionEmail;
+      // The owner mailbox is already scanned by runMailCheck_ above. A legacy
+      // owner connection and a Google OAuth connection can temporarily point
+      // at that same physical Gmail account; scanning both creates two cards.
+      // Also collapse same-user/same-email connections across zones without
+      // merging their permissions or deleting either connection record.
+      if (!connectionEmail || (userId === ownerId && connectionEmail === legacyEmail) ||
+          scheduledMailboxes.has(mailboxKey)) return;
+      scheduledMailboxes.add(mailboxKey);
       work.push({
         userId,
         chatId: userId,
@@ -594,7 +607,7 @@ function runMultiAccountMailChecks_(limitValue) {
         notificationMode: mode,
         account: {
           id: connectionId,
-          email: String(connection.email || ''),
+          email: connectionEmail,
           name: String(connection.displayName || connection.email || 'Gmail'),
           avatarUrl: String(connection.avatarUrl || ''),
         },
@@ -2294,11 +2307,14 @@ function serveGoogleOAuthCallback_(e) {
     'body{font:16px system-ui;margin:0;background:#f6f8fb;color:#172033;display:grid;place-items:center;min-height:100vh}' +
     '.card{box-sizing:border-box;max-width:430px;margin:20px;padding:28px;border-radius:20px;background:#fff;text-align:center;box-shadow:0 12px 36px #1720331a}' +
     '.mark{font-size:42px;color:' + (ok ? '#16835f' : '#c62828') + '}h1{font-size:21px;margin:12px 0}' +
-    'p{line-height:1.5;color:#586174}button{border:0;border-radius:12px;padding:11px 18px;background:#1778d4;color:#fff;font:600 15px system-ui}' +
+    'p{line-height:1.5;color:#586174}.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}' +
+    'button,a{border:0;border-radius:12px;padding:11px 18px;font:600 15px system-ui;text-decoration:none}' +
+    'button{background:#eef3f8;color:#30445a}a{background:#1778d4;color:#fff}' +
     '</style><script>try{history.replaceState(null,"",location.pathname+"?action=gmail_oauth_callback")}catch(e){}</script>' +
     '</head><body><main class="card"><div class="mark">' + (ok ? '✓' : '!') + '</div><h1>' +
-    escapeHtml_(title) + '</h1><p>' + escapeHtml_(message) + '</p><button type="button" onclick="window.close()">' +
-    'Закрити й повернутися до Telegram</button></main></body></html>';
+    escapeHtml_(title) + '</h1><p>' + escapeHtml_(message) + '</p><div class="actions">' +
+    '<button type="button" onclick="window.close()">Закрити</button>' +
+    '<a href="https://t.me/TarasevychGmailNotifierBot">Відкрити Telegram</a></div></main></body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Gmail · Telegram');
 }
 

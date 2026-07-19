@@ -7067,7 +7067,11 @@ test('multi-account workspaces isolate Telegram users and issue only official on
   assert.equal(authorization.origin, 'https://accounts.google.com');
   assert.equal(authorization.pathname, '/o/oauth2/v2/auth');
   assert.equal(authorization.searchParams.get('access_type'), 'offline');
-  assert.equal(authorization.searchParams.get('prompt'), 'select_account consent');
+  assert.equal(authorization.searchParams.get('prompt'), 'select_account');
+  assert.equal(
+    authorization.searchParams.get('redirect_uri'),
+    'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html',
+  );
   assert.match(authorization.searchParams.get('scope'), /gmail\.settings\.basic/);
   assert.equal(authorization.searchParams.get('login_hint'), 'other@example.com');
   assert.match(authorization.searchParams.get('state'), /^[A-Za-z0-9_-]{43}$/);
@@ -8945,6 +8949,13 @@ test('minute worker includes bounded send-later processing without adding anothe
   assert.match(timer, /mailboxProcessExpiredFunctionalMetrics_\(\)/,
     'the existing minute trigger must perform the internally once-daily metrics retention purge');
   assert.equal((codeSource.match(/\.everyMinutes\(CONFIG\.POLL_MINUTES\)/g) || []).length, 1);
+  const multiStart = codeSource.indexOf('function runMultiAccountMailChecks_(');
+  const multiEnd = codeSource.indexOf('\nfunction initializeGmailNotificationWatermark_', multiStart);
+  const multi = codeSource.slice(multiStart, multiEnd);
+  assert.match(multi, /userId === ownerId && connectionEmail === legacyEmail/,
+    'the owner Gmail must not be scanned once by legacy and again by OAuth');
+  assert.match(multi, /scheduledMailboxes\.has\(mailboxKey\)/,
+    'same-user connections to the same physical mailbox must produce one notification scan');
 });
 
 test('send-later storage failure accepts no work and an expired claim cannot outlive its lease token', () => {

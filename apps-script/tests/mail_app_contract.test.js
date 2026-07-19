@@ -1790,6 +1790,10 @@ test('the profile avatar exposes real server-backed Gmail connection and switchi
     /id: safeId\(account\.id \|\| \(bootstrap\.session && bootstrap\.session\.connectionId\)\)/,
     'the active legacy profile must retain the server-provided opaque Gmail connection ID');
   assert.match(accountSource, /state\.accounts = normalizeAccounts\(bootstrap\.accounts, fallbackAccount\)/);
+  assert.match(accountSource, /activeAccountIds[\s\S]*unifiedConnectionIds[\s\S]*filter/,
+    'stale or inactive connection IDs must not inflate the visible unified account count');
+  assert.match(accountSource, /renderAccountButtonAvatar\(els\.accountAvatar, state\.account\)/);
+  assert.match(accountSource, /renderAccountButtonAvatar\(els\.mobileAccountButton, state\.account\)/);
 
   const normalizeAccountsSource = extractUiFunction('normalizeAccounts');
   const fallbackContext = vm.createContext({
@@ -1828,8 +1832,12 @@ test('the profile avatar exposes real server-backed Gmail connection and switchi
   );
   assert.match(connectSource, /continueGoogleOAuth\.href = url/);
   assert.match(connectSource, /continueGoogleOAuth\.dataset\.expiresAt/);
-  assert.doesNotMatch(connectSource, /tg\.openLink|window\.open/,
-    'an async OAuth RPC must not pretend it still has Telegram user activation');
+  assert.match(connectSource, /tg && typeof tg\.openLink === "function"/);
+  assert.match(connectSource, /tg\.openLink\(url\)/);
+  assert.match(connectSource, /window\.open\(url, "_blank", "noopener,noreferrer"\)/,
+    'a safe browser fallback must remain when Telegram openLink is unavailable');
+  assert.match(accountSource, /function refreshAccountsAfterGoogleOAuth\(\)/);
+  assert.match(uiSource, /window\.addEventListener\("focus"[\s\S]*refreshAccountsAfterGoogleOAuth\(\)/);
 });
 
 test('action menus synchronize the active trigger, initial focus, keyboard movement, and Escape return', () => {
@@ -2847,6 +2855,10 @@ test('Google Drive attachment accounts are independently connectable and switcha
   assert.match(previewSource, /if \(op === "sourceAccounts"\)/);
   assert.match(previewSource, /source-drive-preview-work/);
   assert.match(previewSource, /prompt=select_account%20consent/);
+});
+
+test('account panel uses correct singular Gmail account accessibility label', () => {
+  assert.match(uiSource, /unifiedCount === 1 \? "акаунт" : "акаунтів"/);
 });
 
 test('account panel closes only the current Mini App session', () => {

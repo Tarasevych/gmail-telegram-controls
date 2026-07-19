@@ -1583,10 +1583,11 @@ function mailboxGoogleOAuthConfig_() {
   const props = PropertiesService.getScriptProperties();
   const clientId = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_ID_PROPERTY) || '');
   const clientSecret = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_SECRET_PROPERTY) || '');
-  const redirectUri = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_REDIRECT_URI_PROPERTY) || '');
+  const configuredRedirectUri = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_REDIRECT_URI_PROPERTY) || '');
+  const redirectUri = 'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html';
   if (!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId) ||
       clientSecret.length < 16 || clientSecret.length > 512 || /[\s\u0000-\u001f\u007f]/.test(clientSecret) ||
-      !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(redirectUri)) {
+      !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(configuredRedirectUri)) {
     throw mailboxError_('GOOGLE_OAUTH_NOT_CONFIGURED', 'Підключення нових Gmail-акаунтів ще не налаштовано на сервері.');
   }
   return { clientId, clientSecret, redirectUri };
@@ -1638,7 +1639,7 @@ function mailboxGoogleConnectStart_(payload, session) {
     response_type: 'code',
     access_type: 'offline',
     include_granted_scopes: 'true',
-    prompt: 'select_account consent',
+    prompt: 'select_account',
     scope: MAILBOX_MULTI_CONFIG_.GMAIL_SCOPES.join(' '),
     state,
   };

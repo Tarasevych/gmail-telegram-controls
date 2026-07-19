@@ -1098,6 +1098,13 @@
       flex: 1 1 120px;
     }
 
+    .account-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      object-fit: cover;
+    }
+
     .gentle-milestone-card {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -4901,6 +4908,8 @@
         workspaceInviteZoneId: "",
         disconnectConfirmId: "",
         accountManagementBusy: false,
+        googleOAuthPendingUntil: 0,
+        googleOAuthRefreshBusy: false,
         gmailMetadata: null,
         gmailMetadataLoading: false,
         gmailMetadataRequestId: 0,
@@ -5559,6 +5568,23 @@
           avatar.textContent = avatarInitial(name, email);
         }
         return avatar;
+      }
+
+      function renderAccountButtonAvatar(button, account) {
+        var name = safeText(account && account.name);
+        var email = safeText(account && account.email);
+        var fallback = avatarInitial(name, email);
+        clear(button);
+        var imageUrl = safeUrl(account && account.avatarUrl, false);
+        if (!imageUrl) {
+          button.textContent = fallback;
+          return;
+        }
+        var img = make("img", { attrs: { src: imageUrl, alt: "", loading: "eager", referrerpolicy: "no-referrer" } });
+        img.addEventListener("error", function () {
+          button.replaceChildren(document.createTextNode(fallback));
+        }, { once: true });
+        button.appendChild(img);
       }
 
       function normalizeResponse(response) {
@@ -6630,6 +6656,11 @@
           notificationMode: ["all", "important", "none"].indexOf(safeText(accountSettings.notificationMode)) !== -1
             ? safeText(accountSettings.notificationMode) : "all"
         };
+        var activeAccountIds = new Set(state.accounts.map(function (item) { return item.id; }));
+        state.accountSettings.unifiedConnectionIds = state.accountSettings.unifiedConnectionIds
+          .filter(function (id) { return activeAccountIds.has(id); });
+        state.accountSettings.notificationConnectionIds = state.accountSettings.notificationConnectionIds
+          .filter(function (id) { return activeAccountIds.has(id); });
         state.account = state.accounts.find(function (item) { return item.current; }) || state.accounts[0] || fallbackAccount;
         state.sendAs = normalizeSendAs(bootstrap.sendAs, state.account.email);
         state.capabilities = bootstrap.capabilities && typeof bootstrap.capabilities === "object"
@@ -6654,10 +6685,10 @@
         if (!state.folders.some(function (folder) { return folder.id === state.currentFolderId; })) {
           state.currentFolderId = "INBOX";
         }
-        els.accountAvatar.textContent = state.account.initial;
+        renderAccountButtonAvatar(els.accountAvatar, state.account);
         els.accountAvatar.title = state.account.email || state.account.name;
         els.accountAvatar.setAttribute("aria-label", "Обліковий запис " + (state.account.email || state.account.name));
-        els.mobileAccountButton.textContent = state.account.initial;
+        renderAccountButtonAvatar(els.mobileAccountButton, state.account);
         els.mobileAccountButton.setAttribute("aria-label", "Обліковий запис " + (state.account.email || state.account.name));
         els.composeAccount.textContent = state.account.email;
         renderAccountPanel();
@@ -6674,7 +6705,7 @@
             type: "button",
             attrs: {
               "aria-pressed": state.unifiedMode ? "true" : "false",
-              "aria-label": "Спільна стрічка, " + unifiedCount + " Gmail-акаунтів"
+              "aria-label": "Спільна стрічка, " + unifiedCount + " Gmail-" + (unifiedCount === 1 ? "акаунт" : "акаунтів")
             }
           });
           var unifiedCopy = make("div", { className: "account-card-copy" });
@@ -7541,17 +7572,58 @@
           var result = await rpc({ op: "connectGoogleStart", payload: {} });
           var url = safeGoogleAuthorizationUrl(result && result.authorizationUrl);
           if (!url) throw new Error("Сервер не повернув безпечну сторінку Google.");
+          state.googleOAuthPendingUntil = Number(result && result.expiresAt || 0);
           els.continueGoogleOAuth.href = url;
-          els.continueGoogleOAuth.dataset.expiresAt = String(Number(result && result.expiresAt || 0));
-          els.continueGoogleOAuth.hidden = false;
-          els.continueGoogleOAuth.focus();
-          showSnackbar("Посилання готове. Натисніть «Продовжити в Google», оберіть акаунт і поверніться сюди.", { success: true });
+          els.continueGoogleOAuth.dataset.expiresAt = String(state.googleOAuthPendingUntil);
+          var opened = false;
+          if (tg && typeof tg.openLink === "function") {
+            try {
+              tg.openLink(url);
+              opened = true;
+            } catch (openError) { opened = false; }
+          }
+          if (!opened) {
+            var popup = null;
+            try { popup = window.open(url, "_blank", "noopener,noreferrer"); } catch (openError) { popup = null; }
+            opened = Boolean(popup);
+          }
+          els.continueGoogleOAuth.hidden = opened;
+          if (!opened) els.continueGoogleOAuth.focus();
+          showSnackbar(opened
+            ? "Google відкрито. Оберіть акаунт і після завершення поверніться до Telegram."
+            : "Браузер заблокував відкриття. Натисніть «Продовжити в Google».", { success: true });
         } catch (error) {
+          state.googleOAuthPendingUntil = 0;
           els.continueGoogleOAuth.removeAttribute("href");
           els.continueGoogleOAuth.hidden = true;
           showSnackbar(safeText(error && error.message, "Не вдалося почати підключення Gmail."), { error: true });
         } finally {
           els.connectGoogleAccount.disabled = false;
+        }
+      }
+
+      async function refreshAccountsAfterGoogleOAuth() {
+        if (!state.googleOAuthPendingUntil || state.googleOAuthPendingUntil <= Date.now() ||
+            state.googleOAuthRefreshBusy || !state.session || state.sessionClosing) return;
+        state.googleOAuthRefreshBusy = true;
+        var before = state.accounts.map(function (item) { return item.id + ":" + item.email; }).sort().join("|");
+        try {
+          var bootstrap = await rpc({ op: "bootstrap" });
+          initializeFromBootstrap(bootstrap || {});
+          var after = state.accounts.map(function (item) { return item.id + ":" + item.email; }).sort().join("|");
+          if (after !== before) {
+            state.googleOAuthPendingUntil = 0;
+            els.continueGoogleOAuth.removeAttribute("href");
+            els.continueGoogleOAuth.hidden = true;
+            await loadWorkspaceAccess();
+            await loadThreads(true);
+            showSnackbar("Новий Gmail-акаунт підключено.", { success: true });
+          }
+        } catch (error) {
+          // The external Google window may still be open. Retry on the next
+          // focus/visibility event instead of turning that into a false error.
+        } finally {
+          state.googleOAuthRefreshBusy = false;
         }
       }
 
@@ -16012,6 +16084,7 @@
         });
         window.addEventListener("focus", function () {
           refreshOpenAccountMetadataIfStale();
+          refreshAccountsAfterGoogleOAuth();
           if (state.composeSourceOpen && state.composeSourceProvider === "box") {
             loadBoxStatus({ loadList: true, refreshList: true });
           }
@@ -16024,7 +16097,10 @@
         window.addEventListener("hashchange", function () { handleLocationRoute(); });
         document.addEventListener("visibilitychange", function () {
           if (document.visibilityState === "hidden") bestEffortLifecycleAutosave("visibility");
-          else refreshOpenAccountMetadataIfStale();
+          else {
+            refreshOpenAccountMetadataIfStale();
+            refreshAccountsAfterGoogleOAuth();
+          }
         });
         window.setInterval(refreshOpenAccountMetadataIfStale, 60 * 1000);
         window.addEventListener("pagehide", function () { bestEffortLifecycleAutosave("pagehide"); });
