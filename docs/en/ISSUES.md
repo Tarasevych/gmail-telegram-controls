@@ -5,11 +5,11 @@ Updated: **2026-07-19**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | ID | Status | Since Build | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
 | GT-001 | Resolved locally | 1 | One email reaches Telegram twice | Do not rescan the owner mailbox through OAuth and dedupe same-user/same-email; real-time acceptance remains |
-| GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | GitHub Pages relay is live; OAuth redirect URI is filled and Save awaits confirmation |
+| GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | GitHub Pages relay is live; OAuth redirect URI is saved and read back; staging callback acceptance remains |
 | GT-003 | Resolved locally | 1 | Header shows an initial instead of the Google profile photo | Header uses the real photo with an initial fallback; staging readback remains |
 | GT-004 | Resolved locally | 1 | `Add Gmail account` requires an extra `Continue with Google` click | Open the authorization URL immediately; show fallback only when browser navigation is blocked |
 | GT-005 | Resolved locally | 1 | Account panel counts stale/inactive connection IDs | Filter preferences against active visible IDs; staging readback remains |
-| GT-006 | Open | 1 | OAuth client has more than one enabled secret | Determine the active secret from protected runtime evidence; do not delete or rotate in Build 1 without a safe plan |
+| GT-006 | Open | 1 | OAuth client has more than one enabled secret | Determine the active secret from protected runtime evidence; do not delete or rotate in Versie 1 without a safe plan |
 | GT-007 | Open, low risk | 1 | GitHub Pages warns about forced Node 24 for older Actions | Update action pins in a later Build after production stabilization |
 | GT-008 | Blocked by manual gate | 1 | Full real-time acceptance of the new Gmail flow is missing | After OAuth Save, owner completes account choice/consent; then log every function |
 | GT-009 | Resolved locally | 1 | Accessibility label uses plural for one account | `1 Gmail account`, plural for other values |

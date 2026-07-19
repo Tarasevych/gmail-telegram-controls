@@ -20,11 +20,11 @@ $StableDeploymentId = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLa
 $RollbackVersion = 37
 $LegacyStagingVersion = 38
 $CandidateVersion = 39
-$ReleaseDescription = 'Telegram Gmail Build 1 (2026-07-19): single delivery and OAuth callback relay'
-$StagingDescription = 'Telegram Gmail Build 1 (2026-07-19) guarded staging'
+$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-19): single delivery and OAuth callback relay'
+$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-19) guarded staging'
 $LegacyStagingDescription = 'Telegram Gmail product v46 guarded staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-build-001-20260719-release.json'
+$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260719-release.json'
 
 $ExpectedRollbackHashes = @{
   Code='1dfbad4569d110b97b01fc8d98bb51cb0069e0683daac2a0bbc12a67abd31cb5'
@@ -41,10 +41,10 @@ $ExpectedLegacyStagingHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedCandidateHashes = @{
-  Code='a026265c4972578c626f0bc1e565708ce5d049daf282d87d76556f1a49d3ac2d'
+  Code='525ed9f44b3276a54127673485a43a686697f6040f337805da7dfed6f25e54f8'
   MultiAccount='15946e5c889c4d7d94c6aa9414c11c57ebbe430dd050764203a54d426cbfc506'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
-  MailApp='50b735ba7c50cb25cbd86038193de8366af0933f8c27f1153fd13c775f7df6d0'
+  MailApp='d18bbc470a86feb2292ea143295b0c806b10b4346bd0ebb9e77b876454dc1e6c'
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 
@@ -134,13 +134,13 @@ function Set-Head([string]$Base, $Content, [hashtable]$Expected, [string]$Label)
 }
 
 $candidate = Get-Candidate
-Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Build-001 candidate'
+Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Versie-001 candidate'
 
-$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierBuild00120260719Release')
+$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260719Release')
 $held = $false; $script:AccessToken = $null
 try {
   $held = $mutex.WaitOne(0)
-  if (-not $held) { throw 'Another Build-001 release process is active.' }
+  if (-not $held) { throw 'Another Versie-001 release process is active.' }
   $clasp = Get-Content -Raw -LiteralPath (Join-Path $HOME '.clasprc.json') | ConvertFrom-Json
   $token = $clasp.tokens.default
   if (-not $token.refresh_token -or -not $token.client_id -or -not $token.client_secret) {
@@ -210,7 +210,7 @@ try {
           throw 'Unresolved versions.create; refusing automatic replay.'
         }
         if ($headState -ne "candidate_v$CandidateVersion") {
-          Set-Head $base $candidate $ExpectedCandidateHashes 'Uploaded Build-001 HEAD'
+          Set-Head $base $candidate $ExpectedCandidateHashes 'Uploaded Versie-001 HEAD'
           $headState = "candidate_v$CandidateVersion"
         }
         Write-Journal 'version_create_reserved'
@@ -235,7 +235,7 @@ try {
           [string]$_.deploymentConfig.description -eq $StagingDescription
         })
       }
-      if ($staging.Count -ne 1) { throw 'Build 1 staging was not verified exactly once.' }
+      if ($staging.Count -ne 1) { throw 'Versie 1 staging was not verified exactly once.' }
       if ($legacyStaging.Count -eq 1) {
         Invoke-GoogleJson DELETE "$base/deployments/$([string]$legacyStaging[0].deploymentId)" | Out-Null
         $legacyStaging = @()
@@ -272,7 +272,7 @@ try {
   }
 
   if ($CleanupStaging) {
-    if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Cleanup requires stable exact Build-001.' }
+    if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Cleanup requires stable exact Versie-001.' }
     if ($staging.Count -eq 1) {
       Write-Journal 'cleanup_delete_reserved' ([string]$staging[0].deploymentId)
       Invoke-GoogleJson DELETE "$base/deployments/$($staging[0].deploymentId)" | Out-Null
@@ -283,7 +283,7 @@ try {
     return
   }
 
-  if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Rollback requires stable exact Build-001.' }
+  if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Rollback requires stable exact Versie-001.' }
   Invoke-GoogleJson PUT $stableUri @{deploymentConfig=@{scriptId=$ScriptId;versionNumber=$RollbackVersion;
     manifestFileName='appsscript';description='Rollback to verified Telegram Gmail product v38.3'}} | Out-Null
   Set-Head $base $rollbackContent $ExpectedRollbackHashes "Rolled back v$RollbackVersion HEAD"

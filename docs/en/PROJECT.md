@@ -1,6 +1,6 @@
 # Project and expectations
 
-Updated: **2026-07-19**. Current version in development: **Build 1**.
+Updated: **2026-07-19**. Current version in development: **Versie 1**.
 
 ## Mission
 
@@ -23,7 +23,7 @@ Build a safe, neuroinclusive Gmail client in Telegram for one owner and explicit
 - Latest verified public release: `main` plus its release branch/tag.
 - Current work: [ROADMAP.md](ROADMAP.md).
 - Current defects: [ISSUES.md](ISSUES.md).
-- Cumulative history: [Build 1](releases/BUILD-001-2026-07-19.md).
+- Cumulative history: [Versie 1](releases/VERSIE-001-2026-07-19.md).
 
 ## Privacy and secrets
 

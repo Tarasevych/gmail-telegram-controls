@@ -1,6 +1,6 @@
 # Gmail Telegram Controls: project guide
 
-Current product version in development: **Build 1 · 2026-07-19**.
+Current product version in development: **Versie 1 · 2026-07-19**.
 
 This directory is the short entry point into the project. The latest release article is cumulative: it explains the full journey, current state, known problems, and verified solutions, so recovery does not require reading every historical document.
 
@@ -10,7 +10,7 @@ This directory is the short entry point into the project. The latest release art
 - [Project and expectations](PROJECT.md): mission, boundaries, quality criteria, and data protection.
 - [Roadmap](ROADMAP.md): completed, in progress, blocked, and next.
 - [Problem register](ISSUES.md): concise `GT-*` records with status and target Build.
-- [Build 1 · 2026-07-19](releases/BUILD-001-2026-07-19.md): complete cumulative history and release gates.
+- [Versie 1 · 2026-07-19](releases/VERSIE-001-2026-07-19.md): complete cumulative history and release gates.
 
 Українське дзеркало: [docs/uk/README.md](../uk/README.md).
 

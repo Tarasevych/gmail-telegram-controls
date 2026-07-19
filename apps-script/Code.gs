@@ -83,7 +83,7 @@ const CONFIG = Object.freeze({
   GMAIL_ACCOUNT: 'tarasevych.pavlo@gmail.com',
   WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec',
   CONTROL_PAGE_URL: 'https://tarasevych.github.io/gmail-telegram-controls/',
-  CONTROL_PAGE_REVISION: '20260719-1',
+  CONTROL_PAGE_REVISION: 'versie-001-20260719',
   // Apps Script can retain a warm doPost runtime for an unchanged deployment
   // URL. Bump this with each backend release so Telegram reaches the deployed
   // code instead of generating mail cards from an older runtime.
@@ -2748,7 +2748,7 @@ function serveMailboxApp_(options) {
     : '';
   return template
     .evaluate()
-    .setTitle('Gmail сповіщення Павла')
+    .setTitle('Gmail сповіщення Павла · Versie 1')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 

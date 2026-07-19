@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Atomically switch the exact owner bot menu between Build 1 staging and production."""
+"""Atomically switch the exact owner bot menu between Versie 1 staging and production."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ BOT_ID = 8990322470
 BOT_USERNAME = "TarasevychGmailNotifierBot"
 OWNER_ID = 427886279
 PRODUCTION_URL = "https://tarasevych.github.io/gmail-telegram-controls/?v=20260715-5&action=mailbox"
-STAGING_URL = "https://tarasevych.github.io/gmail-telegram-controls/build-001-staging-acceptance-20260719.html"
+STAGING_URL = "https://tarasevych.github.io/gmail-telegram-controls/versie-001-staging-acceptance-20260719.html"
 
 
 class MenuError(RuntimeError):
@@ -84,7 +84,7 @@ def main() -> int:
     target_url = STAGING_URL if args.mode == "staging" else PRODUCTION_URL
     target = {
         "type": "web_app",
-        "text": "🧪 Пошта Build 1" if args.mode == "staging" else "📬 Пошта",
+        "text": "🧪 Пошта · Versie 1" if args.mode == "staging" else "📬 Пошта · Versie 1",
         "web_app": {"url": target_url},
     }
     attempted = False
