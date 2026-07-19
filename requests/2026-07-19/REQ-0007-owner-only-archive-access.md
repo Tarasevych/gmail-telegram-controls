@@ -2,13 +2,14 @@
 
 - ID: REQ-0007
 - Received: 2026-07-19
-- Status: in_progress
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: exact available visible transcript in client-side encrypted artifacts only
 - Routes: requests=record; instructions=update; permissions=update; plan=update; product=reference; release=no-change
 - Permission basis: explicit
 - Permission scope: owner-only archive access; P-006 boundary clarification only
+- Completion evidence / Доказ завершення: private archive commit [`437e30a4fb5a7f4577fd6f3b9c18a8c583f6419c`](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief/commit/437e30a4fb5a7f4577fd6f3b9c18a8c583f6419c); visibility `private`; only collaborator `Tarasevych/admin`; external collaborators `0`; pending invitations `0`; deploy keys `0`; forks `0`; 50 encrypted payloads passed decrypt/readback/hash verification with `plaintext_output=false`.
 
 <!-- lang:uk -->
 ## Українською
