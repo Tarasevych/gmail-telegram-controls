@@ -26,3 +26,11 @@ This directory is the short entry point into the project. The latest release art
 Secrets, OAuth codes, tokens, cookies, private mail, refresh tokens, and deployment-local configuration do not belong in Git.
 
 Every page under `docs/en/` has a paired page at the same relative path under `docs/uk/`. Creating or changing only one language is blocked by an automated check.
+
+## Structured knowledge hub
+
+- [Start with the index](knowledge-hub/README.md)
+- [Cumulative master roadmap](knowledge-hub/MASTER_ROADMAP.md)
+- [Traceability for 295 source items](knowledge-hub/TRACEABILITY.md)
+
+For routine continuation, do not reread the three large deep-research reports. Open the index and only the relevant thematic register.

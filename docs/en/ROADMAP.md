@@ -18,3 +18,7 @@ Updated: **2026-07-19**. Single active version: **Versie 1**.
 ## Movement rule
 
 Versie 2 is not opened until B1-05 through B1-10 are complete. New findings receive a `GT-*` record in [ISSUES.md](ISSUES.md); their fix is added to Versie 1 while Versie 1 is unreleased. After release, every new correction belongs only to Versie 2.
+
+## Cumulative research roadmap
+
+Long-term report-derived phases, dependencies, and evidence gates are in the [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). The current `B1-*` release gates above remain authoritative for Versie 1.

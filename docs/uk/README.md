@@ -26,3 +26,11 @@ English mirror: [docs/en/README.md](../en/README.md).
 Секрети, OAuth-коди, токени, cookies, приватні листи, refresh tokens і deployment-local конфігурація не належать до Git.
 
 Кожна сторінка в `docs/uk/` має парну сторінку з тим самим шляхом у `docs/en/`. Створення або зміна лише однієї мови блокується автоматичною перевіркою.
+
+## Структурований knowledge hub
+
+- [Почати з індексу](knowledge-hub/README.md)
+- [Кумулятивна master roadmap](knowledge-hub/MASTER_ROADMAP.md)
+- [Traceability 295 source items](knowledge-hub/TRACEABILITY.md)
+
+Для routine-продовження не перечитуйте три великі deep-research reports. Відкривайте індекс і лише потрібний тематичний реєстр.

@@ -20,3 +20,7 @@ Updated: **2026-07-19**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 2. Never delete resolved records; change status and add release evidence.
 3. Do not mark `Verified in production` from a unit test or staging alone.
 4. Do not add email content, OAuth codes, tokens, cookies, or secret properties.
+
+## Research problem register
+
+The complete report-derived risk and unresolved-conflict list is in [Problems](knowledge-hub/PROBLEMS.md). Only verified current defects receive a `GT-*` entry in the table above.

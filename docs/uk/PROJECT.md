@@ -39,3 +39,7 @@
 - немає зайвих staging deployments або тимчасових процесів;
 - статті UK/EN, реєстр проблем і roadmap оновлені;
 - release branch/tag створені після перевірки, а не до неї.
+
+## Кумулятивна база знань
+
+[Knowledge hub](knowledge-hub/README.md) зберігає очищений і трасований контекст трьох deep-research reports. Цей файл залишається джерелом поточної мети, а hub є довгостроковим контекстом і не замінює live verification.

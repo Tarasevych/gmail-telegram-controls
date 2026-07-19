@@ -39,3 +39,7 @@ Public Git excludes bot tokens, OAuth client secrets, refresh/access tokens, aut
 - no obsolete staging deployment or temporary process remains;
 - UK/EN articles, the problem register, and roadmap are updated;
 - the release branch/tag is created after verification, not before it.
+
+## Cumulative knowledge base
+
+The [knowledge hub](knowledge-hub/README.md) preserves sanitized, traceable context from the three deep-research reports. This file remains the current mission source; the hub is long-term context and never replaces live verification.

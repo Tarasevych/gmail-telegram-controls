@@ -66,3 +66,10 @@ The page keeps backward compatibility with older cards: their action starts
 immediately without a confirmation screen, requires both the private key and
 fresh owner-bound Telegram `initData`, and closes automatically. Delete always
 moves mail to Gmail Trash; it never performs permanent deletion.
+
+## Project knowledge hub / База знань проєкту
+
+- [Український індекс](docs/uk/knowledge-hub/README.md)
+- [English index](docs/en/knowledge-hub/README.md)
+
+Source request: `REQ-0003`. The hub is report-derived and does not claim a runtime release.

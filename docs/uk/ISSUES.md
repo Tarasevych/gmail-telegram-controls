@@ -20,3 +20,7 @@
 2. Не видаляти вирішені записи; змінювати статус і додавати release evidence.
 3. Не позначати `Перевірена production` лише за unit test або staging.
 4. Не додавати email content, OAuth codes, tokens, cookies або secret properties.
+
+## Дослідницький реєстр проблем
+
+Повний report-derived список ризиків і невирішених конфліктів міститься в [Problems](knowledge-hub/PROBLEMS.md). Лише перевірені поточні дефекти отримують `GT-*` у таблиці вище.

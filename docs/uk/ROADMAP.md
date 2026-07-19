@@ -18,3 +18,7 @@
 ## Правило руху
 
 Поки B1-05–B1-10 не завершені, Versie 2 не відкривається. Нові знайдені проблеми отримують `GT-*` у [ISSUES.md](ISSUES.md); виправлення додається до Versie 1, доки Versie 1 не released. Після release будь-яке нове виправлення належить тільки Versie 2.
+
+## Кумулятивна дослідницька roadmap
+
+Довгострокові report-derived етапи, залежності й evidence gates містяться в [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). Поточні `B1-*` release gates вище мають пріоритет для Versie 1.
