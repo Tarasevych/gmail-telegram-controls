@@ -14,6 +14,7 @@
 | REQ-0004 | 2026-07-19 | completed | Незалежні двомовні factual verification reports | [record](requests/2026-07-19/REQ-0004-independent-factual-verification-reports.md) |
 | REQ-0005 | 2026-07-19 | completed | Приватний Onderzoeksarchief двох історій task | [record](requests/2026-07-19/REQ-0005-private-chat-research-archive.md) |
 | REQ-0006 | 2026-07-19 | completed | Межі повного confidential transcript archive | [record](requests/2026-07-19/REQ-0006-confidential-transcript-boundaries.md) |
+| REQ-0007 | 2026-07-19 | in_progress | Owner-only доступ і межа внутрішніх Codex-даних | [record](requests/2026-07-19/REQ-0007-owner-only-archive-access.md) |
 
 <!-- lang:en -->
 ## English
