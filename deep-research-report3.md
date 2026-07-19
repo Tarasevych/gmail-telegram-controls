@@ -1,7 +1,9 @@
-# deep-research-report3 (v45 continuation)
+# deep-research-report3 (Build 1 continuation)
 
 ## Ціль цього проходу
 Відновити та продовжити v28-ініціативу на базі `C:\Users\t\Documents\Telegram\gmail-telegram-v45-gentle-milestones` без змішування з іншими робочими лініями, з перевіркою реального стану git/branch/remote, checkpoint/heartbeat, preflight і локальних інструментів.
+
+> З 2026-07-19 продуктова нумерація перезапущена як послідовні Build 1, Build 2, ... . Позначення v27-v47 нижче збережені лише як історичні назви та технічні Apps Script докази; вони більше не визначають назву нового продуктового випуску.
 
 ## База і джерела
 - Основна робоча директорія: `C:\Users\t\Documents\Telegram\gmail-telegram-v45-gentle-milestones`.
@@ -98,4 +100,17 @@
 - Gmail-mutating controls were not clicked against arbitrary real mail. Their behavior is covered by the passing contract suite.
 - UX finding: Telegram may refocus an already-open Mini App WebView after menu URL changes. Close the old Mini App before acceptance to avoid visually auditing stale HTML.
 - Non-blocking platform warning: GitHub Pages Actions currently reports Node 20 actions being forced onto Node 24.
+
+## Build 1 foundation — 2026-07-19
+
+- Єдина активна гілка: `codex/build-001-2026-07-19`.
+- Майбутня незмінна release-гілка створюється лише після production acceptance: `release/build-001-2026-07-19`.
+- `main` представляє останній підтверджений публічний стан і GitHub Pages.
+- Технічне зіставлення: production Apps Script v37; історичний staging v38; запланований immutable Build 1 — Apps Script v39.
+- Новий двомовний публічний контур: `docs/uk` і `docs/en` з однаковими фактами, статусами та ID проблем.
+- Запроваджено постійні путівники `PROJECT.md`, `ROADMAP.md`, `ISSUES.md`, `VERSIONING.md` та кумулятивну статтю Build 1.
+- Поточні Build 1 виправлення: захист від подвійної доставки одного Gmail-повідомлення, реальне фото профілю, прямий Google OAuth старт, очищення stale account IDs, OAuth callback relay і правильна однина accessibility label.
+- Локальна перевірка Build 1: 417/417 тестів пройшли; preflight підтвердив stable v37, HEAD v37, один точний legacy staging v38 і відсутність immutable v39.
+- Google OAuth redirect URI підготовлений у консолі, але `Save` не натиснуто без окремого підтвердження власника.
+- Жодного нового OAuth consent, Gmail mutation, випадкової зміни листа або змішування Gmail/Telegram зон не виконано.
 

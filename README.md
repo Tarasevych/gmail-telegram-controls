@@ -2,7 +2,19 @@
 
 Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 
-The repository now also preserves the sanitized Apps Script v27 production baseline under `apps-script/`. Product direction and verified audit evidence live under `docs/`. Runtime credentials, OAuth sessions, mailbox content, and deployment-local configuration are intentionally excluded from Git.
+## Current project line
+
+- Active development version: **Build 1 · 2026-07-19**.
+- Current public production remains the previously verified Apps Script v37 until Build 1 completes acceptance.
+- Product builds now advance only sequentially: Build 1, Build 2, Build 3, and so on.
+- Apps Script immutable numbers are technical deployment IDs, not product version names.
+- One active development branch is used at a time; completed release branches and tags are immutable evidence.
+
+Project guide: [Українська](docs/uk/README.md) | [English](docs/en/README.md)
+
+Direct registers: [Problems / Проблеми](docs/uk/ISSUES.md) | [Roadmap / План](docs/uk/ROADMAP.md) | [Build 1 history](docs/uk/releases/BUILD-001-2026-07-19.md)
+
+The repository preserves sanitized historical Apps Script baselines under `apps-script/` and the cumulative Build 1 candidate. Product direction and verified audit evidence live under `docs/`. Runtime credentials, OAuth sessions, mailbox content, and deployment-local configuration are intentionally excluded from Git.
 
 The page contains no Gmail credentials, bot token, chat ID, or permanent
 mailbox credential. Telegram supplies signed `initData` at runtime. For the
