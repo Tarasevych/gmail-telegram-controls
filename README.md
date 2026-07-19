@@ -69,4 +69,4 @@ moves mail to Gmail Trash; it never performs permanent deletion.
 
 ## Structured project hub / Структурований хаб проєкту
 
-Start with [KNOWLEDGE_HUB.md](KNOWLEDGE_HUB.md) for bilingual navigation, request history, instructions, permissions, and the active Versie roadmap.
+Start with [KNOWLEDGE_HUB.md](KNOWLEDGE_HUB.md) for bilingual navigation, request history, instructions, permissions, and the active Versie roadmap. Use [VERIFICATION_REPORTS.md](VERIFICATION_REPORTS.md) for independent claim-level evidence.
