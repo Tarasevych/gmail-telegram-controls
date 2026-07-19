@@ -3,47 +3,47 @@
 <!-- lang:uk -->
 ## Українською
 
-### Обов'язковий журнал запитів перед виконанням
+### Структурована маршрутизація запитів до виконання
 
-- Перед будь-якою продуктовою зміною оновити remote references і прочитати `INSTRUCTIONS.md`, `REQUESTS.md`, `instructions/REQUEST_POLICY.md` та запис поточного запиту з `origin/Інструкції`.
-- До редагування product files, runtime, deployment або release state створити, перевірити, commit і push окремий двомовний очищений request record у гілці `Інструкції`.
-- Записувати нормалізовану інтерпретацію, критерії та докази; ніколи не переносити до публічного журналу secrets, приватні листи, конкретні credential values, OTP або recovery values.
-- Перед routine-роботою прочитати поточні `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING`, останню release-статтю та індекс `PERMISSIONS.md`; з повноважень читати лише релевантний запис.
-- Поточна робоча версія є Versie 1. Усі виправлення й доповнення належать їй, доки власник прямо не накаже створити конкретну наступну Versie.
-- Не створювати наступну Versie, branch, release article, tag або immutable deployment за непрямим формулюванням. Потрібен новий request record із `Next Versie authorization: yes, Versie N`.
-- Перед дозволеною наступною Versie прочитати всі tracked Markdown-сторінки `main`, `Інструкції`, `Повноваження` й активної Versie та зафіксувати повний pre-version audit.
+- Канонічна історія звернень міститься тільки в гілці `Запити`. `Інструкції` містить нормативні правила, а `Повноваження` лише прямо надані дозволи.
+- Перед зміною коду, документації, плану, проблем, runtime, deployment, інструкції або повноваження оновити remote references і прочитати `REQUESTS.md`, `REQUEST_ROUTING.md`, `requests/REQUEST_POLICY.md` та запис поточного `REQ-ID` з `origin/Запити`.
+- До виконання створити, перевірити, commit і push окремий двомовний очищений запис у `Запити`. Одне повідомлення розділити на логічні частини й для кожної вказати маршрут.
+- Кожен запит завжди йде в `Запити`. До `Інструкції` вносити лише постійні правила процесу. До `Повноваження` вносити лише явно наданий, змінений, обмежений або відкликаний власником дозвіл; дозволи не припускати.
+- План, реєстр проблем, документацію або код активної Versie змінювати лише за відповідною частиною запиту. Нерелевантні гілки й записи не читати та не змінювати.
+- Кожна похідна зміна має посилатися на `REQ-ID`. Після виконання оновити канонічний запис статусом і commit, test або deployment evidence.
+- Ніколи не переносити до публічного журналу secrets, приватні листи, конкретні credential values, OTP, recovery values або приватний вміст повідомлень.
+- Поточна робоча версія є Versie 1. Наступну Versie, branch, article, tag чи immutable deployment не створювати без прямого наказу й поля `Next Versie authorization: yes, Versie N`.
+- Перед дозволеною наступною Versie прочитати всі tracked Markdown-сторінки `main`, `Запити`, `Інструкції`, `Повноваження` та активної Versie й зафіксувати повний аудит.
 
 ### Двомовна документація є обов'язковою
 
 - Кожна сторінка в `docs/uk/` має парну сторінку з тим самим відносним шляхом у `docs/en/`, і навпаки.
 - Нову сторінку створювати тільки як дві мовні версії через `python tools/create_bilingual_page.py <relative-path> --uk-title "..." --en-title "..."`.
 - Зміна змісту однієї версії вимагає змістовно еквівалентної зміни другої версії в тому самому commit range.
-- Не копіювати український текст до англійського файлу або англійський до українського як заміну перекладу.
-- Перед commit запускати `python tools/check_bilingual_docs.py`; для перевірки змін використовувати `--base <sha> --head <sha>`.
-- Одностороння сторінка або зміна не є завершеною й не публікується.
+- Перед commit запускати `python tools/check_bilingual_docs.py`.
 - Кореневі спільні Markdown-файли мають містити повні секції `Українською` та `English`.
 - Продуктові версії називаються лише Versie 1, Versie 2, Versie 3 тощо; термін Build не використовується як назва випуску.
 
 <!-- lang:en -->
 ## English
 
-### Mandatory request ledger before execution
+### Structured request routing before execution
 
-- Before any product change, refresh remote references and read `INSTRUCTIONS.md`, `REQUESTS.md`, `instructions/REQUEST_POLICY.md`, and the current request record from `origin/Інструкції`.
-- Before editing product files, runtime, deployment, or release state, create, validate, commit, and push a separate sanitized bilingual request record on the `Інструкції` branch.
-- Record normalized interpretation, acceptance criteria, and evidence; never copy secrets, private mail, concrete credential values, OTP values, or recovery values into the public ledger.
-- Before routine work, read the current `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING`, latest release article, and the `PERMISSIONS.md` index; read only the relevant permission entry.
-- The current working release is Versie 1. Every fix and addition belongs to it until the owner directly orders creation of a specific next Versie.
-- Do not create a next Versie, branch, release article, tag, or immutable deployment from an indirect request. A new request record with `Next Versie authorization: yes, Versie N` is required.
-- Before an authorized next Versie, read every tracked Markdown page from `main`, `Інструкції`, `Повноваження`, and the active Versie and record a full pre-version audit.
+- Canonical request history exists only on `Запити`. `Інструкції` contains normative rules, while `Повноваження` contains only explicitly granted authority.
+- Before changing code, documentation, plans, issues, runtime, deployment, instructions, or permissions, refresh remote references and read `REQUESTS.md`, `REQUEST_ROUTING.md`, `requests/REQUEST_POLICY.md`, and the current `REQ-ID` record from `origin/Запити`.
+- Before execution, create, validate, commit, and push a separate sanitized bilingual record on `Запити`. Split one message into logical parts and declare the route for each part.
+- Every request always goes to `Запити`. Update `Інструкції` only for standing process rules. Update `Повноваження` only when the owner explicitly grants, changes, narrows, or revokes authority; never infer authority.
+- Change the active Versie's plan, issue register, documentation, or code only for the applicable request part. Do not read or change unrelated branches or records.
+- Every derived change references its `REQ-ID`. After execution, update the canonical record with status and commit, test, or deployment evidence.
+- Never copy secrets, private mail, concrete credential values, OTP values, recovery values, or private message content into the public ledger.
+- The current working release is Versie 1. Do not create a next Versie, branch, article, tag, or immutable deployment without a direct order and `Next Versie authorization: yes, Versie N`.
+- Before an authorized next Versie, read every tracked Markdown page from `main`, `Запити`, `Інструкції`, `Повноваження`, and the active Versie and record a full audit.
 
 ### Bilingual documentation is mandatory
 
 - Every page under `docs/uk/` has a counterpart at the same relative path under `docs/en/`, and vice versa.
 - Create a new page only as a language pair through `python tools/create_bilingual_page.py <relative-path> --uk-title "..." --en-title "..."`.
 - A content change in one language requires a semantically equivalent change in the other language in the same commit range.
-- Never copy Ukrainian text into the English file or English text into the Ukrainian file as a substitute for translation.
-- Run `python tools/check_bilingual_docs.py` before commit; use `--base <sha> --head <sha>` to validate a change range.
-- A one-sided page or update is incomplete and must not be published.
+- Run `python tools/check_bilingual_docs.py` before commit.
 - Shared root Markdown files contain complete `Українською` and `English` sections.
 - Product releases are named only Versie 1, Versie 2, Versie 3, and so on; Build is not a release name.

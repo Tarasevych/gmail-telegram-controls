@@ -19,6 +19,7 @@
 | P-002 | Google-вхід, OAuth і збережені облікові дані | `permissions/P-002-google-auth-saved-credentials.md` |
 | P-003 | Підвищені права, процеси та встановлення | `permissions/P-003-elevated-processes-installation.md` |
 | P-004 | Межі обов'язкового втручання власника | `permissions/P-004-owner-intervention-boundaries.md` |
+| P-005 | Контекстна маршрутизація запитів / Contextual request routing | `permissions/P-005-contextual-request-routing.md` |
 
 ---
 
