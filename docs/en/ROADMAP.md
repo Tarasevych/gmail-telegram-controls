@@ -22,3 +22,7 @@ Versie 2 is not opened until B1-05 through B1-10 are complete. New findings rece
 ## Cumulative research roadmap
 
 Long-term report-derived phases, dependencies, and evidence gates are in the [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). The current `B1-*` release gates above remain authoritative for Versie 1.
+
+## Verification gate
+
+`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Source request: `REQ-0004`.

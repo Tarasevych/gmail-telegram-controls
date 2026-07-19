@@ -22,3 +22,7 @@
 ## Кумулятивна дослідницька roadmap
 
 Довгострокові report-derived етапи, залежності й evidence gates містяться в [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). Поточні `B1-*` release gates вище мають пріоритет для Versie 1.
+
+## Verification gate
+
+`VR-001` завершив repository/test-класифікацію 245/245 `KH-*` claims: [звіт](verification-reports/reports/VR-001/README.md). Він не закриває B1-07–B1-09: staging OAuth callback, real-time Telegram acceptance і production promotion залишаються окремими E4/E5 доказами. Source request: `REQ-0004`.

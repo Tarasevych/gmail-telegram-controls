@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "latest_report": "VR-001",
+  "reports": [
+    {
+      "report_id": "VR-001",
+      "date": "2026-07-19",
+      "source_request": "REQ-0004",
+      "target_commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+      "claim_count": 245,
+      "status_counts": {
+        "verified": 17,
+        "contradicted": 13,
+        "partial": 82,
+        "unverified": 35,
+        "blocked": 7,
+        "recommendation": 91
+      },
+      "manifest": "VR-001/manifest.json",
+      "claims": "VR-001/claims.json",
+      "uk_report": "../uk/verification-reports/reports/VR-001/README.md",
+      "en_report": "../en/verification-reports/reports/VR-001/README.md"
+    }
+  ]
+}

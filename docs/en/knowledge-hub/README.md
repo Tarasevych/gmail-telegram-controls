@@ -1,8 +1,8 @@
 # Bilingual knowledge hub
 
-[Home](README.md) | [Roadmap](MASTER_ROADMAP.md) | [Traceability](TRACEABILITY.md) | [Українська](../../uk/knowledge-hub/README.md)
+[Home](README.md) | [Roadmap](MASTER_ROADMAP.md) | [Traceability](TRACEABILITY.md) | [Independent verification](../verification-reports/README.md) | [Українська](../../uk/knowledge-hub/README.md)
 
-> Draft knowledge hub. Every claim derives only from sanitized report extractions, is not independently verified, and does not prove live deployment or current state.
+> The knowledge hub remains a report-derived baseline. `VR-001` independently classifies every claim; no aggregate status proves live deployment or the current state of every function.
 
 A cumulative GitHub-ready index of three sanitized extraction artifacts.
 
@@ -22,6 +22,7 @@ A cumulative GitHub-ready index of three sanitized extraction artifacts.
 | [EVIDENCE.md](EVIDENCE.md) | Report-derived evidence |
 | [HISTORY.md](HISTORY.md) | Chronology and artifacts |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Standards and dependencies |
+| [Verification reports](../verification-reports/README.md) | Independent atomic-claim and evidence verification |
 
 ## Source dossiers
 
@@ -34,18 +35,20 @@ A cumulative GitHub-ready index of three sanitized extraction artifacts.
 - Source IDs: 295/295
 - Canonical IDs: 245
 - Unresolved conflicts: 8
-- Independent verification: not performed
-- Live deployment assertion: none
+- Independent verification: `VR-001`, 245/245 canonical IDs classified
+- Result: 17 `verified`, 13 `contradicted`, 82 `partial`, 35 `unverified`, 7 `blocked`, 91 `recommendation`
+- Live deployment assertion: claim-specific only; no blanket assertion
 
 ---
 
-Source request / Джерело запиту: `REQ-0003`. Report-derived baseline; live claims require current-state verification.
+Source requests / Джерела запитів: `REQ-0003` (baseline), `REQ-0004` (independent verification). The report-derived baseline does not replace claim-level evidence.
 
 ## Current operational layer
 
 - [Project and expectations](../PROJECT.md) is the current Versie 1 mission source.
 - [Current roadmap](../ROADMAP.md) contains live release gates.
 - [Current issues](../ISSUES.md) contains the confirmed working defect register.
+- [Independent verification reports](../verification-reports/INDEX.md) contain claim-level status, evidence grade, conflicts, and limitations.
 - [Instructions](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%86%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D1%96%D1%97), [Permissions](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%9F%D0%BE%D0%B2%D0%BD%D0%BE%D0%B2%D0%B0%D0%B6%D0%B5%D0%BD%D0%BD%D1%8F), and [Requests](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8) remain separate canonical areas.
 
 For routine work, start on this page and open only the relevant thematic register. Source dossiers are needed only for provenance or conflict resolution.

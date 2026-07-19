@@ -13,6 +13,7 @@ Updated: **2026-07-19**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-007 | Open, low risk | 1 | GitHub Pages warns about forced Node 24 for older Actions | Update action pins in a later Versie after production stabilization |
 | GT-008 | Blocked by manual gate | 1 | Full real-time acceptance of the new Gmail flow is missing | After OAuth Save, owner completes account choice/consent; then log every function |
 | GT-009 | Resolved locally | 1 | Accessibility label uses plural for one account | `1 Gmail account`, plural for other values |
+| GT-010 | Open | 1 | The OAuth token-refresh path has no function-local lock; concurrent behavior is unproven | Add a lock or prove external serialization; run a controlled concurrency test before production |
 
 ## Update procedure
 
@@ -24,3 +25,7 @@ Updated: **2026-07-19**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 ## Research problem register
 
 The complete report-derived risk and unresolved-conflict list is in [Problems](knowledge-hub/PROBLEMS.md). Only verified current defects receive a `GT-*` entry in the table above.
+
+## Independent verification
+
+[VR-001](verification-reports/reports/VR-001/README.md) preserves every contradicted, partial, unverified, and blocked `KH-*` claim. They do not become `GT-*` automatically; `GT-010` was added separately because the current code has a statically confirmed gap. Source request: `REQ-0004`.
