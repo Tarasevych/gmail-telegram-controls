@@ -8,7 +8,7 @@
 | ID | Дата | Статус | Коротка тема | Запис |
 |---|---|---|---|---|
 <!-- request-index -->
-| REQ-0001 | 2026-07-19 | recorded | Гілка інструкцій, журнал запитів і gate наступної Versie | [record](requests/2026-07-19/REQ-0001-instruction-ledger-and-version-gate.md) |
+| REQ-0001 | 2026-07-19 | completed | Гілка інструкцій, журнал запитів і gate наступної Versie | [record](requests/2026-07-19/REQ-0001-instruction-ledger-and-version-gate.md) |
 
 <!-- lang:en -->
 ## English

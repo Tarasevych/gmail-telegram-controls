@@ -2,7 +2,7 @@
 
 - ID: REQ-0001
 - Received: 2026-07-19
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: no
@@ -28,6 +28,15 @@
 - CI перевіряє структуру, індексацію, двомовність і базове secret hygiene request records.
 - Bootstrap-правило перенесене до root `AGENTS.md` робочих гілок.
 
+## Докази виконання
+
+- `8667248`: створено гілку `Інструкції`, канонічні правила, індекс, request record і CI checker.
+- `d3cf37e`: bootstrap-gate додано до root `AGENTS.md` гілки `Інструкції`.
+- `8d4c3b9`: той самий gate застосовано до `main`.
+- `09a9cbd`: той самий gate застосовано до `Повноваження`.
+- `149b7b6`: той самий gate застосовано до активної Versie 1.
+- Перевірки instruction ledger і двомовної документації пройдені локально; Versie 2 не створювалася й не дозволена цим запитом.
+
 <!-- lang:en -->
 ## English
 
@@ -48,3 +57,12 @@
 - The canonical reading order and release gate are documented in both languages.
 - CI validates structure, indexing, bilingual markers, and basic secret hygiene for request records.
 - The bootstrap rule is propagated into root `AGENTS.md` on working branches.
+
+## Implementation evidence
+
+- `8667248`: created the `Інструкції` branch, canonical rules, index, request record, and CI checker.
+- `d3cf37e`: added the bootstrap gate to root `AGENTS.md` on `Інструкції`.
+- `8d4c3b9`: applied the same gate to `main`.
+- `09a9cbd`: applied the same gate to `Повноваження`.
+- `149b7b6`: applied the same gate to the active Versie 1 branch.
+- Instruction-ledger and bilingual-documentation checks passed locally; Versie 2 was neither created nor authorized by this request.
