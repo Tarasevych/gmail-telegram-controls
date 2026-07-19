@@ -2,6 +2,7 @@
 
 - Status / Статус: active / чинне
 - Source request / Джерело: `REQ-0005` on `Запити`
+- Implementation evidence / Доказ реалізації: private archive commit [`2abde8e0d18926c80d439f80a31c72386e7cb0c2`](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief/commit/2abde8e0d18926c80d439f80a31c72386e7cb0c2); authority remains limited to the two named tasks, explicitly referenced project sources, owner-only encrypted preservation, and sanitized derived documentation.
 
 <!-- lang:uk -->
 ## Українською
