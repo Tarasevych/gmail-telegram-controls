@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 <!-- request-index -->
 | REQ-0001 | 2026-07-19 | superseded | Початковий спільний журнал та gate Versie | [record](requests/2026-07-19/REQ-0001-instruction-ledger-and-version-gate.md) |
-| REQ-0002 | 2026-07-19 | recorded | Відокремлений журнал і контекстна маршрутизація | [record](requests/2026-07-19/REQ-0002-separated-ledger-and-context-routing.md) |
+| REQ-0002 | 2026-07-19 | completed | Відокремлений журнал і контекстна маршрутизація | [record](requests/2026-07-19/REQ-0002-separated-ledger-and-context-routing.md) |
 
 <!-- lang:en -->
 ## English

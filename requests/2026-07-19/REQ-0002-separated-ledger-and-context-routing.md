@@ -2,7 +2,7 @@
 
 - ID: REQ-0002
 - Received: 2026-07-19
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: no
@@ -12,47 +12,53 @@
 <!-- lang:uk -->
 ## Українською
 
-## Інтерпретація запиту власника
+## Інтерпретація і маршрути
 
-- Відокремити історію запитів від нормативних гілок `Інструкції` та `Повноваження`.
-- Створити канонічну гілку `Запити`, де кожне проєктне повідомлення отримує очищений запис до виконання.
-- Розділяти повідомлення на логічні частини й маршрутизувати кожну частину до належного контуру.
-- Оновлювати `Інструкції` лише для постійних правил виконання.
-- Оновлювати `Повноваження` лише за явно наданим, зміненим, обмеженим або відкликаним власником дозволом; не виводити дозволи з припущень.
-- План, проблеми, продукт і release змінювати лише тоді, коли відповідна частина запиту справді їх стосується.
-- Пов'язувати кожну похідну зміну з її `REQ-ID`.
-- Не створювати Versie 2 і не змінювати Gmail, Telegram, Apps Script або production у межах цього структурного запиту.
+| Частина | Класифікація | Призначення | Дія |
+|---|---|---|---|
+| Відокремити історію звернень | request governance | `Запити` | створити канонічну гілку, індекс, policy, router і CI |
+| Не змішувати журнал з правилами | instruction | `Інструкції` | видалити ledger-копії та залишити нормативний execution order |
+| Автоматично визначати належність частин | explicit permission | `Повноваження` | створити вузьке P-005 без права припускати інші дозволи |
+| Плани й продукт | no applicable change | активна Versie | не змінювати roadmap, issues, код або runtime |
+| Наступна версія | release gate | Versie | Versie 2 не дозволена і не створюється |
 
-## Критерії завершення
+Канонічний журнал тепер відокремлений. Кожне наступне проєктне повідомлення спочатку отримує очищений `REQ-ID` у `Запити`. Лише потім його окремі частини змінюють релевантні контури, а кожна похідна зміна посилається на джерело.
 
-- Окрема remote-гілка `Запити` містить індекс, політику, маршрутизатор, історичні записи та CI.
-- `Інструкції` більше не містить канонічного журналу запитів.
-- `Повноваження` містить лише вузький явно наданий дозвіл на контекстну маршрутизацію.
-- Bootstrap-правило в робочих гілках указує на `Запити` як джерело історії.
-- REQ-0002 містить докази всіх виконаних змін.
+## Докази виконання
+
+- `bfd74ab`: REQ-0002 опубліковано до структурних змін.
+- `773dd48`: створено й опубліковано `Запити` з історією, маршрутизатором і CI.
+- `ae858e4`: `Інструкції` очищено від канонічного журналу.
+- `37ef923`: додано лише релевантне повноваження P-005.
+- `bc80da9`: bootstrap-порядок застосовано до `main`.
+- `5ae11fd`: bootstrap-порядок застосовано до активної Versie 1.
+- Bilingual checks, request-ledger validation і `git diff --check` пройдені до commit.
+- Product, Gmail, Telegram, Apps Script, deployment і release state не змінювалися.
+- Versie 2 не створена й не авторизована.
 
 <!-- lang:en -->
 ## English
 
-## Interpreted owner request
+## Interpretation and routes
 
-- Separate request history from the normative `Інструкції` and `Повноваження` branches.
-- Create a canonical `Запити` branch where each project message receives a sanitized record before execution.
-- Split a message into logical parts and route each part to the proper governance area.
-- Update `Інструкції` only for standing execution rules.
-- Update `Повноваження` only when the owner explicitly grants, changes, narrows, or revokes authority; never infer authority.
-- Change plans, issues, product, and release state only when the corresponding request part actually applies.
-- Cross-link every derived change to its `REQ-ID`.
-- Do not create Versie 2 or modify Gmail, Telegram, Apps Script, or production as part of this structural request.
+| Part | Classification | Destination | Action |
+|---|---|---|---|
+| Separate request history | request governance | `Запити` | create the canonical branch, index, policy, router, and CI |
+| Do not mix history with rules | instruction | `Інструкції` | remove ledger copies and retain only the normative execution order |
+| Automatically determine where parts belong | explicit permission | `Повноваження` | create narrow P-005 without authority to infer other permissions |
+| Plans and product | no applicable change | active Versie | do not change roadmap, issues, code, or runtime |
+| Next version | release gate | Versie | Versie 2 is not authorized and is not created |
 
-## Completion criteria
+The canonical ledger is now separate. Every subsequent project message first receives a sanitized `REQ-ID` on `Запити`. Only then do its individual parts change relevant areas, and every derived change links back to its source.
 
-- A separate remote `Запити` branch contains the index, policy, router, historical records, and CI.
-- `Інструкції` no longer contains the canonical request ledger.
-- `Повноваження` contains only the narrow, explicitly granted contextual-routing authority.
-- Bootstrap rules on working branches point to `Запити` as the history source.
-- REQ-0002 contains evidence for every completed change.
+## Implementation evidence
 
-## Initial pre-change evidence / Первинний доказ до змін
-
-- `bfd74ab`: REQ-0002 was committed and pushed on the then-canonical `Інструкції` branch before the structural split.
+- `bfd74ab`: REQ-0002 was published before structural changes.
+- `773dd48`: created and published `Запити` with history, routing, and CI.
+- `ae858e4`: removed the canonical ledger from `Інструкції`.
+- `37ef923`: added only the relevant P-005 authority.
+- `bc80da9`: applied the bootstrap order to `main`.
+- `5ae11fd`: applied the bootstrap order to active Versie 1.
+- Bilingual checks, request-ledger validation, and `git diff --check` passed before commit.
+- Product, Gmail, Telegram, Apps Script, deployment, and release state were not changed.
+- Versie 2 was neither created nor authorized.
