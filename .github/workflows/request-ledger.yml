@@ -1,0 +1,20 @@
+name: Request ledger
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate owner request records and routing
+        run: python3 tools/check_request_ledger.py
