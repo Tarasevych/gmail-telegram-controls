@@ -12,6 +12,7 @@
 | REQ-0002 | 2026-07-19 | completed | Відокремлений журнал і контекстна маршрутизація | [record](requests/2026-07-19/REQ-0002-separated-ledger-and-context-routing.md) |
 | REQ-0003 | 2026-07-19 | completed | Маршрутизація трьох deep-research reports у knowledge hub | [record](requests/2026-07-19/REQ-0003-deep-research-knowledge-hub.md) |
 | REQ-0004 | 2026-07-19 | completed | Незалежні двомовні factual verification reports | [record](requests/2026-07-19/REQ-0004-independent-factual-verification-reports.md) |
+| REQ-0005 | 2026-07-19 | recorded | Приватний Onderzoeksarchief двох історій task | [record](requests/2026-07-19/REQ-0005-private-chat-research-archive.md) |
 
 <!-- lang:en -->
 ## English
