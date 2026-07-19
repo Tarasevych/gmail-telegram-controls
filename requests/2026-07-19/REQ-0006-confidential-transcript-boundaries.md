@@ -2,12 +2,13 @@
 
 - ID: REQ-0006
 - Received: 2026-07-19
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: complete visible transcript in client-side encrypted artifacts only
 - Routes: requests=record; instructions=update; permissions=reference; plan=update; product=reference; release=no-change
 - Permission basis: explicit
+- Completion evidence / Доказ завершення: private archive commit [`2abde8e0d18926c80d439f80a31c72386e7cb0c2`](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief/commit/2abde8e0d18926c80d439f80a31c72386e7cb0c2); exact retained visible transcript and confidential sources are AES-256-GCM encrypted; the key remains DPAPI-protected outside Git; 45 payloads passed readback/hash verification without plaintext output; hidden reasoning, system prompts, and developer prompts remain outside the export boundary.
 
 <!-- lang:uk -->
 ## Українською

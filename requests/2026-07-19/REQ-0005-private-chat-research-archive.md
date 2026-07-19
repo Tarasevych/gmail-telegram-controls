@@ -2,12 +2,13 @@
 
 - ID: REQ-0005
 - Received: 2026-07-19
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: encrypted archive only; no plaintext secrets in Git
 - Routes: requests=record; instructions=update; permissions=update; plan=update; product=reference; release=no-change
 - Permission basis: explicit
+- Completion evidence / Доказ завершення: private archive commit [`2abde8e0d18926c80d439f80a31c72386e7cb0c2`](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief/commit/2abde8e0d18926c80d439f80a31c72386e7cb0c2); public locators [`30fd7a1bd83366929f5f28bc77de2015f3ec58b8`](https://github.com/Tarasevych/gmail-telegram-controls/commit/30fd7a1bd83366929f5f28bc77de2015f3ec58b8), [`32b6822c4b00f47ac294423a282a717dc9abf8e9`](https://github.com/Tarasevych/gmail-telegram-controls/commit/32b6822c4b00f47ac294423a282a717dc9abf8e9), [`b6a295dd01e2d1001ccf9df9d40f1435b0efaf14`](https://github.com/Tarasevych/gmail-telegram-controls/commit/b6a295dd01e2d1001ccf9df9d40f1435b0efaf14); 45 encrypted payloads passed decrypt/readback/hash verification with no plaintext output; 13 Ukrainian/English page pairs and plaintext safety scan passed.
 
 <!-- lang:uk -->
 ## Українською
