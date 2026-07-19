@@ -17,6 +17,8 @@
 
 Детальний порядок: [EXECUTION_ORDER.md](instructions/EXECUTION_ORDER.md). Source request: `REQ-0002`.
 
+Для routine-продовження використовуйте [порядок підтримки knowledge hub](instructions/KNOWLEDGE_HUB_MAINTENANCE.md) і читайте лише релевантний тематичний реєстр активної Versie. Source request: `REQ-0003`.
+
 ## Заборона несанкціонованої наступної Versie
 
 Поточна робоча версія: **Versie 1**. Наступна Versie, її branch, article, tag, immutable deployment або production release дозволені лише за прямим наказом власника та полем `Next Versie authorization: yes, Versie N` у новому записі `Запити`.
@@ -41,6 +43,8 @@ The `Інструкції` branch contains only standing project rules. It is no
 7. After execution, update the canonical `Запити` record with status and evidence.
 
 Detailed order: [EXECUTION_ORDER.md](instructions/EXECUTION_ORDER.md). Source request: `REQ-0002`.
+
+For routine continuation, use the [knowledge-hub maintenance order](instructions/KNOWLEDGE_HUB_MAINTENANCE.md) and read only the relevant thematic register on the active Versie. Source request: `REQ-0003`.
 
 ## No unauthorized next Versie
 
