@@ -2,7 +2,7 @@
 
 - ID: REQ-0004
 - Received: 2026-07-19
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Sensitive data persisted: no
@@ -38,6 +38,22 @@
 - Локальні checks і GitHub Actions проходять; `REQ-0004` отримує фінальний статус та commit evidence.
 - `Повноваження`, runtime і поточна `Versie 1` release identity не змінені.
 
+## Результат і докази виконання
+
+- П'ять неперетинних read-only потоків дали рівно 245/245 унікальних `KH-*` результатів; приватні deep-research reports повторно не читалися.
+- Підсумок: 17 `verified`, 13 `contradicted`, 82 `partial`, 35 `unverified`, 7 `blocked`, 91 `recommendation`.
+- Рівні доказу: E0 24, E1 60, E2 145, E3 16, E4 0, E5 0.
+- Безпечний локальний test suite завершився `399/399`; OAuth, network, staging, Telegram і production не викликалися.
+- `91f7223585edce9ea7da341c33c843126a37d0d6`: двомовний `VR-001`, atomic ledger, machine JSON, evidence policy, validator/CI та інтеграція у `PROJECT`, `ROADMAP`, `ISSUES`, knowledge hub і `AGENTS.md` активної Versie 1.
+- `a4601f84d1224657acdb388c9e99c0db671c224f`: standing factual-verification instruction у `Інструкції`.
+- `0ffb133c33d9e4dca89b072bd8d41a1b2819c813`: стабільний двомовний entrypoint у `main`.
+- `Повноваження` не змінювалися; report-derived permissions не стали owner authority.
+- Поточний статично підтверджений ризик token-refresh concurrency зафіксовано як `GT-010`; решта historical/recommendation claims не перетворена на поточні defects автоматично.
+- Local checks пройшли: 34 UK/EN пари, 295 source IDs, 245 exact-once claims, 8 явних baseline conflicts і перевірені immutable Git-object links.
+- GitHub Actions успішні: [Verification reports](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619371), [Knowledge hub](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619369), [Bilingual active Versie](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619379), [Bilingual Instructions](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689655943), [Bilingual main](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689687112), [Pages](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689686779).
+- [Український VR-001](https://github.com/Tarasevych/gmail-telegram-controls/blob/codex/versie-001-2026-07-19/docs/uk/verification-reports/reports/VR-001/README.md) і [atomic ledger](https://github.com/Tarasevych/gmail-telegram-controls/blob/codex/versie-001-2026-07-19/docs/uk/verification-reports/reports/VR-001/CLAIMS.md) опубліковано.
+- Runtime, Gmail, Telegram, Apps Script, deployment, secret state і release identity не змінено. Versie 2 не створена. B1-07-B1-09 та E4/E5 acceptance залишаються окремою незавершеною продуктовою роботою.
+
 <!-- lang:en -->
 ## English
 
@@ -66,3 +82,19 @@
 - The standing instruction, knowledge hub, project, roadmap, and issues link to the current verification result.
 - Local checks and GitHub Actions pass, and `REQ-0004` receives final status and commit evidence.
 - `Повноваження`, runtime, and the current `Versie 1` release identity remain unchanged.
+
+## Result and implementation evidence
+
+- Five disjoint read-only streams produced exactly 245/245 unique `KH-*` results; the private deep-research reports were not reread.
+- Totals: 17 `verified`, 13 `contradicted`, 82 `partial`, 35 `unverified`, 7 `blocked`, and 91 `recommendation`.
+- Evidence grades: E0 24, E1 60, E2 145, E3 16, E4 0, and E5 0.
+- The safe local test suite completed `399/399`; OAuth, network, staging, Telegram, and production were not invoked.
+- `91f7223585edce9ea7da341c33c843126a37d0d6`: bilingual `VR-001`, atomic ledger, machine JSON, evidence policy, validator/CI, and integration into the active Versie 1 `PROJECT`, `ROADMAP`, `ISSUES`, knowledge hub, and `AGENTS.md`.
+- `a4601f84d1224657acdb388c9e99c0db671c224f`: standing factual-verification instruction on `Інструкції`.
+- `0ffb133c33d9e4dca89b072bd8d41a1b2819c813`: stable bilingual entrypoint on `main`.
+- `Повноваження` was not changed; report-derived permissions did not become owner authority.
+- The current statically confirmed token-refresh concurrency risk was recorded as `GT-010`; other historical/recommendation claims were not converted into current defects automatically.
+- Local checks passed: 34 UK/EN pairs, 295 source IDs, 245 exact-once claims, eight explicit baseline conflicts, and verified immutable Git-object links.
+- GitHub Actions succeeded: [Verification reports](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619371), [Knowledge hub](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619369), [Bilingual active Versie](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689619379), [Bilingual Instructions](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689655943), [Bilingual main](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689687112), and [Pages](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29689686779).
+- The [English VR-001](https://github.com/Tarasevych/gmail-telegram-controls/blob/codex/versie-001-2026-07-19/docs/en/verification-reports/reports/VR-001/README.md) and [atomic ledger](https://github.com/Tarasevych/gmail-telegram-controls/blob/codex/versie-001-2026-07-19/docs/en/verification-reports/reports/VR-001/CLAIMS.md) are published.
+- Runtime, Gmail, Telegram, Apps Script, deployment, secret state, and release identity were not changed. Versie 2 was not created. B1-07 through B1-09 and E4/E5 acceptance remain separate unfinished product work.
