@@ -3,63 +3,49 @@
 <!-- lang:uk -->
 ## Українською
 
-Ця гілка є канонічним журналом інтерпретованих запитів та постійних інструкцій власника для `Tarasevych/gmail-telegram-controls`.
+Гілка `Інструкції` містить лише постійні нормативні правила проєкту. Вона не є журналом звернень і не зберігає записи запитів. Канонічна історія міститься в [гілці Запити](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8).
 
-## Обов'язковий порядок перед виконанням проєктного запиту
+## Обов'язковий порядок
 
-1. Оновити remote references для `main`, `Інструкції`, `Повноваження` й активної гілки Versie.
-2. Прочитати цей файл, [політику журналу](instructions/REQUEST_POLICY.md), [індекс запитів](REQUESTS.md) і запис поточного запиту.
-3. Прочитати актуальні `README`, `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING` та останню кумулятивну release-статтю поточної Versie.
-4. Прочитати `PERMISSIONS.md` гілки `Повноваження`, знайти в індексі й прочитати лише релевантний запис повноваження для routine-роботи.
-5. До продуктових змін створити, перевірити, commit і push окремий очищений від секретів запис запиту в цій гілці.
-6. Виконувати тільки зафіксовану інтерпретацію. Після виконання оновити запис статусом, доказами та commit-посиланнями.
+1. Оновити remote references для `main`, `Запити`, `Інструкції`, `Повноваження` та активної Versie.
+2. У `origin/Запити` прочитати `REQUESTS.md`, `REQUEST_ROUTING.md`, `requests/REQUEST_POLICY.md` і поточний `REQ-ID`.
+3. До виконання опублікувати очищений двомовний запис запиту зі статусом `recorded` та маршрутами.
+4. Прочитати актуальні `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING` і release-статтю активної Versie.
+5. У `Повноваження` прочитати індекс і лише релевантний запис. Якщо явного дозволу немає, не створювати його з припущення.
+6. Виконати тільки класифіковані частини й змінити лише вказані контури.
+7. Після виконання оновити канонічний запис у `Запити` статусом і доказами.
+
+Детальний порядок: [EXECUTION_ORDER.md](instructions/EXECUTION_ORDER.md). Source request: `REQ-0002`.
 
 ## Заборона несанкціонованої наступної Versie
 
-- Поточна робоча версія: **Versie 1**.
-- Виправлення, функції та документація додаються до поточної Versie, доки власник прямо не накаже створити конкретну наступну Versie.
-- Формулювання на кшталт «виправити», «додати», «продовжити», «опублікувати зміни» або «протестувати» не є дозволом створити нову Versie.
-- Створення гілки, release article, tag, immutable deployment або production release для Versie 2+ дозволене лише якщо новий запис запиту містить `Next Versie authorization: yes, Versie N` і відтворює прямий наказ власника.
+Поточна робоча версія: **Versie 1**. Наступна Versie, її branch, article, tag, immutable deployment або production release дозволені лише за прямим наказом власника та полем `Next Versie authorization: yes, Versie N` у новому записі `Запити`.
 
 ## Повний pre-version аудит
 
-Перед створенням або випуском наступної Versie потрібно:
-
-1. Прочитати всі tracked Markdown-сторінки актуальних `main`, `Інструкції`, `Повноваження` та активної Versie.
-2. Прочитати всі записи інструкцій, повноважень, плану, проблем і кумулятивної історії.
-3. Звірити git branches, commits, tags, remote, deployments, checkpoint, heartbeat і runtime-процеси.
-4. Записати результат аудиту й точний дозвіл власника в request record до створення нової гілки або immutable release.
-
-Routine-запити не вимагають повторного читання нерелевантних повноважень; повний перегляд усіх сторінок є окремим обов'язковим gate саме перед наступною Versie.
+Перед дозволеною наступною Versie прочитати всі tracked Markdown-сторінки актуальних `main`, `Запити`, `Інструкції`, `Повноваження` й активної Versie; звірити Git, deployments, checkpoint, heartbeat і runtime; записати результат до request record до створення release-артефактів.
 
 <!-- lang:en -->
 ## English
 
-This branch is the canonical ledger of interpreted owner requests and standing instructions for `Tarasevych/gmail-telegram-controls`.
+The `Інструкції` branch contains only standing project rules. It is not a request ledger and does not store request records. Canonical history is on the [Запити branch](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8).
 
-## Mandatory order before executing a project request
+## Mandatory order
 
-1. Refresh remote references for `main`, `Інструкції`, `Повноваження`, and the active Versie branch.
-2. Read this file, the [request policy](instructions/REQUEST_POLICY.md), the [request index](REQUESTS.md), and the current request record.
-3. Read the current `README`, `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING`, and latest cumulative release article for the active Versie.
-4. Read `PERMISSIONS.md` from `Повноваження`, then use its index to read only the relevant permission record for routine work.
-5. Before product changes, create, validate, commit, and push a separate secret-free interpreted request record on this branch.
-6. Execute only the recorded interpretation. After execution, update the record with status, evidence, and commit links.
+1. Refresh remote references for `main`, `Запити`, `Інструкції`, `Повноваження`, and the active Versie.
+2. On `origin/Запити`, read `REQUESTS.md`, `REQUEST_ROUTING.md`, `requests/REQUEST_POLICY.md`, and the current `REQ-ID`.
+3. Before execution, publish a sanitized bilingual request record with `recorded` status and routes.
+4. Read the active Versie's current `PROJECT`, `ROADMAP`, `ISSUES`, `VERSIONING`, and release article.
+5. On `Повноваження`, read the index and only the relevant record. If authority is not explicit, do not infer it.
+6. Execute only the classified parts and change only the declared areas.
+7. After execution, update the canonical `Запити` record with status and evidence.
+
+Detailed order: [EXECUTION_ORDER.md](instructions/EXECUTION_ORDER.md). Source request: `REQ-0002`.
 
 ## No unauthorized next Versie
 
-- Current working release: **Versie 1**.
-- Fixes, features, and documentation stay in the current Versie until the owner directly orders creation of a specific next Versie.
-- Requests such as "fix", "add", "continue", "publish changes", or "test" do not authorize a new Versie.
-- A branch, release article, tag, immutable deployment, or production release for Versie 2+ is allowed only when a new request record contains `Next Versie authorization: yes, Versie N` and records the owner's direct order.
+The current working release is **Versie 1**. A next Versie, its branch, article, tag, immutable deployment, or production release is allowed only after a direct owner order and `Next Versie authorization: yes, Versie N` in a new `Запити` record.
 
 ## Full pre-version audit
 
-Before creating or releasing the next Versie:
-
-1. Read every tracked Markdown page from the current `main`, `Інструкції`, `Повноваження`, and active Versie.
-2. Read every instruction, permission, plan, problem, and cumulative-history record.
-3. Reconcile Git branches, commits, tags, remote, deployments, checkpoint, heartbeat, and runtime processes.
-4. Record the audit result and exact owner authorization in the request record before creating a branch or immutable release.
-
-Routine requests do not require bulk-reading unrelated permissions. The full all-page review is a separate mandatory gate specifically for the next Versie.
+Before an authorized next Versie, read every tracked Markdown page from the current `main`, `Запити`, `Інструкції`, `Повноваження`, and active Versie; reconcile Git, deployments, checkpoint, heartbeat, and runtime; record the result before creating release artifacts.
