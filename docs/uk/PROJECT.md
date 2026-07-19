@@ -15,11 +15,11 @@
 - Поведінка desktop і mobile перевіряється окремо.
 - Реальні Gmail mutations не виконуються на випадкових листах; acceptance використовує контрольований тестовий лист або read-only перевірку.
 - OTP, CAPTCHA, новий consent конкретного користувача та суттєвий ручний вибір залишаються точками втручання власника.
-- Кожний Build має локальні тести, staging acceptance, production verification, Git commit/tag і rollback mapping.
+- Кожна Versie має локальні тести, staging acceptance, production verification, Git commit/tag і rollback mapping.
 
 ## Джерело істини
 
-- Активний код: гілка поточного Build.
+- Активний код: гілка поточної Versie.
 - Останній підтверджений public release: `main` плюс release branch/tag.
 - Поточні задачі: [ROADMAP.md](ROADMAP.md).
 - Поточні дефекти: [ISSUES.md](ISSUES.md).
@@ -29,13 +29,13 @@
 
 У публічний Git не потрапляють bot tokens, OAuth client secrets, refresh/access tokens, authorization codes, cookies, Telegram `initData`, private chat IDs, вміст листів, приватні вкладення або protected runtime properties. Git містить код, шаблони конфігурації, санітизовані докази, рішення та спосіб отримання захищеної конфігурації без її значень.
 
-## Definition of Done для Build
+## Definition of Done для Versie
 
 - усі заявлені контракти пройшли;
 - staging відповідає точному commit;
 - ручні OAuth gates завершені власником;
-- production вказує на immutable цього Build;
-- Telegram menu відкриває production Build;
+- production вказує на immutable цієї Versie;
+- Telegram menu відкриває production Versie;
 - немає зайвих staging deployments або тимчасових процесів;
 - статті UK/EN, реєстр проблем і roadmap оновлені;
 - release branch/tag створені після перевірки, а не до неї.
