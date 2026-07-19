@@ -2,6 +2,9 @@
 
 - Status / Статус: active / чинне
 - Source request / Джерело: `REQ-0005` on `Запити`
+- Related request / Пов'язаний запит: `REQ-0007` on `Запити`
+- Owner-only access / Доступ лише власника: live audit підтвердив `Tarasevych` як єдиного collaborator з роллю `admin`; external collaborators, pending invitations, deploy keys і forks відсутні.
+- Export boundary / Межа експорту: дозвіл охоплює повний доступний visible transcript, operational events і factual action/evidence trace у client-side encrypted artifacts. Він не робить доступними hidden chain-of-thought, system prompts або developer prompts і не дозволяє вигадувати чи реконструювати їх як оригінал.
 - Implementation evidence / Доказ реалізації: private archive commit [`2abde8e0d18926c80d439f80a31c72386e7cb0c2`](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief/commit/2abde8e0d18926c80d439f80a31c72386e7cb0c2); authority remains limited to the two named tasks, explicitly referenced project sources, owner-only encrypted preservation, and sanitized derived documentation.
 
 <!-- lang:uk -->
