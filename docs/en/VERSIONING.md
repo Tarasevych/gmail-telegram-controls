@@ -8,15 +8,15 @@ The history used parallel product and technical numbers v27-v47, so folder, prod
 
 ## Rules
 
-1. New work is made only in the single active branch for the next Build.
+1. New work is made only in the single active branch for the next Versie.
 2. After acceptance, immutable `release/build-NNN-YYYY-MM-DD` and tag `build-NNN-YYYY-MM-DD` are created.
-3. A previous release is not edited. A correction belongs to the next Build and references the earlier problem.
-4. `main` contains the latest verified public Build and its GitHub Pages.
-5. The web app, Telegram menu label, release article, Git commit/tag, and production deployment must reference one Build.
+3. A previous release is not edited. A correction belongs to the next Versie and references the earlier problem.
+4. `main` contains the latest verified public Versie and its GitHub Pages.
+5. The web app, Telegram menu label, release article, Git commit/tag, and production deployment must reference one Versie.
 6. The internal Apps Script immutable number cannot restart. It remains technical evidence in a mapping table but is not the product number.
-7. Every Build article repeats the cumulative history, current capabilities, open problems, and test results, and links to the preceding article.
-8. A hotfix also receives the next sequential Build instead of changing an old release.
-9. A Build must not be marked `Released` until production, Telegram, and control functions have passed acceptance.
+7. Every Versie article repeats the cumulative history, current capabilities, open problems, and test results, and links to the preceding article.
+8. A hotfix also receives the next sequential Versie instead of changing an old release.
+9. A Versie must not be marked `Released` until production, Telegram, and control functions have passed acceptance.
 
 ## Branches
 
