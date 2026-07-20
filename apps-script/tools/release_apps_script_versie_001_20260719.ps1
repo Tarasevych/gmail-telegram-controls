@@ -17,24 +17,24 @@ if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $Rollback | Where-O
 
 $ScriptId = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS'
 $StableDeploymentId = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z'
-$RollbackVersion = 42
+$RollbackVersion = 50
 $LegacyStagingVersion = 49
-$CandidateVersion = 50
-$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): detach expired Telegram card records'
-$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) detach expired Telegram card records staging'
+$CandidateVersion = 51
+$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): per-account Gmail delivery diagnostics'
+$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) per-account Gmail delivery diagnostics staging'
 $LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) retention failure diagnostics staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v50-release.json'
+$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v51-release.json'
 
 $ExpectedRollbackHashes = @{
-  Code='a23e4052264aeb70de54786aafe953d8d6c4f38133f857307b07190ff79df8c9'
+  Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedRollbackHeadDriftHashes = @{
-  Code='4703fae2d71c1959451f67a4fea49e46d84cc8f3be798b9d67995f5bb31bb84e'
+  Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -55,7 +55,7 @@ $ExpectedBaselineHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedCandidateHashes = @{
-  Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'
+  Code='881dcb1424f11217f64f02175b4105cbbe648b2f51fbb8740fd0107d01f25f24'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -150,7 +150,7 @@ function Set-Head([string]$Base, $Content, [hashtable]$Expected, [string]$Label)
 $candidate = Get-Candidate
 Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Versie-001 candidate'
 
-$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V50Release')
+$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V51Release')
 $held = $false; $script:AccessToken = $null
 try {
   $held = $mutex.WaitOne(0)
@@ -225,7 +225,7 @@ try {
 
   if ($StageOnly) {
     if ($stableVersion -ne $RollbackVersion) { throw "StageOnly requires stable v$RollbackVersion." }
-    # Keep the exact v43 staging until its v44 replacement is verified.
+    # Keep any guarded prior staging until its verified replacement exists.
     try {
       if (-not $immutable) {
         if ($journal -and [string]$journal.state -eq 'version_create_reserved') {
@@ -307,7 +307,7 @@ try {
 
   if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Rollback requires stable exact Versie-001.' }
   Invoke-GoogleJson PUT $stableUri @{deploymentConfig=@{scriptId=$ScriptId;versionNumber=$RollbackVersion;
-    manifestFileName='appsscript';description='Rollback to verified Telegram Gmail Versie 1 Apps Script v42'}} | Out-Null
+    manifestFileName='appsscript';description='Rollback to verified Telegram Gmail Versie 1 Apps Script v50'}} | Out-Null
   Set-Head $base $rollbackContent $ExpectedRollbackHashes "Rolled back v$RollbackVersion HEAD"
   if ([int](Invoke-GoogleJson GET $stableUri).deploymentConfig.versionNumber -ne $RollbackVersion) {
     throw 'Rollback deployment did not verify.'

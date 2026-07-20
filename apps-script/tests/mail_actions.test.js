@@ -6407,6 +6407,57 @@ test('manual check covers realtime and frozen scans for every notification conne
   assert.match(multi[1], /executionOptions\.realtimeOnly \? runRealtimeMailCheck_ : runMailCheck_/);
 });
 
+test('multi-account scan preserves each lane delivery and failure in the combined result', () => {
+  const memory = memoryProperties({ CHAT_ID: '123' });
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    mailboxMultiReadRegistry_: context.mailboxMultiReadRegistry_,
+    mailboxOwnerId_: context.mailboxOwnerId_,
+    MAILBOX_MULTI_CONFIG_: context.MAILBOX_MULTI_CONFIG_,
+    withMailboxConnectionContext_: context.withMailboxConnectionContext_,
+    runRealtimeMailCheck_: context.runRealtimeMailCheck_,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.mailboxOwnerId_ = () => '123';
+    context.MAILBOX_MULTI_CONFIG_ = { LEGACY_CONNECTION_ID: 'gmail-legacy-unit' };
+    context.mailboxMultiReadRegistry_ = () => ({
+      preferences: [{
+        userId: '123', notifications: 'all',
+        notificationConnectionIds: ['gmail-first-unit', 'gmail-second-unit'],
+      }],
+      connections: [
+        { id: 'gmail-first-unit', zoneId: 'zone-first', email: 'first@example.com', status: 'active' },
+        { id: 'gmail-second-unit', zoneId: 'zone-second', email: 'second@example.com', status: 'active' },
+      ],
+      members: [
+        { userId: '123', zoneId: 'zone-first', status: 'active' },
+        { userId: '123', zoneId: 'zone-second', status: 'active' },
+      ],
+    });
+    context.withMailboxConnectionContext_ = (_userId, _connectionId, _role, callback) => callback();
+    context.runRealtimeMailCheck_ = (_source, scope) => scope.connectionId === 'gmail-first-unit'
+      ? { delivered: 1, retryPending: 0 }
+      : { failed: 1, workerErrors: 1, retryPending: 1, pending: true };
+
+    const result = context.runMultiAccountMailChecks_(5, { realtimeOnly: true, source: 'test' });
+    assert.equal(result.delivered, 1);
+    assert.equal(result.failed, 1);
+    assert.equal(result.workerErrors, 1);
+    assert.equal(result.retryPending, 1);
+    assert.equal(result.processed, 2);
+    assert.equal(result.remaining, 0);
+    assert.equal(result.pending, true);
+  } finally { Object.assign(context, originals); }
+});
+
+test('declared Google reauthorization failures are not masked as transport errors', () => {
+  const error = new Error('sanitized');
+  error.mailboxCode = 'REAUTH_REQUIRED';
+  assert.equal(context.gmailRealtimeGmailErrorCode_(error), 'gmail_auth_required');
+  assert.equal(context.gmailRuntimeFailureCode_(error), 'gmail_auth_required');
+});
+
 test('realtime legacy delivery reuses the canonical scope and never inherits an unrelated global mode', () => {
   const body = code.match(/function runRealtimeMailCheck_\(source\)\s*\{([\s\S]*?)\n\}/);
   const mode = code.match(/function gmailRealtimeNotificationMode_\(rootProps, scope\)\s*\{([\s\S]*?)\n\}/);
@@ -6440,6 +6491,8 @@ test('realtime status exposes sanitized lane retry backlog and card capacity', (
     assert.match(html, /Активні frozen scan:\s*<b>1<\/b>/);
     assert.match(html, /Картки в реєстрі:\s*<b>1\/60<\/b>/);
     assert.match(html, /telegram_rate_limit/);
+    assert.match(html, /Стан смуг:/);
     assert.doesNotMatch(html, /opaque_message/);
+    assert.doesNotMatch(html, /gmail_unit/);
   } finally { context.PropertiesService = original; }
 });

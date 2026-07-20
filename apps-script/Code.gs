@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v50';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v51';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -670,7 +670,8 @@ function gmailRealtimeStateKey_(rootProps, scope) {
 function gmailRealtimeReadState_(rootProps, key) {
   var state = {
     version: 1, watermarkMs: 0, lastCheckAt: 0, lastDeliveredAt: 0,
-    lastErrorCode: '', retries: [], deadLetteredTotal: 0, pageOverflow: false,
+    lastErrorAt: 0, lastErrorStage: '', lastErrorCode: '', lastErrorFingerprint: '',
+    retries: [], deadLetteredTotal: 0, pageOverflow: false,
     leaseToken: '', leaseUntil: 0
   };
   try {
@@ -679,7 +680,12 @@ function gmailRealtimeReadState_(rootProps, key) {
     state.watermarkMs = Math.max(0, Number(parsed.watermarkMs || 0));
     state.lastCheckAt = Math.max(0, Number(parsed.lastCheckAt || 0));
     state.lastDeliveredAt = Math.max(0, Number(parsed.lastDeliveredAt || 0));
+    state.lastErrorAt = Math.max(0, Number(parsed.lastErrorAt || 0));
+    state.lastErrorStage = String(parsed.lastErrorStage || '')
+      .replace(/[^a-z0-9_]/g, '').slice(0, 40);
     state.lastErrorCode = String(parsed.lastErrorCode || '').slice(0, 32);
+    state.lastErrorFingerprint = String(parsed.lastErrorFingerprint || '')
+      .replace(/[^a-f0-9]/g, '').slice(0, 12);
     state.deadLetteredTotal = Math.max(0, Number(parsed.deadLetteredTotal || 0));
     state.pageOverflow = Boolean(parsed.pageOverflow);
     state.leaseToken = String(parsed.leaseToken || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
@@ -742,6 +748,11 @@ function gmailRealtimeErrorCode_(error) {
   return gmailRuntimeFailureCode_(error);
 }
 
+function gmailDeclaredErrorCode_(error) {
+  return String(error && (error.mailboxCode || error.errorCode || error.code) || '')
+    .toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 64);
+}
+
 function gmailRealtimeNotificationOptions_(rootProps, scope) {
   var chatId = scope && scope.chatId ? String(scope.chatId) :
     String(rootProps.getProperty('CHAT_ID') || '');
@@ -771,6 +782,11 @@ function gmailRealtimeNotificationMode_(rootProps, scope) {
 }
 
 function gmailRealtimeGmailErrorCode_(error) {
+  var declared = gmailDeclaredErrorCode_(error);
+  if (declared === 'REAUTH_REQUIRED' || declared === 'GOOGLE_OAUTH_REAUTH_REQUIRED' ||
+      declared === 'GOOGLE_OAUTH_FAILED') return 'gmail_auth_required';
+  if (declared === 'FORBIDDEN') return 'gmail_access_forbidden';
+  if (declared === 'BUSY') return 'runtime_busy';
   var status = Number(error && error.gmailHttpStatus || 0);
   if (status === 401 || status === 403) return 'gmail_auth_' + status;
   if (status === 408 || status === 425 || status === 429) return 'gmail_retry_' + status;
@@ -781,6 +797,11 @@ function gmailRealtimeGmailErrorCode_(error) {
 
 function gmailRuntimeFailureCode_(error) {
   if (error && error.telegramOutcomeUncertain === true) return 'telegram_uncertain';
+  var declared = gmailDeclaredErrorCode_(error);
+  if (declared === 'REAUTH_REQUIRED' || declared === 'GOOGLE_OAUTH_REAUTH_REQUIRED' ||
+      declared === 'GOOGLE_OAUTH_FAILED') return 'gmail_auth_required';
+  if (declared === 'FORBIDDEN') return 'gmail_access_forbidden';
+  if (declared === 'BUSY') return 'runtime_busy';
   var gmailStatus = Number(error && error.gmailHttpStatus || 0);
   if (gmailStatus === 401 || gmailStatus === 403) return 'gmail_auth_' + gmailStatus;
   if (gmailStatus === 408 || gmailStatus === 425 || gmailStatus === 429) {
@@ -813,6 +834,23 @@ function gmailRuntimeFingerprint_(error) {
   } catch (ignored) {
     return 'unavailable';
   }
+}
+
+function gmailRealtimeSetStateError_(state, error, stageValue) {
+  var stage = String(stageValue || 'realtime_delivery')
+    .toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 40);
+  state.lastErrorAt = Date.now();
+  state.lastErrorStage = stage;
+  state.lastErrorCode = /^(?:gmail_|realtime_list)/.test(stage)
+    ? gmailRealtimeGmailErrorCode_(error) : gmailRuntimeFailureCode_(error);
+  state.lastErrorFingerprint = gmailRuntimeFingerprint_(error);
+}
+
+function gmailRealtimeClearStateError_(state) {
+  state.lastErrorAt = 0;
+  state.lastErrorStage = '';
+  state.lastErrorCode = '';
+  state.lastErrorFingerprint = '';
 }
 
 function gmailRuntimeReadState_(propsValue) {
@@ -905,7 +943,8 @@ function serveGmailRuntimeStatus_(e) {
     ok: true,
     product: 'Versie 1',
     candidate: GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_,
-    runtime: gmailRuntimeReadState_(props)
+    runtime: gmailRuntimeReadState_(props),
+    lanes: gmailRealtimeLaneSnapshots_(props, false)
   } : { ok: false };
   return ContentService.createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
@@ -964,7 +1003,8 @@ function serveGmailRuntimeProbe_(e) {
       lastErrorCode: String(retention.lastErrorCode || ''),
       lastErrorFingerprint: String(retention.lastErrorFingerprint || '')
     },
-    runtime: gmailRuntimeReadState_(props)
+    runtime: gmailRuntimeReadState_(props),
+    lanes: gmailRealtimeLaneSnapshots_(props, false)
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -1015,6 +1055,7 @@ function runRealtimeMailCheck_(source) {
     seen.forEach(function (id) { seenMap[String(id)] = true; });
     var quarantined = gmailRealtimeQuarantinedIds_(scopedProps);
     var options = gmailRealtimeNotificationOptions_(rootProps, scope);
+    var listSucceeded = false;
     var retryMap = {};
     (state.retries || []).forEach(function (row) {
       if (!Array.isArray(row) || !row[0]) return;
@@ -1029,7 +1070,7 @@ function runRealtimeMailCheck_(source) {
       if (!id) return;
       var current = retryMap[id] || [id, 0, 0, now];
       var attempts = Number(current[1] || 0) + 1;
-      state.lastErrorCode = gmailRealtimeErrorCode_(error);
+      gmailRealtimeSetStateError_(state, error, stage || 'realtime_delivery');
       recordGmailRuntimeFailure_(stage || 'realtime_delivery', error);
       if (attempts >= GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_) {
         delete retryMap[id];
@@ -1075,7 +1116,7 @@ function runRealtimeMailCheck_(source) {
           var uncertainError = new Error('Telegram delivery outcome is uncertain.');
           uncertainError.telegramOutcomeUncertain = true;
           result.uncertain += 1;
-          state.lastErrorCode = 'telegram_uncertain';
+          gmailRealtimeSetStateError_(state, uncertainError, 'telegram_notify');
           persistSeen(id);
           removeRetry(id);
           recordGmailRuntimeFailure_('telegram_notify', uncertainError);
@@ -1086,7 +1127,6 @@ function runRealtimeMailCheck_(source) {
         removeRetry(id);
         result.delivered += 1;
         state.lastDeliveredAt = now;
-        state.lastErrorCode = '';
         recordGmailRuntimeSuccess_('realtime_delivery');
       } catch (error) {
         result.failed += 1;
@@ -1105,6 +1145,7 @@ function runRealtimeMailCheck_(source) {
           pageToken: '', page: 0, pass: 0, passNewCount: 0,
           verificationPass: false, createdAt: now
         }) || { ids: [], nextPageToken: '' };
+        listSucceeded = true;
         var ids = Array.isArray(page.ids) ?
           page.ids.slice(0, GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_) : [];
         ids.forEach(function (id) {
@@ -1113,7 +1154,7 @@ function runRealtimeMailCheck_(source) {
         state.pageOverflow = Boolean(page.nextPageToken);
         state.watermarkMs = upper;
       } catch (error) {
-        state.lastErrorCode = gmailRealtimeGmailErrorCode_(error);
+        gmailRealtimeSetStateError_(state, error, 'realtime_list');
         recordGmailRuntimeFailure_('realtime_list', error);
         result.workerErrors += 1;
       }
@@ -1126,6 +1167,10 @@ function runRealtimeMailCheck_(source) {
       result.deadLettered += 1;
     }
     state.retries = retries;
+    if (listSucceeded && result.failed === 0 && result.uncertain === 0 &&
+        result.workerErrors === 0 && retries.length === 0) {
+      gmailRealtimeClearStateError_(state);
+    }
     state.lastCheckAt = now;
     state.lastSource = String(source || 'timer').slice(0, 16);
     result.retryPending = retries.length;
@@ -1147,23 +1192,75 @@ function runRealtimeMailCheck_(source) {
   }
 }
 
+function gmailRealtimeLaneReference_(userIdValue, connectionIdValue) {
+  var connectionId = String(connectionIdValue || '');
+  if (connectionId === 'legacy') return 'legacy';
+  try {
+    return bytesToHex_(Utilities.computeDigest(
+      Utilities.DigestAlgorithm.SHA_256,
+      String(userIdValue || '') + ':' + String(userIdValue || '') + ':' + connectionId,
+      Utilities.Charset.UTF_8
+    )).slice(0, 20);
+  } catch (error) {
+    return 'unavailable';
+  }
+}
+
+function gmailRealtimeLaneSnapshots_(propsValue, includeAccounts) {
+  var props = propsValue || PropertiesService.getScriptProperties();
+  var all = props.getProperties();
+  var accountByConnection = {};
+  if (includeAccounts) {
+    try {
+      var registry = mailboxMultiReadRegistry_(props);
+      (registry.connections || []).forEach(function (connection) {
+        var email = String(connection && connection.email || '').trim().toLowerCase();
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          accountByConnection[String(connection.id || '')] = email;
+        }
+      });
+    } catch (error) {}
+  }
+  return Object.keys(all).sort().map(function (key) {
+    if (key.indexOf(GMAIL_NOTIFICATION_REALTIME_STATE_PREFIX_) !== 0) return null;
+    var suffix = key.slice(GMAIL_NOTIFICATION_REALTIME_STATE_PREFIX_.length);
+    var match = suffix.match(/^(\d{1,24})_(legacy|[A-Za-z0-9_-]{3,80})$/);
+    if (!match) return null;
+    var state = gmailRealtimeReadState_(props, key);
+    var connectionId = match[2];
+    var snapshot = {
+      laneRef: gmailRealtimeLaneReference_(match[1], connectionId),
+      lastCheckAt: Math.max(0, Number(state.lastCheckAt || 0)),
+      lastErrorAt: Math.max(0, Number(state.lastErrorAt || 0)),
+      lastErrorStage: String(state.lastErrorStage || '').replace(/[^a-z0-9_]/g, '').slice(0, 40),
+      lastErrorCode: String(state.lastErrorCode || '').replace(/[^a-z0-9_]/g, '').slice(0, 40),
+      lastErrorFingerprint: String(state.lastErrorFingerprint || '').replace(/[^a-f0-9]/g, '').slice(0, 12),
+      retryPending: Array.isArray(state.retries) ? state.retries.length : 0,
+      deadLetteredTotal: Math.max(0, Number(state.deadLetteredTotal || 0)),
+      pageOverflow: Boolean(state.pageOverflow)
+    };
+    if (includeAccounts) {
+      var legacyEmail = connectionId === 'legacy' && typeof CONFIG !== 'undefined'
+        ? String(CONFIG.GMAIL_ACCOUNT || '').trim().toLowerCase() : '';
+      snapshot.account = accountByConnection[connectionId] || legacyEmail || '';
+    }
+    return snapshot;
+  }).filter(function (item) { return Boolean(item); });
+}
+
 function gmailRealtimeStatusHtml_() {
   var props = PropertiesService.getScriptProperties();
   var all = props.getProperties();
-  var lanes = 0, retries = 0, dead = 0, last = 0, errorCode = '', overflow = 0;
-  Object.keys(all).forEach(function (key) {
-    if (key.indexOf(GMAIL_NOTIFICATION_REALTIME_STATE_PREFIX_) !== 0) return;
-    try {
-      var state = JSON.parse(all[key] || '{}');
-      lanes += 1;
-      retries += Array.isArray(state.retries) ? state.retries.length : 0;
-      dead += Math.max(0, Number(state.deadLetteredTotal || 0));
-      overflow += state.pageOverflow ? 1 : 0;
-      if (Number(state.lastCheckAt || 0) >= last) {
-        last = Number(state.lastCheckAt || 0);
-        errorCode = String(state.lastErrorCode || '').slice(0, 32);
-      }
-    } catch (error) {}
+  var laneSnapshots = gmailRealtimeLaneSnapshots_(props, true);
+  var lanes = laneSnapshots.length, retries = 0, dead = 0, last = 0, errorCode = '', overflow = 0;
+  laneSnapshots.forEach(function (lane) {
+    retries += lane.retryPending;
+    dead += lane.deadLetteredTotal;
+    overflow += lane.pageOverflow ? 1 : 0;
+    if (lane.lastCheckAt >= last) {
+      last = lane.lastCheckAt;
+      errorCode = lane.lastErrorCode;
+    }
   });
   var cards = Object.keys(all).filter(function (key) {
     return /^TELEGRAM_MAIL_CARD_V2_/.test(key);
@@ -1177,6 +1274,14 @@ function gmailRealtimeStatusHtml_() {
         Object.prototype.hasOwnProperty.call(value, 'page');
     } catch (error) { return false; }
   }).length;
+  var laneLines = laneSnapshots.map(function (lane) {
+    var label = lane.account || ('смуга ' + lane.laneRef);
+    var health = lane.lastErrorCode || 'ok';
+    var fingerprint = lane.lastErrorFingerprint
+      ? ' · <code>' + escapeHtml_(lane.lastErrorFingerprint) + '</code>' : '';
+    return '\n• <code>' + escapeHtml_(label) + '</code>: <code>' +
+      escapeHtml_(health) + '</code>' + fingerprint;
+  }).join('');
   return '\n\n<b>Realtime Gmail</b>' +
     '\nАктивні ізольовані смуги: <b>' + lanes + '</b>' +
     '\nОстання перевірка: <code>' + (last ? new Date(last).toISOString() : 'ще не запускалась') + '</code>' +
@@ -1185,7 +1290,8 @@ function gmailRealtimeStatusHtml_() {
     '\nСмуги з переповненою першою сторінкою: <b>' + overflow + '</b>' +
     '\nАктивні frozen scan: <b>' + frozen + '</b>' +
     '\nКартки в реєстрі: <b>' + cards + '/60</b>' +
-    '\nОстанній код помилки: <code>' + (errorCode || 'немає') + '</code>';
+    '\nОстанній код помилки: <code>' + (errorCode || 'немає') + '</code>' +
+    (laneLines ? '\nСтан смуг:' + laneLines : '');
 }
 
 function gmailRealtimeAppendStatus_(baseHtml) {
@@ -1194,7 +1300,12 @@ function gmailRealtimeAppendStatus_(baseHtml) {
 function runMultiAccountMailChecks_(limitValue) {
   const executionOptions = arguments[1] || {};
   if (typeof mailboxMultiReadRegistry_ !== 'function' ||
-      typeof withMailboxConnectionContext_ !== 'function') return { processed: 0, failed: 0, pending: 0 };
+      typeof withMailboxConnectionContext_ !== 'function') {
+    const unavailable = emptyMailCheckResult_();
+    unavailable.processed = 0;
+    unavailable.remaining = 0;
+    return unavailable;
+  }
   const props = PropertiesService.getScriptProperties();
   const registry = mailboxMultiReadRegistry_(props);
   const work = [];
@@ -1241,25 +1352,34 @@ function runMultiAccountMailChecks_(limitValue) {
   work.sort((a, b) => (a.userId + ':' + a.connectionId).localeCompare(b.userId + ':' + b.connectionId));
   if (!work.length) {
     deleteScriptProperty_(props, GMAIL_MULTI_NOTIFICATION_CURSOR);
-    return { processed: 0, failed: 0, pending: 0 };
+    const empty = emptyMailCheckResult_();
+    empty.processed = 0;
+    empty.remaining = 0;
+    return empty;
   }
   const limit = Math.max(1, Math.min(Number(limitValue) || 1, 5));
   const start = Math.max(0, Number(props.getProperty(GMAIL_MULTI_NOTIFICATION_CURSOR) || 0)) % work.length;
   let processed = 0;
-  let failed = 0;
+  let aggregate = emptyMailCheckResult_();
   for (let offset = 0; offset < Math.min(limit, work.length); offset += 1) {
     const scope = work[(start + offset) % work.length];
     try {
-      withMailboxConnectionContext_(scope.userId, scope.connectionId, 'viewer', () =>
+      const scoped = withMailboxConnectionContext_(scope.userId, scope.connectionId, 'viewer', () =>
         (executionOptions.realtimeOnly ? runRealtimeMailCheck_ : runMailCheck_)(String(executionOptions.source || 'timer'), scope));
+      aggregate = mergeMailCheckResults_(aggregate, scoped || emptyMailCheckResult_());
     } catch (error) {
-      failed += 1;
+      aggregate.failed += 1;
+      aggregate.workerErrors += 1;
+      recordGmailRuntimeFailure_('multi_account_scan', error);
       console.error('Scoped Gmail notification scan failed for ' + scope.connectionId + ': ' + error);
     }
     processed += 1;
   }
   props.setProperty(GMAIL_MULTI_NOTIFICATION_CURSOR, String((start + processed) % work.length));
-  return { processed, failed, pending: Math.max(0, work.length - processed) };
+  aggregate.processed = processed;
+  aggregate.remaining = Math.max(0, work.length - processed);
+  aggregate.pending = aggregate.pending || aggregate.remaining > 0;
+  return aggregate;
 }
 
 function initializeGmailNotificationWatermark_(props, nowValue) {

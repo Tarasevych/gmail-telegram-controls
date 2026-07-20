@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260719.ps1'), 'utf8');
 const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
-  Code: '1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24',
+  Code: '881dcb1424f11217f64f02175b4105cbbe648b2f51fbb8740fd0107d01f25f24',
   MultiAccount: '80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc',
   MailClient: 'f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7',
   MailApp: 'c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b',
@@ -19,24 +19,24 @@ function hash(name, extension) {
   return crypto.createHash('sha256').update(source, 'utf8').digest('hex');
 }
 
-test('Versie 1 helper pins stable v42 rollback and immutable v50 candidate', () => {
-  assert.match(helper, /\$RollbackVersion = 42/);
+test('Versie 1 helper pins stable v50 rollback and immutable v51 candidate', () => {
+  assert.match(helper, /\$RollbackVersion = 50/);
   assert.match(helper, /\$LegacyStagingVersion = 49/);
-  assert.match(helper, /\$CandidateVersion = 50/);
-  assert.match(helper, /Versie 1 \(2026-07-20\): detach expired Telegram card records/);
-  assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) detach expired Telegram card records staging/);
+  assert.match(helper, /\$CandidateVersion = 51/);
+  assert.match(helper, /Versie 1 \(2026-07-20\): per-account Gmail delivery diagnostics/);
+  assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) per-account Gmail delivery diagnostics staging/);
   assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) retention failure diagnostics staging/);
-  assert.match(helper, /\$ExpectedRollbackHashes = @\{[\s\S]*Code='a23e4052264aeb70de54786aafe953d8d6c4f38133f857307b07190ff79df8c9'/);
+  assert.match(helper, /\$ExpectedRollbackHashes = @\{[\s\S]*Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'/);
   assert.match(helper, /\$ExpectedLegacyStagingHashes = @\{[\s\S]*Code='c5d9275e69c0aa49a1460d03412bd2f78dd3a886d67fc0c98dc665cd629e1d48'/);
-  assert.match(helper, /\$ExpectedRollbackHeadDriftHashes = @\{[\s\S]*Code='4703fae2d71c1959451f67a4fea49e46d84cc8f3be798b9d67995f5bb31bb84e'/);
+  assert.match(helper, /\$ExpectedRollbackHeadDriftHashes = @\{[\s\S]*Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'/);
   assert.match(helper, /stable_v\$\{RollbackVersion\}_whitespace_drift/);
-  assert.match(helper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v42/);
-  assert.match(helper, /versie-001-20260720-v50-release\.json/);
-  assert.match(helper, /TarasevychGmailNotifierVersie00120260720V50Release/);
+  assert.match(helper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v50/);
+  assert.match(helper, /versie-001-20260720-v51-release\.json/);
+  assert.match(helper, /TarasevychGmailNotifierVersie00120260720V51Release/);
   assert.match(helper, /Invoke-GoogleJson DELETE .*legacyStaging/);
 });
 
-test('Versie 1 v50 detaches only definitively too-old Telegram retention records', () => {
+test('Versie 1 v51 keeps retention safety and exposes isolated Gmail lane failures', () => {
   assert.match(code, /function runSafeLegacyMailCheck_\(source\)/);
   assert.match(code, /recordGmailRuntimeFailure_\('legacy_scan', error\)/);
   assert.match(code, /runSafeLegacyMailCheck_\('manual'\)/);
@@ -51,7 +51,10 @@ test('Versie 1 v50 detaches only definitively too-old Telegram retention records
   assert.match(code, /postedParams\.action \|\| ''\) === 'runtime_probe'/);
   assert.match(code, /function compactTelegramMailCardIndexLocked_\(props\)/);
   assert.match(code, /if \(!props\.getProperty\(propertyKey\)\)/);
-  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v50'/);
+  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v51'/);
+  assert.match(code, /function gmailRealtimeLaneSnapshots_\(propsValue, includeAccounts\)/);
+  assert.match(code, /lanes: gmailRealtimeLaneSnapshots_\(props, false\)/);
+  assert.match(code, /declared === 'REAUTH_REQUIRED'/);
   assert.match(code, /function gmailRealtimeClaimLease_\(rootProps, stateKey, nowValue\)/);
   assert.match(code, /gmailRealtimeCommitLease_\(rootProps, stateKey, state, lease\.token\)/);
   assert.match(code, /function telegramRetentionErrorCode_\(error\)/);
