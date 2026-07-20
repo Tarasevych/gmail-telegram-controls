@@ -15,6 +15,7 @@
 | REQ-0005 | 2026-07-19 | completed | Приватний Onderzoeksarchief двох історій task | [record](requests/2026-07-19/REQ-0005-private-chat-research-archive.md) |
 | REQ-0006 | 2026-07-19 | completed | Межі повного confidential transcript archive | [record](requests/2026-07-19/REQ-0006-confidential-transcript-boundaries.md) |
 | REQ-0007 | 2026-07-19 | completed | Owner-only доступ і межа внутрішніх Codex-даних | [record](requests/2026-07-19/REQ-0007-owner-only-archive-access.md) |
+| REQ-0008 | 2026-07-20 | in_progress | Versie 1 multi-account OAuth return і one-click switch | [record](requests/2026-07-20/REQ-0008-versie-1-multi-account-oauth-return.md) |
 
 <!-- lang:en -->
 ## English
