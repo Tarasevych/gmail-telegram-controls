@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v48';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v49';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -920,6 +920,7 @@ function serveGmailRuntimeProbe_(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   var capacityBefore = telegramMailCardCapacitySnapshot_();
+  var retention = purgeOldTelegramMailCards_(10);
   var compaction = { keys: [], removedDuplicate: 0, removedMissing: 0 };
   try {
     compaction = compactTelegramMailCardIndex_();
@@ -954,6 +955,13 @@ function serveGmailRuntimeProbe_(e) {
       after: telegramMailCardCapacitySnapshot_(),
       removedDuplicate: Math.max(0, Number(compaction.removedDuplicate || 0)),
       removedMissing: Math.max(0, Number(compaction.removedMissing || 0))
+    },
+    retention: {
+      attempted: Math.max(0, Number(retention.attempted || 0)),
+      removed: Math.max(0, Number(retention.removed || 0)),
+      failed: Math.max(0, Number(retention.failed || 0)),
+      lastErrorCode: String(retention.lastErrorCode || ''),
+      lastErrorFingerprint: String(retention.lastErrorFingerprint || '')
     },
     runtime: gmailRuntimeReadState_(props)
   })).setMimeType(ContentService.MimeType.JSON);
@@ -6106,6 +6114,18 @@ function removeTelegramMailCardPropertyKey_(propertyKey) {
  * from Telegram first; their registry entry is deleted only after Telegram
  * confirms deletion (or reports the idempotent already-gone result).
  */
+function telegramRetentionErrorCode_(error) {
+  const text = String(error && error.message || error || '').toLowerCase();
+  if (/message (?:can'?t|cannot) be deleted|message is too old|older than 48/.test(text)) {
+    return 'telegram_delete_too_old';
+  }
+  if (text.includes('chat not found')) return 'telegram_delete_chat_missing';
+  if (/not enough rights|need administrator|have no rights/.test(text)) {
+    return 'telegram_delete_forbidden';
+  }
+  return gmailRuntimeFailureCode_(error);
+}
+
 function purgeOldTelegramMailCards_(limit) {
   const props = PropertiesService.getScriptProperties();
   const maximum = Math.max(0, Math.min(Number(limit) || 5, 10));
@@ -6147,6 +6167,9 @@ function purgeOldTelegramMailCards_(limit) {
     candidates.push(propertyKey);
   }
   let removed = 0;
+  let failed = 0;
+  let lastErrorCode = '';
+  let lastErrorFingerprint = '';
   candidates.forEach(propertyKey => {
     let card = null;
     try { card = JSON.parse(props.getProperty(propertyKey) || 'null'); }
@@ -6163,13 +6186,17 @@ function purgeOldTelegramMailCards_(limit) {
       });
     } catch (error) {
       if (!telegramDeleteAlreadyApplied_(error)) {
+        failed += 1;
+        lastErrorCode = telegramRetentionErrorCode_(error);
+        lastErrorFingerprint = gmailRuntimeFingerprint_(error);
+        recordGmailRuntimeFailure_('card_retention_delete', error);
         console.error('Could not purge old Telegram mail card: ' + error);
         return;
       }
     }
     if (removeTelegramMailCardRecord_(card)) removed += 1;
   });
-  return { attempted: candidates.length, removed };
+  return { attempted: candidates.length, removed, failed, lastErrorCode, lastErrorFingerprint };
 }
 
 function recordTelegramMailCard_(gmailMessage, telegramMessage, replyMarkup, topicName, contextValue) {

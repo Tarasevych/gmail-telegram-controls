@@ -2760,16 +2760,18 @@ test('mail-card registry never forgets an over-soft-limit card before Telegram c
     assert.ok(context.utf8ByteLength_(memory.store.TELEGRAM_MAIL_CARD_INDEX) < 8500);
 
     context.telegramRequest_ = () => { throw new Error('temporary delete failure'); };
-    assert.deepEqual(
-      JSON.parse(JSON.stringify(context.purgeOldTelegramMailCards_(5))),
-      { attempted: 1, removed: 0 }
-    );
+    const failedPurge = JSON.parse(JSON.stringify(context.purgeOldTelegramMailCards_(5)));
+    assert.equal(failedPurge.attempted, 1);
+    assert.equal(failedPurge.removed, 0);
+    assert.equal(failedPurge.failed, 1);
+    assert.equal(failedPurge.lastErrorCode, 'runtime_error');
+    assert.match(failedPurge.lastErrorFingerprint, /^(?:[a-f0-9]{12}|unavailable)$/);
     assert.ok(memory.store[oldestKey], 'failed Telegram delete must retain the registry record');
 
     context.telegramRequest_ = () => true;
     assert.deepEqual(
       JSON.parse(JSON.stringify(context.purgeOldTelegramMailCards_(5))),
-      { attempted: 1, removed: 1 }
+      { attempted: 1, removed: 1, failed: 0, lastErrorCode: '', lastErrorFingerprint: '' }
     );
     keys = JSON.parse(memory.store.TELEGRAM_MAIL_CARD_INDEX);
     assert.equal(keys.length, 60);
@@ -4074,7 +4076,7 @@ test('retention deletes a scoped tenant card in its own Telegram chat before for
     };
     assert.deepEqual(
       JSON.parse(JSON.stringify(context.purgeOldTelegramMailCards_(5))),
-      { attempted: 1, removed: 1 }
+      { attempted: 1, removed: 1, failed: 0, lastErrorCode: '', lastErrorFingerprint: '' }
     );
     assert.deepEqual(JSON.parse(JSON.stringify(calls)), [{
       method: 'deleteMessage',
