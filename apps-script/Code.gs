@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v49';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v50';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -960,6 +960,7 @@ function serveGmailRuntimeProbe_(e) {
       attempted: Math.max(0, Number(retention.attempted || 0)),
       removed: Math.max(0, Number(retention.removed || 0)),
       failed: Math.max(0, Number(retention.failed || 0)),
+      detachedTooOld: Math.max(0, Number(retention.detachedTooOld || 0)),
       lastErrorCode: String(retention.lastErrorCode || ''),
       lastErrorFingerprint: String(retention.lastErrorFingerprint || '')
     },
@@ -6168,6 +6169,7 @@ function purgeOldTelegramMailCards_(limit) {
   }
   let removed = 0;
   let failed = 0;
+  let detachedTooOld = 0;
   let lastErrorCode = '';
   let lastErrorFingerprint = '';
   candidates.forEach(propertyKey => {
@@ -6186,9 +6188,15 @@ function purgeOldTelegramMailCards_(limit) {
       });
     } catch (error) {
       if (!telegramDeleteAlreadyApplied_(error)) {
-        failed += 1;
-        lastErrorCode = telegramRetentionErrorCode_(error);
+        const retentionCode = telegramRetentionErrorCode_(error);
+        lastErrorCode = retentionCode;
         lastErrorFingerprint = gmailRuntimeFingerprint_(error);
+        if (retentionCode === 'telegram_delete_too_old' && removeTelegramMailCardRecord_(card)) {
+          removed += 1;
+          detachedTooOld += 1;
+          return;
+        }
+        failed += 1;
         recordGmailRuntimeFailure_('card_retention_delete', error);
         console.error('Could not purge old Telegram mail card: ' + error);
         return;
@@ -6196,7 +6204,9 @@ function purgeOldTelegramMailCards_(limit) {
     }
     if (removeTelegramMailCardRecord_(card)) removed += 1;
   });
-  return { attempted: candidates.length, removed, failed, lastErrorCode, lastErrorFingerprint };
+  const summary = { attempted: candidates.length, removed, failed, lastErrorCode, lastErrorFingerprint };
+  if (detachedTooOld) summary.detachedTooOld = detachedTooOld;
+  return summary;
 }
 
 function recordTelegramMailCard_(gmailMessage, telegramMessage, replyMarkup, topicName, contextValue) {

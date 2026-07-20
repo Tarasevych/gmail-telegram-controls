@@ -2781,6 +2781,46 @@ test('mail-card registry never forgets an over-soft-limit card before Telegram c
   }
 });
 
+test('retention detaches only a card that Telegram definitively reports as too old to delete', () => {
+  const memory = memoryProperties({ CHAT_ID: '123' });
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+    telegramRequest_: context.telegramRequest_,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    for (let index = 0; index < 61; index += 1) {
+      context.saveTelegramMailCard_({
+        gmailMessageId: `too_old_card_${String(index).padStart(3, '0')}`,
+        gmailThreadId: `too_old_thread_${String(index).padStart(3, '0')}`,
+        telegramMessageId: 8000 + index,
+        messageThreadId: 0,
+        topic: 'inbox',
+        replyMarkup: '{}',
+      });
+    }
+    const oldestKey = JSON.parse(memory.store.TELEGRAM_MAIL_CARD_INDEX)[0];
+    context.telegramRequest_ = () => {
+      const error = new Error("Telegram API error: Bad Request: message can't be deleted");
+      error.telegramHttpStatus = 400;
+      throw error;
+    };
+
+    const result = JSON.parse(JSON.stringify(context.purgeOldTelegramMailCards_(5)));
+    assert.equal(result.attempted, 1);
+    assert.equal(result.removed, 1);
+    assert.equal(result.failed, 0);
+    assert.equal(result.detachedTooOld, 1);
+    assert.equal(result.lastErrorCode, 'telegram_delete_too_old');
+    assert.equal(memory.store[oldestKey], undefined);
+    assert.equal(JSON.parse(memory.store.TELEGRAM_MAIL_CARD_INDEX).length, 60);
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
 test('new mail-card delivery is reserved before Telegram send and becomes active only after promotion', () => {
   const gmailMessageId = 'delivery12345';
   const memory = memoryProperties({ CHAT_ID: '123' });
