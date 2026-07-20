@@ -6383,7 +6383,15 @@ test('realtime lane delivers mail newer than the frozen backlog upper bound exac
       return { message_id: delivered.length };
     };
     assert.equal(context.runRealtimeMailCheck_('timer').delivered, 1);
+    const firstLaneState = JSON.parse(memory.store.GMAIL_NOTIFICATION_REALTIME_V1_123_legacy);
+    assert.equal(firstLaneState.lastScanListed, 1);
+    assert.equal(firstLaneState.lastScanFetched, 1);
+    assert.equal(firstLaneState.lastScanEligible, 1);
     assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
+    const secondLaneState = JSON.parse(memory.store.GMAIL_NOTIFICATION_REALTIME_V1_123_legacy);
+    assert.equal(secondLaneState.lastScanListed, 1);
+    assert.equal(secondLaneState.lastScanSeenSkipped, 1);
+    assert.equal(secondLaneState.lastScanEligible, 0);
     assert.deepEqual(delivered, [{ id: 'realtime_message_12345', email: 'owner@example.com' }]);
     assert.equal(JSON.parse(memory.store.GMAIL_NOTIFICATION_SCAN_V1).pageToken, 'frozen_page_2');
     assert.deepEqual(JSON.parse(memory.store.SEEN_MESSAGE_IDS), ['realtime_message_12345']);

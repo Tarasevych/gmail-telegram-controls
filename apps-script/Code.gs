@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v51';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v52';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -671,6 +671,9 @@ function gmailRealtimeReadState_(rootProps, key) {
   var state = {
     version: 1, watermarkMs: 0, lastCheckAt: 0, lastDeliveredAt: 0,
     lastErrorAt: 0, lastErrorStage: '', lastErrorCode: '', lastErrorFingerprint: '',
+    lastScanAt: 0, lastScanListed: 0, lastScanFetched: 0, lastScanSeenSkipped: 0,
+    lastScanQuarantinedSkipped: 0, lastScanLabelSkipped: 0,
+    lastScanWindowSkipped: 0, lastScanEligible: 0,
     retries: [], deadLetteredTotal: 0, pageOverflow: false,
     leaseToken: '', leaseUntil: 0
   };
@@ -688,6 +691,14 @@ function gmailRealtimeReadState_(rootProps, key) {
       .replace(/[^a-f0-9]/g, '').slice(0, 12);
     state.deadLetteredTotal = Math.max(0, Number(parsed.deadLetteredTotal || 0));
     state.pageOverflow = Boolean(parsed.pageOverflow);
+    state.lastScanAt = Math.max(0, Number(parsed.lastScanAt || 0));
+    state.lastScanListed = Math.max(0, Number(parsed.lastScanListed || 0));
+    state.lastScanFetched = Math.max(0, Number(parsed.lastScanFetched || 0));
+    state.lastScanSeenSkipped = Math.max(0, Number(parsed.lastScanSeenSkipped || 0));
+    state.lastScanQuarantinedSkipped = Math.max(0, Number(parsed.lastScanQuarantinedSkipped || 0));
+    state.lastScanLabelSkipped = Math.max(0, Number(parsed.lastScanLabelSkipped || 0));
+    state.lastScanWindowSkipped = Math.max(0, Number(parsed.lastScanWindowSkipped || 0));
+    state.lastScanEligible = Math.max(0, Number(parsed.lastScanEligible || 0));
     state.leaseToken = String(parsed.leaseToken || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
     state.leaseUntil = Math.max(0, Number(parsed.leaseUntil || 0));
     state.retries = Array.isArray(parsed.retries) ?
@@ -1056,6 +1067,10 @@ function runRealtimeMailCheck_(source) {
     var quarantined = gmailRealtimeQuarantinedIds_(scopedProps);
     var options = gmailRealtimeNotificationOptions_(rootProps, scope);
     var listSucceeded = false;
+    var scanMetrics = {
+      listed: 0, fetched: 0, seenSkipped: 0, quarantinedSkipped: 0,
+      labelSkipped: 0, windowSkipped: 0, eligible: 0
+    };
     var retryMap = {};
     (state.retries || []).forEach(function (row) {
       if (!Array.isArray(row) || !row[0]) return;
@@ -1094,22 +1109,36 @@ function runRealtimeMailCheck_(source) {
     }
     function deliverId(id, enforceWindow) {
       id = String(id || '');
-      if (!id || seenMap[id] || quarantined[id]) {
+      if (!id) return;
+      var countScan = Boolean(enforceWindow);
+      if (seenMap[id]) {
+        if (countScan) scanMetrics.seenSkipped += 1;
+        removeRetry(id);
+        return;
+      }
+      if (quarantined[id]) {
+        if (countScan) scanMetrics.quarantinedSkipped += 1;
         removeRetry(id);
         return;
       }
       var failureStage = 'gmail_get';
       try {
         var message = getGmailMessage_(id);
+        if (countScan) scanMetrics.fetched += 1;
         var timestamp = Number(message && message.timestamp || 0);
         var labels = message && Array.isArray(message.labelIds) ? message.labelIds : [];
         if (labels.indexOf('INBOX') < 0 || labels.indexOf('SPAM') >= 0 ||
             labels.indexOf('TRASH') >= 0 ||
             (mode === 'important' && labels.indexOf('IMPORTANT') < 0)) {
+          if (countScan) scanMetrics.labelSkipped += 1;
           removeRetry(id);
           return;
         }
-        if (enforceWindow && (timestamp < lower || timestamp >= upper)) return;
+        if (enforceWindow && (timestamp < lower || timestamp >= upper)) {
+          scanMetrics.windowSkipped += 1;
+          return;
+        }
+        if (countScan) scanMetrics.eligible += 1;
         failureStage = 'telegram_notify';
         var notification = notifyMessage_(message, options);
         if (notification && notification.uncertain) {
@@ -1148,6 +1177,7 @@ function runRealtimeMailCheck_(source) {
         listSucceeded = true;
         var ids = Array.isArray(page.ids) ?
           page.ids.slice(0, GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_) : [];
+        scanMetrics.listed = ids.length;
         ids.forEach(function (id) {
           if (result.delivered < GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_) deliverId(id, true);
         });
@@ -1167,6 +1197,14 @@ function runRealtimeMailCheck_(source) {
       result.deadLettered += 1;
     }
     state.retries = retries;
+    state.lastScanAt = now;
+    state.lastScanListed = scanMetrics.listed;
+    state.lastScanFetched = scanMetrics.fetched;
+    state.lastScanSeenSkipped = scanMetrics.seenSkipped;
+    state.lastScanQuarantinedSkipped = scanMetrics.quarantinedSkipped;
+    state.lastScanLabelSkipped = scanMetrics.labelSkipped;
+    state.lastScanWindowSkipped = scanMetrics.windowSkipped;
+    state.lastScanEligible = scanMetrics.eligible;
     if (listSucceeded && result.failed === 0 && result.uncertain === 0 &&
         result.workerErrors === 0 && retries.length === 0) {
       gmailRealtimeClearStateError_(state);
@@ -1237,7 +1275,17 @@ function gmailRealtimeLaneSnapshots_(propsValue, includeAccounts) {
       lastErrorFingerprint: String(state.lastErrorFingerprint || '').replace(/[^a-f0-9]/g, '').slice(0, 12),
       retryPending: Array.isArray(state.retries) ? state.retries.length : 0,
       deadLetteredTotal: Math.max(0, Number(state.deadLetteredTotal || 0)),
-      pageOverflow: Boolean(state.pageOverflow)
+      pageOverflow: Boolean(state.pageOverflow),
+      lastScan: {
+        at: Math.max(0, Number(state.lastScanAt || 0)),
+        listed: Math.max(0, Number(state.lastScanListed || 0)),
+        fetched: Math.max(0, Number(state.lastScanFetched || 0)),
+        seenSkipped: Math.max(0, Number(state.lastScanSeenSkipped || 0)),
+        quarantinedSkipped: Math.max(0, Number(state.lastScanQuarantinedSkipped || 0)),
+        labelSkipped: Math.max(0, Number(state.lastScanLabelSkipped || 0)),
+        windowSkipped: Math.max(0, Number(state.lastScanWindowSkipped || 0)),
+        eligible: Math.max(0, Number(state.lastScanEligible || 0))
+      }
     };
     if (includeAccounts) {
       var legacyEmail = connectionId === 'legacy' && typeof CONFIG !== 'undefined'
