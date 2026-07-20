@@ -589,6 +589,8 @@ var GMAIL_NOTIFICATION_REALTIME_LAG_MS_ = 5 * 1000;
 var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
+var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v45';
 
 function emptyMailCheckResult_() {
   return {
@@ -620,8 +622,22 @@ function runSafeMultiAccountMailChecks_(limit, options) {
     if (typeof runMultiAccountMailChecks_ !== 'function') return emptyMailCheckResult_();
     return runMultiAccountMailChecks_(limit, options || {}) || emptyMailCheckResult_();
   } catch (error) {
+    recordGmailRuntimeFailure_('multi_account_scan', error);
     var result = emptyMailCheckResult_();
     result.workerErrors = 1;
+    result.failed = 1;
+    return result;
+  }
+}
+
+function runSafeLegacyMailCheck_(source) {
+  try {
+    return runMailCheck_(source || 'manual') || emptyMailCheckResult_();
+  } catch (error) {
+    recordGmailRuntimeFailure_('legacy_scan', error);
+    var result = emptyMailCheckResult_();
+    result.workerErrors = 1;
+    result.failed = 1;
     return result;
   }
 }
@@ -631,7 +647,9 @@ function runRealtimeMailChecks_(source, limit) {
   try {
     result = mergeMailCheckResults_(result, runRealtimeMailCheck_(source || 'timer'));
   } catch (error) {
+    recordGmailRuntimeFailure_('legacy_realtime', error);
     result.workerErrors += 1;
+    result.failed += 1;
   }
   return mergeMailCheckResults_(result, runSafeMultiAccountMailChecks_(limit || 5, {
     realtimeOnly: true,
@@ -669,11 +687,7 @@ function gmailRealtimeReadState_(rootProps, key) {
 }
 
 function gmailRealtimeErrorCode_(error) {
-  if (error && error.telegramOutcomeUncertain === true) return 'telegram_uncertain';
-  var status = Number(error && error.telegramHttpStatus || 0);
-  if (status === 401 || status === 403) return 'telegram_auth';
-  if (status === 429) return 'telegram_rate_limit';
-  return 'delivery_error';
+  return gmailRuntimeFailureCode_(error);
 }
 
 function gmailRealtimeNotificationOptions_(rootProps, scope) {
@@ -711,6 +725,118 @@ function gmailRealtimeGmailErrorCode_(error) {
   if (status >= 500) return 'gmail_retry_5xx';
   if (status >= 400) return 'gmail_http_' + status;
   return 'gmail_transport';
+}
+
+function gmailRuntimeFailureCode_(error) {
+  if (error && error.telegramOutcomeUncertain === true) return 'telegram_uncertain';
+  var gmailStatus = Number(error && error.gmailHttpStatus || 0);
+  if (gmailStatus === 401 || gmailStatus === 403) return 'gmail_auth_' + gmailStatus;
+  if (gmailStatus === 408 || gmailStatus === 425 || gmailStatus === 429) {
+    return 'gmail_retry_' + gmailStatus;
+  }
+  if (gmailStatus >= 500) return 'gmail_retry_5xx';
+  if (gmailStatus >= 400) return 'gmail_http_' + gmailStatus;
+  var telegramStatus = Number(error && error.telegramHttpStatus || 0);
+  if (telegramStatus === 401 || telegramStatus === 403) return 'telegram_auth';
+  if (telegramStatus === 408 || telegramStatus === 425 || telegramStatus === 429) {
+    return 'telegram_retry_' + telegramStatus;
+  }
+  if (telegramStatus >= 500) return 'telegram_retry_5xx';
+  if (telegramStatus >= 400) return 'telegram_http_' + telegramStatus;
+  var message = String(error && error.message || error || '').toLowerCase();
+  if (/quota|capacity|property store|too many|забагато|ліміт/.test(message)) return 'storage_capacity';
+  if (/lock|busy|already executing|виконується/.test(message)) return 'runtime_busy';
+  return 'runtime_error';
+}
+
+function gmailRuntimeFingerprint_(error) {
+  try {
+    var value = String(error && error.name || 'Error') + ':' +
+      String(error && error.message || error || 'unknown');
+    return bytesToHex_(Utilities.computeDigest(
+      Utilities.DigestAlgorithm.SHA_256,
+      value,
+      Utilities.Charset.UTF_8
+    )).slice(0, 12);
+  } catch (ignored) {
+    return 'unavailable';
+  }
+}
+
+function gmailRuntimeReadState_(propsValue) {
+  var props = propsValue || PropertiesService.getScriptProperties();
+  var state = {
+    version: 1,
+    candidate: GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_,
+    lastSuccessAt: 0,
+    lastSuccessStage: '',
+    lastFailureAt: 0,
+    lastFailureStage: '',
+    lastFailureCode: '',
+    lastFailureFingerprint: ''
+  };
+  try {
+    var parsed = JSON.parse(props.getProperty(GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_) || '{}');
+    if (!parsed || Number(parsed.version || 1) !== 1) return state;
+    state.lastSuccessAt = Math.max(0, Number(parsed.lastSuccessAt || 0));
+    state.lastSuccessStage = String(parsed.lastSuccessStage || '').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastFailureAt = Math.max(0, Number(parsed.lastFailureAt || 0));
+    state.lastFailureStage = String(parsed.lastFailureStage || '').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastFailureCode = String(parsed.lastFailureCode || '').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastFailureFingerprint = String(parsed.lastFailureFingerprint || '')
+      .replace(/[^a-f0-9]/g, '').slice(0, 12);
+  } catch (ignored) {}
+  return state;
+}
+
+function gmailRuntimeWriteState_(props, state) {
+  props.setProperty(GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_, JSON.stringify(state));
+}
+
+function recordGmailRuntimeFailure_(stage, error) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var state = gmailRuntimeReadState_(props);
+    state.lastFailureAt = Date.now();
+    state.lastFailureStage = String(stage || 'runtime').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastFailureCode = gmailRuntimeFailureCode_(error);
+    state.lastFailureFingerprint = gmailRuntimeFingerprint_(error);
+    gmailRuntimeWriteState_(props, state);
+  } catch (ignored) {}
+}
+
+function recordGmailRuntimeSuccess_(stage) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var state = gmailRuntimeReadState_(props);
+    state.lastSuccessAt = Date.now();
+    state.lastSuccessStage = String(stage || 'runtime').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    gmailRuntimeWriteState_(props, state);
+  } catch (ignored) {}
+}
+
+function gmailRuntimeStatusHtml_() {
+  var state = gmailRuntimeReadState_();
+  return '\n\n<b>Runtime guard</b>\n' +
+    'Кандидат: <code>' + escapeHtml_(state.candidate) + '</code>\n' +
+    'Останній успішний етап: <code>' + escapeHtml_(state.lastSuccessStage || 'немає') + '</code>\n' +
+    'Останній код збою: <code>' + escapeHtml_(state.lastFailureCode || 'немає') + '</code>\n' +
+    'Етап збою: <code>' + escapeHtml_(state.lastFailureStage || 'немає') + '</code>';
+}
+
+function serveGmailRuntimeStatus_(e) {
+  var props = PropertiesService.getScriptProperties();
+  var expected = String(props.getProperty('WEBHOOK_KEY') || '');
+  var supplied = String(e && e.parameter && e.parameter.key || '');
+  var allowed = expected && constantTimeEqual_(expected, supplied);
+  var payload = allowed ? {
+    ok: true,
+    product: 'Versie 1',
+    candidate: GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_,
+    runtime: gmailRuntimeReadState_(props)
+  } : { ok: false };
+  return ContentService.createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function gmailRealtimeQuarantinedIds_(scopedProps) {
@@ -768,12 +894,13 @@ function runRealtimeMailCheck_(source) {
       ];
     });
     function removeRetry(id) { delete retryMap[String(id)]; }
-    function scheduleRetry(id, error) {
+    function scheduleRetry(id, error, stage) {
       id = String(id || '');
       if (!id) return;
       var current = retryMap[id] || [id, 0, 0, now];
       var attempts = Number(current[1] || 0) + 1;
       state.lastErrorCode = gmailRealtimeErrorCode_(error);
+      recordGmailRuntimeFailure_(stage || 'realtime_delivery', error);
       if (attempts >= GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_) {
         delete retryMap[id];
         state.deadLetteredTotal += 1;
@@ -800,6 +927,7 @@ function runRealtimeMailCheck_(source) {
         removeRetry(id);
         return;
       }
+      var failureStage = 'gmail_get';
       try {
         var message = getGmailMessage_(id);
         var timestamp = Number(message && message.timestamp || 0);
@@ -811,16 +939,29 @@ function runRealtimeMailCheck_(source) {
           return;
         }
         if (enforceWindow && (timestamp < lower || timestamp >= upper)) return;
-        notifyMessage_(message, options);
+        failureStage = 'telegram_notify';
+        var notification = notifyMessage_(message, options);
+        if (notification && notification.uncertain) {
+          var uncertainError = new Error('Telegram delivery outcome is uncertain.');
+          uncertainError.telegramOutcomeUncertain = true;
+          result.uncertain += 1;
+          state.lastErrorCode = 'telegram_uncertain';
+          persistSeen(id);
+          removeRetry(id);
+          recordGmailRuntimeFailure_('telegram_notify', uncertainError);
+          return;
+        }
+        failureStage = 'realtime_state';
         persistSeen(id);
         removeRetry(id);
         result.delivered += 1;
         state.lastDeliveredAt = now;
         state.lastErrorCode = '';
+        recordGmailRuntimeSuccess_('realtime_delivery');
       } catch (error) {
         result.failed += 1;
         if (error && error.telegramOutcomeUncertain === true) result.uncertain += 1;
-        scheduleRetry(id, error);
+        scheduleRetry(id, error, failureStage);
       }
     }
     Object.keys(retryMap)
@@ -843,6 +984,7 @@ function runRealtimeMailCheck_(source) {
         state.watermarkMs = upper;
       } catch (error) {
         state.lastErrorCode = gmailRealtimeGmailErrorCode_(error);
+        recordGmailRuntimeFailure_('realtime_list', error);
         result.workerErrors += 1;
       }
     }
@@ -859,8 +1001,13 @@ function runRealtimeMailCheck_(source) {
     result.retryPending = retries.length;
     result.deadLetteredTotal = state.deadLetteredTotal;
     result.pending = Boolean(retries.length || state.pageOverflow);
-    persistRecentGmailNotificationIds_(scopedProps, new Set(seen));
-    rootProps.setProperty(stateKey, JSON.stringify(state));
+    try {
+      persistRecentGmailNotificationIds_(scopedProps, new Set(seen));
+      rootProps.setProperty(stateKey, JSON.stringify(state));
+    } catch (error) {
+      recordGmailRuntimeFailure_('realtime_state_persist', error);
+      throw error;
+    }
     return result;
   } finally {
     lock.releaseLock();
@@ -1547,10 +1694,14 @@ function runManualMailCheck_() {
     console.error('sendChatAction failed: ' + error);
   }
 
-  const result = mergeMailCheckResults_(mergeMailCheckResults_(realtimeResult, runMailCheck_('manual')), runSafeMultiAccountMailChecks_(5, { source: 'manual' }));
+  const result = mergeMailCheckResults_(
+    mergeMailCheckResults_(realtimeResult, runSafeLegacyMailCheck_('manual')),
+    runSafeMultiAccountMailChecks_(5, { source: 'manual' })
+  );
   const deadLettered = Math.max(0, Number(result.deadLettered || 0));
   const deadLetteredTotal = Math.max(0, Number(result.deadLetteredTotal || 0));
   const retryPending = Math.max(0, Number(result.retryPending || 0));
+  const workerErrors = Math.max(0, Number(result.workerErrors || 0));
   const deadLetterNotice = deadLetteredTotal
     ? '\nБез автоматичного повтору за весь час: <b>' + deadLetteredTotal +
       '</b>. Оригінали залишаються доступними у Gmail.'
@@ -1561,7 +1712,7 @@ function runManualMailCheck_() {
       null,
       systemTopicOptions_()
     );
-  } else if (result.failed > 0 || result.uncertain > 0 || deadLettered > 0) {
+  } else if (result.failed > 0 || result.uncertain > 0 || deadLettered > 0 || workerErrors > 0) {
     sendTelegramText_(
       '⚠️ <b>Gmail перевірено частково</b>\n\nДоставлено: <b>' + result.delivered +
       '</b>. Нові або повторні помилки доставки: <b>' + result.failed +
@@ -1570,10 +1721,11 @@ function runManualMailCheck_() {
         ? '\nПід час цієї перевірки автоматичні спроби остаточно вичерпано для: <b>' +
           deadLettered + '</b>.'
         : '') +
-      (result.uncertain
+       (result.uncertain
         ? '\nНевизначена відповідь Telegram: <b>' + result.uncertain +
-          '</b>. Бот не повторює їх автоматично, щоб не створити дублікати; оригінали доступні у Gmail.'
-        : '') +
+           '</b>. Бот не повторює їх автоматично, щоб не створити дублікати; оригінали доступні у Gmail.'
+         : '') +
+      (workerErrors ? '\nІзольовані помилки конекторів: <b>' + workerErrors + '</b>.' : '') +
       deadLetterNotice +
       (result.pending ? '\nЧерга наступних сторінок продовжиться автоматично.' : ''),
       replyKeyboard_(),
@@ -1671,7 +1823,9 @@ function doPost(e) {
           callbackAnswered = true;
         }
         completeTelegramUpdate_(update.update_id);
+        recordGmailRuntimeSuccess_('telegram_action');
       } catch (actionError) {
+        recordGmailRuntimeFailure_('telegram_action', actionError);
         console.error('Telegram action failed: ' +
           (actionError && actionError.stack ? actionError.stack : actionError));
         failTelegramUpdate_(update.update_id, actionError);
@@ -1696,6 +1850,7 @@ function doPost(e) {
       }
     }
   } catch (error) {
+    recordGmailRuntimeFailure_('webhook', error);
     console.error('Webhook error: ' + (error && error.stack ? error.stack : error));
   }
   return webhookOk_();
@@ -1704,6 +1859,9 @@ function doPost(e) {
 function doGet(e) {
   const action = String((e && e.parameter && e.parameter.action) || 'menu');
   const view = String((e && e.parameter && e.parameter.view) || '');
+  if (action === 'runtime_status') {
+    return serveGmailRuntimeStatus_(e);
+  }
   if (action === 'gmail_oauth_start') {
     return serveGoogleOAuthStart_(e);
   }
@@ -9364,7 +9522,8 @@ function sendBotStatus_() {
         ? ' — автоматичні спроби вичерпано; перевірте Gmail і Telegram'
         : '') + '\n' +
     'Усього зафіксовано таких переміщень: <b>' + abandonedMoves.total + '</b>\n' +
-    'Зараз без звуку: <b>' + (isQuietHours_() ? 'так' : 'ні') + '</b>' + gmailRealtimeStatusHtml_(),
+    'Зараз без звуку: <b>' + (isQuietHours_() ? 'так' : 'ні') + '</b>' +
+      gmailRealtimeStatusHtml_() + gmailRuntimeStatusHtml_(),
     inlineControlMenu_(),
     systemTopicOptions_()
   );

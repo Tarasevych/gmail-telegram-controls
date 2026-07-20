@@ -6,8 +6,9 @@ const crypto = require('node:crypto');
 
 const root = path.resolve(__dirname, '..');
 const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260719.ps1'), 'utf8');
+const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
-  Code: 'd28a6eda436bb461f832526160c6770c4d64237547e8bdac810a6c1b877511d2',
+  Code: '6544e6b066966dd83c0dedc7f0b624bafaa176c6eba60083c800b6742298d8d7',
   MultiAccount: '80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc',
   MailClient: 'f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7',
   MailApp: 'c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b',
@@ -18,21 +19,33 @@ function hash(name, extension) {
   return crypto.createHash('sha256').update(source, 'utf8').digest('hex');
 }
 
-test('Versie 1 helper pins stable v42 rollback and immutable v44 candidate', () => {
+test('Versie 1 helper pins stable v42 rollback and immutable v45 candidate', () => {
   assert.match(helper, /\$RollbackVersion = 42/);
-  assert.match(helper, /\$LegacyStagingVersion = 43/);
-  assert.match(helper, /\$CandidateVersion = 44/);
-  assert.match(helper, /Versie 1 \(2026-07-20\): realtime legacy-context repair/);
+  assert.match(helper, /\$LegacyStagingVersion = 44/);
+  assert.match(helper, /\$CandidateVersion = 45/);
+  assert.match(helper, /Versie 1 \(2026-07-20\): runtime-isolated realtime delivery/);
+  assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) runtime-isolated realtime delivery staging/);
   assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) realtime legacy-context repair staging/);
-  assert.match(helper, /Telegram Gmail Versie 1 \(2026-07-20\) realtime multi-account delivery staging/);
   assert.match(helper, /\$ExpectedRollbackHashes = @\{[\s\S]*Code='a23e4052264aeb70de54786aafe953d8d6c4f38133f857307b07190ff79df8c9'/);
-  assert.match(helper, /\$ExpectedLegacyStagingHashes = @\{[\s\S]*Code='4139f3645136f8afea014c6c3e6ea241b584981a61c85b36df8b1a665cf22f8d'/);
+  assert.match(helper, /\$ExpectedLegacyStagingHashes = @\{[\s\S]*Code='d28a6eda436bb461f832526160c6770c4d64237547e8bdac810a6c1b877511d2'/);
   assert.match(helper, /\$ExpectedRollbackHeadDriftHashes = @\{[\s\S]*Code='4703fae2d71c1959451f67a4fea49e46d84cc8f3be798b9d67995f5bb31bb84e'/);
   assert.match(helper, /stable_v\$\{RollbackVersion\}_whitespace_drift/);
   assert.match(helper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v42/);
-  assert.match(helper, /versie-001-20260720-v44-release\.json/);
-  assert.match(helper, /TarasevychGmailNotifierVersie00120260720V44Release/);
+  assert.match(helper, /versie-001-20260720-v45-release\.json/);
+  assert.match(helper, /TarasevychGmailNotifierVersie00120260720V45Release/);
   assert.match(helper, /Invoke-GoogleJson DELETE .*legacyStaging/);
+});
+
+test('Versie 1 v45 isolates frozen failures and exposes only protected sanitized runtime evidence', () => {
+  assert.match(code, /function runSafeLegacyMailCheck_\(source\)/);
+  assert.match(code, /recordGmailRuntimeFailure_\('legacy_scan', error\)/);
+  assert.match(code, /runSafeLegacyMailCheck_\('manual'\)/);
+  assert.match(code, /var failureStage = 'gmail_get'/);
+  assert.match(code, /failureStage = 'telegram_notify'/);
+  assert.match(code, /action === 'runtime_status'/);
+  assert.match(code, /constantTimeEqual_\(expected, supplied\)/);
+  assert.match(code, /lastFailureFingerprint/);
+  assert.doesNotMatch(code, /lastFailureMessage/);
 });
 
 test('Versie 1 candidate hashes match the current source bundle', () => {
