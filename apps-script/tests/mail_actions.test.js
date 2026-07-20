@@ -1552,6 +1552,8 @@ test('timer retry replays a stored failed update and marks it complete', () => {
 test('the first native webhook setup drops stale updates and later setups preserve fresh ones', () => {
   const store = { CHAT_ID: '123', BOT_TOKEN: 'token' };
   const setWebhookCalls = [];
+  const setCommandCalls = [];
+  const setMenuCalls = [];
   let failAfterWebhook = true;
   const originals = {
     PropertiesService: context.PropertiesService,
@@ -1573,7 +1575,9 @@ test('the first native webhook setup drops stale updates and later setups preser
     context.ensureWebhookKey_ = () => 'webhook-secret';
     context.telegramRequest_ = (method, payload) => {
       if (method === 'setWebhook') setWebhookCalls.push(payload);
-      if (method === 'deleteMyCommands' && failAfterWebhook) {
+      if (method === 'setMyCommands') setCommandCalls.push(payload);
+      if (method === 'setChatMenuButton') setMenuCalls.push(payload);
+      if (method === 'setMyCommands' && failAfterWebhook) {
         failAfterWebhook = false;
         throw new Error('temporary post-webhook failure');
       }
@@ -1593,6 +1597,13 @@ test('the first native webhook setup drops stale updates and later setups preser
     assert.equal(webhookUrl.searchParams.get('key'), 'webhook-secret');
     assert.equal(webhookUrl.searchParams.get('rev'), code.match(/WEBHOOK_REVISION:\s*'([^']+)'/)[1]);
     assert.equal(store.NATIVE_CALLBACK_WEBHOOK_READY, '1');
+    assert.equal(setCommandCalls.length, 3);
+    const commands = JSON.parse(setCommandCalls[setCommandCalls.length - 1].commands);
+    assert.ok(commands.some(item => item.command === 'settings'));
+    assert.equal(setMenuCalls.length, 2);
+    setMenuCalls.forEach(call => {
+      assert.deepEqual(JSON.parse(call.menu_button), { type: 'commands' });
+    });
   } finally {
     Object.assign(context, originals);
   }
@@ -6190,6 +6201,39 @@ test('active reminder capacity is isolated per Telegram user and Gmail connectio
       /забагато активних/);
     assert.equal(context.mailReminderWriteLocked_(props, record(26, 'gmail-active-b')).connectionId,
       'gmail-active-b');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('owner settings use chat-native controls instead of the Apps Script Mini App', () => {
+  const originals = {
+    mailboxOwnerId_: context.mailboxOwnerId_,
+    sendSettingsMenu_: context.sendSettingsMenu_,
+  };
+  const calls = [];
+  try {
+    context.mailboxOwnerId_ = () => '123';
+    context.sendSettingsMenu_ = (userId, chatId, page) => {
+      calls.push({ userId, chatId, page });
+      return { message: 'Налаштування Gmail оновлено' };
+    };
+    const commandResult = context.routeTelegramUpdate_({
+      message: { text: '/settings', chat: { id: 123 } },
+    });
+    const textResult = context.routeTelegramUpdate_({
+      message: { text: '⚙️ Gmail-акаунти', chat: { id: 123 } },
+    });
+    assert.equal(commandResult.message, 'Налаштування Gmail оновлено');
+    assert.equal(textResult.message, 'Налаштування Gmail оновлено');
+    assert.deepEqual(calls, [
+      { userId: '123', chatId: '123', page: undefined },
+      { userId: '123', chatId: '123', page: undefined },
+    ]);
+    const keyboard = JSON.parse(context.replyKeyboard_());
+    const buttons = keyboard.keyboard.flat();
+    assert.ok(buttons.some(button => button.text === '⚙️ Gmail-акаунти'));
+    assert.equal(buttons.some(button => button.web_app), false);
   } finally {
     Object.assign(context, originals);
   }

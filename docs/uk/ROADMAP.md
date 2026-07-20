@@ -9,11 +9,11 @@
 | B1-03 | Виконано локально | Дедуплікація owner mailbox, avatar, прямий OAuth старт, stale account count | локальні контракти пройшли |
 | B1-04 | Виконано локально | Neutral GitHub OAuth callback із credentialless POST до Apps Script | query очищається до передачі; one-use user/chat/zone state; Google multi-login cookies не надсилаються |
 | B1-05 | Виконано | Зберегти новий redirect URI в Google OAuth client | `OAuth client saved`; точний URI прочитано назад |
-| B1-06 | В роботі | Створити Apps Script immutable v41 із credentialless relay receiver; замінити лише точний v40 staging | один точний v41 staging, stable v37 не змінено до acceptance |
-| B1-07 | Ручний gate | Додати контрольний Gmail-акаунт через новий flow | власник проходить account choice/consent; callback success |
-| B1-08 | Заплановано | Повний real-time acceptance у `@TarasevychGmailNotifierBot` | функціональний журнал без дублювання й zone mix |
-| B1-09 | Заплановано | Promote Versie 1, cleanup, production menu | stable v39, staging 0, menu `📬 Пошта · Versie 1` |
-| B1-10 | Заплановано | Оновити UK/EN docs, commit, tag, release branch | `versie-001-2026-07-19` і `release/versie-001-2026-07-19` |
+| B1-06 | Виконано | Credentialless OAuth relay та послідовні immutable v41/v42 | stable v42, staging 0, точний v41 rollback |
+| B1-07 | Ручний gate активний | Додати контрольний Gmail-акаунт через новий flow | production дійшов до Google «додаток не перевірено»; власник підтверджує consent для правильного акаунта |
+| B1-08 | В роботі | Повний real-time acceptance у `@TarasevychGmailNotifierBot` | menu та /settings перевірені; callback success і контрольний лист без дубля ще не доведені |
+| B1-09 | Виконано | Promote, cleanup, production command menu | stable v42, staging 0, setup execution completed |
+| B1-10 | В роботі | Оновити UK/EN docs, commit і push | v42 evidence готується у поточній Versie 1; tag/release branch лише після B1-07/B1-08 |
 
 ## Правило руху
 

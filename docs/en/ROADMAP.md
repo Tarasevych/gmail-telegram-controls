@@ -9,11 +9,11 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-03 | Completed locally | Owner mailbox dedupe, avatar, direct OAuth start, stale account count | local contracts pass |
 | B1-04 | Completed locally | Neutral GitHub OAuth callback with a credentialless POST to Apps Script | query cleared before transfer; one-use user/chat/zone state; Google multi-login cookies omitted |
 | B1-05 | Completed | Save the new redirect URI in the Google OAuth client | `OAuth client saved`; exact URI read back |
-| B1-06 | In progress | Create Apps Script immutable v41 with the credentialless relay receiver; replace only the exact v40 staging | one exact v41 staging; stable v37 unchanged before acceptance |
-| B1-07 | Manual gate | Add a controlled Gmail account through the new flow | owner completes account choice/consent; callback succeeds |
-| B1-08 | Planned | Full real-time acceptance in `@TarasevychGmailNotifierBot` | functional log shows no duplication or zone mixing |
-| B1-09 | Planned | Promote Versie 1, clean up, restore production menu | stable v39, staging 0, menu `📬 Пошта · Versie 1` |
-| B1-10 | Planned | Update UK/EN docs, commit, tag, release branch | `versie-001-2026-07-19` and `release/versie-001-2026-07-19` |
+| B1-06 | Completed | Credentialless OAuth relay and sequential immutable v41/v42 | stable v42, staging 0, exact v41 rollback |
+| B1-07 | Manual gate active | Add a controlled Gmail account through the new flow | production reached Google “app not verified”; owner confirms consent for the intended account |
+| B1-08 | In progress | Full real-time acceptance in `@TarasevychGmailNotifierBot` | menu and /settings verified; callback success and one-card controlled mail test remain |
+| B1-09 | Completed | Promote, clean up, and install the production command menu | stable v42, staging 0, setup execution completed |
+| B1-10 | In progress | Update UK/EN docs, commit, and push | v42 evidence is being published in Versie 1; tag/release branch wait for B1-07/B1-08 |
 
 ## Movement rule
 

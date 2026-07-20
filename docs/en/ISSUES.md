@@ -17,6 +17,20 @@ Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-011 | Resolved locally | 1 | Telegram settings lacked native one-click Gmail account switching | Added user/zone-bound callback buttons, a short OAuth launcher, and automatic menu refresh after callback; staging/readback remains |
 | GT-012 | Resolved locally | 1 | A signed-in Google session rewrites the Apps Script web-app URL to `/macros/u/N/` and returns Drive “file not found” | The browser callback no longer navigates to Apps Script: the relay clears the query and sends one-use data with `fetch(mode:no-cors, credentials:omit)` |
 
+| GT-013 | Verified in production | 1 | The owner /settings command fell through to the fallback and did not show Gmail accounts | Production v42 routes /settings and the Gmail accounts button to native Telegram controls |
+| GT-014 | Verified in production | 1 | The Telegram menu web_app opened Apps Script in a signed-in Google session and repeated the Drive error | The menu now uses commands; production setup completed and the account flow no longer enters the Apps Script Mini App |
+| GT-015 | Open, no data mutation | 1 | Two connection records for the same owner Gmail appear as separate buttons | Do not delete or merge records automatically; add account-zone display dedupe after factual identity verification |
+| GT-016 | Platform constraint | 1 | Telegram Web shows its standard Open Link warning before external Google OAuth | The product-owned extra Continue with Google step is gone; do not bypass Telegram security UI |
+| GT-017 | Open | 1 | Legacy “Open thread in Mini App” mail buttons can still reach the Apps Script Drive error in multi-login Chrome | Account/OAuth is now chat-native; the full Mini App requires a neutral response-capable backend or replacement of legacy deep links |
+
+## Production evidence 2026-07-20
+
+- Apps Script stable: v42; staging: 0; immutable v41 remains the rollback.
+- Local tests: 418/418.
+- setupTelegramControls completed in the Apps Script editor; Telegram now exposes a command menu.
+- Production /settings showed isolated Gmail accounts, one-click callbacks, and the direct GitHub OAuth launcher.
+- The real OAuth flow reached the new Google consent gate; consent was not accepted, so callback success remains unproven.
+
 ## Update procedure
 
 1. Add a new problem once using the next `GT-*` ID.

@@ -83,11 +83,11 @@ const CONFIG = Object.freeze({
   GMAIL_ACCOUNT: 'tarasevych.pavlo@gmail.com',
   WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec',
   CONTROL_PAGE_URL: 'https://tarasevych.github.io/gmail-telegram-controls/',
-  CONTROL_PAGE_REVISION: 'versie-001-20260720-oauth-relay2',
+  CONTROL_PAGE_REVISION: 'versie-001-20260720-native-accounts',
   // Apps Script can retain a warm doPost runtime for an unchanged deployment
   // URL. Bump this with each backend release so Telegram reaches the deployed
   // code instead of generating mail cards from an older runtime.
-  WEBHOOK_REVISION: '20260720-02',
+  WEBHOOK_REVISION: '20260720-03',
   QUIET_HOURS_START: 22,
   QUIET_HOURS_END: 8,
 });
@@ -99,9 +99,11 @@ const BOT_UI = Object.freeze({
   FOLDERS_TEXT: '📂 Папки',
   BROWSE_TEXT: '📬 Листи в чаті',
   FOCUS_TEXT: '🎯 Пріоритети',
+  SETTINGS_TEXT: '⚙️ Gmail-акаунти',
   CHECK_ACTION: 'mail.check',
   STATUS_ACTION: 'mail.status',
   SETTINGS_ACTION: 'mail.settings',
+  SETTINGS_PAGE_PREFIX: 'gp.',
   ACCOUNT_PREFIX: 'ga.',
   HELP_ACTION: 'mail.help',
   FOLDERS_ACTION: 'mail.folders',
@@ -437,16 +439,26 @@ function setupTelegramControls_() {
   // failure must not make a retry drop fresh owner commands or callbacks again.
   props.setProperty('WEBHOOK_URL', webhookUrl);
   props.setProperty('NATIVE_CALLBACK_WEBHOOK_READY', '1');
-  telegramRequest_('deleteMyCommands', {
+  const commands = JSON.stringify([
+    { command: 'mail', description: 'Листи в Telegram' },
+    { command: 'settings', description: 'Gmail-акаунти' },
+    { command: 'focus', description: 'Правила пріоритетів' },
+    { command: 'check', description: 'Перевірити пошту зараз' },
+    { command: 'status', description: 'Статус сервісу' },
+    { command: 'folders', description: 'Папки й мітки' },
+    { command: 'help', description: 'Можливості бота' },
+  ]);
+  telegramRequest_('setMyCommands', { commands });
+  telegramRequest_('setMyCommands', {
+    commands,
     scope: JSON.stringify({ type: 'chat', chat_id: chatId }),
   });
   telegramRequest_('setChatMenuButton', {
+    menu_button: JSON.stringify({ type: 'commands' }),
+  });
+  telegramRequest_('setChatMenuButton', {
     chat_id: chatId,
-    menu_button: JSON.stringify({
-      type: 'web_app',
-      text: '📬 Пошта',
-      web_app: { url: mailboxAppUrl_() },
-    }),
+    menu_button: JSON.stringify({ type: 'commands' }),
   });
 
   // Telegram topics are optional until Threaded Mode is enabled in BotFather.
@@ -455,8 +467,8 @@ function setupTelegramControls_() {
 
   sendTelegramText_(
     '<b>📬 Керування Gmail увімкнено</b>\n\n' +
-    'Кнопка <b>«Перевірити пошту зараз»</b> доступна під полем введення. ' +
-    'Вона запускає захищену перевірку одразу, не очікуючи хвилинного таймера.',
+    'Кнопки доступні під полем введення, а <b>☰ Меню</b> відкриває команди. ' +
+    'Перевірка пошти запускається захищено, без очікування хвилинного таймера.',
     replyKeyboard_(),
     systemTopicOptions_()
   );
@@ -2201,7 +2213,6 @@ function routeTenantBootstrapUpdate_(update, userId) {
       'Підключіть один або кілька Gmail-акаунтів. Кожна скринька ізольована вашим Telegram ID; ' +
       'пароль вводиться лише на сторінці Google.',
       JSON.stringify({ inline_keyboard: [
-        [{ text: '📬 Відкрити мою пошту', web_app: { url: mailboxBootstrapUrl_() } }],
         [{ text: '⚙️ Мої Gmail-акаунти', callback_data: BOT_UI.SETTINGS_ACTION }],
       ] }),
       { chatId: userId, silent: false }
@@ -2215,9 +2226,10 @@ function routeTenantUpdate_(update, userId) {
   const callback = update && update.callback_query;
   const data = String(callback && callback.data || '');
   const text = String(update && update.message && update.message.text || '').trim();
-  if ((callback && data === BOT_UI.SETTINGS_ACTION) ||
-      (!callback && /^\/settings(?:@\w+)?$/i.test(text))) {
-    const result = sendSettingsMenu_(userId, userId);
+  const settingsPage = callback ? parseTelegramGmailSettingsPageCallback_(data) : null;
+  if ((callback && data === BOT_UI.SETTINGS_ACTION) || settingsPage ||
+      (!callback && (text === BOT_UI.SETTINGS_TEXT || /^\/settings(?:@\w+)?$/i.test(text)))) {
+    const result = sendSettingsMenu_(userId, userId, settingsPage ? settingsPage.page : 0);
     if (callback) answerTelegramCallback_(callback.id, 'Налаштування оновлено');
     return result;
   }
@@ -3024,8 +3036,9 @@ function durableTelegramUpdatePayload_(update) {
 function durableTelegramCommandText_(value) {
   const text = String(value || '').trim();
   if (text === BOT_UI.CHECK_TEXT || text === BOT_UI.STATUS_TEXT || text === BOT_UI.MENU_TEXT ||
+      text === BOT_UI.SETTINGS_TEXT ||
       text === BOT_UI.FOLDERS_TEXT || text === BOT_UI.BROWSE_TEXT ||
-      /^\/(?:check|status|start|menu|folders|help)(?:@\w+)?$/i.test(text)) {
+      /^\/(?:check|status|settings|start|menu|folders|help)(?:@\w+)?$/i.test(text)) {
     return text.slice(0, 100);
   }
   if (/^\/mail(?:@\w+)?(?:\s|$)/i.test(text) && text.length <= 500 &&
@@ -3969,6 +3982,14 @@ function routeTelegramUpdate_(update) {
     if (action === BOT_UI.CHECK_ACTION) return runManualMailCheck_();
     if (action === BOT_UI.STATUS_ACTION) return sendBotStatus_();
     if (action === BOT_UI.SETTINGS_ACTION) return sendSettingsMenu_(mailboxOwnerId_(), telegramCallbackChatId_(update.callback_query.message));
+    const settingsPage = parseTelegramGmailSettingsPageCallback_(action);
+    if (settingsPage) {
+      return sendSettingsMenu_(
+        mailboxOwnerId_(),
+        telegramCallbackChatId_(update.callback_query.message),
+        settingsPage.page
+      );
+    }
     const accountSwitch = parseTelegramGmailAccountCallback_(action);
     if (accountSwitch) {
       return switchTelegramGmailAccount_(
@@ -4071,6 +4092,12 @@ function routeTelegramUpdate_(update) {
   }
   if (text === BOT_UI.STATUS_TEXT || /^\/status(?:@\w+)?$/i.test(text)) {
     return sendBotStatus_();
+  }
+  if (text === BOT_UI.SETTINGS_TEXT || /^\/settings(?:@\w+)?$/i.test(text)) {
+    return sendSettingsMenu_(
+      mailboxOwnerId_(),
+      String(update.message && update.message.chat && update.message.chat.id || mailboxOwnerId_())
+    );
   }
   if (text === BOT_UI.MENU_TEXT || /^\/(?:start|menu)(?:@\w+)?$/i.test(text)) {
     return sendControlMenu_();
@@ -7621,6 +7648,7 @@ function replyKeyboard_() {
       [{ text: BOT_UI.CHECK_TEXT }],
       [{ text: BOT_UI.BROWSE_TEXT }],
       [{ text: BOT_UI.FOCUS_TEXT }],
+      [{ text: BOT_UI.SETTINGS_TEXT }],
       [
         { text: BOT_UI.STATUS_TEXT },
         { text: BOT_UI.MENU_TEXT },
@@ -8748,7 +8776,7 @@ function inlineControlMenu_() {
   return JSON.stringify({
     inline_keyboard: [
       [{ text: '📬 Листи в цьому чаті', callback_data: BOT_UI.BROWSE_ACTION }],
-      [{ text: '🧩 Повний поштовий клієнт', web_app: { url: mailboxAppUrl_() } }],
+      [{ text: '⚙️ Gmail-акаунти', callback_data: BOT_UI.SETTINGS_ACTION }],
       [{ text: '📂 Папки, мітки й стани', callback_data: BOT_UI.FOLDERS_ACTION }],
       [{ text: '🔄 Перевірити зараз', callback_data: BOT_UI.CHECK_ACTION }],
       [
@@ -8825,6 +8853,22 @@ function telegramGmailAccountCallbackData_(connectionIdValue) {
   return value;
 }
 
+function telegramGmailSettingsPageCallbackData_(pageValue) {
+  const page = Math.max(0, Math.floor(Number(pageValue) || 0));
+  const value = BOT_UI.SETTINGS_PAGE_PREFIX + page.toString(36);
+  if (value.length > 64) throw new Error('Telegram settings page callback exceeds 64 bytes.');
+  return value;
+}
+
+function parseTelegramGmailSettingsPageCallback_(value) {
+  const text = String(value || '');
+  if (text.indexOf(BOT_UI.SETTINGS_PAGE_PREFIX) !== 0) return null;
+  const encoded = text.slice(BOT_UI.SETTINGS_PAGE_PREFIX.length);
+  if (!/^[0-9a-z]{1,4}$/.test(encoded)) return null;
+  const page = parseInt(encoded, 36);
+  return Number.isFinite(page) && page >= 0 ? { page } : null;
+}
+
 function parseTelegramGmailAccountCallback_(value) {
   const text = String(value || '');
   if (text.indexOf(BOT_UI.ACCOUNT_PREFIX) !== 0) return null;
@@ -8846,7 +8890,7 @@ function switchTelegramGmailAccount_(userIdValue, chatIdValue, connectionIdValue
   return { message: 'Активна Gmail: ' + String(selected.connection.email || selected.connection.displayName || 'Gmail') };
 }
 
-function sendSettingsMenu_(userIdValue, chatIdValue) {
+function sendSettingsMenu_(userIdValue, chatIdValue, pageValue) {
   const userId = String(userIdValue || mailboxOwnerId_());
   const chatId = String(chatIdValue || userId);
   if (!/^\d{1,24}$/.test(userId) || !/^-?\d{1,24}$/.test(chatId)) {
@@ -8858,13 +8902,17 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
     connectionId: principal.connectionId,
   }, principal.registry).filter(item => item.connected);
   const active = accounts.find(item => item.id === principal.connectionId) || null;
+  const pageSize = 8;
+  const pageCount = Math.max(1, Math.ceil(accounts.length / pageSize));
+  const page = Math.min(pageCount - 1, Math.max(0, Math.floor(Number(pageValue) || 0)));
+  const pageAccounts = accounts.slice(page * pageSize, (page + 1) * pageSize);
   let googleStart = null;
   try {
     googleStart = mailboxGoogleConnectStart_({}, principal);
   } catch (error) {
     console.error('Direct Gmail OAuth launcher unavailable: ' + String(error && error.message || error));
   }
-  const accountLines = accounts.slice(0, 12).map(account => {
+  const accountLines = pageAccounts.map(account => {
     const sync = typeof mailboxMetadataSyncPublicStatus_ === 'function'
       ? mailboxMetadataSyncPublicStatus_(account.id, '')
       : { state: 'pending', lastCheckedAt: 0 };
@@ -8875,7 +8923,7 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
       '<b>' + escapeHtml_(account.email || account.name || 'Gmail') + '</b> · ' +
       telegramMetadataSyncStatusLabel_(sync) + checked;
   });
-  if (accounts.length > 12) accountLines.push('…ще ' + (accounts.length - 12) + ' акаунтів у Mini App');
+  if (pageCount > 1) accountLines.push('<i>Сторінка ' + (page + 1) + ' з ' + pageCount + ' · усього ' + accounts.length + ' акаунтів</i>');
   const text = '<b>⚙️ Налаштування Gmail</b>\n\n' +
     (active
       ? 'Активна скринька: <b>' + escapeHtml_(active.email || active.name || 'Gmail') + '</b>\n'
@@ -8885,16 +8933,24 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
     '\n\n🌙 Сповіщення без звуку: <b>22:00–08:00</b>\n' +
     '🎯 Правила пріоритетів: команда <code>/focus</code>\n' +
     '🔄 Мітки, send-as і підтримувані налаштування перевіряються окремо для кожної скриньки.';
-  const keyboard = accounts.slice(0, 12).map(account => [{
+  const keyboard = pageAccounts.map(account => [{
     text: (account.id === principal.connectionId ? '✅ ' : '▫️ ') +
       String(account.email || account.name || 'Gmail').slice(0, 48),
     callback_data: telegramGmailAccountCallbackData_(account.id),
   }]);
+  const navigation = [];
+  if (page > 0) {
+    navigation.push({ text: '⬅️ Попередні', callback_data: telegramGmailSettingsPageCallbackData_(page - 1) });
+  }
+  if (page + 1 < pageCount) {
+    navigation.push({ text: 'Наступні ➡️', callback_data: telegramGmailSettingsPageCallbackData_(page + 1) });
+  }
+  if (navigation.length) keyboard.push(navigation);
   if (googleStart && /^https:\/\/tarasevych\.github\.io\/gmail-telegram-controls\/gmail-oauth-callback\.html\?start=1&state=[A-Za-z0-9_-]{43}&client=[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(String(googleStart.launchUrl || ''))) {
     keyboard.push([{ text: '＋ Додати Gmail-акаунт', url: googleStart.launchUrl }]);
   }
   keyboard.push(
-    [{ text: '🧩 Відкрити поштовий клієнт', web_app: { url: mailboxBootstrapUrl_() } }],
+    [{ text: '📬 Листи в чаті', callback_data: BOT_UI.BROWSE_ACTION }],
     [{ text: '🔄 Оновити стан', callback_data: BOT_UI.SETTINGS_ACTION }]
   );
   sendTelegramText_(
@@ -11917,4 +11973,9 @@ function requireSetting_(props, key) {
   const value = props.getProperty(key);
   if (!value) throw new Error('Script Property ' + key + ' is missing.');
   return value;
+}
+
+function setupTelegramControls() {
+  setupTelegramControls_();
+  return { ok: true, menu: 'commands', revision: CONFIG.WEBHOOK_REVISION };
 }

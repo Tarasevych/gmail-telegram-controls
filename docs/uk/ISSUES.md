@@ -17,6 +17,20 @@
 | GT-011 | Вирішена локально | 1 | Telegram settings не мали нативного one-click перемикання між Gmail-акаунтами | Додано user/zone-bound callback-кнопки, короткий OAuth launcher та автоматичне оновлення меню після callback; потрібен staging/readback |
 | GT-012 | Вирішена локально | 1 | Підписана Google-сесія переписує Apps Script web-app URL у `/macros/u/N/` і повертає Drive “файл не знайдено” | Browser callback більше не навігується на Apps Script: relay стирає query та надсилає одноразові дані через `fetch(mode:no-cors, credentials:omit)` |
 
+| GT-013 | Перевірена production | 1 | Owner-команда /settings потрапляла у fallback і не показувала Gmail-акаунти | Production v42 маршрутизує /settings і кнопку Gmail-акаунтів у нативне Telegram-меню |
+| GT-014 | Перевірена production | 1 | Telegram menu web_app відкривав Apps Script у підписаній Google-сесії та повторював Drive error | Menu переведено на commands; production setup завершився, account flow більше не входить в Apps Script Mini App |
+| GT-015 | Відкрита, без мутації даних | 1 | Два connection records тієї самої owner Gmail показуються окремими кнопками | Не видаляти й не зливати записи автоматично; додати account-zone display dedupe після factual identity check |
+| GT-016 | Обмеження платформи | 1 | Telegram Web показує стандартний Open Link перед зовнішнім Google OAuth | Власний зайвий Continue with Google усунуто; системне попередження Telegram не обходити |
+| GT-017 | Відкрита | 1 | Старі кнопки листів «Відкрити гілку в Mini App» ще можуть відкрити Apps Script Drive error у multi-login Chrome | Account/OAuth flow вже chat-native; повний Mini App потребує нейтрального response-capable backend або заміни legacy deep links |
+
+## Production-доказ 2026-07-20
+
+- Apps Script stable: v42; staging: 0; immutable v41 збережено як rollback.
+- Локальні тести: 418/418.
+- setupTelegramControls завершився в Apps Script editor; Telegram menu став command-menu.
+- Production /settings показав ізольовані Gmail-акаунти, one-click callbacks і прямий GitHub OAuth launcher.
+- Реальний OAuth дійшов до нового Google consent gate; consent не підтверджено, callback success ще не доведено.
+
 ## Як оновлювати
 
 1. Нову проблему додати один раз із наступним `GT-*` ID.

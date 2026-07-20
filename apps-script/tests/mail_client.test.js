@@ -7148,10 +7148,16 @@ test('Telegram settings expose only the requesting user Gmail zone and exact per
   const buttons = JSON.parse(deliveries[0].markup).inline_keyboard.flat();
   const secondButton = buttons.find(button => button.callback_data === 'ga.gmail-other-second');
   const addButton = buttons.find(button => button.text === '＋ Додати Gmail-акаунт');
+  const nativeMailButton = buttons.find(button => button.text === '📬 Листи в чаті');
   assert.ok(secondButton, 'every visible sibling Gmail must have a native Telegram switch button');
+  assert.equal(nativeMailButton.callback_data, 'mail.browse');
+  assert.equal(buttons.some(button => button.web_app), false,
+    'account management must not enter an Apps Script webview');
   assert.match(addButton.url,
     /^https:\/\/tarasevych\.github\.io\/gmail-telegram-controls\/gmail-oauth-callback\.html\?start=1&state=[A-Za-z0-9_-]{43}&client=123456789-unit-test\.apps\.googleusercontent\.com$/);
   const parsed = harness.context.parseTelegramGmailAccountCallback_(secondButton.callback_data);
+  assert.deepEqual({ ...harness.context.parseTelegramGmailSettingsPageCallback_('gp.a') }, { page: 10 });
+  assert.equal(harness.context.parseTelegramGmailSettingsPageCallback_('gp.!'), null);
   const switched = harness.context.switchTelegramGmailAccount_(otherUserId, otherUserId, parsed.connectionId);
   assert.equal(switched.message, 'Активна Gmail: other-second@example.com');
   const switchedRegistry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1);
