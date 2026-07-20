@@ -3069,6 +3069,51 @@ test('mail-card delivery hard limit counts reservations and cancellation release
   }
 });
 
+test('mail-card delivery compacts duplicate and missing index keys before enforcing the hard limit', () => {
+  const memory = memoryProperties({ CHAT_ID: '123' });
+  const originals = {
+    PropertiesService: context.PropertiesService,
+    LockService: context.LockService,
+  };
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    const live = context.reserveTelegramMailCardDelivery_({
+      gmailMessageId: 'live_card_before_compaction',
+      gmailThreadId: 'live_thread_before_compaction',
+      messageThreadId: 101,
+      topic: 'inbox',
+      replyMarkup: '{}',
+    });
+    const liveRecord = memory.store[live.propertyKey];
+    const ghostKeys = Array.from(
+      { length: 90 },
+      (_, index) => `TELEGRAM_MAIL_CARD_GHOST_${String(index).padStart(3, '0')}`
+    );
+    memory.store.TELEGRAM_MAIL_CARD_INDEX = JSON.stringify([
+      live.propertyKey,
+      live.propertyKey,
+      ...ghostKeys,
+    ]);
+
+    const next = context.reserveTelegramMailCardDelivery_({
+      gmailMessageId: 'card_after_compaction',
+      gmailThreadId: 'thread_after_compaction',
+      messageThreadId: 101,
+      topic: 'inbox',
+      replyMarkup: '{}',
+    });
+
+    assert.deepEqual(
+      JSON.parse(memory.store.TELEGRAM_MAIL_CARD_INDEX),
+      [live.propertyKey, next.propertyKey]
+    );
+    assert.equal(memory.store[live.propertyKey], liveRecord, 'live card record must remain byte-identical');
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
 test('mail-card promotion failure deletes the sent Telegram card and releases its reservation', () => {
   const gmailMessageId = 'promotion12345';
   const memory = memoryProperties({ CHAT_ID: '123' });

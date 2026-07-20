@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v45';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v47';
 
 function emptyMailCheckResult_() {
   return {
@@ -867,6 +867,13 @@ function serveGmailRuntimeProbe_(e) {
     return ContentService.createTextOutput(JSON.stringify({ ok: false }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  var capacityBefore = telegramMailCardCapacitySnapshot_();
+  var compaction = { keys: [], removedDuplicate: 0, removedMissing: 0 };
+  try {
+    compaction = compactTelegramMailCardIndex_();
+  } catch (error) {
+    recordGmailRuntimeFailure_('realtime_card_index', error);
+  }
   var result;
   try {
     result = runRealtimeMailChecks_('probe', 5) || emptyMailCheckResult_();
@@ -888,6 +895,12 @@ function serveGmailRuntimeProbe_(e) {
       deadLettered: Math.max(0, Number(result.deadLettered || 0)),
       workerErrors: Math.max(0, Number(result.workerErrors || 0)),
       pending: Boolean(result.pending)
+    },
+    cardCapacity: {
+      before: capacityBefore,
+      after: telegramMailCardCapacitySnapshot_(),
+      removedDuplicate: Math.max(0, Number(compaction.removedDuplicate || 0)),
+      removedMissing: Math.max(0, Number(compaction.removedMissing || 0))
     },
     runtime: gmailRuntimeReadState_(props)
   })).setMimeType(ContentService.MimeType.JSON);
@@ -5515,6 +5528,69 @@ function telegramCardIndex_(props, name) {
   }
 }
 
+function compactTelegramMailCardIndexLocked_(props) {
+  const source = telegramCardIndex_(props, 'TELEGRAM_MAIL_CARD_INDEX');
+  const seen = new Set();
+  const keys = [];
+  let removedDuplicate = 0;
+  let removedMissing = 0;
+  source.forEach(value => {
+    const propertyKey = String(value || '');
+    if (!propertyKey || seen.has(propertyKey)) {
+      removedDuplicate += 1;
+      return;
+    }
+    seen.add(propertyKey);
+    if (!props.getProperty(propertyKey)) {
+      removedMissing += 1;
+      return;
+    }
+    keys.push(propertyKey);
+  });
+  if (removedDuplicate || removedMissing) {
+    const serialized = JSON.stringify(keys);
+    assertTelegramPropertyValueFits_('TELEGRAM_MAIL_CARD_INDEX', serialized);
+    props.setProperty('TELEGRAM_MAIL_CARD_INDEX', serialized);
+  }
+  return { keys, removedDuplicate, removedMissing };
+}
+
+function compactTelegramMailCardIndex_() {
+  return withTelegramCardStateLock_(props => compactTelegramMailCardIndexLocked_(props));
+}
+
+function telegramMailCardCapacitySnapshot_() {
+  const props = PropertiesService.getScriptProperties();
+  const raw = telegramCardIndex_(props, 'TELEGRAM_MAIL_CARD_INDEX');
+  const unique = Array.from(new Set(raw.map(String).filter(Boolean)));
+  const snapshot = {
+    raw: raw.length,
+    unique: unique.length,
+    present: 0,
+    missing: 0,
+    active: 0,
+    reserved: 0,
+    uncertain: 0,
+    other: 0,
+  };
+  unique.forEach(propertyKey => {
+    const value = props.getProperty(propertyKey);
+    if (!value) {
+      snapshot.missing += 1;
+      return;
+    }
+    snapshot.present += 1;
+    let card = null;
+    try { card = JSON.parse(value); } catch (error) { card = null; }
+    const state = String(card && card.state || '');
+    if (state === 'active') snapshot.active += 1;
+    else if (state === 'delivery_reserved') snapshot.reserved += 1;
+    else if (state === 'delivery_uncertain') snapshot.uncertain += 1;
+    else snapshot.other += 1;
+  });
+  return snapshot;
+}
+
 function telegramCardMovePropertyKey_(chatId, sourceMessageId, destinationThreadId) {
   return 'TELEGRAM_CARD_MOVE_' +
     String(chatId).replace(/[^0-9-]/g, '').slice(-24) + '_' +
@@ -5604,7 +5680,7 @@ function saveTelegramMailCard_(card) {
     });
     const propertyKey = telegramMailCardPropertyKey_(normalized.gmailMessageId, normalized.connectionId, normalized.chatId);
     if (!normalized.gmailMessageId || !normalized.telegramMessageId || !propertyKey) return null;
-    const existingKeys = telegramCardIndex_(props, 'TELEGRAM_MAIL_CARD_INDEX')
+    const existingKeys = compactTelegramMailCardIndexLocked_(props).keys
       .filter(key => key !== propertyKey);
     if (!props.getProperty(propertyKey) && existingKeys.length >= CONFIG.TELEGRAM_MAIL_CARD_HARD_LIMIT) {
       throw new Error('Telegram mail-card registry is temporarily full.');
@@ -5810,7 +5886,7 @@ function reserveTelegramMailCardDelivery_(card) {
       return { outcomeUncertain: true, staleReservation: true, card: uncertain };
     }
 
-    const existingKeys = telegramCardIndex_(props, 'TELEGRAM_MAIL_CARD_INDEX')
+    const existingKeys = compactTelegramMailCardIndexLocked_(props).keys
       .filter(key => key !== propertyKey);
     if (existingKeys.length >= CONFIG.TELEGRAM_MAIL_CARD_HARD_LIMIT) {
       throw new Error('Telegram-картки тимчасово очікують синхронізації. Новий лист буде повторено пізніше.');
