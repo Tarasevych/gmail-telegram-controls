@@ -5,7 +5,7 @@ Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | ID | Status | Since Versie | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
 | GT-001 | Resolved locally | 1 | One email reaches Telegram twice | Do not rescan the owner mailbox through OAuth and dedupe same-user/same-email; real-time acceptance remains |
-| GT-002 | Resolved locally | 1 | Google callback opens a Drive error page instead of the service | The active flow uses the configured Apps Script redirect directly; the stale GitHub relay is decommissioned; staging callback acceptance remains |
+| GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | Direct Apps Script callback was rejected because Google multi-login is officially unsupported; neutral GitHub callback plus credentialless POST is being implemented; live acceptance remains |
 | GT-003 | Resolved locally | 1 | Header shows an initial instead of the Google profile photo | Header uses the real photo with an initial fallback; staging readback remains |
 | GT-004 | Resolved locally | 1 | `Add Gmail account` requires an extra `Continue with Google` click | Open the authorization URL immediately; show fallback only when browser navigation is blocked |
 | GT-005 | Resolved locally | 1 | Account panel counts stale/inactive connection IDs | Filter preferences against active visible IDs; staging readback remains |
@@ -15,6 +15,7 @@ Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-009 | Resolved locally | 1 | Accessibility label uses plural for one account | `1 Gmail account`, plural for other values |
 | GT-010 | Open | 1 | The OAuth token-refresh path has no function-local lock; concurrent behavior is unproven | Add a lock or prove external serialization; run a controlled concurrency test before production |
 | GT-011 | Resolved locally | 1 | Telegram settings lacked native one-click Gmail account switching | Added user/zone-bound callback buttons, a short OAuth launcher, and automatic menu refresh after callback; staging/readback remains |
+| GT-012 | Resolved locally | 1 | A signed-in Google session rewrites the Apps Script web-app URL to `/macros/u/N/` and returns Drive “file not found” | The browser callback no longer navigates to Apps Script: the relay clears the query and sends one-use data with `fetch(mode:no-cors, credentials:omit)` |
 
 ## Update procedure
 

@@ -7,9 +7,9 @@
 | B1-01 | Виконано | Відновити v45 source-of-truth і перевірити Git/production | remote правильний; production v37 підтверджено |
 | B1-02 | Виконано | Виявити причину подвійних Telegram-карток | знайдено legacy + OAuth подвійне сканування; один trigger підтверджено |
 | B1-03 | Виконано локально | Дедуплікація owner mailbox, avatar, прямий OAuth старт, stale account count | локальні контракти пройшли |
-| B1-04 | Виконано локально | Прямий Apps Script OAuth callback без історичного GitHub relay | configured redirect, короткий Telegram launcher, one-use user/chat/zone state і контрактний доказ |
+| B1-04 | Виконано локально | Neutral GitHub OAuth callback із credentialless POST до Apps Script | query очищається до передачі; one-use user/chat/zone state; Google multi-login cookies не надсилаються |
 | B1-05 | Виконано | Зберегти новий redirect URI в Google OAuth client | `OAuth client saved`; точний URI прочитано назад |
-| B1-06 | В роботі | Створити Apps Script immutable v40 з direct OAuth return і one-click account switching; замінити лише точний v39 staging | один точний v40 staging, stable v37 не змінено до acceptance |
+| B1-06 | В роботі | Створити Apps Script immutable v41 із credentialless relay receiver; замінити лише точний v40 staging | один точний v41 staging, stable v37 не змінено до acceptance |
 | B1-07 | Ручний gate | Додати контрольний Gmail-акаунт через новий flow | власник проходить account choice/consent; callback success |
 | B1-08 | Заплановано | Повний real-time acceptance у `@TarasevychGmailNotifierBot` | функціональний журнал без дублювання й zone mix |
 | B1-09 | Заплановано | Promote Versie 1, cleanup, production menu | stable v39, staging 0, menu `📬 Пошта · Versie 1` |

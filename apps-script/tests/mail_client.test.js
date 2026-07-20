@@ -7070,16 +7070,18 @@ test('multi-account workspaces isolate Telegram users and issue only official on
   assert.equal(authorization.searchParams.get('prompt'), 'select_account');
   assert.equal(
     authorization.searchParams.get('redirect_uri'),
-    'https://script.google.com/macros/s/unit-test-deployment_123/exec?action=gmail_oauth_callback',
+    'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html',
   );
   assert.match(authorization.searchParams.get('scope'), /gmail\.settings\.basic/);
   assert.equal(authorization.searchParams.get('login_hint'), 'other@example.com');
   assert.match(authorization.searchParams.get('state'), /^[A-Za-z0-9_-]{43}$/);
   assert.doesNotMatch(oauth.authorizationUrl, /client_secret|refresh_token|BOT_TOKEN/i);
   const launch = new URL(oauth.launchUrl);
-  assert.equal(launch.origin, 'https://script.google.com');
-  assert.equal(launch.searchParams.get('action'), 'gmail_oauth_start');
+  assert.equal(launch.origin, 'https://tarasevych.github.io');
+  assert.equal(launch.pathname, '/gmail-telegram-controls/gmail-oauth-callback.html');
+  assert.equal(launch.searchParams.get('start'), '1');
   assert.equal(launch.searchParams.get('state'), authorization.searchParams.get('state'));
+  assert.equal(launch.searchParams.get('client'), '123456789-unit-test.apps.googleusercontent.com');
   assert.equal(
     harness.context.mailboxGoogleResolveOAuthStart_(launch.searchParams.get('state')).authorizationUrl,
     oauth.authorizationUrl,
@@ -7148,7 +7150,7 @@ test('Telegram settings expose only the requesting user Gmail zone and exact per
   const addButton = buttons.find(button => button.text === '＋ Додати Gmail-акаунт');
   assert.ok(secondButton, 'every visible sibling Gmail must have a native Telegram switch button');
   assert.match(addButton.url,
-    /^https:\/\/script\.google\.com\/macros\/s\/unit-test-deployment_123\/exec\?action=gmail_oauth_start&state=[A-Za-z0-9_-]{43}$/);
+    /^https:\/\/tarasevych\.github\.io\/gmail-telegram-controls\/gmail-oauth-callback\.html\?start=1&state=[A-Za-z0-9_-]{43}&client=123456789-unit-test\.apps\.googleusercontent\.com$/);
   const parsed = harness.context.parseTelegramGmailAccountCallback_(secondButton.callback_data);
   const switched = harness.context.switchTelegramGmailAccount_(otherUserId, otherUserId, parsed.connectionId);
   assert.equal(switched.message, 'Активна Gmail: other-second@example.com');

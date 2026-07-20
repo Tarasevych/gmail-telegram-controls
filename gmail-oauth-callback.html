@@ -5,24 +5,111 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; navigate-to https://t.me; base-uri 'none'; form-action 'none'">
-  <title>Gmail OAuth route moved</title>
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; connect-src https://script.google.com https://script.googleusercontent.com; style-src 'unsafe-inline'; navigate-to https://accounts.google.com https://t.me; base-uri 'none'; form-action 'none'">
+  <title>Gmail OAuth · Telegram</title>
   <style>
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f7f6; color: #17302b; font: 16px/1.5 system-ui, sans-serif; }
     main { box-sizing: border-box; width: min(430px, calc(100% - 32px)); padding: 28px; border-radius: 20px; background: white; box-shadow: 0 16px 45px #17302b1a; }
     h1 { margin-top: 0; font-size: 1.35rem; }
+    p { color: #4c625d; }
     a { display: inline-block; margin-top: 8px; padding: 11px 16px; border-radius: 11px; background: #176b58; color: white; font-weight: 700; text-decoration: none; }
-    hr { border: 0; border-top: 1px solid #dce7e3; margin: 22px 0; }
+    [hidden] { display: none; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Маршрут Google OAuth оновлено</h1>
-    <p>Versie 1 більше не передає OAuth-коди через GitHub Pages. Почніть нове підключення безпосередньо в Telegram-боті.</p>
-    <hr>
-    <h1 lang="en">Google OAuth route updated</h1>
-    <p lang="en">Versie 1 no longer relays OAuth codes through GitHub Pages. Start a new connection directly in the Telegram bot.</p>
-    <a href="https://t.me/TarasevychGmailNotifierBot">Відкрити Telegram / Open Telegram</a>
+    <h1 id="title">Підключення Gmail</h1>
+    <p id="status">Перевіряємо одноразовий запит...</p>
+    <a id="telegramReturn" href="https://t.me/TarasevychGmailNotifierBot?start=gmail_connected" hidden>Повернутися в Telegram</a>
   </main>
+  <script>
+    (function () {
+      "use strict";
+      var callbackEndpoint = "https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec";
+      var callbackUri = location.origin + location.pathname;
+      var params = new URLSearchParams(location.search);
+      var start = params.get("start") === "1";
+      var state = String(params.get("state") || "");
+      var clientId = String(params.get("client") || "");
+      var code = String(params.get("code") || "");
+      var providerError = String(params.get("error") || "");
+      var telegramUrl = "https://t.me/TarasevychGmailNotifierBot?start=gmail_connected";
+      var title = document.getElementById("title");
+      var status = document.getElementById("status");
+      var telegramReturn = document.getElementById("telegramReturn");
+      try { history.replaceState(null, "", location.pathname); } catch (ignored) {}
+
+      function fail(message) {
+        title.textContent = "Не вдалося продовжити";
+        status.textContent = message;
+        telegramReturn.hidden = false;
+      }
+
+      if (!/^[A-Za-z0-9_-]{43}$/.test(state)) {
+        fail("Одноразове посилання недійсне або завершилося. Створіть нове підключення в Telegram.");
+        return;
+      }
+
+      if (start) {
+        if (code || providerError || !/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId)) {
+          fail("Параметри Google OAuth недійсні.");
+          return;
+        }
+        var authorization = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+        authorization.searchParams.set("client_id", clientId);
+        authorization.searchParams.set("redirect_uri", callbackUri);
+        authorization.searchParams.set("response_type", "code");
+        authorization.searchParams.set("access_type", "offline");
+        authorization.searchParams.set("include_granted_scopes", "true");
+        authorization.searchParams.set("prompt", "select_account");
+        authorization.searchParams.set("scope", [
+          "openid",
+          "email",
+          "profile",
+          "https://www.googleapis.com/auth/gmail.modify",
+          "https://www.googleapis.com/auth/gmail.settings.basic"
+        ].join(" "));
+        authorization.searchParams.set("state", state);
+        title.textContent = "Відкриваємо Google";
+        status.textContent = "Зараз відкриється офіційна сторінка вибору Gmail-акаунта.";
+        location.replace(authorization.href);
+        return;
+      }
+
+      if (Boolean(code) === Boolean(providerError) ||
+          (code && !/^4\/[A-Za-z0-9._-]{20,2048}$/.test(code)) ||
+          (providerError && !/^[A-Za-z0-9_.-]{1,128}$/.test(providerError))) {
+        fail("Відповідь Google має некоректний формат.");
+        return;
+      }
+
+      title.textContent = "Завершуємо підключення";
+      status.textContent = "Передаємо одноразове підтвердження захищеному серверу без Google multi-login cookies.";
+      var body = new URLSearchParams();
+      body.set("action", "gmail_oauth_callback");
+      body.set("relay", "github_pages_v2");
+      body.set("state", state);
+      if (code) body.set("code", code);
+      if (providerError) body.set("error", providerError);
+
+      fetch(callbackEndpoint, {
+        method: "POST",
+        mode: "no-cors",
+        credentials: "omit",
+        redirect: "follow",
+        referrerPolicy: "no-referrer",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: body.toString()
+      }).then(function () {
+        title.textContent = "Запит передано";
+        status.textContent = "Telegram підтвердить результат і покаже оновлений список Gmail-акаунтів.";
+        telegramReturn.hidden = false;
+        setTimeout(function () { location.replace(telegramUrl); }, 1200);
+      }).catch(function () {
+        fail("Не вдалося передати підтвердження. Поверніться в Telegram і створіть нове підключення.");
+      });
+    }());
+  </script>
 </body>
 </html>
