@@ -773,7 +773,11 @@ function gmailRuntimeReadState_(propsValue) {
     lastFailureAt: 0,
     lastFailureStage: '',
     lastFailureCode: '',
-    lastFailureFingerprint: ''
+    lastFailureFingerprint: '',
+    lastMailFailureAt: 0,
+    lastMailFailureStage: '',
+    lastMailFailureCode: '',
+    lastMailFailureFingerprint: ''
   };
   try {
     var parsed = JSON.parse(props.getProperty(GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_) || '{}');
@@ -784,6 +788,13 @@ function gmailRuntimeReadState_(propsValue) {
     state.lastFailureStage = String(parsed.lastFailureStage || '').replace(/[^a-z0-9_]/g, '').slice(0, 40);
     state.lastFailureCode = String(parsed.lastFailureCode || '').replace(/[^a-z0-9_]/g, '').slice(0, 40);
     state.lastFailureFingerprint = String(parsed.lastFailureFingerprint || '')
+      .replace(/[^a-f0-9]/g, '').slice(0, 12);
+    state.lastMailFailureAt = Math.max(0, Number(parsed.lastMailFailureAt || 0));
+    state.lastMailFailureStage = String(parsed.lastMailFailureStage || '')
+      .replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastMailFailureCode = String(parsed.lastMailFailureCode || '')
+      .replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    state.lastMailFailureFingerprint = String(parsed.lastMailFailureFingerprint || '')
       .replace(/[^a-f0-9]/g, '').slice(0, 12);
   } catch (ignored) {}
   return state;
@@ -797,10 +808,19 @@ function recordGmailRuntimeFailure_(stage, error) {
   try {
     var props = PropertiesService.getScriptProperties();
     var state = gmailRuntimeReadState_(props);
+    var safeStage = String(stage || 'runtime').replace(/[^a-z0-9_]/g, '').slice(0, 40);
+    var failureCode = gmailRuntimeFailureCode_(error);
+    var fingerprint = gmailRuntimeFingerprint_(error);
     state.lastFailureAt = Date.now();
-    state.lastFailureStage = String(stage || 'runtime').replace(/[^a-z0-9_]/g, '').slice(0, 40);
-    state.lastFailureCode = gmailRuntimeFailureCode_(error);
-    state.lastFailureFingerprint = gmailRuntimeFingerprint_(error);
+    state.lastFailureStage = safeStage;
+    state.lastFailureCode = failureCode;
+    state.lastFailureFingerprint = fingerprint;
+    if (/^(?:gmail_|realtime_|telegram_notify|legacy_|multi_account)/.test(safeStage)) {
+      state.lastMailFailureAt = state.lastFailureAt;
+      state.lastMailFailureStage = safeStage;
+      state.lastMailFailureCode = failureCode;
+      state.lastMailFailureFingerprint = fingerprint;
+    }
     gmailRuntimeWriteState_(props, state);
   } catch (ignored) {}
 }
@@ -837,6 +857,40 @@ function serveGmailRuntimeStatus_(e) {
   } : { ok: false };
   return ContentService.createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function serveGmailRuntimeProbe_(e) {
+  var props = PropertiesService.getScriptProperties();
+  var expected = String(props.getProperty('WEBHOOK_KEY') || '');
+  var supplied = String(e && e.parameter && e.parameter.key || '');
+  if (!expected || !constantTimeEqual_(expected, supplied)) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  var result;
+  try {
+    result = runRealtimeMailChecks_('probe', 5) || emptyMailCheckResult_();
+  } catch (error) {
+    recordGmailRuntimeFailure_('realtime_probe', error);
+    result = emptyMailCheckResult_();
+    result.failed = 1;
+    result.workerErrors = 1;
+  }
+  return ContentService.createTextOutput(JSON.stringify({
+    ok: true,
+    product: 'Versie 1',
+    candidate: GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_,
+    result: {
+      delivered: Math.max(0, Number(result.delivered || 0)),
+      failed: Math.max(0, Number(result.failed || 0)),
+      uncertain: Math.max(0, Number(result.uncertain || 0)),
+      retryPending: Math.max(0, Number(result.retryPending || 0)),
+      deadLettered: Math.max(0, Number(result.deadLettered || 0)),
+      workerErrors: Math.max(0, Number(result.workerErrors || 0)),
+      pending: Boolean(result.pending)
+    },
+    runtime: gmailRuntimeReadState_(props)
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function gmailRealtimeQuarantinedIds_(scopedProps) {
@@ -1754,6 +1808,9 @@ function runManualMailCheck_() {
 /** Telegram Web App endpoint. */
 function doPost(e) {
   const postedParams = e && e.parameter ? e.parameter : {};
+  if (String(postedParams.action || '') === 'runtime_probe') {
+    return serveGmailRuntimeProbe_(e);
+  }
   if (String(postedParams.action || '') === 'gmail_oauth_callback' &&
       String(postedParams.relay || '') === 'github_pages_v2') {
     return serveGoogleOAuthRelayPost_(e);
