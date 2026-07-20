@@ -15,6 +15,9 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-09 | Completed | Promote, clean up, and install the production command menu | stable v42, staging 0, setup execution completed |
 | B1-10 | In progress | Update UK/EN docs, commit, and push | v42 evidence is being published in Versie 1; tag/release branch wait for B1-07/B1-08 |
 
+| B1-11 | Completed locally | Separate realtime delivery from the frozen backlog and run it before maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 still required |
+| B1-12 | Completed locally | Aggregate every notification account into one physical Telegram feed with account identity and account-scoped actions | the main chat is “All messages”; account roots switch context without duplicating a card; second-account E5 is consent-blocked |
+
 ## Movement rule
 
 Versie 2 is not opened until B1-05 through B1-10 are complete. New findings receive a `GT-*` record in [ISSUES.md](ISSUES.md); their fix is added to Versie 1 while Versie 1 is unreleased. After release, every new correction belongs only to Versie 2.
@@ -25,4 +28,4 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## Verification gate
 
-`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0008`.
+`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0009`.

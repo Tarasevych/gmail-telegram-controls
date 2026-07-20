@@ -23,6 +23,10 @@ Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-016 | Platform constraint | 1 | Telegram Web shows its standard Open Link warning before external Google OAuth | The product-owned extra Continue with Google step is gone; do not bypass Telegram security UI |
 | GT-017 | Open | 1 | Legacy “Open thread in Mini App” mail buttons can still reach the Apps Script Drive error in multi-login Chrome | Account/OAuth is now chat-native; the full Mini App requires a neutral response-capable backend or replacement of legacy deep links |
 
+| GT-018 | Fixed locally, E5 required | 1 | New Gmail mail is not delivered while the frozen scan drains an old backlog | Added a bounded realtime lane before maintenance; frozen scan remains the backfill; immutable v43 plus a controlled message is required |
+| GT-019 | Fixed locally, E5 required | 1 | Manual `/check` inspected only the legacy mailbox | Manual check now merges realtime and frozen fan-out for every notification connection |
+| GT-020 | Open operational | 1 | Protected credential storage still contains an obsolete Telegram bot-token alias that returns 401 | Runtime uses a separately verified protected reference; do not rotate the current token without a separate safe plan |
+
 ## Production evidence 2026-07-20
 
 - Apps Script stable: v42; staging: 0; immutable v41 remains the rollback.
@@ -30,6 +34,7 @@ Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 - setupTelegramControls completed in the Apps Script editor; Telegram now exposes a command menu.
 - Production /settings showed isolated Gmail accounts, one-click callbacks, and the direct GitHub OAuth launcher.
 - The real OAuth flow reached the new Google consent gate; consent was not accepted, so callback success remains unproven.
+- REQ-0009: a controlled new message did not appear after the minute trigger or manual /check; the webhook was healthy, isolating the failure to the frozen Gmail scan and worker order.
 
 ## Update procedure
 

@@ -6238,3 +6238,83 @@ test('owner settings use chat-native controls instead of the Apps Script Mini Ap
     Object.assign(context, originals);
   }
 });
+
+test('realtime lane delivers mail newer than the frozen backlog upper bound exactly once', () => {
+  const now = Date.now();
+  const memory = memoryProperties({
+    BOT_TOKEN: 'test-token', CHAT_ID: '123',
+    STARTED_AT: String(now - 3600000), SEEN_MESSAGE_IDS: '[]',
+    GMAIL_NOTIFICATION_SCAN_V1: JSON.stringify({
+      version: 1, lowerBoundMs: now - 3600000, upperBoundMs: now - 1800000,
+      pageToken: 'frozen_page_2', page: 1, pass: 0, passNewCount: 0,
+      verificationPass: false, createdAt: now - 1200000,
+    }),
+  });
+  const originals = {
+    PropertiesService: context.PropertiesService, LockService: context.LockService,
+    Session: context.Session, listGmailNotificationPage_: context.listGmailNotificationPage_,
+    getGmailMessage_: context.getGmailMessage_, notifyMessage_: context.notifyMessage_,
+  };
+  const delivered = [];
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.Session = { getEffectiveUser: () => ({ getEmail: () => 'owner@example.com' }) };
+    context.listGmailNotificationPage_ = () => ({ ids: ['realtime_message_12345'], nextPageToken: '' });
+    context.getGmailMessage_ = id => ({
+      id, threadId: 'realtime_thread_12345', timestamp: now - 10000, labelIds: ['INBOX'],
+    });
+    context.notifyMessage_ = (message, options) => {
+      delivered.push({ id: message.id, email: options.account.email });
+      return { message_id: delivered.length };
+    };
+    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 1);
+    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
+    assert.deepEqual(delivered, [{ id: 'realtime_message_12345', email: 'owner@example.com' }]);
+    assert.equal(JSON.parse(memory.store.GMAIL_NOTIFICATION_SCAN_V1).pageToken, 'frozen_page_2');
+    assert.deepEqual(JSON.parse(memory.store.SEEN_MESSAGE_IDS), ['realtime_message_12345']);
+  } finally { Object.assign(context, originals); }
+});
+
+test('minute trigger runs realtime fan-out before maintenance and frozen recovery', () => {
+  const start = code.indexOf('function checkNewMail_()');
+  const realtime = code.indexOf("runRealtimeMailChecks_('timer', 5)", start);
+  const maintenance = code.indexOf('retryPendingTelegramMailCardActions_(5)', start);
+  const frozen = code.indexOf("return runMailCheck_('timer')", start);
+  assert.ok(start >= 0 && realtime > start && realtime < maintenance && realtime < frozen);
+});
+
+test('manual check covers realtime and frozen scans for every notification connection', () => {
+  const body = code.match(/function runManualMailCheck_\(\)\s*\{([\s\S]*?)\n\}/);
+  assert.ok(body);
+  assert.match(body[1], /runRealtimeMailChecks_\('manual', 5\)/);
+  assert.match(body[1], /runSafeMultiAccountMailChecks_\(5, \{ source: 'manual' \}\)/);
+  const multi = code.match(/function runMultiAccountMailChecks_\(limitValue\)\s*\{([\s\S]*?)\n\}/);
+  assert.match(multi[1], /executionOptions\.realtimeOnly \? runRealtimeMailCheck_ : runMailCheck_/);
+});
+
+test('realtime status exposes sanitized lane retry backlog and card capacity', () => {
+  const memory = memoryProperties({
+    GMAIL_NOTIFICATION_REALTIME_V1_123_gmail_unit: JSON.stringify({
+      version: 1, lastCheckAt: Date.now(), lastErrorCode: 'telegram_rate_limit',
+      retries: [['opaque_message', 2, Date.now() + 1000, Date.now()]],
+      deadLetteredTotal: 3, pageOverflow: true,
+    }),
+    TELEGRAM_MAIL_CARD_V2_opaque: JSON.stringify({ state: 'sent' }),
+    GMAIL_NOTIFICATION_SCAN_V1: JSON.stringify({
+      version: 1, lowerBoundMs: 1000, upperBoundMs: 2000, page: 1,
+    }),
+  });
+  const original = context.PropertiesService;
+  try {
+    context.PropertiesService = memory.service;
+    const html = context.gmailRealtimeStatusHtml_();
+    assert.match(html, /Активні ізольовані смуги:\s*<b>1<\/b>/);
+    assert.match(html, /Черга швидкого повтору:\s*<b>1<\/b>/);
+    assert.match(html, /Без автоповтору у швидкій смузі:\s*<b>3<\/b>/);
+    assert.match(html, /Активні frozen scan:\s*<b>1<\/b>/);
+    assert.match(html, /Картки в реєстрі:\s*<b>1\/60<\/b>/);
+    assert.match(html, /telegram_rate_limit/);
+    assert.doesNotMatch(html, /opaque_message/);
+  } finally { context.PropertiesService = original; }
+});

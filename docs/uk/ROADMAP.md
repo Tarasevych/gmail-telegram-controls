@@ -15,6 +15,9 @@
 | B1-09 | Виконано | Promote, cleanup, production command menu | stable v42, staging 0, setup execution completed |
 | B1-10 | В роботі | Оновити UK/EN docs, commit і push | v42 evidence готується у поточній Versie 1; tag/release branch лише після B1-07/B1-08 |
 
+| B1-11 | Виконано локально | Відокремити realtime delivery від frozen backlog і запускати її перед maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 ще потрібні |
+| B1-12 | Виконано локально | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | main chat є «Усі повідомлення»; account roots перемикають context без дублювання картки; E5 з другим акаунтом заблоковано consent |
+
 ## Правило руху
 
 Поки B1-05–B1-10 не завершені, Versie 2 не відкривається. Нові знайдені проблеми отримують `GT-*` у [ISSUES.md](ISSUES.md); виправлення додається до Versie 1, доки Versie 1 не released. Після release будь-яке нове виправлення належить тільки Versie 2.
@@ -25,4 +28,4 @@
 
 ## Verification gate
 
-`VR-001` завершив repository/test-класифікацію 245/245 `KH-*` claims: [звіт](verification-reports/reports/VR-001/README.md). Він не закриває B1-07–B1-09: staging OAuth callback, real-time Telegram acceptance і production promotion залишаються окремими E4/E5 доказами. Поточне продовження: `REQ-0008`.
+`VR-001` завершив repository/test-класифікацію 245/245 `KH-*` claims: [звіт](verification-reports/reports/VR-001/README.md). Він не закриває B1-07–B1-09: staging OAuth callback, real-time Telegram acceptance і production promotion залишаються окремими E4/E5 доказами. Поточне продовження: `REQ-0009`.

@@ -23,6 +23,10 @@
 | GT-016 | Обмеження платформи | 1 | Telegram Web показує стандартний Open Link перед зовнішнім Google OAuth | Власний зайвий Continue with Google усунуто; системне попередження Telegram не обходити |
 | GT-017 | Відкрита | 1 | Старі кнопки листів «Відкрити гілку в Mini App» ще можуть відкрити Apps Script Drive error у multi-login Chrome | Account/OAuth flow вже chat-native; повний Mini App потребує нейтрального response-capable backend або заміни legacy deep links |
 
+| GT-018 | Виправлена локально, потрібен E5 | 1 | Нові Gmail-листи не доходять, доки frozen scan відпрацьовує старий backlog | Додано bounded realtime-смугу перед maintenance; frozen scan лишається backfill; потрібен immutable v43 і контрольний лист |
+| GT-019 | Виправлена локально, потрібен E5 | 1 | Ручна `/check` перевіряла лише legacy mailbox | Manual check тепер об’єднує realtime і frozen fan-out для всіх notification connections |
+| GT-020 | Відкрита операційна | 1 | У protected credential store лишився застарілий alias Telegram bot token, який повертає 401 | Runtime використовує окреме підтверджене protected посилання; не ротувати чинний token без окремого безпечного плану |
+
 ## Production-доказ 2026-07-20
 
 - Apps Script stable: v42; staging: 0; immutable v41 збережено як rollback.
@@ -30,6 +34,7 @@
 - setupTelegramControls завершився в Apps Script editor; Telegram menu став command-menu.
 - Production /settings показав ізольовані Gmail-акаунти, one-click callbacks і прямий GitHub OAuth launcher.
 - Реальний OAuth дійшов до нового Google consent gate; consent не підтверджено, callback success ще не доведено.
+- REQ-0009: контрольний новий лист не з'явився після minute trigger і manual /check; webhook був healthy, тому збій локалізовано до frozen Gmail scan та порядку worker-ів.
 
 ## Як оновлювати
 
