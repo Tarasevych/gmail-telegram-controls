@@ -5,46 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'">
-  <title>Gmail · Telegram</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; navigate-to https://t.me; base-uri 'none'; form-action 'none'">
+  <title>Gmail OAuth route moved</title>
   <style>
-    :root{font-family:system-ui,sans-serif;color:#172033;background:#eef3f8}
-    body{min-height:100vh;margin:0;display:grid;place-items:center}
-    main{box-sizing:border-box;width:min(430px,calc(100% - 32px));padding:28px;border-radius:20px;background:#fff;text-align:center;box-shadow:0 12px 36px #1720331a}
-    h1{font-size:21px;margin:0 0 12px}p{line-height:1.5;color:#586174;margin:0}
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f7f6; color: #17302b; font: 16px/1.5 system-ui, sans-serif; }
+    main { box-sizing: border-box; width: min(430px, calc(100% - 32px)); padding: 28px; border-radius: 20px; background: white; box-shadow: 0 16px 45px #17302b1a; }
+    h1 { margin-top: 0; font-size: 1.35rem; }
+    a { display: inline-block; margin-top: 8px; padding: 11px 16px; border-radius: 11px; background: #176b58; color: white; font-weight: 700; text-decoration: none; }
+    hr { border: 0; border-top: 1px solid #dce7e3; margin: 22px 0; }
   </style>
 </head>
 <body>
   <main>
-    <h1 id="title">Завершуємо підключення Gmail</h1>
-    <p id="message">Безпечно повертаємося до поштового сервісу.</p>
+    <h1>Маршрут Google OAuth оновлено</h1>
+    <p>Versie 1 більше не передає OAuth-коди через GitHub Pages. Почніть нове підключення безпосередньо в Telegram-боті.</p>
+    <hr>
+    <h1 lang="en">Google OAuth route updated</h1>
+    <p lang="en">Versie 1 no longer relays OAuth codes through GitHub Pages. Start a new connection directly in the Telegram bot.</p>
+    <a href="https://t.me/TarasevychGmailNotifierBot">Відкрити Telegram / Open Telegram</a>
   </main>
-  <script>
-    (function () {
-      "use strict";
-      var params = new URLSearchParams(location.search);
-      var state = String(params.get("state") || "");
-      var code = String(params.get("code") || "");
-      var error = String(params.get("error") || "");
-      history.replaceState(null, "", location.pathname);
-
-      if (error) {
-        document.getElementById("title").textContent = "Google не завершив підключення";
-        document.getElementById("message").textContent = "Поверніться до Telegram і повторіть дію, коли будете готові.";
-        return;
-      }
-      if (!/^[A-Za-z0-9_-]{43}$/.test(state) || !/^4\/[A-Za-z0-9._-]{20,2048}$/.test(code)) {
-        document.getElementById("title").textContent = "Некоректна відповідь Google";
-        document.getElementById("message").textContent = "OAuth-відповідь відхилено без передавання даних.";
-        return;
-      }
-
-      var callback = new URL("https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec");
-      callback.searchParams.set("action", "gmail_oauth_callback");
-      callback.searchParams.set("state", state);
-      callback.searchParams.set("code", code);
-      location.replace(callback.toString());
-    }());
-  </script>
 </body>
 </html>
