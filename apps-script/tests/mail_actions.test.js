@@ -3114,6 +3114,33 @@ test('mail-card delivery compacts duplicate and missing index keys before enforc
   }
 });
 
+test('realtime Gmail uses a per-lane lease without touching the long legacy UserLock', () => {
+  const memory = memoryProperties({ CHAT_ID: '123' });
+  const originals = {
+    LockService: context.LockService,
+  };
+  let userLockCalls = 0;
+  try {
+    context.LockService = {
+      getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }),
+      getUserLock: () => {
+        userLockCalls += 1;
+        throw new Error('legacy UserLock must not be used by realtime');
+      },
+    };
+    const props = memory.service.getScriptProperties();
+    const key = 'GMAIL_NOTIFICATION_REALTIME_V1_123_legacy';
+    const first = context.gmailRealtimeClaimLease_(props, key, 1000);
+    assert.match(first.token, /^rs_/);
+    assert.equal(context.gmailRealtimeClaimLease_(props, key, 1001), null);
+    assert.equal(context.gmailRealtimeReleaseLease_(props, key, first.token), true);
+    assert.ok(context.gmailRealtimeClaimLease_(props, key, 1002));
+    assert.equal(userLockCalls, 0);
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
 test('mail-card promotion failure deletes the sent Telegram card and releases its reservation', () => {
   const gmailMessageId = 'promotion12345';
   const memory = memoryProperties({ CHAT_ID: '123' });

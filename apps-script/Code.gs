@@ -590,7 +590,8 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v47';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v48';
+var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
   return {
@@ -669,7 +670,8 @@ function gmailRealtimeStateKey_(rootProps, scope) {
 function gmailRealtimeReadState_(rootProps, key) {
   var state = {
     version: 1, watermarkMs: 0, lastCheckAt: 0, lastDeliveredAt: 0,
-    lastErrorCode: '', retries: [], deadLetteredTotal: 0, pageOverflow: false
+    lastErrorCode: '', retries: [], deadLetteredTotal: 0, pageOverflow: false,
+    leaseToken: '', leaseUntil: 0
   };
   try {
     var parsed = JSON.parse(rootProps.getProperty(key) || '{}');
@@ -680,10 +682,60 @@ function gmailRealtimeReadState_(rootProps, key) {
     state.lastErrorCode = String(parsed.lastErrorCode || '').slice(0, 32);
     state.deadLetteredTotal = Math.max(0, Number(parsed.deadLetteredTotal || 0));
     state.pageOverflow = Boolean(parsed.pageOverflow);
+    state.leaseToken = String(parsed.leaseToken || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+    state.leaseUntil = Math.max(0, Number(parsed.leaseUntil || 0));
     state.retries = Array.isArray(parsed.retries) ?
       parsed.retries.slice(0, GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_) : [];
   } catch (error) {}
   return state;
+}
+
+function gmailRealtimeClaimLease_(rootProps, stateKey, nowValue) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(2000)) return null;
+  try {
+    var now = Math.max(0, Number(nowValue || Date.now()));
+    var state = gmailRealtimeReadState_(rootProps, stateKey);
+    if (state.leaseToken && state.leaseUntil > now) return null;
+    var token = now.toString(36) + '_' +
+      Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+    state.leaseToken = token;
+    state.leaseUntil = now + GMAIL_NOTIFICATION_REALTIME_LEASE_MS_;
+    rootProps.setProperty(stateKey, JSON.stringify(state));
+    return { token: token, state: state };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function gmailRealtimeCommitLease_(rootProps, stateKey, state, token) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(2000)) return false;
+  try {
+    var current = gmailRealtimeReadState_(rootProps, stateKey);
+    if (!token || current.leaseToken !== token) return false;
+    state.leaseToken = '';
+    state.leaseUntil = 0;
+    rootProps.setProperty(stateKey, JSON.stringify(state));
+    return true;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function gmailRealtimeReleaseLease_(rootProps, stateKey, token) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(2000)) return false;
+  try {
+    var current = gmailRealtimeReadState_(rootProps, stateKey);
+    if (!token || current.leaseToken !== token) return false;
+    current.leaseToken = '';
+    current.leaseUntil = 0;
+    rootProps.setProperty(stateKey, JSON.stringify(current));
+    return true;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function gmailRealtimeErrorCode_(error) {
@@ -889,6 +941,7 @@ function serveGmailRuntimeProbe_(e) {
     candidate: GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_,
     result: {
       delivered: Math.max(0, Number(result.delivered || 0)),
+      busy: Boolean(result.busy),
       failed: Math.max(0, Number(result.failed || 0)),
       uncertain: Math.max(0, Number(result.uncertain || 0)),
       retryPending: Math.max(0, Number(result.retryPending || 0)),
@@ -930,16 +983,17 @@ function runRealtimeMailCheck_(source) {
   }
   var mode = gmailRealtimeNotificationMode_(rootProps, scope);
   if (mode === 'none') return result;
-  var lock = LockService.getUserLock();
-  if (!lock.tryLock(5000)) {
+  var now = Date.now();
+  var stateKey = gmailRealtimeStateKey_(rootProps, scope);
+  var lease = gmailRealtimeClaimLease_(rootProps, stateKey, now);
+  if (!lease) {
     result.busy = true;
     return result;
   }
+  var leaseCommitted = false;
   try {
-    var now = Date.now();
     var upper = now - GMAIL_NOTIFICATION_REALTIME_LAG_MS_;
-    var stateKey = gmailRealtimeStateKey_(rootProps, scope);
-    var state = gmailRealtimeReadState_(rootProps, stateKey);
+    var state = lease.state;
     var started = Math.max(0, Number(scopedProps.getProperty('STARTED_AT') || 0));
     var initial = Math.max(started, upper - GMAIL_NOTIFICATION_REALTIME_WINDOW_MS_);
     var lower = state.watermarkMs ?
@@ -1070,14 +1124,17 @@ function runRealtimeMailCheck_(source) {
     result.pending = Boolean(retries.length || state.pageOverflow);
     try {
       persistRecentGmailNotificationIds_(scopedProps, new Set(seen));
-      rootProps.setProperty(stateKey, JSON.stringify(state));
+      if (!gmailRealtimeCommitLease_(rootProps, stateKey, state, lease.token)) {
+        throw new Error('Realtime Gmail lane lease was superseded before commit.');
+      }
+      leaseCommitted = true;
     } catch (error) {
       recordGmailRuntimeFailure_('realtime_state_persist', error);
       throw error;
     }
     return result;
   } finally {
-    lock.releaseLock();
+    if (!leaseCommitted) gmailRealtimeReleaseLease_(rootProps, stateKey, lease.token);
   }
 }
 
