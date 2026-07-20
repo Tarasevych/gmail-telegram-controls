@@ -6293,6 +6293,17 @@ test('manual check covers realtime and frozen scans for every notification conne
   assert.match(multi[1], /executionOptions\.realtimeOnly \? runRealtimeMailCheck_ : runMailCheck_/);
 });
 
+test('realtime legacy delivery reuses the canonical scope and never inherits an unrelated global mode', () => {
+  const body = code.match(/function runRealtimeMailCheck_\(source\)\s*\{([\s\S]*?)\n\}/);
+  const mode = code.match(/function gmailRealtimeNotificationMode_\(rootProps, scope\)\s*\{([\s\S]*?)\n\}/);
+  assert.ok(body && mode);
+  assert.match(body[1], /gmailNotificationScope_\(arguments\.length > 1 \? arguments\[1\] : null\)/);
+  assert.match(body[1], /requireSetting_\(scopedProps, 'BOT_TOKEN'\)/);
+  assert.match(body[1], /persistRecentGmailNotificationIds_\(scopedProps, new Set\(seen\)\)/);
+  assert.doesNotMatch(mode[1], /getProperty\(/);
+  assert.match(mode[1], /scope && scope\.notificationMode/);
+});
+
 test('realtime status exposes sanitized lane retry backlog and card capacity', () => {
   const memory = memoryProperties({
     GMAIL_NOTIFICATION_REALTIME_V1_123_gmail_unit: JSON.stringify({

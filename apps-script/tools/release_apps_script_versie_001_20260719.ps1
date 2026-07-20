@@ -18,13 +18,13 @@ if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $Rollback | Where-O
 $ScriptId = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS'
 $StableDeploymentId = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z'
 $RollbackVersion = 42
-$LegacyStagingVersion = 41
-$CandidateVersion = 43
-$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): multi-account realtime Gmail delivery'
-$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) realtime multi-account delivery staging'
-$LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) credentialless OAuth relay staging'
+$LegacyStagingVersion = 43
+$CandidateVersion = 44
+$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): realtime legacy-context repair'
+$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) realtime legacy-context repair staging'
+$LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) realtime multi-account delivery staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v43-release.json'
+$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v44-release.json'
 
 $ExpectedRollbackHashes = @{
   Code='a23e4052264aeb70de54786aafe953d8d6c4f38133f857307b07190ff79df8c9'
@@ -41,7 +41,7 @@ $ExpectedRollbackHeadDriftHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedLegacyStagingHashes = @{
-  Code='9ff46675241b92c66a9f0c623f384b1aee59f2720384d993cf8d8fa58a447402'
+  Code='4139f3645136f8afea014c6c3e6ea241b584981a61c85b36df8b1a665cf22f8d'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -55,7 +55,7 @@ $ExpectedBaselineHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedCandidateHashes = @{
-  Code='4139f3645136f8afea014c6c3e6ea241b584981a61c85b36df8b1a665cf22f8d'
+  Code='d28a6eda436bb461f832526160c6770c4d64237547e8bdac810a6c1b877511d2'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -150,7 +150,7 @@ function Set-Head([string]$Base, $Content, [hashtable]$Expected, [string]$Label)
 $candidate = Get-Candidate
 Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Versie-001 candidate'
 
-$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V43Release')
+$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V44Release')
 $held = $false; $script:AccessToken = $null
 try {
   $held = $mutex.WaitOne(0)
@@ -225,7 +225,7 @@ try {
 
   if ($StageOnly) {
     if ($stableVersion -ne $RollbackVersion) { throw "StageOnly requires stable v$RollbackVersion." }
-    # Keep the exact v41 staging until its v43 replacement is verified.
+    # Keep the exact v43 staging until its v44 replacement is verified.
     try {
       if (-not $immutable) {
         if ($journal -and [string]$journal.state -eq 'version_create_reserved') {

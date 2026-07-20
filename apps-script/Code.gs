@@ -699,12 +699,18 @@ function gmailRealtimeNotificationOptions_(rootProps, scope) {
 }
 
 function gmailRealtimeNotificationMode_(rootProps, scope) {
-  var raw = scope && scope.notificationMode ? scope.notificationMode :
-    rootProps.getProperty('GMAIL_NOTIFICATION_MODE') ||
-    rootProps.getProperty('MAIL_NOTIFICATION_MODE') ||
-    rootProps.getProperty('NOTIFICATION_MODE') || 'all';
+  var raw = scope && scope.notificationMode ? scope.notificationMode : 'all';
   raw = String(raw || 'all').trim().toLowerCase();
   return raw === 'none' || raw === 'important' ? raw : 'all';
+}
+
+function gmailRealtimeGmailErrorCode_(error) {
+  var status = Number(error && error.gmailHttpStatus || 0);
+  if (status === 401 || status === 403) return 'gmail_auth_' + status;
+  if (status === 408 || status === 425 || status === 429) return 'gmail_retry_' + status;
+  if (status >= 500) return 'gmail_retry_5xx';
+  if (status >= 400) return 'gmail_http_' + status;
+  return 'gmail_transport';
 }
 
 function gmailRealtimeQuarantinedIds_(scopedProps) {
@@ -720,10 +726,15 @@ function gmailRealtimeQuarantinedIds_(scopedProps) {
 }
 
 function runRealtimeMailCheck_(source) {
-  var scope = arguments[1] || null;
+  var scope = gmailNotificationScope_(arguments.length > 1 ? arguments[1] : null);
   var rootProps = PropertiesService.getScriptProperties();
   var scopedProps = gmailNotificationProperties_(rootProps, scope);
   var result = emptyMailCheckResult_();
+  requireSetting_(scopedProps, 'BOT_TOKEN');
+  requireSetting_(scopedProps, 'CHAT_ID');
+  if (scope && !scopedProps.getProperty('STARTED_AT')) {
+    scopedProps.setProperty('STARTED_AT', String(Date.now()));
+  }
   var mode = gmailRealtimeNotificationMode_(rootProps, scope);
   if (mode === 'none') return result;
   var lock = LockService.getUserLock();
@@ -793,12 +804,13 @@ function runRealtimeMailCheck_(source) {
         var message = getGmailMessage_(id);
         var timestamp = Number(message && message.timestamp || 0);
         var labels = message && Array.isArray(message.labelIds) ? message.labelIds : [];
-        if (labels.indexOf('INBOX') < 0 ||
+        if (labels.indexOf('INBOX') < 0 || labels.indexOf('SPAM') >= 0 ||
+            labels.indexOf('TRASH') >= 0 ||
             (mode === 'important' && labels.indexOf('IMPORTANT') < 0)) {
           removeRetry(id);
           return;
         }
-        if (enforceWindow && (timestamp <= lower || timestamp > upper)) return;
+        if (enforceWindow && (timestamp < lower || timestamp >= upper)) return;
         notifyMessage_(message, options);
         persistSeen(id);
         removeRetry(id);
@@ -830,7 +842,7 @@ function runRealtimeMailCheck_(source) {
         state.pageOverflow = Boolean(page.nextPageToken);
         state.watermarkMs = upper;
       } catch (error) {
-        state.lastErrorCode = 'gmail_list';
+        state.lastErrorCode = gmailRealtimeGmailErrorCode_(error);
         result.workerErrors += 1;
       }
     }
@@ -847,7 +859,7 @@ function runRealtimeMailCheck_(source) {
     result.retryPending = retries.length;
     result.deadLetteredTotal = state.deadLetteredTotal;
     result.pending = Boolean(retries.length || state.pageOverflow);
-    scopedProps.setProperty('SEEN_MESSAGE_IDS', JSON.stringify(seen));
+    persistRecentGmailNotificationIds_(scopedProps, new Set(seen));
     rootProps.setProperty(stateKey, JSON.stringify(state));
     return result;
   } finally {
