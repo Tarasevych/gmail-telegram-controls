@@ -7,9 +7,9 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-01 | Completed | Restore the v45 source of truth and inspect Git/production | correct remote; production v37 confirmed |
 | B1-02 | Completed | Identify the cause of duplicate Telegram cards | legacy + OAuth double scan found; one trigger confirmed |
 | B1-03 | Completed locally | Owner mailbox dedupe, avatar, direct OAuth start, stale account count | local contracts pass |
-| B1-04 | Completed locally | Direct Apps Script OAuth callback without the historical GitHub relay | configured redirect, short Telegram launcher, one-use user/chat/zone state, and contract evidence |
+| B1-04 | Completed locally | Neutral GitHub OAuth callback with a credentialless POST to Apps Script | query cleared before transfer; one-use user/chat/zone state; Google multi-login cookies omitted |
 | B1-05 | Completed | Save the new redirect URI in the Google OAuth client | `OAuth client saved`; exact URI read back |
-| B1-06 | In progress | Create Apps Script immutable v40 with direct OAuth return and one-click account switching; replace only the exact v39 staging | one exact v40 staging; stable v37 unchanged before acceptance |
+| B1-06 | In progress | Create Apps Script immutable v41 with the credentialless relay receiver; replace only the exact v40 staging | one exact v41 staging; stable v37 unchanged before acceptance |
 | B1-07 | Manual gate | Add a controlled Gmail account through the new flow | owner completes account choice/consent; callback succeeds |
 | B1-08 | Planned | Full real-time acceptance in `@TarasevychGmailNotifierBot` | functional log shows no duplication or zone mixing |
 | B1-09 | Planned | Promote Versie 1, clean up, restore production menu | stable v39, staging 0, menu `📬 Пошта · Versie 1` |

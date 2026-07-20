@@ -83,11 +83,11 @@ const CONFIG = Object.freeze({
   GMAIL_ACCOUNT: 'tarasevych.pavlo@gmail.com',
   WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec',
   CONTROL_PAGE_URL: 'https://tarasevych.github.io/gmail-telegram-controls/',
-  CONTROL_PAGE_REVISION: 'versie-001-20260720-oauth-return',
+  CONTROL_PAGE_REVISION: 'versie-001-20260720-oauth-relay2',
   // Apps Script can retain a warm doPost runtime for an unchanged deployment
   // URL. Bump this with each backend release so Telegram reaches the deployed
   // code instead of generating mail cards from an older runtime.
-  WEBHOOK_REVISION: '20260720-01',
+  WEBHOOK_REVISION: '20260720-02',
   QUIET_HOURS_START: 22,
   QUIET_HOURS_END: 8,
 });
@@ -1258,6 +1258,10 @@ function runManualMailCheck_() {
 /** Telegram Web App endpoint. */
 function doPost(e) {
   const postedParams = e && e.parameter ? e.parameter : {};
+  if (String(postedParams.action || '') === 'gmail_oauth_callback' &&
+      String(postedParams.relay || '') === 'github_pages_v2') {
+    return serveGoogleOAuthRelayPost_(e);
+  }
   if (String(postedParams.action || '') === 'mailbox' &&
       String(postedParams.mailbox_bootstrap || '') === '1') {
     return serveMailboxLaunchPost_(e);
@@ -2313,6 +2317,32 @@ function serveGoogleOAuthStart_(e) {
     '</main>' + (authorizationUrl ? '<script>location.replace(' + safeScriptUrl + ')</script>' : '') +
     '</body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Google Gmail · Telegram');
+}
+
+function serveGoogleOAuthRelayPost_(e) {
+  let ok = false;
+  try {
+    const params = e && e.parameter ? e.parameter : {};
+    const result = mailboxGoogleHandleOAuthCallback_({
+      code: String(params.code || ''),
+      state: String(params.state || ''),
+      error: String(params.error || ''),
+      errorDescription: '',
+    });
+    ok = Boolean(result && result.ok);
+    if (ok && /^\d{1,24}$/.test(String(result.telegramUserId || ''))) {
+      try {
+        sendSettingsMenu_(String(result.telegramUserId), String(result.telegramChatId || result.telegramUserId));
+      } catch (notificationError) {
+        console.error('Gmail OAuth relay completed but Telegram refresh failed: ' +
+          String(notificationError && notificationError.message || notificationError));
+      }
+    }
+  } catch (error) {
+    console.error('Gmail OAuth relay failed: ' + String(error && error.message || error));
+  }
+  return ContentService.createTextOutput(ok ? 'ok' : 'failed')
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 function serveGoogleOAuthCallback_(e) {
@@ -8860,7 +8890,7 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
       String(account.email || account.name || 'Gmail').slice(0, 48),
     callback_data: telegramGmailAccountCallbackData_(account.id),
   }]);
-  if (googleStart && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_start&state=[A-Za-z0-9_-]{43}$/.test(String(googleStart.launchUrl || ''))) {
+  if (googleStart && /^https:\/\/tarasevych\.github\.io\/gmail-telegram-controls\/gmail-oauth-callback\.html\?start=1&state=[A-Za-z0-9_-]{43}&client=[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(String(googleStart.launchUrl || ''))) {
     keyboard.push([{ text: '＋ Додати Gmail-акаунт', url: googleStart.launchUrl }]);
   }
   keyboard.push(

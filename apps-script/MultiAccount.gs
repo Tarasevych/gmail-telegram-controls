@@ -1584,12 +1584,13 @@ function mailboxGoogleOAuthConfig_() {
   const clientId = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_ID_PROPERTY) || '');
   const clientSecret = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_SECRET_PROPERTY) || '');
   const configuredRedirectUri = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_REDIRECT_URI_PROPERTY) || '');
+  const redirectUri = 'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html';
   if (!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId) ||
       clientSecret.length < 16 || clientSecret.length > 512 || /[\s\u0000-\u001f\u007f]/.test(clientSecret) ||
       !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(configuredRedirectUri)) {
     throw mailboxError_('GOOGLE_OAUTH_NOT_CONFIGURED', 'Підключення нових Gmail-акаунтів ще не налаштовано на сервері.');
   }
-  return { clientId, clientSecret, redirectUri: configuredRedirectUri };
+  return { clientId, clientSecret, redirectUri, callbackUri: configuredRedirectUri };
 }
 
 function mailboxGoogleAuthorizationUrl_(config, stateValue, loginHintValue) {
@@ -1613,15 +1614,17 @@ function mailboxGoogleAuthorizationUrl_(config, stateValue, loginHintValue) {
     .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(query[key])).join('&');
 }
 
-function mailboxGoogleLaunchUrl_(redirectUriValue, stateValue) {
+function mailboxGoogleLaunchUrl_(redirectUriValue, stateValue, clientIdValue) {
   const redirectUri = String(redirectUriValue || '');
   const state = String(stateValue || '');
-  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(redirectUri) ||
-      !/^[A-Za-z0-9_-]{43}$/.test(state)) {
+  const clientId = String(clientIdValue || '');
+  if (redirectUri !== 'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html' ||
+      !/^[A-Za-z0-9_-]{43}$/.test(state) ||
+      !/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId)) {
     throw mailboxError_('GOOGLE_OAUTH_INVALID', 'Google OAuth launcher недійсний.');
   }
-  return redirectUri.replace(/\?action=gmail_oauth_callback$/, '') +
-    '?action=gmail_oauth_start&state=' + encodeURIComponent(state);
+  return redirectUri + '?start=1&state=' + encodeURIComponent(state) +
+    '&client=' + encodeURIComponent(clientId);
 }
 
 function mailboxGoogleConnectStart_(payload, session) {
@@ -1668,7 +1671,7 @@ function mailboxGoogleConnectStart_(payload, session) {
   }
   return {
     authorizationUrl: mailboxGoogleAuthorizationUrl_(config, state, loginHint),
-    launchUrl: mailboxGoogleLaunchUrl_(config.redirectUri, state),
+    launchUrl: mailboxGoogleLaunchUrl_(config.redirectUri, state, config.clientId),
     expiresAt: now + MAILBOX_MULTI_CONFIG_.OAUTH_STATE_SECONDS * 1000,
     target: { zoneId, loginHint },
   };
