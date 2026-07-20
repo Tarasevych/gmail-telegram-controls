@@ -5,11 +5,10 @@ const test = require('node:test');
 
 const source = fs.readFileSync(path.resolve(__dirname, '..', '..', 'gmail-oauth-callback.html'), 'utf8');
 
-test('Gmail OAuth relay forwards only one-use state and code to the stable Apps Script callback', () => {
-  assert.match(source, /history\.replaceState\(null, "", location\.pathname\)/);
-  assert.match(source, /callback\.searchParams\.set\("action", "gmail_oauth_callback"\)/);
-  assert.match(source, /callback\.searchParams\.set\("state", state\)/);
-  assert.match(source, /callback\.searchParams\.set\("code", code\)/);
-  assert.doesNotMatch(source, /callback\.searchParams\.set\("(?:authuser|prompt|scope|iss)"/);
+test('legacy GitHub OAuth relay is decommissioned and retains no authorization response', () => {
+  assert.match(source, /Versie 1 no longer relays OAuth codes through GitHub Pages/);
+  assert.match(source, /https:\/\/t\.me\/TarasevychGmailNotifierBot/);
+  assert.doesNotMatch(source, /script\.google\.com\/macros\/s\//);
+  assert.doesNotMatch(source, /searchParams|location\.search|\bcode\b|\bstate\b/);
   assert.doesNotMatch(source, /localStorage|sessionStorage|console\./);
 });

@@ -83,11 +83,11 @@ const CONFIG = Object.freeze({
   GMAIL_ACCOUNT: 'tarasevych.pavlo@gmail.com',
   WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z/exec',
   CONTROL_PAGE_URL: 'https://tarasevych.github.io/gmail-telegram-controls/',
-  CONTROL_PAGE_REVISION: 'versie-001-20260719',
+  CONTROL_PAGE_REVISION: 'versie-001-20260720-oauth-return',
   // Apps Script can retain a warm doPost runtime for an unchanged deployment
   // URL. Bump this with each backend release so Telegram reaches the deployed
   // code instead of generating mail cards from an older runtime.
-  WEBHOOK_REVISION: '20260719-25',
+  WEBHOOK_REVISION: '20260720-01',
   QUIET_HOURS_START: 22,
   QUIET_HOURS_END: 8,
 });
@@ -102,6 +102,7 @@ const BOT_UI = Object.freeze({
   CHECK_ACTION: 'mail.check',
   STATUS_ACTION: 'mail.status',
   SETTINGS_ACTION: 'mail.settings',
+  ACCOUNT_PREFIX: 'ga.',
   HELP_ACTION: 'mail.help',
   FOLDERS_ACTION: 'mail.folders',
   BROWSE_ACTION: 'mail.browse',
@@ -1287,6 +1288,7 @@ function doPost(e) {
       parseTelegramFocusCallback_(callbackData) ||
       parseTelegramFocusRuleCallback_(callbackData) ||
       parseMailReminderCallback_(callbackData) ||
+      parseTelegramGmailAccountCallback_(callbackData) ||
       callbackData === BOT_UI.BROWSE_ACTION
     );
     const deferredCallbackToast = nativeMailboxCallback ||
@@ -1354,6 +1356,9 @@ function doPost(e) {
 function doGet(e) {
   const action = String((e && e.parameter && e.parameter.action) || 'menu');
   const view = String((e && e.parameter && e.parameter.view) || '');
+  if (action === 'gmail_oauth_start') {
+    return serveGoogleOAuthStart_(e);
+  }
   if (action === 'gmail_oauth_callback') {
     return serveGoogleOAuthCallback_(e);
   }
@@ -2238,9 +2243,10 @@ function routeTenantUpdate_(update, userId) {
   const reminder = callback ? parseMailReminderCallback_(data) : null;
   const content = callback ? parseMailboxContentCallback_(data) : null;
   const attachment = callback ? parseAttachmentCallback_(data) : null;
+  const accountSwitch = callback ? parseTelegramGmailAccountCallback_(data) : null;
   const connectionId = String(mailbox && mailbox.connectionId || focus && focus.connectionId ||
     focusRule && focusRule.connectionId || content && content.connectionId ||
-    attachment && attachment.connectionId || '');
+    attachment && attachment.connectionId || accountSwitch && accountSwitch.connectionId || '');
   if (!callback || (!connectionId && !reminder)) {
     routeTenantBootstrapUpdate_(update, userId);
     return;
@@ -2252,7 +2258,9 @@ function routeTenantUpdate_(update, userId) {
   }
   try {
     const replyTo = callback.message && callback.message.message_id;
-    const result = reminder
+    const result = accountSwitch
+      ? switchTelegramGmailAccount_(userId, userId, accountSwitch.connectionId)
+      : reminder
       ? executeMailReminderCallback_(callback, reminder, String(userId))
       : focusRule
       ? handleTelegramFocusRuleCallback_(callback, focusRule, String(userId))
@@ -2281,6 +2289,32 @@ function routeTenantUpdate_(update, userId) {
   }
 }
 
+function serveGoogleOAuthStart_(e) {
+  let authorizationUrl = '';
+  let errorMessage = '';
+  try {
+    const params = e && e.parameter ? e.parameter : {};
+    authorizationUrl = mailboxGoogleResolveOAuthStart_(String(params.state || '')).authorizationUrl;
+  } catch (error) {
+    errorMessage = String(error && error.message || 'Посилання Google недійсне або завершилося.').slice(0, 500);
+  }
+  const safeScriptUrl = JSON.stringify(authorizationUrl).replace(/</g, '\\u003c');
+  const html = '<!doctype html><html lang="uk"><head><base target="_top">' +
+    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">' +
+    '<meta http-equiv="Cache-Control" content="no-store"><style>' +
+    'body{font:16px system-ui;margin:0;background:#f6f8fb;color:#172033;display:grid;place-items:center;min-height:100vh}' +
+    '.card{box-sizing:border-box;max-width:430px;margin:20px;padding:28px;border-radius:20px;background:#fff;text-align:center;box-shadow:0 12px 36px #1720331a}' +
+    'a{display:inline-block;border-radius:12px;padding:11px 18px;background:#1778d4;color:#fff;font-weight:600;text-decoration:none}' +
+    '</style></head><body><main class="card"><h1>' + (authorizationUrl ? 'Відкриваємо Google' : 'Посилання завершилося') + '</h1><p>' +
+    escapeHtml_(authorizationUrl ? 'Зачекайте: зараз відкриється офіційна сторінка Google.' : errorMessage) + '</p>' +
+    (authorizationUrl ? '<a href="' + escapeHtml_(authorizationUrl) + '">Продовжити в Google</a>' :
+      '<a href="https://t.me/TarasevychGmailNotifierBot">Повернутися в Telegram</a>') +
+    '</main>' + (authorizationUrl ? '<script>location.replace(' + safeScriptUrl + ')</script>' : '') +
+    '</body></html>';
+  return HtmlService.createHtmlOutput(html).setTitle('Google Gmail · Telegram');
+}
+
 function serveGoogleOAuthCallback_(e) {
   let result = null;
   let ok = false;
@@ -2293,6 +2327,14 @@ function serveGoogleOAuthCallback_(e) {
       errorDescription: String(params.error_description || ''),
     });
     ok = Boolean(result && result.ok);
+    if (ok && /^\d{1,24}$/.test(String(result.telegramUserId || ''))) {
+      try {
+        sendSettingsMenu_(String(result.telegramUserId), String(result.telegramChatId || result.telegramUserId));
+      } catch (notificationError) {
+        console.error('Gmail OAuth completed but Telegram refresh failed: ' +
+          String(notificationError && notificationError.message || notificationError));
+      }
+    }
   } catch (error) {
     result = { message: String(error && error.message || 'Не вдалося підключити Gmail.').slice(0, 500) };
   }
@@ -2300,6 +2342,7 @@ function serveGoogleOAuthCallback_(e) {
   const message = String(result && result.message || (ok
     ? 'Акаунт готовий до роботи в Telegram.'
     : 'Поверніться до Mini App і спробуйте ще раз.'));
+  const telegramUrl = 'https://t.me/TarasevychGmailNotifierBot?start=gmail_connected';
   const html = '<!doctype html><html lang="uk"><head><base target="_top">' +
     '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">' +
@@ -2314,7 +2357,9 @@ function serveGoogleOAuthCallback_(e) {
     '</head><body><main class="card"><div class="mark">' + (ok ? '✓' : '!') + '</div><h1>' +
     escapeHtml_(title) + '</h1><p>' + escapeHtml_(message) + '</p><div class="actions">' +
     '<button type="button" onclick="window.close()">Закрити</button>' +
-    '<a href="https://t.me/TarasevychGmailNotifierBot">Відкрити Telegram</a></div></main></body></html>';
+    '<a href="' + telegramUrl + '">Повернутися в Telegram</a></div></main>' +
+    (ok ? '<script>setTimeout(function(){location.replace("' + telegramUrl + '")},1200)</script>' : '') +
+    '</body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Gmail · Telegram');
 }
 
@@ -3894,6 +3939,14 @@ function routeTelegramUpdate_(update) {
     if (action === BOT_UI.CHECK_ACTION) return runManualMailCheck_();
     if (action === BOT_UI.STATUS_ACTION) return sendBotStatus_();
     if (action === BOT_UI.SETTINGS_ACTION) return sendSettingsMenu_(mailboxOwnerId_(), telegramCallbackChatId_(update.callback_query.message));
+    const accountSwitch = parseTelegramGmailAccountCallback_(action);
+    if (accountSwitch) {
+      return switchTelegramGmailAccount_(
+        mailboxOwnerId_(),
+        telegramCallbackChatId_(update.callback_query.message),
+        accountSwitch.connectionId
+      );
+    }
     if (action === BOT_UI.HELP_ACTION) return sendBotHelp_();
     if (action === BOT_UI.FOLDERS_ACTION) return sendFolderMenu_();
     if (action === BOT_UI.BROWSE_ACTION) {
@@ -8735,6 +8788,34 @@ function telegramMetadataSyncStatusLabel_(statusValue) {
   return '⚪ очікує перевірки';
 }
 
+function telegramGmailAccountCallbackData_(connectionIdValue) {
+  const connectionId = mailboxMultiOpaqueId_(connectionIdValue, 'gmail');
+  const value = BOT_UI.ACCOUNT_PREFIX + connectionId;
+  if (value.length > 64) throw new Error('Telegram account callback exceeds 64 bytes.');
+  return value;
+}
+
+function parseTelegramGmailAccountCallback_(value) {
+  const text = String(value || '');
+  if (text.indexOf(BOT_UI.ACCOUNT_PREFIX) !== 0) return null;
+  try {
+    return { connectionId: mailboxMultiOpaqueId_(text.slice(BOT_UI.ACCOUNT_PREFIX.length), 'gmail') };
+  } catch (error) {
+    return null;
+  }
+}
+
+function switchTelegramGmailAccount_(userIdValue, chatIdValue, connectionIdValue) {
+  const userId = String(userIdValue || '');
+  const chatId = String(chatIdValue || userId);
+  if (!/^\d{1,24}$/.test(userId) || !/^-?\d{1,24}$/.test(chatId)) {
+    throw new Error('Некоректна Telegram-зона перемикання Gmail.');
+  }
+  const selected = mailboxMultiSelectConnection_({ userId }, connectionIdValue);
+  sendSettingsMenu_(userId, chatId);
+  return { message: 'Активна Gmail: ' + String(selected.connection.email || selected.connection.displayName || 'Gmail') };
+}
+
 function sendSettingsMenu_(userIdValue, chatIdValue) {
   const userId = String(userIdValue || mailboxOwnerId_());
   const chatId = String(chatIdValue || userId);
@@ -8747,6 +8828,12 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
     connectionId: principal.connectionId,
   }, principal.registry).filter(item => item.connected);
   const active = accounts.find(item => item.id === principal.connectionId) || null;
+  let googleStart = null;
+  try {
+    googleStart = mailboxGoogleConnectStart_({}, principal);
+  } catch (error) {
+    console.error('Direct Gmail OAuth launcher unavailable: ' + String(error && error.message || error));
+  }
   const accountLines = accounts.slice(0, 12).map(account => {
     const sync = typeof mailboxMetadataSyncPublicStatus_ === 'function'
       ? mailboxMetadataSyncPublicStatus_(account.id, '')
@@ -8768,12 +8855,21 @@ function sendSettingsMenu_(userIdValue, chatIdValue) {
     '\n\n🌙 Сповіщення без звуку: <b>22:00–08:00</b>\n' +
     '🎯 Правила пріоритетів: команда <code>/focus</code>\n' +
     '🔄 Мітки, send-as і підтримувані налаштування перевіряються окремо для кожної скриньки.';
+  const keyboard = accounts.slice(0, 12).map(account => [{
+    text: (account.id === principal.connectionId ? '✅ ' : '▫️ ') +
+      String(account.email || account.name || 'Gmail').slice(0, 48),
+    callback_data: telegramGmailAccountCallbackData_(account.id),
+  }]);
+  if (googleStart && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_start&state=[A-Za-z0-9_-]{43}$/.test(String(googleStart.launchUrl || ''))) {
+    keyboard.push([{ text: '＋ Додати Gmail-акаунт', url: googleStart.launchUrl }]);
+  }
+  keyboard.push(
+    [{ text: '🧩 Відкрити поштовий клієнт', web_app: { url: mailboxBootstrapUrl_() } }],
+    [{ text: '🔄 Оновити стан', callback_data: BOT_UI.SETTINGS_ACTION }]
+  );
   sendTelegramText_(
     text,
-    JSON.stringify({ inline_keyboard: [
-      [{ text: '🧩 Відкрити поштовий клієнт', web_app: { url: mailboxBootstrapUrl_() } }],
-      [{ text: '🔄 Оновити стан', callback_data: BOT_UI.SETTINGS_ACTION }],
-    ] }),
+    JSON.stringify({ inline_keyboard: keyboard }),
     { chatId, silent: true }
   );
   return { message: 'Налаштування Gmail оновлено' };

@@ -1584,13 +1584,44 @@ function mailboxGoogleOAuthConfig_() {
   const clientId = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_ID_PROPERTY) || '');
   const clientSecret = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_CLIENT_SECRET_PROPERTY) || '');
   const configuredRedirectUri = String(props.getProperty(MAILBOX_MULTI_CONFIG_.OAUTH_REDIRECT_URI_PROPERTY) || '');
-  const redirectUri = 'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html';
   if (!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId) ||
       clientSecret.length < 16 || clientSecret.length > 512 || /[\s\u0000-\u001f\u007f]/.test(clientSecret) ||
       !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(configuredRedirectUri)) {
     throw mailboxError_('GOOGLE_OAUTH_NOT_CONFIGURED', 'Підключення нових Gmail-акаунтів ще не налаштовано на сервері.');
   }
-  return { clientId, clientSecret, redirectUri };
+  return { clientId, clientSecret, redirectUri: configuredRedirectUri };
+}
+
+function mailboxGoogleAuthorizationUrl_(config, stateValue, loginHintValue) {
+  const state = String(stateValue || '');
+  const loginHint = String(loginHintValue || '').toLowerCase();
+  if (!/^[A-Za-z0-9_-]{43}$/.test(state) || (loginHint && mailboxSafeEmail_(loginHint) !== loginHint)) {
+    throw mailboxError_('GOOGLE_OAUTH_INVALID', 'Google OAuth-запит недійсний.');
+  }
+  const query = {
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    response_type: 'code',
+    access_type: 'offline',
+    include_granted_scopes: 'true',
+    prompt: 'select_account',
+    scope: MAILBOX_MULTI_CONFIG_.GMAIL_SCOPES.join(' '),
+    state,
+  };
+  if (loginHint) query.login_hint = loginHint;
+  return 'https://accounts.google.com/o/oauth2/v2/auth?' + Object.keys(query)
+    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(query[key])).join('&');
+}
+
+function mailboxGoogleLaunchUrl_(redirectUriValue, stateValue) {
+  const redirectUri = String(redirectUriValue || '');
+  const state = String(stateValue || '');
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?action=gmail_oauth_callback$/.test(redirectUri) ||
+      !/^[A-Za-z0-9_-]{43}$/.test(state)) {
+    throw mailboxError_('GOOGLE_OAUTH_INVALID', 'Google OAuth launcher недійсний.');
+  }
+  return redirectUri.replace(/\?action=gmail_oauth_callback$/, '') +
+    '?action=gmail_oauth_start&state=' + encodeURIComponent(state);
 }
 
 function mailboxGoogleConnectStart_(payload, session) {
@@ -1616,13 +1647,15 @@ function mailboxGoogleConnectStart_(payload, session) {
   try {
     const props = PropertiesService.getScriptProperties();
     const states = mailboxGoogleReadStates_(props, now)
-      .filter(item => !(item.userId === String(session.userId) && item.zoneId === zoneId))
       .slice(-(MAILBOX_MULTI_CONFIG_.OAUTH_STATE_LIMIT - 1));
     states.push({
-      v: 1,
+      v: 2,
       hash: mailboxMultiHashText_(state),
       userId: String(session.userId),
+      chatId: String(session.userId),
       zoneId,
+      returnTo: 'telegram',
+      loginHint,
       createdAt: now,
       expiresAt: now + MAILBOX_MULTI_CONFIG_.OAUTH_STATE_SECONDS * 1000,
     });
@@ -1633,22 +1666,26 @@ function mailboxGoogleConnectStart_(payload, session) {
   } finally {
     lock.releaseLock();
   }
-  const query = {
-    client_id: config.clientId,
-    redirect_uri: config.redirectUri,
-    response_type: 'code',
-    access_type: 'offline',
-    include_granted_scopes: 'true',
-    prompt: 'select_account',
-    scope: MAILBOX_MULTI_CONFIG_.GMAIL_SCOPES.join(' '),
-    state,
-  };
-  if (loginHint) query.login_hint = loginHint;
   return {
-    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth?' + Object.keys(query)
-      .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(query[key])).join('&'),
+    authorizationUrl: mailboxGoogleAuthorizationUrl_(config, state, loginHint),
+    launchUrl: mailboxGoogleLaunchUrl_(config.redirectUri, state),
     expiresAt: now + MAILBOX_MULTI_CONFIG_.OAUTH_STATE_SECONDS * 1000,
     target: { zoneId, loginHint },
+  };
+}
+
+function mailboxGoogleResolveOAuthStart_(stateValue) {
+  const state = String(stateValue || '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(state)) {
+    throw mailboxError_('GOOGLE_OAUTH_INVALID', 'Google OAuth-посилання недійсне.');
+  }
+  const record = mailboxGoogleReadStates_(PropertiesService.getScriptProperties(), Date.now())
+    .find(item => constantTimeEqual_(item.hash, mailboxMultiHashText_(state)));
+  if (!record) throw mailboxError_('GOOGLE_OAUTH_INVALID', 'Google OAuth-посилання використано або воно завершилося.');
+  const config = mailboxGoogleOAuthConfig_();
+  return {
+    authorizationUrl: mailboxGoogleAuthorizationUrl_(config, state, record.loginHint || ''),
+    expiresAt: record.expiresAt,
   };
 }
 
@@ -1684,14 +1721,25 @@ function mailboxGoogleReadStates_(properties, nowValue) {
   const now = Number(nowValue || Date.now());
   const seen = new Set();
   return states.map(item => {
-    const valid = mailboxIsPlainObject_(item) && item.v === 1 &&
+    const version = Number(item && item.v);
+    const userId = String(item && item.userId || '');
+    const chatId = String(item && item.chatId || '');
+    const loginHint = String(item && item.loginHint || '');
+    const legacy = version === 1;
+    const current = version === 2 && chatId === userId && String(item.returnTo || '') === 'telegram' &&
+      (!loginHint || mailboxSafeEmail_(loginHint) === loginHint);
+    const valid = mailboxIsPlainObject_(item) && (legacy || current) &&
       /^[a-f0-9]{64}$/.test(String(item.hash || '')) && /^\d{1,24}$/.test(String(item.userId || '')) &&
       /^zone-[A-Za-z0-9_-]{1,80}$/.test(String(item.zoneId || '')) &&
       Number.isInteger(item.createdAt) && Number.isInteger(item.expiresAt) && item.expiresAt > item.createdAt &&
       item.expiresAt - item.createdAt === MAILBOX_MULTI_CONFIG_.OAUTH_STATE_SECONDS * 1000;
     if (!valid || seen.has(item.hash)) throw mailboxError_('SERVER_CONFIG', 'Стан Google OAuth пошкоджений.');
     seen.add(item.hash);
-    return item;
+    return Object.assign({}, item, {
+      chatId: legacy ? userId : chatId,
+      returnTo: 'telegram',
+      loginHint: legacy ? '' : loginHint,
+    });
   }).filter(item => item.expiresAt > now);
 }
 
@@ -1844,6 +1892,8 @@ function mailboxGooglePersistConnection_(state, token, identity) {
     return {
       ok: true,
       account: { id: connection.id, email: connection.email, name: connection.displayName, avatarUrl: connection.avatarUrl },
+      telegramUserId: String(state.userId),
+      telegramChatId: String(state.chatId || state.userId),
       message: 'Gmail-акаунт ' + connection.email + ' підключено.',
     };
   } finally {

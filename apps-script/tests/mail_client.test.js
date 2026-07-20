@@ -7070,16 +7070,37 @@ test('multi-account workspaces isolate Telegram users and issue only official on
   assert.equal(authorization.searchParams.get('prompt'), 'select_account');
   assert.equal(
     authorization.searchParams.get('redirect_uri'),
-    'https://tarasevych.github.io/gmail-telegram-controls/gmail-oauth-callback.html',
+    'https://script.google.com/macros/s/unit-test-deployment_123/exec?action=gmail_oauth_callback',
   );
   assert.match(authorization.searchParams.get('scope'), /gmail\.settings\.basic/);
   assert.equal(authorization.searchParams.get('login_hint'), 'other@example.com');
   assert.match(authorization.searchParams.get('state'), /^[A-Za-z0-9_-]{43}$/);
   assert.doesNotMatch(oauth.authorizationUrl, /client_secret|refresh_token|BOT_TOKEN/i);
+  const launch = new URL(oauth.launchUrl);
+  assert.equal(launch.origin, 'https://script.google.com');
+  assert.equal(launch.searchParams.get('action'), 'gmail_oauth_start');
+  assert.equal(launch.searchParams.get('state'), authorization.searchParams.get('state'));
+  assert.equal(
+    harness.context.mailboxGoogleResolveOAuthStart_(launch.searchParams.get('state')).authorizationUrl,
+    oauth.authorizationUrl,
+  );
+  const pendingState = JSON.parse(harness.propertyValues.MAILBOX_GOOGLE_OAUTH_STATES_V1)[0];
+  assert.equal(pendingState.v, 2);
+  assert.equal(pendingState.userId, otherUserId);
+  assert.equal(pendingState.chatId, otherUserId);
+  assert.equal(pendingState.returnTo, 'telegram');
+  harness.context.mailboxGoogleConsumeState_(launch.searchParams.get('state'));
+  assert.throws(() => harness.context.mailboxGoogleResolveOAuthStart_(launch.searchParams.get('state')),
+    /використано|завершилося/);
 });
 
 test('Telegram settings expose only the requesting user Gmail zone and exact per-account sync status', () => {
-  const harness = makeContext();
+  const harness = makeContext({ properties: {
+    GOOGLE_OAUTH_CLIENT_ID: '123456789-unit-test.apps.googleusercontent.com',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'unit-test-google-client-secret-123456789',
+    GOOGLE_OAUTH_REDIRECT_URI:
+      'https://script.google.com/macros/s/unit-test-deployment_123/exec?action=gmail_oauth_callback',
+  } });
   openOwnerSession(harness);
   const otherUserId = '999999999';
   resultData(harness.context.mailboxOpenSession(telegramInitData(otherUserId)));
@@ -7092,6 +7113,10 @@ test('Telegram settings expose only the requesting user Gmail zone and exact per
   }, {
     id: 'gmail-other-settings', zoneId: otherZone, provider: 'google_oauth',
     email: 'other-settings@example.com', displayName: 'Other settings', avatarUrl: '', status: 'active',
+    connectedByUserId: otherUserId, connectedAt: Date.now(), tokenGeneration: 1,
+  }, {
+    id: 'gmail-other-second', zoneId: otherZone, provider: 'google_oauth',
+    email: 'other-second@example.com', displayName: 'Other second', avatarUrl: '', status: 'active',
     connectedByUserId: otherUserId, connectedAt: Date.now(), tokenGeneration: 1,
   });
   const otherPreference = registry.preferences.find(item => item.userId === otherUserId);
@@ -7118,6 +7143,20 @@ test('Telegram settings expose only the requesting user Gmail zone and exact per
   assert.match(deliveries[0].text, /синхронізовано/);
   assert.doesNotMatch(deliveries[0].text, /owner-private@example\.com|Павло Тарасевич/);
   assert.doesNotMatch(deliveries[0].markup, /client_secret|refresh_token|BOT_TOKEN/i);
+  const buttons = JSON.parse(deliveries[0].markup).inline_keyboard.flat();
+  const secondButton = buttons.find(button => button.callback_data === 'ga.gmail-other-second');
+  const addButton = buttons.find(button => button.text === '＋ Додати Gmail-акаунт');
+  assert.ok(secondButton, 'every visible sibling Gmail must have a native Telegram switch button');
+  assert.match(addButton.url,
+    /^https:\/\/script\.google\.com\/macros\/s\/unit-test-deployment_123\/exec\?action=gmail_oauth_start&state=[A-Za-z0-9_-]{43}$/);
+  const parsed = harness.context.parseTelegramGmailAccountCallback_(secondButton.callback_data);
+  const switched = harness.context.switchTelegramGmailAccount_(otherUserId, otherUserId, parsed.connectionId);
+  assert.equal(switched.message, 'Активна Gmail: other-second@example.com');
+  const switchedRegistry = JSON.parse(harness.propertyValues.MAILBOX_TENANT_REGISTRY_V1);
+  assert.equal(switchedRegistry.preferences.find(item => item.userId === otherUserId).activeConnectionId,
+    'gmail-other-second');
+  assert.throws(() => harness.context.switchTelegramGmailAccount_(OWNER_ID, OWNER_ID, parsed.connectionId),
+    /іншій поштовій зоні/);
 });
 
 test('Gmail metadata is connection-scoped and user labels use optimistic guarded CRUD', () => {

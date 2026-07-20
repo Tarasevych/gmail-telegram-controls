@@ -1832,8 +1832,11 @@ test('the profile avatar exposes real server-backed Gmail connection and switchi
   );
   assert.match(connectSource, /continueGoogleOAuth\.href = url/);
   assert.match(connectSource, /continueGoogleOAuth\.dataset\.expiresAt/);
-  assert.match(connectSource, /tg && typeof tg\.openLink === "function"/);
+  assert.match(connectSource, /telegramCanOpen = Boolean\(tg && typeof tg\.openLink === "function"\)/);
   assert.match(connectSource, /tg\.openLink\(url\)/);
+  assert.match(connectSource, /window\.open\("about:blank", "_blank"\)[\s\S]*await rpc/,
+    'the browser fallback must reserve its window during the original user click');
+  assert.match(connectSource, /browserPopup\.location\.replace\(url\)/);
   assert.match(connectSource, /window\.open\(url, "_blank", "noopener,noreferrer"\)/,
     'a safe browser fallback must remain when Telegram openLink is unavailable');
   assert.match(accountSource, /function refreshAccountsAfterGoogleOAuth\(\)/);

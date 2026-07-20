@@ -7567,6 +7567,14 @@
       }
 
       async function connectGoogleMailbox() {
+        var telegramCanOpen = Boolean(tg && typeof tg.openLink === "function");
+        var browserPopup = null;
+        if (!telegramCanOpen) {
+          try {
+            browserPopup = window.open("about:blank", "_blank");
+            if (browserPopup) browserPopup.opener = null;
+          } catch (openError) { browserPopup = null; }
+        }
         els.connectGoogleAccount.disabled = true;
         try {
           var result = await rpc({ op: "connectGoogleStart", payload: {} });
@@ -7576,9 +7584,15 @@
           els.continueGoogleOAuth.href = url;
           els.continueGoogleOAuth.dataset.expiresAt = String(state.googleOAuthPendingUntil);
           var opened = false;
-          if (tg && typeof tg.openLink === "function") {
+          if (telegramCanOpen) {
             try {
               tg.openLink(url);
+              opened = true;
+            } catch (openError) { opened = false; }
+          }
+          if (!opened && browserPopup && !browserPopup.closed) {
+            try {
+              browserPopup.location.replace(url);
               opened = true;
             } catch (openError) { opened = false; }
           }
@@ -7593,6 +7607,9 @@
             ? "Google відкрито. Оберіть акаунт і після завершення поверніться до Telegram."
             : "Браузер заблокував відкриття. Натисніть «Продовжити в Google».", { success: true });
         } catch (error) {
+          if (browserPopup && !browserPopup.closed) {
+            try { browserPopup.close(); } catch (closeError) {}
+          }
           state.googleOAuthPendingUntil = 0;
           els.continueGoogleOAuth.removeAttribute("href");
           els.continueGoogleOAuth.hidden = true;

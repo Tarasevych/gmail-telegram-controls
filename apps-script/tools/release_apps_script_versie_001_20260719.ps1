@@ -18,13 +18,13 @@ if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $Rollback | Where-O
 $ScriptId = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS'
 $StableDeploymentId = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z'
 $RollbackVersion = 37
-$LegacyStagingVersion = 38
-$CandidateVersion = 39
-$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-19): single delivery and OAuth callback relay'
-$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-19) guarded staging'
-$LegacyStagingDescription = 'Telegram Gmail product v46 guarded staging'
+$LegacyStagingVersion = 39
+$CandidateVersion = 40
+$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): direct OAuth return and account switching'
+$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) guarded staging'
+$LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-19) guarded staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260719-release.json'
+$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v40-release.json'
 
 $ExpectedRollbackHashes = @{
   Code='1dfbad4569d110b97b01fc8d98bb51cb0069e0683daac2a0bbc12a67abd31cb5'
@@ -34,17 +34,17 @@ $ExpectedRollbackHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedLegacyStagingHashes = @{
-  Code='a026265c4972578c626f0bc1e565708ce5d049daf282d87d76556f1a49d3ac2d'
-  MultiAccount='9f97b7ac0c72f38878c3c28a42f5a811c1875b91a5451d1a8fc34879b7b7ebd0'
-  MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
-  MailApp='54d39b680e1770d64cf28e6cbe78df7f04d73033f3c436ac8d7496e2838e27a0'
-  appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
-}
-$ExpectedCandidateHashes = @{
   Code='525ed9f44b3276a54127673485a43a686697f6040f337805da7dfed6f25e54f8'
   MultiAccount='15946e5c889c4d7d94c6aa9414c11c57ebbe430dd050764203a54d426cbfc506'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='d18bbc470a86feb2292ea143295b0c806b10b4346bd0ebb9e77b876454dc1e6c'
+  appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
+}
+$ExpectedCandidateHashes = @{
+  Code='7e2e0e87542e230eb542e512ca8ac02eca4ac2bb67604c1cf9efafba883d59b7'
+  MultiAccount='e422d00ad55cc2a49a9b70bf2d897d2cbed07ad3beada2956ae34e6f286335d6'
+  MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
+  MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 
@@ -136,7 +136,7 @@ function Set-Head([string]$Base, $Content, [hashtable]$Expected, [string]$Label)
 $candidate = Get-Candidate
 Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Versie-001 candidate'
 
-$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260719Release')
+$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V40Release')
 $held = $false; $script:AccessToken = $null
 try {
   $held = $mutex.WaitOne(0)
@@ -195,7 +195,7 @@ try {
   if ($PreflightOnly) {
     [ordered]@{ok=$true;stableVersion=$stableVersion;headState=$headState;immutableReady=[bool]$immutable;
       legacyStagingCount=$legacyStaging.Count;stagingCount=$staging.Count;
-      readyToStage=($stableVersion -eq $RollbackVersion -and $legacyStaging.Count -eq 0);
+      readyToStage=($stableVersion -eq $RollbackVersion -and $legacyStaging.Count -le 1 -and $staging.Count -eq 0);
       journalState=if($journal){[string]$journal.state}else{''};candidateHashes=$ExpectedCandidateHashes} |
       ConvertTo-Json -Depth 5
     return
@@ -285,7 +285,7 @@ try {
 
   if ($stableVersion -ne $CandidateVersion -or -not $immutable) { throw 'Rollback requires stable exact Versie-001.' }
   Invoke-GoogleJson PUT $stableUri @{deploymentConfig=@{scriptId=$ScriptId;versionNumber=$RollbackVersion;
-    manifestFileName='appsscript';description='Rollback to verified Telegram Gmail product v38.3'}} | Out-Null
+    manifestFileName='appsscript';description='Rollback to verified Telegram Gmail product v45 Apps Script v37'}} | Out-Null
   Set-Head $base $rollbackContent $ExpectedRollbackHashes "Rolled back v$RollbackVersion HEAD"
   if ([int](Invoke-GoogleJson GET $stableUri).deploymentConfig.versionNumber -ne $RollbackVersion) {
     throw 'Rollback deployment did not verify.'
