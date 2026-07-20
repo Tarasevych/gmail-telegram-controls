@@ -18,13 +18,13 @@ if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $Rollback | Where-O
 $ScriptId = '1Lxm-LJsGCRAz_LO0EjSlXnikx0oDioX6CdmiMhyLRmAAJ1fCk63S_1mS'
 $StableDeploymentId = 'AKfycbwQkmQIIsboUayMhWdv_DzGj_gbERMKdWEpUVUpIjvwTaIjyjyLaBWUmw1g3lFWFV3Z'
 $RollbackVersion = 50
-$LegacyStagingVersion = 51
-$CandidateVersion = 52
-$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): per-account Gmail scan telemetry'
-$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) per-account Gmail scan telemetry staging'
-$LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) per-account Gmail delivery diagnostics staging'
+$LegacyStagingVersion = 52
+$CandidateVersion = 53
+$ReleaseDescription = 'Telegram Gmail Versie 1 (2026-07-20): protected per-account Gmail trace'
+$StagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) protected per-account Gmail trace staging'
+$LegacyStagingDescription = 'Telegram Gmail Versie 1 (2026-07-20) per-account Gmail scan telemetry staging'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v52-release.json'
+$JournalPath = Join-Path $HOME '.codex\recovery\019f5d65-8209-7a00-b915-4a522dbcb612-versie-001-20260720-v53-release.json'
 
 $ExpectedRollbackHashes = @{
   Code='1cf96a95ef65d0a59e71ddd171377439bfba59de142a9455b09477b6cde6ba24'
@@ -41,7 +41,7 @@ $ExpectedRollbackHeadDriftHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedLegacyStagingHashes = @{
-  Code='881dcb1424f11217f64f02175b4105cbbe648b2f51fbb8740fd0107d01f25f24'
+  Code='4a0f2beee5005a18ea31f420ed0463f73abbfe00c928cfa6c6db1224092907cb'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -55,7 +55,7 @@ $ExpectedBaselineHashes = @{
   appsscript='354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9'
 }
 $ExpectedCandidateHashes = @{
-  Code='4a0f2beee5005a18ea31f420ed0463f73abbfe00c928cfa6c6db1224092907cb'
+  Code='55042fcf036073673709720b121bf184506768de1d2356d0e4aff10a294d27b2'
   MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'
   MailClient='f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7'
   MailApp='c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b'
@@ -150,7 +150,7 @@ function Set-Head([string]$Base, $Content, [hashtable]$Expected, [string]$Label)
 $candidate = Get-Candidate
 Assert-Hashes $candidate $ExpectedCandidateHashes 'Local Versie-001 candidate'
 
-$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V52Release')
+$mutex = [Threading.Mutex]::new($false, 'Local\TarasevychGmailNotifierVersie00120260720V53Release')
 $held = $false; $script:AccessToken = $null
 try {
   $held = $mutex.WaitOne(0)

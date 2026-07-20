@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v52';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v53';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -961,6 +961,87 @@ function serveGmailRuntimeStatus_(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function gmailRuntimeTraceToken_(e) {
+  var value = String(e && e.parameter && e.parameter.trace || '').trim();
+  return /^[A-Za-z0-9:._-]{12,80}$/.test(value) ? value : '';
+}
+
+function gmailRuntimeTraceCurrentMailbox_(traceToken) {
+  var query = encodeURIComponent('subject:"' + traceToken + '" newer_than:2d');
+  var data = gmailApi_('/messages?q=' + query + '&includeSpamTrash=true&maxResults=10') || {};
+  var rows = Array.isArray(data.messages) ? data.messages.slice(0, 10) : [];
+  var result = {
+    matchCount: rows.length, inboxCount: 0, spamCount: 0,
+    trashCount: 0, unreadCount: 0, truncated: Boolean(data.nextPageToken)
+  };
+  rows.forEach(function (row) {
+    var id = String(row && row.id || '');
+    if (!/^[A-Za-z0-9_-]{5,64}$/.test(id)) return;
+    var metadata = gmailApi_('/messages/' + encodeURIComponent(id) + '?format=metadata') || {};
+    var labels = Array.isArray(metadata.labelIds) ? metadata.labelIds : [];
+    if (labels.indexOf('INBOX') >= 0) result.inboxCount += 1;
+    if (labels.indexOf('SPAM') >= 0) result.spamCount += 1;
+    if (labels.indexOf('TRASH') >= 0) result.trashCount += 1;
+    if (labels.indexOf('UNREAD') >= 0) result.unreadCount += 1;
+  });
+  return result;
+}
+
+function gmailRuntimeTraceMailboxes_(traceToken) {
+  var results = [];
+  function capture(laneRef, callback) {
+    try {
+      var value = callback();
+      value.laneRef = laneRef;
+      value.errorCode = '';
+      value.errorFingerprint = '';
+      results.push(value);
+    } catch (error) {
+      results.push({
+        laneRef: laneRef, matchCount: 0, inboxCount: 0, spamCount: 0,
+        trashCount: 0, unreadCount: 0, truncated: false,
+        errorCode: gmailRealtimeGmailErrorCode_(error),
+        errorFingerprint: gmailRuntimeFingerprint_(error)
+      });
+    }
+  }
+  capture('legacy', function () { return gmailRuntimeTraceCurrentMailbox_(traceToken); });
+  if (typeof mailboxMultiReadRegistry_ !== 'function' ||
+      typeof withMailboxConnectionContext_ !== 'function') return results;
+  var props = PropertiesService.getScriptProperties();
+  var registry = mailboxMultiReadRegistry_(props);
+  var ownerId = String(mailboxOwnerId_());
+  var legacyEmail = String(CONFIG.GMAIL_ACCOUNT || '').trim().toLowerCase();
+  var scheduled = {};
+  (registry.preferences || []).forEach(function (preference) {
+    var userId = String(preference.userId || '');
+    if (!/^\d{1,24}$/.test(userId) || String(preference.notifications || 'all') === 'none') return;
+    (preference.notificationConnectionIds || []).forEach(function (connectionIdValue) {
+      var connectionId = String(connectionIdValue || '');
+      if (!connectionId || connectionId === MAILBOX_MULTI_CONFIG_.LEGACY_CONNECTION_ID) return;
+      var connection = (registry.connections || []).find(function (item) {
+        return String(item.id || '') === connectionId && String(item.status || '') === 'active';
+      });
+      var member = connection && (registry.members || []).find(function (item) {
+        return String(item.zoneId || '') === String(connection.zoneId || '') &&
+          String(item.userId || '') === userId && String(item.status || '') === 'active';
+      });
+      if (!connection || !member) return;
+      var email = String(connection.email || '').trim().toLowerCase();
+      var mailboxKey = userId + ':' + email;
+      if (!email || (userId === ownerId && email === legacyEmail) || scheduled[mailboxKey]) return;
+      scheduled[mailboxKey] = true;
+      var laneRef = gmailRealtimeLaneReference_(userId, connectionId);
+      capture(laneRef, function () {
+        return withMailboxConnectionContext_(userId, connectionId, 'viewer', function () {
+          return gmailRuntimeTraceCurrentMailbox_(traceToken);
+        });
+      });
+    });
+  });
+  return results;
+}
+
 function serveGmailRuntimeProbe_(e) {
   var props = PropertiesService.getScriptProperties();
   var expected = String(props.getProperty('WEBHOOK_KEY') || '');
@@ -986,6 +1067,8 @@ function serveGmailRuntimeProbe_(e) {
     result.failed = 1;
     result.workerErrors = 1;
   }
+  var traceToken = gmailRuntimeTraceToken_(e);
+  var trace = traceToken ? gmailRuntimeTraceMailboxes_(traceToken) : [];
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
     product: 'Versie 1',
@@ -1013,6 +1096,10 @@ function serveGmailRuntimeProbe_(e) {
       detachedTooOld: Math.max(0, Number(retention.detachedTooOld || 0)),
       lastErrorCode: String(retention.lastErrorCode || ''),
       lastErrorFingerprint: String(retention.lastErrorFingerprint || '')
+    },
+    trace: {
+      requested: Boolean(traceToken),
+      lanes: trace
     },
     runtime: gmailRuntimeReadState_(props),
     lanes: gmailRealtimeLaneSnapshots_(props, false)

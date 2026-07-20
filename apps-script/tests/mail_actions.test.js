@@ -6466,6 +6466,31 @@ test('declared Google reauthorization failures are not masked as transport error
   assert.equal(context.gmailRuntimeFailureCode_(error), 'gmail_auth_required');
 });
 
+test('protected Gmail trace returns only bounded label counts and never identifiers or the trace token', () => {
+  const original = context.gmailApi_;
+  const token = '2026-07-20T23:34:34.365Z';
+  try {
+    context.gmailApi_ = path => {
+      if (path.startsWith('/messages?q=')) {
+        return { messages: [{ id: 'trace_message_one' }, { id: 'trace_message_two' }] };
+      }
+      if (path.includes('trace_message_one')) return { labelIds: ['INBOX', 'UNREAD'] };
+      if (path.includes('trace_message_two')) return { labelIds: ['SPAM'] };
+      throw new Error('unexpected trace request');
+    };
+    const result = context.gmailRuntimeTraceCurrentMailbox_(token);
+    assert.deepEqual({ ...result }, {
+      matchCount: 2, inboxCount: 1, spamCount: 1,
+      trashCount: 0, unreadCount: 1, truncated: false,
+    });
+    const serialized = JSON.stringify(result);
+    assert.doesNotMatch(serialized, /trace_message/);
+    assert.doesNotMatch(serialized, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.equal(context.gmailRuntimeTraceToken_({ parameter: { trace: token } }), token);
+    assert.equal(context.gmailRuntimeTraceToken_({ parameter: { trace: 'subject:"in:anywhere"' } }), '');
+  } finally { context.gmailApi_ = original; }
+});
+
 test('realtime legacy delivery reuses the canonical scope and never inherits an unrelated global mode', () => {
   const body = code.match(/function runRealtimeMailCheck_\(source\)\s*\{([\s\S]*?)\n\}/);
   const mode = code.match(/function gmailRealtimeNotificationMode_\(rootProps, scope\)\s*\{([\s\S]*?)\n\}/);
