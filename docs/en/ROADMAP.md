@@ -59,3 +59,19 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
 - **Gates:** regression/full tests, hash-pinned PreflightOnly, staging E4, and production E5 after the external quota resets.
 - **Source request:** REQ-0018.
+
+### B1-17 — Google primary-source gate and publication surfaces
+
+- Review the canonical Advanced Gmail Service and Advanced Google services pages before Gmail/Apps Script changes, and record the access date and decision.
+- GitHub remains the canonical code/history repository; Apps Script is runtime; Developer Profile is a discovery index, not a Git mirror.
+- CI must test LF/CRLF-stable evidence hashing before factual verification report validation.
+- **Status:** tooling/docs candidate; Gmail runtime and Versie are unchanged.
+- **Source:** `REQ-0021`.
+
+### B1-18 — Connection-scoped metadata transport
+
+- **GT-025:** remove the hardcoded Apps Script owner token from parallel `threads.get` metadata.
+- Keep direct Gmail API transport for external OAuth connections; evaluate Advanced Gmail Service only as a separate owner-lane adapter.
+- Next quota-reduction spike: one Gmail HTTP batch with a fail-closed multipart/Content-ID parser and no connection-token mixing.
+- **Status:** source candidate; live staging/production is `unverified`.
+- **Source:** `REQ-0021`.

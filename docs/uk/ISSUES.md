@@ -29,6 +29,8 @@
 | GT-021 | Відкрита production | 1 | Перше відкриття production Web App інколи лишається на skeleton понад 15 секунд | Після одного refresh mailbox завантажився; додати content-free timing для bridge/backend bootstrap і перевірити cold-start timeout без Gmail mutations |
 | GT-022 | Обмеження платформи | 1 | `clasp logs` недоступний, бо production використовує Apps Script-managed default GCP project без standard project ID | Не мігрувати лише заради логів: це незворотно скасувало б чинні authorizations. Використовувати Apps Script Executions UI або окремий content-free telemetry reader |
 | GT-023 | В роботі; root cause перевірено production | 1 | Єдиний хвилинний `checkNewMail_` виконується 80–106 секунд, тому запуски перекриваються та вичерпують денну квоту `URLFETCH` | Другого trigger немає. Candidate додає атомарний 150-секундний timer slot через короткий ScriptLock, лишає realtime першим, а повний Gmail History backfill обмежує одним запуском на 15 хвилин; потрібні локальні тести, staging і production evidence після відновлення зовнішньої квоти |
+| GT-024 | Відкрита shared blocker | 1 | Web App bootstrap повернув однаковий network error на production v56 і після exact rollback на v55 | Candidate-specific regression не підтверджена; не перемикати релізи повторно до контрольованого A/B після відновлення зовнішньої квоти |
+| GT-025 | Виправлена у source candidate; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | Вибирати `mailboxMultiGmailAccessToken_` для активного `connectionId`, залишаючи `ScriptApp.getOAuthToken()` лише для legacy/owner lane; regression test забороняє hardcoded owner token |
 
 ## Production-доказ 2026-07-20
 

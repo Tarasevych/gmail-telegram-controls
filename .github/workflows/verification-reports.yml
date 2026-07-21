@@ -23,5 +23,8 @@ jobs:
       - name: Validate knowledge-hub baseline
         run: python3 tools/check_knowledge_hub.py
 
+      - name: Run verification tooling regression tests
+        run: python3 -m unittest discover -s tools/tests -p "test_*.py"
+
       - name: Validate factual verification reports
         run: python3 tools/check_verification_reports.py
