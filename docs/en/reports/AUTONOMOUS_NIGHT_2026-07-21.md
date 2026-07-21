@@ -2,7 +2,7 @@
 
 Source request: `REQ-0025`  
 Checkpoint status: **complete_with_blockers**  
-Evidence cutoff: **2026-07-21 23:10 +02:00 (Europe/Brussels)**  
+Evidence cutoff: **2026-07-21 23:22 +02:00 (Europe/Brussels)**
 Canonical repository: `Tarasevych/gmail-telegram-controls`
 
 ## Executive result
@@ -84,6 +84,7 @@ Relevant successful main runs:
 | Trigger | one minute `checkNewMail_`; not changed |
 | Release journal | staging-verified state preserved; no promotion performed in this phase |
 | Advanced Gmail flag | unset; runtime behavior unchanged |
+| Final read-only preflight | passed at 23:22: stable v55, HEAD `stable_v55`, one staging, zero legacy staging, journal `staging_verified`, exact immutable v57 hashes |
 
 The latest inspected failed execution at 22:49:14 ended in `gmailApiRequest_` through the notification scan path with the exact daily `urlfetch` quota exception. This proves a shared external blocker, not a v57-specific regression.
 
