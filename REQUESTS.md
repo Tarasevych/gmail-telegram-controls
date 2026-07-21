@@ -77,6 +77,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: виправити невдалий GitHub Actions `Request ledger` шляхом schema-only нормалізації REQ-0009–REQ-0013.
 - English: repair failed GitHub Actions `Request ledger` through schema-only normalization of REQ-0009 through REQ-0013.
 - Record: [REQ-0014](requests/2026-07-21/REQ-0014-repair-request-ledger-ci.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: request metadata only; no instruction, permission, product, runtime, release, or main change.
+- Evidence: schema fix `42d341e`; Request ledger run [29831638800](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29831638800) and bilingual run [29831638784](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29831638784) succeeded.

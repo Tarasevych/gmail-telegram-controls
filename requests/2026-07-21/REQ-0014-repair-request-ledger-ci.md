@@ -2,7 +2,7 @@
 
 - ID: REQ-0014
 - Received: 2026-07-21
-- Status: recorded
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Routes: requests=record; instructions=no-change; permissions=reference; plan=no-change; product=no-change; release=no-change
@@ -37,3 +37,11 @@ Read-only GitHub logs confirmed that the bilingual workflow succeeds while the r
 - Local request-ledger and bilingual checks pass.
 - Privacy and `git diff --check` pass.
 - The commit is pushed to `Запити`, and the exact GitHub Actions run on the new HEAD succeeds.
+
+## Completion evidence
+
+- Root cause: REQ-0009/0010 used extended human-only route syntax; REQ-0011/0012/0013 lacked the validator's required bullet metadata and language markers.
+- Schema-only migration commit: `42d341e3017764e2b2a70e3883f28612ae6431d1`.
+- Local checks passed: Request ledger 14/14 indexed records, bilingual documentation 7/7 pairs, privacy scan, and `git diff --check`.
+- GitHub Actions on `42d341e`: Request ledger `29831638800` and Bilingual documentation `29831638784`, both successful.
+- No instruction, permission, product, runtime, deployment, release, mailbox, or `main` state changed.
