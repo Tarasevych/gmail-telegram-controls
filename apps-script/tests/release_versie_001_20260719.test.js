@@ -6,9 +6,10 @@ const crypto = require('node:crypto');
 
 const root = path.resolve(__dirname, '..');
 const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260719.ps1'), 'utf8');
+const candidateHelper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v56.ps1'), 'utf8');
 const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
-  Code: '7216a34067309cfb98db25deccddd1b4d759f8923d66851209165351b7c512cd',
+  Code: '34515ca570d1d869ca096eb837e8523bdb8f889259b2272b0d1a79d914245a53',
   MultiAccount: '8d07e8b9f0f524ed5cedccbb8bfecbb547c93a34eda8ef876e40776d6b470f10',
   MailClient: 'f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7',
   MailApp: 'c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b',
@@ -36,7 +37,19 @@ test('Versie 1 helper pins stable v50 rollback and immutable v55 Sent-copy candi
   assert.match(helper, /Invoke-GoogleJson DELETE .*legacyStaging/);
 });
 
-test('Versie 1 v55 keeps retention safety and excludes Sent copies without maintenance mutations', () => {
+test('current Versie 1 helper pins immutable v55 rollback and v56 runtime-budget candidate', () => {
+  assert.match(candidateHelper, /\$RollbackVersion = 55/);
+  assert.match(candidateHelper, /\$LegacyStagingVersion = 54/);
+  assert.match(candidateHelper, /\$CandidateVersion = 56/);
+  assert.match(candidateHelper, /Versie 1 \(2026-07-21\): isolate timer overlap and URLFetch quota/);
+  assert.match(candidateHelper, /\$ExpectedRollbackHashes = @\{[\s\S]*Code='7216a34067309cfb98db25deccddd1b4d759f8923d66851209165351b7c512cd'/);
+  assert.match(candidateHelper, /\$ExpectedLegacyStagingHashes = @\{[\s\S]*MultiAccount='80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc'/);
+  assert.match(candidateHelper, /versie-001-20260721-v56-release\.json/);
+  assert.match(candidateHelper, /TarasevychGmailNotifierVersie00120260721V56Release/);
+  assert.match(candidateHelper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v55/);
+});
+
+test('Versie 1 v56 keeps v55 safety and adds bounded timer maintenance', () => {
   assert.match(code, /function runSafeLegacyMailCheck_\(source\)/);
   assert.match(code, /recordGmailRuntimeFailure_\('legacy_scan', error\)/);
   assert.match(code, /runSafeLegacyMailCheck_\('manual'\)/);
@@ -51,7 +64,9 @@ test('Versie 1 v55 keeps retention safety and excludes Sent copies without maint
   assert.match(code, /postedParams\.action \|\| ''\) === 'runtime_probe'/);
   assert.match(code, /function compactTelegramMailCardIndexLocked_\(props\)/);
   assert.match(code, /if \(!props\.getProperty\(propertyKey\)\)/);
-  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v55'/);
+  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v56'/);
+  assert.match(code, /claimGmailTimerSlot_\('worker', GMAIL_TIMER_WORKER_SLOT_MS_\)/);
+  assert.match(code, /claimGmailTimerSlot_\('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_\)/);
   assert.match(code, /function gmailRealtimeLaneSnapshots_\(propsValue, includeAccounts\)/);
   assert.match(code, /lanes: gmailRealtimeLaneSnapshots_\(props, false\)/);
   assert.match(code, /declared === 'REAUTH_REQUIRED'/);
@@ -82,5 +97,5 @@ test('Versie 1 candidate hashes match the current source bundle', () => {
   assert.equal(hash('MailClient', 'gs'), expected.MailClient);
   assert.equal(hash('MailApp', 'html'), expected.MailApp);
   assert.equal(hash('appsscript', 'json'), expected.appsscript);
-  for (const value of Object.values(expected)) assert.match(helper, new RegExp(value));
+  for (const value of Object.values(expected)) assert.match(candidateHelper, new RegExp(value));
 });

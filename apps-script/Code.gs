@@ -510,8 +510,29 @@ function nativeWebhookUrl_(webhookKey) {
     '&rev=' + encodeURIComponent(String(CONFIG.WEBHOOK_REVISION || '1'));
 }
 
+function claimGmailTimerSlot_(slotName, durationMs) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(250)) return false;
+  try {
+    var now = Date.now();
+    var propertyKey = GMAIL_TIMER_SLOT_PROPERTY_PREFIX_ +
+      String(slotName || 'unknown').replace(/[^a-z0-9_-]/gi, '_').slice(0, 64);
+    var properties = PropertiesService.getScriptProperties();
+    var currentUntil = Number(properties.getProperty(propertyKey) || 0);
+    if (Number.isFinite(currentUntil) && currentUntil > now) return false;
+    properties.setProperty(
+      propertyKey,
+      String(now + Math.max(1000, Number(durationMs) || 0))
+    );
+    return true;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /** Timer entry point. */
 function checkNewMail_() {
+  if (!claimGmailTimerSlot_('worker', GMAIL_TIMER_WORKER_SLOT_MS_)) return;
   runRealtimeMailChecks_('timer', 5);
   // Webhook failures and half-finished Telegram card moves are durable. The
   // minute trigger provides a bounded retry path without repeating Gmail work.
@@ -534,7 +555,11 @@ function checkNewMail_() {
   } catch (error) {
     console.error('Per-account Gmail metadata reconciliation failed: ' + error);
   }
-  try { syncTelegramMailCardsFromAllGmailHistory_(CONFIG.GMAIL_HISTORY_SYNC_CARD_LIMIT); } catch (error) {
+  try {
+    if (claimGmailTimerSlot_('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_)) {
+      syncTelegramMailCardsFromAllGmailHistory_(CONFIG.GMAIL_HISTORY_SYNC_CARD_LIMIT);
+    }
+  } catch (error) {
     console.error('Gmail History synchronization failed: ' + error);
   }
   // Gmail History is authoritative for ordinary changes. The rotating metadata
@@ -590,8 +615,11 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v55';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v56';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
+var GMAIL_TIMER_SLOT_PROPERTY_PREFIX_ = 'gmail_timer_slot_v1_';
+var GMAIL_TIMER_WORKER_SLOT_MS_ = 150 * 1000;
+var GMAIL_HISTORY_SYNC_SLOT_MS_ = 15 * 60 * 1000;
 
 function emptyMailCheckResult_() {
   return {
@@ -837,7 +865,8 @@ function gmailRuntimeFailureCode_(error) {
   if (telegramStatus >= 500) return 'telegram_retry_5xx';
   if (telegramStatus >= 400) return 'telegram_http_' + telegramStatus;
   var message = String(error && error.message || error || '').toLowerCase();
-  if (/quota|capacity|property store|too many|забагато|ліміт/.test(message)) return 'storage_capacity';
+  if (/urlfetch|service invoked too many times for one day/.test(message)) return 'urlfetch_quota';
+  if (/capacity|property store|storage (?:capacity|full)/.test(message)) return 'storage_capacity';
   if (/lock|busy|already executing|виконується/.test(message)) return 'runtime_busy';
   return 'runtime_error';
 }

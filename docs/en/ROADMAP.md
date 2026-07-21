@@ -28,7 +28,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## Verification gate
 
-`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). E4/E5 for the existing owner connection and the v55 promotion are now evidenced; they do not close B1-07 fresh OAuth or B1-12 second-account fan-out. Current continuation: `REQ-0016`/`REQ-0017`.
+`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). E4/E5 for the existing owner connection and the v55 promotion are now evidenced; they do not close B1-07 fresh OAuth or B1-12 second-account fan-out. Current continuation: `REQ-0018`.
 
 ### B1-13 — Concurrent Gmail OAuth refresh isolation
 
@@ -50,3 +50,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Status:** in progress.
 - **GT-021:** the first Web App open can require a refresh after a prolonged skeleton.
 - **GT-022:** `clasp logs` requires the exact verified GCP project ID; do not guess identity.
+
+### B1-16 — Timer runtime budget and URLFetch quota isolation
+
+- **Status:** Versie 1 candidate; production root cause verified, release gates pending.
+- **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
+- **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
+- **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
+- **Gates:** regression/full tests, hash-pinned PreflightOnly, staging E4, and production E5 after the external quota resets.
+- **Source request:** REQ-0018.

@@ -27,7 +27,8 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-019 | Production verified | 1 | Manual `/check` inspected only the legacy mailbox | Two consecutive `/check` runs after automatic delivery created no duplicate; exact-marker search remained at one result |
 | GT-020 | Open operational | 1 | Protected credential storage still contains an obsolete Telegram bot-token alias that returns 401 | Runtime uses a separately verified protected reference; do not rotate the current token without a separate safe plan |
 | GT-021 | Open in production | 1 | The first production Web App open can remain on the skeleton for more than 15 seconds | One refresh loaded the mailbox; add content-free bridge/backend bootstrap timing and inspect cold-start timeout without Gmail mutations |
-| GT-022 | Open operational | 1 | `clasp logs` is unavailable because local Apps Script config has no GCP project ID | Bind only the factually verified GCP project ID or add a safe Apps Script API log reader; do not guess project identity |
+| GT-022 | Platform constraint | 1 | `clasp logs` is unavailable because production uses an Apps Script-managed default GCP project without a standard project ID | Do not migrate only for logs: that would permanently revoke current authorizations. Use the Apps Script Executions UI or a separate content-free telemetry reader |
+| GT-023 | In progress; root cause production verified | 1 | The single minute `checkNewMail_` takes 80–106 seconds, so invocations overlap and exhaust the daily `URLFETCH` quota | There is no second trigger. The candidate adds an atomic 150-second timer slot with a short ScriptLock, keeps realtime first, and limits the full Gmail History backfill to once per 15 minutes; local tests, staging, and production evidence after the external quota resets remain required |
 
 ## Production evidence 2026-07-20
 
@@ -47,6 +48,8 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 - Production E5: a controlled owner self-message carrying `SENT+INBOX` automatically produced one card; two `/check` runs returned no new mail, and exact-marker search showed one result both times.
 - Production menu: `📬 Mail · Versie 1` opens the static GitHub Pages bridge. No arbitrary mail, OAuth records, or Gmail zones were changed.
 - The first production open required one refresh after a skeleton; `clasp logs` could not start without a verified GCP project ID. Both observations remain open as GT-021/GT-022.
+- Apps Script Executions confirmed the new delivery-outage cause: one minute trigger produced overlapping 80–106-second invocations, while the per-minute Gmail History fan-out ended with `Service invoked too many times for one day: urlfetch`. The trigger list contained exactly one `checkNewMail_`; its configuration was not changed.
+- GT-022 is now classified as a platform constraint: production uses an Apps Script-managed default GCP project. Moving to a standard GCP project only for `clasp logs` would permanently revoke current authorizations, so it was not performed; the Apps Script Executions UI remains the safe evidence source.
 
 ## Update procedure
 
