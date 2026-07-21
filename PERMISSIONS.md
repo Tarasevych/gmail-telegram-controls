@@ -21,6 +21,7 @@
 | P-004 | Межі обов'язкового втручання власника | `permissions/P-004-owner-intervention-boundaries.md` |
 | P-005 | Контекстна маршрутизація запитів / Contextual request routing | `permissions/P-005-contextual-request-routing.md` |
 | P-006 | Автономне продовження і recovery / Autonomous continuation and recovery | `permissions/P-006-autonomous-continuation-recovery.md` |
+| P-007 | Приватне GitLab-дзеркало / Private GitLab mirror | `permissions/P-007-private-gitlab-mirror.md` |
 
 ---
 
