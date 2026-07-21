@@ -119,3 +119,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `in_progress`
 - Next Versie authorization: `no`
 - Boundary: no new Versie, rollback, repeated deployment, arbitrary mailbox mutation, account/zone mixing, guessed cloud project identity, CAPTCHA, OTP/2FA, passkey/biometric/hardware key, payment, or unavoidable physical action.
+
+## REQ-0019 | 2026-07-21
+
+- Українською: безпечно продовжити `Versie 1` після exact rollback з immutable v56 на stable v55, встановити спільну причину network/bootstrap failure і виконати контрольований A/B gate до будь-якого повторного promotion.
+- English: safely continue `Versie 1` after the exact rollback from immutable v56 to stable v55, establish the shared network/bootstrap failure cause, and run a controlled A/B gate before any renewed promotion.
+- Record: [REQ-0019](requests/2026-07-21/REQ-0019-versie-1-shared-bootstrap-ab-recovery.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Boundary: preserve immutable v56 and exact v55 rollback; no repeated OAuth, arbitrary mailbox mutation, account/zone mixing, secret publication, safety-control bypass, CAPTCHA, OTP/2FA, passkey/biometric/hardware key, payment, or unavoidable physical action.
