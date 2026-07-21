@@ -1925,29 +1925,211 @@ function mailboxMultiGmailAccessToken_(session) {
   return mailboxGoogleRefreshAccess_(key, record, access.connection);
 }
 
-function mailboxGoogleRefreshAccess_(key, record, connection) {
-  const config = mailboxGoogleOAuthConfig_();
-  const response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
-    method: 'post', contentType: 'application/x-www-form-urlencoded', muteHttpExceptions: true,
-    payload: {
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      refresh_token: record.refreshToken,
-      grant_type: 'refresh_token',
-    },
-  });
-  const value = mailboxGoogleJson_(response);
-  const accessToken = String(value && value.access_token || '');
-  const expiresIn = Number(value && value.expires_in);
-  if (Number(response.getResponseCode()) !== 200 || !mailboxGoogleSafeToken_(accessToken) ||
-      !Number.isInteger(expiresIn) || expiresIn < 60 || expiresIn > 86400) {
-    throw mailboxError_('REAUTH_REQUIRED', 'Google відкликав або завершив доступ до ' + connection.email + '. Підключіть акаунт знову.');
+function mailboxGoogleRefreshError_(code, message) {
+  const error = new Error(String(message || code || 'Google OAuth refresh failed'));
+  error.mailboxCode = String(code || 'REAUTH_REQUIRED');
+  return error;
+}
+
+function mailboxGoogleRefreshSafeText_(value, maxLength) {
+  const text = String(value || '');
+  return text.length > 0 && text.length <= Number(maxLength || 8192);
+}
+
+function mailboxGoogleRefreshLeaseKey_(key) {
+  return String(key || '') + '_REFRESH_LEASE_V1';
+}
+
+function mailboxGoogleRefreshParseJson_(value) {
+  try {
+    return value ? JSON.parse(String(value)) : null;
+  } catch (error) {
+    return null;
   }
-  record.accessToken = accessToken;
-  record.accessExpiresAt = Date.now() + expiresIn * 1000;
-  record.updatedAt = Date.now();
-  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(record));
-  return accessToken;
+}
+
+function mailboxGoogleRefreshRecordMatchesConnection_(record, connection) {
+  if (!record || !connection || Number(record.v) !== 1) return false;
+  if (record.connectionId && String(record.connectionId) !== String(connection.id || '')) return false;
+  if (String(record.email || '').toLowerCase() !== String(connection.email || '').toLowerCase()) return false;
+  if (Number(record.generation) !== Number(connection.tokenGeneration)) return false;
+  return mailboxGoogleRefreshSafeText_(record.refreshToken, 4096);
+}
+
+function mailboxGoogleRefreshRecordFingerprint_(record) {
+  return JSON.stringify({
+    v: Number(record && record.v),
+    connectionId: String((record && record.connectionId) || ''),
+    email: String((record && record.email) || '').toLowerCase(),
+    generation: Number(record && record.generation),
+    refreshToken: String((record && record.refreshToken) || ''),
+    accessToken: String((record && record.accessToken) || ''),
+    accessTokenExpiresAt: Number(record && record.accessTokenExpiresAt),
+    updatedAt: String((record && record.updatedAt) || '')
+  });
+}
+
+function mailboxGoogleRefreshTokenIsFresh_(record, now) {
+  return mailboxGoogleRefreshSafeText_(record && record.accessToken, 8192) &&
+    Number(record && record.accessTokenExpiresAt) > Number(now || Date.now()) + 90000;
+}
+
+function mailboxGoogleRefreshConnectionIsCurrent_(candidate, expected) {
+  return !!candidate &&
+    String(candidate.id || '') === String(expected.id || '') &&
+    String(candidate.provider || '') === 'google_oauth' &&
+    String(candidate.status || '') === 'active' &&
+    String(candidate.email || '').toLowerCase() === String(expected.email || '').toLowerCase() &&
+    Number(candidate.tokenGeneration) === Number(expected.tokenGeneration);
+}
+
+function mailboxGoogleClaimRefresh_(key, connection) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxGoogleRefreshError_('BUSY', 'Google OAuth token refresh is already being coordinated');
+  }
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const current = mailboxGoogleRefreshParseJson_(props.getProperty(key));
+    if (!mailboxGoogleRefreshRecordMatchesConnection_(current, connection)) {
+      throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth connection changed before token refresh');
+    }
+
+    const now = Date.now();
+    if (mailboxGoogleRefreshTokenIsFresh_(current, now)) {
+      return { accessToken: String(current.accessToken) };
+    }
+
+    const leaseKey = mailboxGoogleRefreshLeaseKey_(key);
+    const lease = mailboxGoogleRefreshParseJson_(props.getProperty(leaseKey));
+    const activeLease = lease && Number(lease.v) === 1 &&
+      mailboxGoogleRefreshSafeText_(lease.owner, 256) &&
+      String(lease.connectionId || '') === String(connection.id || '') &&
+      Number(lease.generation) === Number(connection.tokenGeneration) &&
+      Number(lease.expiresAt) > now;
+    if (activeLease) {
+      throw mailboxGoogleRefreshError_('BUSY', 'Google OAuth token refresh is already in progress');
+    }
+
+    const owner = String(Utilities.getUuid());
+    props.setProperty(leaseKey, JSON.stringify({
+      v: 1,
+      owner: owner,
+      connectionId: String(connection.id || ''),
+      generation: Number(connection.tokenGeneration),
+      issuedAt: now,
+      expiresAt: now + 120000
+    }));
+    return {
+      owner: owner,
+      leaseKey: leaseKey,
+      record: current,
+      recordFingerprint: mailboxGoogleRefreshRecordFingerprint_(current)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxGoogleCommitRefresh_(key, claim, connection, accessToken, expiresIn) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxGoogleRefreshError_('BUSY', 'Google OAuth token refresh commit is busy');
+  }
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const lease = mailboxGoogleRefreshParseJson_(props.getProperty(claim.leaseKey));
+    if (!lease || String(lease.owner || '') !== String(claim.owner || '') || Number(lease.expiresAt) <= Date.now()) {
+      throw mailboxGoogleRefreshError_('BUSY', 'Google OAuth token refresh lease was lost');
+    }
+
+    const registry = mailboxMultiReadRegistry_(props);
+    const currentConnection = (Array.isArray(registry.connections) ? registry.connections : [])
+      .filter(function(item) { return String(item.id || '') === String(connection.id || ''); })[0];
+    if (!mailboxGoogleRefreshConnectionIsCurrent_(currentConnection, connection)) {
+      throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth connection changed during token refresh');
+    }
+
+    const current = mailboxGoogleRefreshParseJson_(props.getProperty(key));
+    if (!mailboxGoogleRefreshRecordMatchesConnection_(current, currentConnection) ||
+        String(current.refreshToken || '') !== String(claim.record.refreshToken || '')) {
+      throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth token generation changed during refresh');
+    }
+
+    if (mailboxGoogleRefreshRecordFingerprint_(current) !== String(claim.recordFingerprint || '')) {
+      if (mailboxGoogleRefreshTokenIsFresh_(current, Date.now())) {
+        props.deleteProperty(claim.leaseKey);
+        return String(current.accessToken);
+      }
+      throw mailboxGoogleRefreshError_('BUSY', 'Google OAuth token state changed during refresh');
+    }
+
+    const updated = Object.assign({}, current, {
+      accessToken: String(accessToken),
+      accessTokenExpiresAt: Date.now() + Math.max(60, Number(expiresIn || 3600)) * 1000,
+      updatedAt: new Date().toISOString()
+    });
+    props.setProperty(key, JSON.stringify(updated));
+    props.deleteProperty(claim.leaseKey);
+    return String(updated.accessToken);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function mailboxGoogleReleaseRefresh_(claim) {
+  if (!claim || !claim.owner || !claim.leaseKey) return;
+  const lock = LockService.getScriptLock();
+  try {
+    if (!lock.tryLock(1000)) return;
+    const props = PropertiesService.getScriptProperties();
+    const lease = mailboxGoogleRefreshParseJson_(props.getProperty(claim.leaseKey));
+    if (lease && String(lease.owner || '') === String(claim.owner || '')) {
+      props.deleteProperty(claim.leaseKey);
+    }
+  } catch (error) {
+    // Lease expiry is the fallback cleanup path; never mask the provider error.
+  } finally {
+    try { lock.releaseLock(); } catch (error) {}
+  }
+}
+
+function mailboxGoogleRefreshAccess_(key, record, connection) {
+  // Source request: REQ-0015. Provider I/O must stay outside ScriptLock.
+  let claim = null;
+  try {
+    claim = mailboxGoogleClaimRefresh_(key, connection);
+    if (claim.accessToken) return String(claim.accessToken);
+
+    const config = mailboxGoogleOAuthConfig_();
+    const requestPayload = {
+      client_id: String(config.clientId || ''),
+      refresh_token: String(claim.record.refreshToken || ''),
+      grant_type: 'refresh_token'
+    };
+    if (config.clientSecret) requestPayload.client_secret = String(config.clientSecret);
+
+    let response;
+    try {
+      response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
+        method: 'post',
+        contentType: 'application/x-www-form-urlencoded',
+        payload: requestPayload,
+        muteHttpExceptions: true
+      });
+    } catch (error) {
+      throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth token refresh request failed');
+    }
+
+    const status = Number(response.getResponseCode());
+    const payload = mailboxGoogleRefreshParseJson_(response.getContentText()) || {};
+    if (status < 200 || status >= 300 || !mailboxGoogleRefreshSafeText_(payload.access_token, 8192)) {
+      throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth token refresh was rejected');
+    }
+    return mailboxGoogleCommitRefresh_(key, claim, connection, payload.access_token, payload.expires_in);
+  } finally {
+    mailboxGoogleReleaseRefresh_(claim);
+  }
 }
 
 function mailboxGoogleSafeToken_(value) {

@@ -9,7 +9,7 @@ const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_ver
 const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
   Code: '7216a34067309cfb98db25deccddd1b4d759f8923d66851209165351b7c512cd',
-  MultiAccount: '80eaa3e6b47832ade00788375b4825f12e3d0384de9515041543b1c1fa7576dc',
+  MultiAccount: '8d07e8b9f0f524ed5cedccbb8bfecbb547c93a34eda8ef876e40776d6b470f10',
   MailClient: 'f3ddbe75dfdae6a4f36a07f1c9eddd9ac556c21069efcffebb89a339680988c7',
   MailApp: 'c190067de229100cb4bc0cf14855e5ab6e0d503d037db14f7d782030ee482c0b',
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',

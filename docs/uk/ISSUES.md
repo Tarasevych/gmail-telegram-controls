@@ -13,7 +13,7 @@
 | GT-007 | Відкрита, низький ризик | 1 | GitHub Pages попереджає про forced Node 24 для старих Actions | Оновити action pins у наступній Versie після production стабілізації |
 | GT-008 | Заблокована ручним gate | 1 | Немає повного real-time acceptance нового Gmail flow | Після OAuth Save власник проходить account choice/consent; далі журнал усіх функцій |
 | GT-009 | Вирішена локально | 1 | Accessibility label використовує множину для одного акаунта | `1 Gmail-акаунт`, множина для інших значень |
-| GT-010 | Відкрита | 1 | OAuth token refresh path не має function-local lock; конкурентна поведінка не доведена | Додати lock або довести зовнішню серіалізацію; виконати контрольований concurrency test до production |
+| GT-010 | Виправлена локально; потрібні E4/E5 | 1 | OAuth token refresh path не мав function-local coordination; паралельні виклики могли одночасно оновлювати один token record | REQ-0015: додано короткі ScriptLock-секції claim/commit/release, per-connection lease без секретів, provider I/O поза lock, generation/reconnect recheck і детерміновані concurrency-тести. Production не змінено |
 | GT-011 | Вирішена локально | 1 | Telegram settings не мали нативного one-click перемикання між Gmail-акаунтами | Додано user/zone-bound callback-кнопки, короткий OAuth launcher та автоматичне оновлення меню після callback; потрібен staging/readback |
 | GT-012 | Вирішена локально | 1 | Підписана Google-сесія переписує Apps Script web-app URL у `/macros/u/N/` і повертає Drive “файл не знайдено” | Browser callback більше не навігується на Apps Script: relay стирає query та надсилає одноразові дані через `fetch(mode:no-cors, credentials:omit)` |
 

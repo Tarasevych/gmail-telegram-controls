@@ -29,3 +29,12 @@
 ## Verification gate
 
 `VR-001` завершив repository/test-класифікацію 245/245 `KH-*` claims: [звіт](verification-reports/reports/VR-001/README.md). Він не закриває B1-07–B1-09: staging OAuth callback, real-time Telegram acceptance і production promotion залишаються окремими E4/E5 доказами. Поточне продовження: `REQ-0009`.
+
+### B1-13 — Ізоляція конкурентного Gmail OAuth refresh
+
+- **Статус:** виконано локально; E4/E5 ще не пройдені.
+- **Результат:** для кожного Gmail-з’єднання застосовано короткий ScriptLock лише на claim/commit/release та lease у protected Script Properties; HTTP refresh виконується поза lock.
+- **Інваріанти:** активний lease не допускає другого provider fetch; перед commit повторно перевіряються connection ID, email, token generation і поточний token record; помилка звільняє власний lease без зміни захищеного токена.
+- **Доказ:** детерміновані локальні тести та candidate hash pin для поточної Versie 1.
+- **Source request:** REQ-0015.
+- **Не виконано:** immutable deployment, staging/production rollout і реальний OAuth цикл.

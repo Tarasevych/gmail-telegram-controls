@@ -29,3 +29,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 ## Verification gate
 
 `VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0009`.
+
+### B1-13 — Concurrent Gmail OAuth refresh isolation
+
+- **Status:** completed locally; E4/E5 have not passed yet.
+- **Result:** each Gmail connection now uses a short ScriptLock only for claim/commit/release plus a lease in protected Script Properties; HTTP refresh runs outside the lock.
+- **Invariants:** an active lease prevents a second provider fetch; connection ID, email, token generation, and the current token record are rechecked before commit; a failure releases its owned lease without changing the protected token.
+- **Evidence:** deterministic local tests and the candidate hash pin for the current Versie 1.
+- **Source request:** REQ-0015.
+- **Not performed:** immutable deployment, staging/production rollout, or a real OAuth cycle.

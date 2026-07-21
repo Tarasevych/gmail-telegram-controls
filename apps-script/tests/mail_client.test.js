@@ -9104,3 +9104,138 @@ test('send-later separates active quota from compactable terminal history and va
   })).code, 'INVALID_REQUEST');
   assert.equal(invalidTimezone.gmailCalls.length, 0);
 });
+
+// Source request: REQ-0015.
+function installGoogleRefreshFixture(harness, overrides = {}) {
+  const connection = {
+    id: overrides.connectionId || 'gmail-refresh-connection',
+    userId: String(overrides.userId || OWNER_ID),
+    zoneId: overrides.zoneId || 'zone-owner',
+    provider: 'google_oauth',
+    email: overrides.email || 'refresh.fixture@example.com',
+    status: 'active',
+    tokenGeneration: Number(overrides.tokenGeneration || 1)
+  };
+  const key = `MAILBOX_GOOGLE_OAUTH_TOKEN_V1_${connection.id}`;
+  const record = {
+    v: 1,
+    connectionId: connection.id,
+    email: connection.email,
+    generation: connection.tokenGeneration,
+    refreshToken: 'test-refresh-token-00000001',
+    accessToken: 'expired-test-access-token',
+    accessTokenExpiresAt: Date.now() - 60000,
+    updatedAt: new Date(Date.now() - 120000).toISOString()
+  };
+  harness.propertyValues[key] = JSON.stringify(record);
+  harness.context.mailboxMultiReadRegistry_ = () => ({ connections: [connection] });
+  harness.context.mailboxGoogleOAuthConfig_ = () => ({
+    clientId: 'test-client-id',
+    clientSecret: 'test-client-secret'
+  });
+  return { connection, key, record };
+}
+
+function installTrackedGoogleRefreshLock(harness, state) {
+  harness.context.LockService = {
+    getScriptLock() {
+      return {
+        tryLock() {
+          assert.equal(state.depth, 0);
+          state.depth += 1;
+          state.calls += 1;
+          return true;
+        },
+        releaseLock() {
+          assert.equal(state.depth, 1);
+          state.depth -= 1;
+        }
+      };
+    }
+  };
+}
+
+test('Gmail token refresh keeps provider I/O outside ScriptLock and commits through a lease', () => {
+  const harness = makeContext();
+  const fixture = installGoogleRefreshFixture(harness);
+  const lockState = { depth: 0, calls: 0 };
+  let fetchCalls = 0;
+  installTrackedGoogleRefreshLock(harness, lockState);
+  harness.context.UrlFetchApp = {
+    fetch(url, request) {
+      fetchCalls += 1;
+      assert.equal(lockState.depth, 0);
+      assert.equal(url, 'https://oauth2.googleapis.com/token');
+      assert.equal(request.payload.refresh_token, fixture.record.refreshToken);
+      return {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({ access_token: 'fresh-test-access-token', expires_in: 3600 })
+      };
+    }
+  };
+
+  const token = harness.context.mailboxGoogleRefreshAccess_(fixture.key, fixture.record, fixture.connection);
+  const stored = JSON.parse(harness.propertyValues[fixture.key]);
+  const leaseKey = harness.context.mailboxGoogleRefreshLeaseKey_(fixture.key);
+  assert.equal(token, 'fresh-test-access-token');
+  assert.equal(stored.accessToken, token);
+  assert.ok(stored.accessTokenExpiresAt > Date.now() + 3500000);
+  assert.equal(fetchCalls, 1);
+  assert.equal(lockState.depth, 0);
+  assert.ok(lockState.calls >= 2);
+  assert.equal(Object.prototype.hasOwnProperty.call(harness.propertyValues, leaseKey), false);
+});
+
+test('Gmail token refresh rejects an active lease and reuses a fresh protected token', () => {
+  const harness = makeContext();
+  const fixture = installGoogleRefreshFixture(harness);
+  let fetchCalls = 0;
+  harness.context.UrlFetchApp = { fetch() { fetchCalls += 1; throw new Error('unexpected fetch'); } };
+  const leaseKey = harness.context.mailboxGoogleRefreshLeaseKey_(fixture.key);
+  harness.propertyValues[leaseKey] = JSON.stringify({
+    v: 1,
+    owner: 'another-refresh-owner',
+    connectionId: fixture.connection.id,
+    generation: fixture.connection.tokenGeneration,
+    issuedAt: Date.now(),
+    expiresAt: Date.now() + 60000
+  });
+
+  assert.throws(
+    () => harness.context.mailboxGoogleRefreshAccess_(fixture.key, fixture.record, fixture.connection),
+    (error) => error && error.mailboxCode === 'BUSY'
+  );
+  assert.equal(fetchCalls, 0);
+
+  const freshRecord = Object.assign({}, fixture.record, {
+    accessToken: 'already-committed-access-token',
+    accessTokenExpiresAt: Date.now() + 3600000,
+    updatedAt: new Date().toISOString()
+  });
+  harness.propertyValues[fixture.key] = JSON.stringify(freshRecord);
+  const token = harness.context.mailboxGoogleRefreshAccess_(fixture.key, fixture.record, fixture.connection);
+  assert.equal(token, freshRecord.accessToken);
+  assert.equal(fetchCalls, 0);
+});
+
+test('failed Gmail token refresh releases its lease and preserves protected token state', () => {
+  const harness = makeContext();
+  const fixture = installGoogleRefreshFixture(harness);
+  const original = harness.propertyValues[fixture.key];
+  harness.context.UrlFetchApp = {
+    fetch() {
+      return {
+        getResponseCode: () => 503,
+        getContentText: () => JSON.stringify({ error: 'temporarily_unavailable' })
+      };
+    }
+  };
+
+  assert.throws(
+    () => harness.context.mailboxGoogleRefreshAccess_(fixture.key, fixture.record, fixture.connection),
+    (error) => error && error.mailboxCode === 'REAUTH_REQUIRED'
+  );
+  const leaseKey = harness.context.mailboxGoogleRefreshLeaseKey_(fixture.key);
+  assert.equal(harness.propertyValues[fixture.key], original);
+  assert.equal(Object.prototype.hasOwnProperty.call(harness.propertyValues, leaseKey), false);
+});

@@ -13,7 +13,7 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-007 | Open, low risk | 1 | GitHub Pages warns about forced Node 24 for older Actions | Update action pins in a later Versie after production stabilization |
 | GT-008 | Blocked by manual gate | 1 | Full real-time acceptance of the new Gmail flow is missing | After OAuth Save, owner completes account choice/consent; then log every function |
 | GT-009 | Resolved locally | 1 | Accessibility label uses plural for one account | `1 Gmail account`, plural for other values |
-| GT-010 | Open | 1 | The OAuth token-refresh path has no function-local lock; concurrent behavior is unproven | Add a lock or prove external serialization; run a controlled concurrency test before production |
+| GT-010 | Fixed locally; E4/E5 required | 1 | The OAuth token-refresh path had no function-local coordination; parallel calls could update one token record concurrently | REQ-0015: added short ScriptLock claim/commit/release sections, a secret-free per-connection lease, provider I/O outside the lock, generation/reconnect rechecks, and deterministic concurrency tests. Production is unchanged |
 | GT-011 | Resolved locally | 1 | Telegram settings lacked native one-click Gmail account switching | Added user/zone-bound callback buttons, a short OAuth launcher, and automatic menu refresh after callback; staging/readback remains |
 | GT-012 | Resolved locally | 1 | A signed-in Google session rewrites the Apps Script web-app URL to `/macros/u/N/` and returns Drive “file not found” | The browser callback no longer navigates to Apps Script: the relay clears the query and sends one-use data with `fetch(mode:no-cors, credentials:omit)` |
 
