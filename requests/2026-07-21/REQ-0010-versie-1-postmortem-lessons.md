@@ -57,3 +57,16 @@ The owner ordered the verified Gmail-to-Telegram Versie 1 development history, i
 - `CONTRIBUTING.md` contains actionable Lessons learned and cites REQ-0010.
 - Documentation is checked for secrets and language parity.
 - Separate commits and ordinary pushes are published to the applicable branches; `Повноваження`, runtime, and release remain unchanged.
+
+## Completion evidence: c98e69e
+
+Status: `completed`
+Completed: `2026-07-21`
+
+- Latest relevant GitHub email was inspected read-only; it identified failed Actions run `29788979153` for product commit `184184c`.
+- Authorized GitHub CLI inspection proved the exact failure: both VR-002 pages lacked the repository-wide `REQ-0004` marker; bilingual and knowledge-hub checks had already passed.
+- Active Versie documentation commit: `c98e69eaec23da06d63f883451ac433f4ae38d09`.
+- Standing contributor lessons commit on `Інструкції`: `80d79ab`.
+- Local checks passed: 37 bilingual pairs, knowledge hub 295 source IDs / 245 canonical items / 8 explicit conflicts, verification reports 245 claims, 20/20 RCA parity, targeted privacy scan, and identical CONTRIBUTING hashes.
+- GitHub Actions passed: bilingual `29810786984`, knowledge hub `29810787010`, verification reports `29810787006`.
+- No `apps-script/*` file entered the documentation commit. The separate v55 candidate remains `unverified` and was not deployed or released by this request.

@@ -32,3 +32,9 @@ The table above is the canonical machine-checked index. Every record is internal
 - English: autonomous continuation, logging, and recovery authority within safety boundaries.
 - Record: [REQ-0011](requests/2026-07-21/REQ-0011-autonomous-continuation-permissions.md)
 - Status: `recorded`
+
+## REQ-0010 completion | 2026-07-21
+
+- Status: `completed`
+- Evidence: product `c98e69e`, instructions `80d79ab`, GitHub Actions `29810786984`, `29810787010`, `29810787006`.
+- Boundary: v55 runtime candidate remains separate and unverified.
