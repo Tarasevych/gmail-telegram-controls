@@ -52,3 +52,19 @@ Cleanup through the standard `git cherry-pick --abort` is authorized only after 
 - Ancestry: `f96d8f0` is an ancestor of `ae8fa827`; the active local and remote product branches contain it.
 - Current release state: production `v50`; immutable/staging `v55`; staging journal `staging_verified`; production not promoted.
 - Current bot menu readback: owner-scoped `type=commands`; staging App entry still requires the exact bridge update.
+
+## Reconciliation result / Результат узгодження — 2026-07-21
+
+### Українською
+
+- Старий detached worktree містив незавершений cherry-pick коміту, який уже був предком актуальної продуктової лінії; операцію безпечно скасовано без reset/rebase і без втрати унікальних змін.
+- Конфлікт bridge deletion проти перевіреної bridge modification вирішено на користь актуального GitHub Pages bridge з `main`; застаріле видалення не переносилося.
+- Тимчасовий command-menu замінено production Web App menu після E4/E5; rollback immutable v50 збережено, stable працює на v55.
+- Відкриті спостереження маршрутизовано окремо: cold-start skeleton та відсутній підтверджений GCP project ID для `clasp logs`.
+
+### English
+
+- The old detached worktree held an unfinished cherry-pick of a commit already ancestral to the current product line; it was safely aborted without reset/rebase and without losing unique work.
+- The bridge deletion versus verified bridge modification conflict kept the current GitHub Pages bridge from `main`; the obsolete deletion was not carried forward.
+- The temporary command menu was replaced by the production Web App menu after E4/E5; immutable rollback v50 remains and stable runs v55.
+- Open observations were routed separately: cold-start skeleton and the missing verified GCP project ID for `clasp logs`.

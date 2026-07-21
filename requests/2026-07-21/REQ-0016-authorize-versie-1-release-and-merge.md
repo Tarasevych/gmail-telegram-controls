@@ -53,3 +53,21 @@ Random mail mutation, replacing the candidate with an older version, creating a 
 - PR `#1`: `OPEN`, `CLEAN`, `MERGEABLE`, all current checks successful.
 - Existing local proof: Gmail/Telegram tests 148/148, release tests 3/3, bilingual product pages 44/44.
 - Runtime state remains unchanged pending this record and its checks.
+
+## Continuation result / Результат продовження — 2026-07-21
+
+### Українською
+
+- Bridge-only PR #2 злитий normal merge як `a7df53c`; product PR #1 злитий normal merge як `ee9286e` після безпечного вирішення одного `delete/modify` конфлікту.
+- Apps Script immutable v55 пройшов staging E4, просунутий у stable production, а тимчасовий staging видалено після E5.
+- Фінальний preflight: stable v55, candidate HEAD v55, immutable ready, staging 0, legacy staging 0, release journal `cleaned`.
+- Telegram menu тепер відкриває neutral GitHub Pages Web App `Versie 1`, а не direct Apps Script URL.
+- Контрольна owner доставка створила одну картку; два `/check` не створили дубль. Fresh OAuth і second-account fan-out не позначені виконаними.
+
+### English
+
+- Bridge-only PR #2 merged normally as `a7df53c`; product PR #1 merged normally as `ee9286e` after one safely resolved `delete/modify` conflict.
+- Apps Script immutable v55 passed staging E4, advanced to stable production, and its temporary staging deployment was removed after E5.
+- Final preflight: stable v55, candidate HEAD v55, immutable ready, staging 0, legacy staging 0, release journal `cleaned`.
+- Telegram menu now opens the neutral GitHub Pages Versie 1 Web App rather than a direct Apps Script URL.
+- The controlled owner delivery produced one card; two `/check` runs produced no duplicate. Fresh OAuth and second-account fan-out are not marked complete.
