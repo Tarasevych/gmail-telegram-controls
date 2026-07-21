@@ -17,4 +17,6 @@ jobs:
           persist-credentials: false
 
       - name: Validate owner request records and routing
-        run: python3 tools/check_request_ledger.py
+        run: |
+          python3 -m unittest discover -s tools/tests -p "test_*.py"
+          python3 tools/check_request_ledger.py

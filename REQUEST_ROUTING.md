@@ -24,6 +24,19 @@
 7. Повернутися до `Запити` та додати status і evidence.
 8. Старі записи не переписувати заднім числом: замінені рішення позначати `superseded` і зв'язувати з новим ID.
 
+## Machine contract для Routes
+
+| Key | Дозволені values |
+|---|---|
+| `requests` | `record` |
+| `instructions` | `update`, `reference`, `no-change` |
+| `permissions` | `update`, `reference`, `no-change` |
+| `plan` | `update`, `reference`, `no-change` |
+| `product` | `update`, `reference`, `no-change` |
+| `release` | `update`, `reference`, `no-change` |
+
+Parser трактує поле як множину `key=value`, а не як один крихкий regex-рядок. Unknown, missing, duplicate keys і invalid values мають окрему diagnostic; невідома семантика не приймається автоматично.
+
 Запит на виправлення, тест, продовження або публікацію змін сам по собі не дозволяє нову Versie. Для цього потрібен прямий наказ і `Next Versie authorization: yes, Versie N`.
 
 <!-- lang:en -->
@@ -49,5 +62,18 @@
 6. Change only the declared areas and add `Source request: REQ-NNNN`.
 7. Return to `Запити` and add status and evidence.
 8. Never rewrite old records retroactively: mark replaced decisions `superseded` and link the new ID.
+
+## Routes machine contract
+
+| Key | Allowed values |
+|---|---|
+| `requests` | `record` |
+| `instructions` | `update`, `reference`, `no-change` |
+| `permissions` | `update`, `reference`, `no-change` |
+| `plan` | `update`, `reference`, `no-change` |
+| `product` | `update`, `reference`, `no-change` |
+| `release` | `update`, `reference`, `no-change` |
+
+The parser treats the field as a `key=value` set rather than one brittle regex string. Unknown, missing, and duplicate keys and invalid values receive separate diagnostics; unknown semantics never pass automatically.
 
 A request to fix, test, continue, or publish changes does not by itself authorize a new Versie. That requires a direct order and `Next Versie authorization: yes, Versie N`.

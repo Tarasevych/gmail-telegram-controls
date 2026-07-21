@@ -16,6 +16,14 @@
 - Після виконання запис отримує `completed`, `blocked` або `superseded` та точні докази.
 - Старий запис не видаляється, коли новий запит змінює рішення.
 
+## Канонічний machine header
+
+- Новий запис створюється з [TEMPLATE.md](TEMPLATE.md), а не копіюванням випадкового історичного REQ.
+- Обов'язкові поля: `ID`, `Date`, `Status`, `Next Versie authorization`, `Routes`, `Permission basis` і обидва language markers.
+- `Routes` містить рівно шість унікальних ключів: `requests`, `instructions`, `permissions`, `plan`, `product`, `release`.
+- Порядок route keys не має семантичного значення, але template використовує канонічний порядок для читабельності.
+- Невідомий, відсутній або дубльований key і недозволене value завершують перевірку помилкою з назвою конкретного поля.
+
 ## Захист даних
 
 - Зберігати очищену інтерпретацію, а не дослівний приватний текст.
@@ -43,6 +51,14 @@
 - `recorded` is published before changing product files, runtime, deployment, plans, instructions, or permissions.
 - After execution, the record receives `completed`, `blocked`, or `superseded` plus exact evidence.
 - An older record is not deleted when a new request changes the decision.
+
+## Canonical machine header
+
+- Create every new record from [TEMPLATE.md](TEMPLATE.md), not by copying an arbitrary historical REQ.
+- Required fields are `ID`, `Date`, `Status`, `Next Versie authorization`, `Routes`, `Permission basis`, and both language markers.
+- `Routes` contains exactly six unique keys: `requests`, `instructions`, `permissions`, `plan`, `product`, and `release`.
+- Route-key order has no semantic meaning, although the template uses the canonical order for readability.
+- An unknown, missing, or duplicate key or an invalid value fails validation with a field-specific error.
 
 ## Data protection
 
