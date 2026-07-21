@@ -4,7 +4,7 @@
 - Date: 2026-07-21
 - Status: in_progress
 - Next Versie authorization: no
-- Routes: requests=record; instructions=reference; permissions=reference; plan=update; problems=update; product=conditional; release=conditional
+- Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
 - Authority reference: REQ-0011 / P-006
 
