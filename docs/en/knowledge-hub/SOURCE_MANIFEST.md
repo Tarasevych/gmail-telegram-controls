@@ -21,3 +21,7 @@ R1 reports evidence=11 and lesson=5, while its atomic rows yield evidence=12 and
 ---
 
 Source request / Джерело запиту: `REQ-0003`. Report-derived baseline; live claims require current-state verification.
+
+## REQ-0012 private session sources
+
+`SESSION-CURRENT` and `SESSION-PREVIOUS` are registered by cryptographic hashes and logical-line coverage in [VR-003 source-manifest.json](../../verification-reports/VR-003/source-manifest.json). Their raw text and normalized chunks are private; only sanitized claim provenance is public.

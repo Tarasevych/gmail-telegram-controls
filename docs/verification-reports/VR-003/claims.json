@@ -1,0 +1,1542 @@
+{
+  "schema_version": 1,
+  "report_id": "VR-003",
+  "source_request": "REQ-0012",
+  "target_commit": "4ff66ca94312a2959798af3773e70cd0ac7c0879",
+  "generated_at": "2026-07-21",
+  "claim_count": 32,
+  "status_counts": {
+    "verified": 19,
+    "unverified": 3,
+    "partial": 3,
+    "blocked": 2,
+    "recommendation": 5
+  },
+  "evidence_grade_counts": {
+    "E0": 10,
+    "E1": 5,
+    "E2": 5,
+    "E3": 12,
+    "E4": 0,
+    "E5": 0
+  },
+  "category_counts": {
+    "governance": 1,
+    "realtime-delivery": 3,
+    "frozen-backlog": 1,
+    "multi-account": 2,
+    "card-capacity": 1,
+    "root-cause": 3,
+    "retention": 2,
+    "dedupe": 1,
+    "safety": 1,
+    "tests": 1,
+    "release": 7,
+    "recovery": 1,
+    "oauth": 2,
+    "permissions": 1,
+    "evidence-policy": 1,
+    "lesson": 4
+  },
+  "claims": [
+    {
+      "claim_id": "VR3-001",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "governance",
+      "statement_uk": "Активна продуктова лінія має назву Versie 1; наступну Versie власник не авторизував.",
+      "statement_en": "The active product line is named Versie 1; the owner has not authorized the next Versie.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "adopted_governance",
+      "verification_scope": "governance",
+      "evidence_grade": "E1",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 15930,
+            "line_end": 15930
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "owner_request",
+          "commit": "4dd669d848f3ce518f92069eb548acc27a960f4a",
+          "path": "requests/2026-07-21/REQ-0012-full-two-corpus-knowledge-base.md",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/4dd669d848f3ce518f92069eb548acc27a960f4a/requests/2026-07-21/REQ-0012-full-two-corpus-knowledge-base.md",
+          "method": "Immutable request-record inspection",
+          "result": "The request fixes the active product at Versie 1 and sets next-version authorization to no."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-GOV"
+    },
+    {
+      "claim_id": "VR3-002",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "realtime-delivery",
+      "statement_uk": "Minute trigger запускає bounded realtime fan-out перед maintenance і frozen recovery.",
+      "statement_en": "The minute trigger runs bounded realtime fan-out before maintenance and frozen recovery.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32324,
+            "line_end": 32354
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 23069,
+            "line_end": 23106
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Static entry-point inspection",
+          "result": "checkNewMail_ invokes realtime fan-out first."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local Node test suite",
+          "result": "The trigger-order regression contract passed in the 432/432 run."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-003",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "realtime-delivery",
+      "statement_uk": "Realtime lane має per-connection state, 15-хвилинне bounded window, overlap, lag, ліміт 25 повідомлень і bounded retries.",
+      "statement_en": "The realtime lane has per-connection state, a bounded 15-minute window, overlap, lag, a 25-message limit, and bounded retries.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E2",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32328,
+            "line_end": 32350
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Exact source inspection",
+          "result": "The committed constants and state-key construction implement these bounds."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-STATIC"
+    },
+    {
+      "claim_id": "VR3-004",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "frozen-backlog",
+      "statement_uk": "Frozen scanner лишається crash-resumable bounded backfill і не є realtime lane.",
+      "statement_en": "The frozen scanner remains a crash-resumable bounded backfill mechanism and is not the realtime lane.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32358,
+            "line_end": 32381
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Source inspection",
+          "result": "runMailCheck_ retains the frozen page-based scanner after the realtime entry."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local Node test suite",
+          "result": "Frozen paging and realtime/frozen boundary contracts passed in the 432/432 run."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-005",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "multi-account",
+      "statement_uk": "`activeConnectionId` керує UI, тоді як automatic notification fan-out використовує `notificationConnectionIds`.",
+      "statement_en": "`activeConnectionId` controls UI selection while automatic notification fan-out uses `notificationConnectionIds`.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E2",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 22515,
+            "line_end": 22517
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32441,
+            "line_end": 32475
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/MultiAccount.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/MultiAccount.gs",
+          "method": "Registry and preference inspection",
+          "result": "Active, unified, and notification connection sets are stored separately and updated independently."
+        },
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Worker inspection",
+          "result": "Realtime and manual checks consume notification scopes rather than only the active UI connection."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-STATIC"
+    },
+    {
+      "claim_id": "VR3-006",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "multi-account",
+      "statement_uk": "Одна Gmail-подія резервує одну фізичну Telegram-картку; account identity і connection-scoped callbacks зберігають контекст без копії для кожного view.",
+      "statement_en": "One Gmail event reserves one physical Telegram card; account identity and connection-scoped callbacks preserve context without a copy per view.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 22515,
+            "line_end": 22515
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 23763,
+            "line_end": 23763
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32441,
+            "line_end": 32479
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Card reservation and callback inspection",
+          "result": "Card property keys and callbacks bind Gmail message, connection, and chat context."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local Node test suite",
+          "result": "Connection-bound card and at-most-once contracts passed in the 432/432 run."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-007",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "card-capacity",
+      "statement_uk": "Перед hard-capacity guard індекс Telegram-карток видаляє duplicate та missing-property keys, не змінюючи live record.",
+      "statement_en": "Before the hard-capacity guard, the Telegram card index removes duplicate and missing-property keys without changing a live record.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32402,
+            "line_end": 32410
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation_diff",
+          "commit": "fcb9012e319c2928cb4df054d88d5588ebf3f364",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/fcb9012e319c2928cb4df054d88d5588ebf3f364/apps-script/Code.gs",
+          "method": "Immutable fix inspection",
+          "result": "The raw index read was replaced by compactTelegramMailCardIndexLocked_(props).keys."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "fcb9012e319c2928cb4df054d88d5588ebf3f364",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/fcb9012e319c2928cb4df054d88d5588ebf3f364/apps-script/tests/mail_actions.test.js",
+          "method": "Regression-test inspection and executed suite",
+          "result": "The test uses 90 ghost keys and asserts byte-identical preservation of the live card record."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-008",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "root-cause",
+      "statement_uk": "До v47 capacity guard рахував сирий card index, включно з duplicate/stale/missing entries; перший patch також пропустив фактичний read у reservation path.",
+      "statement_en": "Before v47, the capacity guard counted the raw card index, including duplicate/stale/missing entries; the first patch also missed the actual reservation-path read.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "mixed",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 28176,
+            "line_end": 28350
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation_diff",
+          "commit": "fcb9012e319c2928cb4df054d88d5588ebf3f364",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/fcb9012e319c2928cb4df054d88d5588ebf3f364/apps-script/Code.gs",
+          "method": "Before/after immutable diff inspection",
+          "result": "Both save and reservation capacity reads changed from the raw index to the compacted key set."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "fcb9012e319c2928cb4df054d88d5588ebf3f364",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/fcb9012e319c2928cb4df054d88d5588ebf3f364/apps-script/tests/mail_actions.test.js",
+          "method": "Executed regression contract",
+          "result": "The corrected guard behavior passed locally."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-009",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "root-cause",
+      "statement_uk": "До v48 realtime path використовував довгий legacy `UserLock`, через що contention міг блокувати швидку смугу.",
+      "statement_en": "Before v48, the realtime path used the long legacy `UserLock`, so contention could block the fast lane.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "mixed",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 28682,
+            "line_end": 28785
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32347,
+            "line_end": 32378
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation_diff",
+          "commit": "1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36/apps-script/Code.gs",
+          "method": "Immutable before/after inspection",
+          "result": "runRealtimeMailCheck_ stopped acquiring UserLock and moved to a per-lane property lease."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36/apps-script/tests/mail_actions.test.js",
+          "method": "Executed regression contract",
+          "result": "The test proves the realtime lane never calls getUserLock."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-010",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "realtime-delivery",
+      "statement_uk": "Поточна realtime lane claim/commit/release використовує короткий `ScriptLock` і per-lane lease; Gmail/Telegram I/O не утримує legacy UserLock.",
+      "statement_en": "The current realtime lane uses a short `ScriptLock` and per-lane lease for claim/commit/release; Gmail/Telegram I/O does not hold the legacy UserLock.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32347,
+            "line_end": 32347
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32473,
+            "line_end": 32473
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36/apps-script/Code.gs",
+          "method": "Lease implementation inspection",
+          "result": "Claim, commit, and release are isolated under short ScriptLock sections."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/1da47150b7dcc870f24b4f4cbffa7b0c3c7b5b36/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local regression test",
+          "result": "Per-lane lease behavior and zero UserLock calls passed."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-011",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "retention",
+      "statement_uk": "Retention є bounded і від’єднує локальний record лише для definitive Telegram `delete_too_old`; інші failures залишаються fail-closed.",
+      "statement_en": "Retention is bounded and detaches a local record only for definitive Telegram `delete_too_old`; other failures remain fail-closed.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32414,
+            "line_end": 32437
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 29435,
+            "line_end": 29627
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "11995fe01c651e6b81a0e8ef2afcbd54dc643982",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/11995fe01c651e6b81a0e8ef2afcbd54dc643982/apps-script/Code.gs",
+          "method": "Immutable retention-fix inspection",
+          "result": "The purge path classifies definite too-old deletion separately."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "11995fe01c651e6b81a0e8ef2afcbd54dc643982",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/11995fe01c651e6b81a0e8ef2afcbd54dc643982/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local regression contract",
+          "result": "The retention contract proves only definite too-old cards are detached."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-012",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "retention",
+      "statement_uk": "Transcript повідомляє live capacity `72→60` і доставку queued card у v50, але цей runtime результат у REQ-0012 повторно не перевірявся.",
+      "statement_en": "The transcript reports live capacity `72→60` and queued-card delivery in v50, but REQ-0012 did not independently reverify that runtime result.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "unverified",
+      "implementation_status": "historical_claim_only",
+      "verification_scope": "runtime",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 29435,
+            "line_end": 29627
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32430,
+            "line_end": 32437
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "A current E4/E5 runtime readback was outside this documentation reconstruction."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-013",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "root-cause",
+      "statement_uk": "Повідомлення з одночасними labels `INBOX` і `SENT` є відтвореним duplicate-notification ризиком; v55 пригнічує його й durable-mark-ить seen у realtime.",
+      "statement_en": "A message carrying both `INBOX` and `SENT` labels is a reproduced duplicate-notification risk; v55 suppresses it and durably marks it seen in realtime.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32235,
+            "line_end": 32243
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32479,
+            "line_end": 32479
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation_diff",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Immutable v55 diff inspection",
+          "result": "The common eligibility helper rejects SENT and realtime persists the identifier as seen."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local regression test",
+          "result": "The INBOX+SENT fixture produced zero cards and was not refetched on the next cycle."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-014",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "dedupe",
+      "statement_uk": "v55 застосовує єдиний Gmail label-eligibility invariant до realtime, quarantine retry і frozen scanner.",
+      "statement_en": "v55 applies one Gmail label-eligibility invariant to realtime, quarantine retry, and the frozen scanner.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E2",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32354,
+            "line_end": 32379
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_implementation",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Call-site inspection",
+          "result": "All three automatic delivery paths call gmailNotificationLabelsEligible_."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-STATIC"
+    },
+    {
+      "claim_id": "VR3-015",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "safety",
+      "statement_uk": "v55 видалив staging-only mailbox mutation surface v54 і зберіг read-only trace.",
+      "statement_en": "v55 removed the v54 staging-only mailbox mutation surface and retained read-only tracing.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32235,
+            "line_end": 32243
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32353,
+            "line_end": 32354
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "implementation_diff",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/Code.gs",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/Code.gs",
+          "method": "Immutable diff inspection",
+          "result": "Spam-to-Inbox mutation entrypoints and trace_action handling were removed."
+        },
+        {
+          "kind": "automated_test",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Executed local contract",
+          "result": "The v55 test asserts the mutation function and source surface are absent."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-016",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "tests",
+      "statement_uk": "Поточний v55 candidate пройшов усі 19 локальних test files: 432/432.",
+      "statement_en": "The current v55 candidate passed all 19 local test files: 432/432.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [
+        "The source-time statement marked v55 tests unverified; this E3 run supersedes only that local-test status."
+      ],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32532,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "local_test_run",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/mail_actions.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/mail_actions.test.js",
+          "method": "Node test runner executed over the complete apps-script test directory",
+          "result": "19 files completed with 432 passed and 0 failed."
+        },
+        {
+          "kind": "local_test_run",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tests/release_versie_001_20260719.test.js",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tests/release_versie_001_20260719.test.js",
+          "method": "Release-contract subset included in the same run",
+          "result": "The v55 hash pin and safety contract passed."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-017",
+      "source_ids": [
+        "SESSION-CURRENT",
+        "SESSION-PREVIOUS"
+      ],
+      "category": "release",
+      "statement_uk": "v55 `PreflightOnly` пройшов fail-closed: stable v50, legacy staging v54, current staging 0, candidate hashes exact, `readyToStage=true`.",
+      "statement_en": "v55 `PreflightOnly` passed fail-closed: stable v50, legacy staging v54, current staging 0, exact candidate hashes, and `readyToStage=true`.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "test",
+      "evidence_grade": "E3",
+      "dependencies": [],
+      "conflicts": [
+        "The source-time statement marked v55 preflight unverified; this E3 run supersedes only preflight status."
+      ],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32532,
+            "line_end": 32538
+          },
+          {
+            "source_id": "SESSION-PREVIOUS",
+            "line_start": 134442,
+            "line_end": 134536
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "local_preflight",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "method": "PreflightOnly executed without release mutation",
+          "result": "Result: stableVersion 50, legacyStagingCount 1, stagingCount 0, immutableReady false, readyToStage true, all candidate hashes matched."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-TEST"
+    },
+    {
+      "claim_id": "VR3-018",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "release",
+      "statement_uk": "REQ-0012 не створював immutable v55, staging deployment або production promotion.",
+      "statement_en": "REQ-0012 did not create immutable v55, a staging deployment, or a production promotion.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "partial",
+      "implementation_status": "not_released",
+      "verification_scope": "mixed",
+      "evidence_grade": "E1",
+      "dependencies": [
+        "Fresh read-only Apps Script deployment state for E4 confirmation"
+      ],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32243,
+            "line_end": 32243
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32532,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "status_record",
+          "commit": "4ff66ca94312a2959798af3773e70cd0ac7c0879",
+          "path": "docs/en/POSTMORTEM.md",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/4ff66ca94312a2959798af3773e70cd0ac7c0879/docs/en/POSTMORTEM.md",
+          "method": "Immutable repository status inspection",
+          "result": "The published v55 update records local verification and no deployment."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "Repository and local preflight evidence do not prove that external state has not drifted since the last readback."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-019",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "release",
+      "statement_uk": "v50 як historical stable production і v54 як historical immutable/staging є report-backed, але не були повторно підтверджені live у REQ-0012.",
+      "statement_en": "v50 as historical stable production and v54 as historical immutable/staging are report-backed but were not live-reconfirmed in REQ-0012.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "partial",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E1",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32527,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "historical_record",
+          "commit": "c98e69eaec23da06d63f883451ac433f4ae38d09",
+          "path": "docs/en/POSTMORTEM.md",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/c98e69eaec23da06d63f883451ac433f4ae38d09/docs/en/POSTMORTEM.md",
+          "method": "Immutable postmortem inspection",
+          "result": "The project history records the v42-v55 release progression and distinguishes stable, staging, and local-only states."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "Current Apps Script E4 readback was not rerun."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-020",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "release",
+      "statement_uk": "Поточний release helper pin-ить rollback v50, legacy staging v54 і candidate v55 із exact SHA-256 bundle.",
+      "statement_en": "The current release helper pins rollback v50, legacy staging v54, and candidate v55 with an exact SHA-256 bundle.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E2",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32483,
+            "line_end": 32532
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_release_contract",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "method": "Exact helper inspection",
+          "result": "RollbackVersion=50, LegacyStagingVersion=54, CandidateVersion=55, and all candidate hashes are pinned."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-STATIC"
+    },
+    {
+      "claim_id": "VR3-021",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "release",
+      "statement_uk": "Послідовність v42–v54 зберігається як historical lineage всередині Versie 1, а не як паралельні поточні продуктові випуски.",
+      "statement_en": "The v42-v54 sequence is retained as historical lineage inside Versie 1, not as parallel current product releases.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "partial",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E1",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32517,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "historical_record",
+          "commit": "c98e69eaec23da06d63f883451ac433f4ae38d09",
+          "path": "docs/en/POSTMORTEM.md",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/c98e69eaec23da06d63f883451ac433f4ae38d09/docs/en/POSTMORTEM.md",
+          "method": "Immutable bilingual history inspection",
+          "result": "The postmortem preserves the historical Apps Script sequence while the product remains Versie 1."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "Commit and documentation history do not independently prove every historical runtime claim."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-022",
+      "source_ids": [
+        "SESSION-PREVIOUS"
+      ],
+      "category": "recovery",
+      "statement_uk": "Попередня сесія повідомляла preflight failures через stale hard-coded hashes і відсутні compatibility scripts; без Git evidence ці конкретні діагнози залишаються historical transcript claims.",
+      "statement_en": "The previous session reported preflight failures from stale hard-coded hashes and missing compatibility scripts; without matched Git evidence, those specific diagnoses remain historical transcript claims.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "unverified",
+      "implementation_status": "historical_claim_only",
+      "verification_scope": "repository",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-PREVIOUS",
+            "line_start": 134442,
+            "line_end": 134536
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "The relevant historical working-tree snapshot was not pinned by the source span."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-023",
+      "source_ids": [
+        "SESSION-CURRENT",
+        "SESSION-PREVIOUS"
+      ],
+      "category": "release",
+      "statement_uk": "Release path є fail-closed: exact hashes перевіряються до StageOnly/Promote, а stable rollback не змінюється через звичайний preflight.",
+      "statement_en": "The release path is fail-closed: exact hashes are checked before StageOnly/Promote, and ordinary preflight does not change the stable rollback.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "tracked",
+      "verification_scope": "repository",
+      "evidence_grade": "E2",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32483,
+            "line_end": 32516
+          },
+          {
+            "source_id": "SESSION-PREVIOUS",
+            "line_start": 82457,
+            "line_end": 82457
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "static_release_contract",
+          "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+          "path": "apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/b5a5452646d26479b4a74fc00e31df0d56e23898/apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+          "method": "Control-flow and hash-guard inspection",
+          "result": "Mutation modes are explicit, mutually exclusive, mutex-protected, and reached only after hash assertions."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-STATIC"
+    },
+    {
+      "claim_id": "VR3-024",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "oauth",
+      "statement_uk": "Transcript приписує callback failure службовим `authuser/prompt/scope` і пропонує controlled relay, але REQ-0012 не перевіряв OAuth flow live.",
+      "statement_en": "The transcript attributes callback failure to service `authuser/prompt/scope` parameters and proposes a controlled relay, but REQ-0012 did not verify the OAuth flow live.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "unverified",
+      "implementation_status": "historical_claim_only",
+      "verification_scope": "runtime",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 15108,
+            "line_end": 15108
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "No OAuth callback, token exchange, consent, or browser flow was run in this phase."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-HISTORY"
+    },
+    {
+      "claim_id": "VR3-025",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "oauth",
+      "statement_uk": "Production acceptance другого Gmail account лишається заблокованим новою user-specific Google consent.",
+      "statement_en": "Production acceptance for the second Gmail account remains blocked on new user-specific Google consent.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "blocked",
+      "implementation_status": "manual_gate",
+      "verification_scope": "runtime",
+      "evidence_grade": "E0",
+      "dependencies": [
+        "Owner completion of the specific Google consent screen"
+      ],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 22517,
+            "line_end": 22517
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 23763,
+            "line_end": 23763
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "The gate must not be bypassed or mixed with another account zone."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-GOV"
+    },
+    {
+      "claim_id": "VR3-026",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "release",
+      "statement_uk": "Production one-card acceptance для v55 ще не виконано.",
+      "statement_en": "Production one-card acceptance for v55 has not yet been performed.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "blocked",
+      "implementation_status": "acceptance_pending",
+      "verification_scope": "runtime",
+      "evidence_grade": "E0",
+      "dependencies": [
+        "Explicit release authorization",
+        "Staging deployment",
+        "Controlled one-card acceptance",
+        "Production promotion authorization"
+      ],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32354,
+            "line_end": 32354
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32532,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [
+        "Local E3 tests and preflight are not E4/E5 runtime evidence."
+      ],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-GOV"
+    },
+    {
+      "claim_id": "VR3-027",
+      "source_ids": [
+        "REQ-0011"
+      ],
+      "category": "permissions",
+      "statement_uk": "Власник дозволив автономні routine PC/browser/Git/test/recovery actions; CAPTCHA, OTP/passkey/physical і суттєві unsafe choices залишаються manual gates.",
+      "statement_en": "The owner authorized autonomous routine PC/browser/Git/test/recovery actions; CAPTCHA, OTP/passkey/physical actions, and materially unsafe choices remain manual gates.",
+      "claim_type": "fact",
+      "relevance": "high",
+      "verification_status": "verified",
+      "implementation_status": "owner_granted",
+      "verification_scope": "governance",
+      "evidence_grade": "E1",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "REQ-0011",
+            "line_start": 1,
+            "line_end": 1
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "owner_permission",
+          "commit": "9653434cf62d578b23939eb682c5633f58448de8",
+          "path": "permissions/P-006-autonomous-continuation-recovery.md",
+          "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/9653434cf62d578b23939eb682c5633f58448de8/permissions/P-006-autonomous-continuation-recovery.md",
+          "method": "Canonical permission-record inspection",
+          "result": "P-006 records autonomous continuation and the explicit manual gates."
+        }
+      ],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-GOV"
+    },
+    {
+      "claim_id": "VR3-028",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "evidence-policy",
+      "statement_uk": "Повтор твердження у transcript, summary або postmortem не підвищує його вище E0 без primary evidence.",
+      "statement_en": "Repeating a statement in a transcript, summary, or postmortem does not raise it above E0 without primary evidence.",
+      "claim_type": "rule",
+      "relevance": "high",
+      "verification_status": "recommendation",
+      "implementation_status": "adopted_for_vr003",
+      "verification_scope": "governance",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32322,
+            "line_end": 32322
+          },
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32532,
+            "line_end": 32538
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-GOV"
+    },
+    {
+      "claim_id": "VR3-029",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "lesson",
+      "statement_uk": "Не утримувати shared UserLock під час Gmail/Telegram I/O; claim/commit state слід ізолювати коротким lane-specific lease.",
+      "statement_en": "Do not hold a shared UserLock during Gmail/Telegram I/O; isolate claim/commit state with a short lane-specific lease.",
+      "claim_type": "rule",
+      "relevance": "high",
+      "verification_status": "recommendation",
+      "implementation_status": "documented_lesson",
+      "verification_scope": "governance",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 28682,
+            "line_end": 28785
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-030",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "lesson",
+      "statement_uk": "Capacity guard має рахувати лише deduplicated keys із наявними records і не повинен видаляти active card як спосіб звільнення slot.",
+      "statement_en": "A capacity guard must count only deduplicated keys with present records and must not delete an active card merely to free a slot.",
+      "claim_type": "rule",
+      "relevance": "high",
+      "verification_status": "recommendation",
+      "implementation_status": "documented_lesson",
+      "verification_scope": "governance",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 28176,
+            "line_end": 28350
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-031",
+      "source_ids": [
+        "SESSION-CURRENT"
+      ],
+      "category": "lesson",
+      "statement_uk": "Dedupe invariant треба застосовувати на спільній eligibility boundary усіх delivery lanes; окремий patch лише realtime залишає retry/backlog divergence.",
+      "statement_en": "Apply the dedupe invariant at the shared eligibility boundary of every delivery lane; patching only realtime leaves retry/backlog divergence.",
+      "claim_type": "rule",
+      "relevance": "high",
+      "verification_status": "recommendation",
+      "implementation_status": "documented_lesson",
+      "verification_scope": "governance",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32235,
+            "line_end": 32243
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    },
+    {
+      "claim_id": "VR3-032",
+      "source_ids": [
+        "SESSION-CURRENT",
+        "SESSION-PREVIOUS"
+      ],
+      "category": "lesson",
+      "statement_uk": "Перед release потрібно запускати exact-hash tests і PreflightOnly; stale pins виправляються новим immutable history commit, а не force/reset або ручним обходом guard.",
+      "statement_en": "Before release, run exact-hash tests and PreflightOnly; fix stale pins in a new immutable history commit rather than force/reset or manually bypassing guards.",
+      "claim_type": "rule",
+      "relevance": "high",
+      "verification_status": "recommendation",
+      "implementation_status": "documented_lesson",
+      "verification_scope": "governance",
+      "evidence_grade": "E0",
+      "dependencies": [],
+      "conflicts": [],
+      "sensitivity": "public",
+      "provenance": {
+        "source_request": "REQ-0012",
+        "verification_framework": "REQ-0004",
+        "source_spans": [
+          {
+            "source_id": "SESSION-CURRENT",
+            "line_start": 32483,
+            "line_end": 32516
+          },
+          {
+            "source_id": "SESSION-PREVIOUS",
+            "line_start": 134442,
+            "line_end": 134536
+          }
+        ]
+      },
+      "evidence": [],
+      "verified_at": "2026-07-21",
+      "limitations": [],
+      "report_id": "VR-003",
+      "analysis_stream": "VR003-RCA"
+    }
+  ]
+}

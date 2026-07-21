@@ -75,3 +75,14 @@ python tools/check_verification_reports.py
 Every verification-report page keeps the repository-wide `REQ-0004` framework marker and separately names its actual source request.
 
 Full analysis: [English postmortem](docs/en/POSTMORTEM.md).
+
+### Lessons learned from VR-003
+
+- Compact card indexes before every capacity guard and test every read path.
+- Keep network I/O outside shared locks; use short lane-specific leases.
+- Apply one eligibility and dedupe invariant across realtime, retry, and frozen lanes.
+- Pin immutable release bundles by exact hash and run tests plus `PreflightOnly` before mutation.
+- Treat transcript repetition as E0 until it is matched to primary Git, test, staging, or production evidence.
+- Do not equate local E3 success with staging E4 or production E5 acceptance.
+
+See the paired [English](docs/en/verification-reports/reports/VR-003/LESSONS.md) and [Ukrainian](docs/uk/verification-reports/reports/VR-003/LESSONS.md) records.

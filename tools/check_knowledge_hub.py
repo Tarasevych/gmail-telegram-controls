@@ -17,7 +17,7 @@ REQUIRED = {
     "README.md", "SOURCE_MANIFEST.md", "TRACEABILITY.md", "MASTER_ROADMAP.md",
     "INSTRUCTIONS.md", "PERMISSIONS.md", "PRODUCT.md", "PROBLEMS.md",
     "DECISIONS.md", "LESSONS.md", "EVIDENCE.md", "HISTORY.md",
-    "DEPENDENCIES.md", "sources/REPORT-1.md", "sources/REPORT-2.md",
+    "DEPENDENCIES.md", "SESSION_EVIDENCE.md", "sources/REPORT-1.md", "sources/REPORT-2.md",
     "sources/REPORT-3.md",
 }
 SOURCE_ID = re.compile(r"\bR[123]-[A-Z0-9-]*\d+\b")
@@ -106,7 +106,10 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
-    print("Knowledge hub check passed: 16 language pairs, 295 source IDs, 245 canonical items, 8 explicit conflicts")
+    print(
+        f"Knowledge hub check passed: {len(uk_pages)} language pairs, "
+        "295 source IDs, 245 canonical items, 8 explicit conflicts"
+    )
     return 0
 
 

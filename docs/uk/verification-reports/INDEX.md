@@ -12,3 +12,7 @@ Source request: `REQ-0004`.
 [Machine-readable index](../../verification-reports/index.json).
 
 Історичний report не переписується після публікації для приховування помилки. Нове незалежне спростування або сильніший доказ додається новим report ID чи явно трасованою correction-зміною.
+
+## VR-003 (2026-07-21)
+
+[VR-003](reports/VR-003/README.md) є найновішою двокорпусною factual verification для Versie 1. Вона публікує 32 очищені атомарні твердження, метадані повного покриття джерел, підтверджені root causes і явні runtime/release gates. Machine-readable артефакти: [manifest](../../verification-reports/VR-003/manifest.json), [claims](../../verification-reports/VR-003/claims.json) і [source manifest](../../verification-reports/VR-003/source-manifest.json).

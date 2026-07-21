@@ -12,3 +12,7 @@ Source request: `REQ-0004`.
 [Machine-readable index](../../verification-reports/index.json).
 
 A historical report is not rewritten after publication to hide an error. A new independent contradiction or stronger evidence is added under a new report ID or an explicitly traced correction change.
+
+## VR-003 (2026-07-21)
+
+[VR-003](reports/VR-003/README.md) is the latest two-corpus factual verification for Versie 1. It publishes 32 sanitized atomic claims, complete source coverage metadata, confirmed root causes, and explicit runtime/release gates. Machine-readable artifacts: [manifest](../../verification-reports/VR-003/manifest.json), [claims](../../verification-reports/VR-003/claims.json), and [source manifest](../../verification-reports/VR-003/source-manifest.json).

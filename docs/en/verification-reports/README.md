@@ -21,3 +21,7 @@ This area is a separate evidence layer between the report-derived knowledge hub 
 5. Require E4/E5 for runtime or production, not E1/E2.
 
 A permission claim is verified only against a canonical owner-granted record. A recommendation is not authority. This area does not create a new Versie, deployment, or runtime change.
+
+## Latest report
+
+[VR-003](reports/VR-003/README.md) verifies the v42-v55 Versie 1 evidence across two private session corpora and primary Git/test artifacts. It changes no release or runtime state.

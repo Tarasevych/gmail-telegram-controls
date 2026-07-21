@@ -22,3 +22,7 @@ Source request: `REQ-0004`.
 - Permission стає verified лише через канонічне Повноваження та traceable owner request.
 - OTP, CAPTCHA, новий user consent і небезпечні mutations не обходяться заради вищого evidence grade.
 - Чутливе значення не публікується; у звіті залишається лише redacted reference.
+
+## Правило session corpus (VR-003)
+
+Приватні transcripts можуть встановлювати provenance і search coverage, але повторення не є доказом. Публікуються лише очищені атомарні твердження й aggregate/hash metadata. Raw transcripts, normalized chunks, candidate excerpts, credentials, private URLs, local paths і mailbox content залишаються поза Git. E2 доводить tracked implementation, E3 доводить local checks, E4 потребує staging evidence, E5 потребує production acceptance.

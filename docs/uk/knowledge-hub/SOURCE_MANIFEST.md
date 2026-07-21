@@ -21,3 +21,7 @@ R1 повідомляє evidence=11 і lesson=5, але атомарні rows д
 ---
 
 Source request / Джерело запиту: `REQ-0003`. Report-derived baseline; live claims require current-state verification.
+
+## Приватні session sources REQ-0012
+
+`SESSION-CURRENT` і `SESSION-PREVIOUS` зареєстровані cryptographic hashes та logical-line coverage у [VR-003 source-manifest.json](../../verification-reports/VR-003/source-manifest.json). Їхній raw text і normalized chunks є приватними; публічною є лише очищена claim provenance.

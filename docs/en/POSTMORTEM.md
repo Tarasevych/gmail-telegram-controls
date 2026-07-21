@@ -95,3 +95,7 @@ GitHub Actions run [29788979153](https://github.com/Tarasevych/gmail-telegram-co
 ## Current local verification update
 
 After the supplied-log boundary, candidate commit `b5a5452` passed all `432/432` local tests and `PreflightOnly`. The preflight readback reported stable v50, current staging 0, one legacy staging deployment, and `readyToStage=true`. This upgrades v55 from source-only `unverified` to locally verified; staging deployment and controlled live one-card acceptance remain `unverified`.
+
+## VR-003 evidence refresh (2026-07-21)
+
+[VR-003](verification-reports/reports/VR-003/README.md) independently classifies the two-session record into atomic claims. Confirmed causes remain raw card-index capacity accounting (fixed in v47), shared realtime `UserLock` contention (fixed in v48), and SENT+INBOX lane divergence (fixed in v55). OAuth callback causation and live production acceptance remain explicitly unverified or blocked.

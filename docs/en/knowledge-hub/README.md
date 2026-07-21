@@ -52,3 +52,7 @@ Source requests / Джерела запитів: `REQ-0003` (baseline), `REQ-000
 - [Instructions](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%86%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%86%D1%96%D1%97), [Permissions](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%9F%D0%BE%D0%B2%D0%BD%D0%BE%D0%B2%D0%B0%D0%B6%D0%B5%D0%BD%D0%BD%D1%8F), and [Requests](https://github.com/Tarasevych/gmail-telegram-controls/tree/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8) remain separate canonical areas.
 
 For routine work, start on this page and open only the relevant thematic register. Source dossiers are needed only for provenance or conflict resolution.
+
+## Session evidence
+
+Use the [session evidence register](SESSION_EVIDENCE.md) for the reproducible REQ-0012 corpus boundary and the link to VR-003. Do not reprocess the raw sessions unless a new request changes the verification scope.

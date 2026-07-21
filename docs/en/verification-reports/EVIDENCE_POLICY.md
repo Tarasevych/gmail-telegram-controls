@@ -22,3 +22,7 @@ Source request: `REQ-0004`.
 - A permission becomes verified only through canonical Permissions and a traceable owner request.
 - OTP, CAPTCHA, new user consent, and unsafe mutations are never bypassed to obtain a higher evidence grade.
 - Sensitive values are not published; the report retains only a redacted reference.
+
+## Session-corpus rule (VR-003)
+
+Private transcripts may establish provenance and search coverage, but repetition is not proof. Only sanitized atomic claims and aggregate/hash metadata may be published. Raw transcripts, normalized chunks, candidate excerpts, credentials, private URLs, local paths, and mailbox content remain outside Git. E2 proves tracked implementation, E3 proves local checks, E4 requires staging evidence, and E5 requires production acceptance.

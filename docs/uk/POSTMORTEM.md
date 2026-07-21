@@ -95,3 +95,7 @@ GitHub Actions run [29788979153](https://github.com/Tarasevych/gmail-telegram-co
 ## Поточне локальне оновлення перевірки
 
 Після межі наданого логу candidate commit `b5a5452` пройшов усі `432/432` локальні tests і `PreflightOnly`. Preflight readback показав stable v50, current staging 0, один legacy staging deployment і `readyToStage=true`. Це підвищує v55 із source-only `unverified` до локально перевіреного; staging deployment і контрольний live acceptance однієї картки лишаються `unverified`.
+
+## Оновлення доказів VR-003 (2026-07-21)
+
+[VR-003](verification-reports/reports/VR-003/README.md) незалежно класифікує записи двох сесій на атомарні твердження. Підтвердженими причинами залишаються raw card-index capacity accounting (виправлено у v47), shared realtime `UserLock` contention (виправлено у v48) та SENT+INBOX lane divergence (виправлено у v55). OAuth callback causation і live production acceptance явно залишаються unverified або blocked.

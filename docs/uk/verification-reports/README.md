@@ -21,3 +21,7 @@
 5. Для runtime або production вимагати E4/E5, а не E1/E2.
 
 Permission claim перевіряється лише проти канонічного owner-granted запису. Recommendation не є повноваженням. Нова Versie, deployment або runtime change цим контуром не створюється.
+
+## Найновіший звіт
+
+[VR-003](reports/VR-003/README.md) перевіряє evidence лінії v42-v55 у Versie 1 за двома приватними корпусами сесій і первинними Git/test артефактами. Він не змінює release або runtime state.
