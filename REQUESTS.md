@@ -144,3 +144,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - English: Gmail primary-source gate, CI validator hardening, and the factual Google Developer Program Profile boundary.
 - Record: [REQ-0021](requests/2026-07-21/REQ-0021-gmail-primary-source-ci-hardening-dual-publication.md)
 - Status: `in_progress`
+
+## REQ-0022 | 2026-07-21
+
+- Українською: дозволити за практичної потреби синхронізований приватний GitLab mirror без створення другої source-of-truth або паралельної Versie.
+- English: authorize a synchronized private GitLab mirror when practically useful, without creating a second source of truth or a parallel Versie.
+- Record: [REQ-0022](requests/2026-07-21/REQ-0022-private-gitlab-mirror-authority.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Boundary: GitHub remains canonical; ordinary non-force verified-ref pushes only; no secrets, OAuth/session data, mailbox content, production promotion, new Versie, or history rewrite.
