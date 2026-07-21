@@ -153,3 +153,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `in_progress`
 - Next Versie authorization: `no`
 - Boundary: GitHub remains canonical; ordinary non-force verified-ref pushes only; no secrets, OAuth/session data, mailbox content, production promotion, new Versie, or history rewrite.
+
+## REQ-0023 | 2026-07-21
+
+- Українською: повторно дозволити практичне використання вже створеного приватного GitLab mirror у чинних межах `P-007`.
+- English: reaffirm practical use of the existing private GitLab mirror within the current `P-007` boundary.
+- Record: [REQ-0023](requests/2026-07-21/REQ-0023-reaffirm-optional-private-gitlab-mirror.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: no new authority, product/release mutation, history rewrite, secrets, OAuth/session data, mailbox content, or Telegram-zone change.
