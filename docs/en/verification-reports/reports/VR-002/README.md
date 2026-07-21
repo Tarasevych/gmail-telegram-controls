@@ -2,7 +2,7 @@
 
 [Index](../../INDEX.md) | [Schema](../../REPORT_SCHEMA.md) | [Українська](../../../../uk/verification-reports/reports/VR-002/README.md)
 
-Source request: `REQ-0009`. Baseline: [Versie 1 `f96d8f0`](https://github.com/Tarasevych/gmail-telegram-controls/tree/f96d8f0) and production Apps Script immutable v42.
+Verification framework marker: `REQ-0004`. Source request: `REQ-0009`. Baseline: [Versie 1 `f96d8f0`](https://github.com/Tarasevych/gmail-telegram-controls/tree/f96d8f0) and production Apps Script immutable v42.
 
 ## Scope
 

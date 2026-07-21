@@ -2,7 +2,7 @@
 
 [Індекс](../../INDEX.md) | [Схема](../../REPORT_SCHEMA.md) | [English](../../../../en/verification-reports/reports/VR-002/README.md)
 
-Source request: `REQ-0009`. Baseline: [Versie 1 `f96d8f0`](https://github.com/Tarasevych/gmail-telegram-controls/tree/f96d8f0) та production Apps Script immutable v42.
+Маркер схеми перевірки: `REQ-0004`. Джерело звіту: `REQ-0009`. Baseline: [Versie 1 `f96d8f0`](https://github.com/Tarasevych/gmail-telegram-controls/tree/f96d8f0) та production Apps Script immutable v42.
 
 ## Межі
 

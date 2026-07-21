@@ -11,6 +11,7 @@
 - [Дорожня карта](ROADMAP.md): виконано, виконується, заблоковано, далі.
 - [Реєстр проблем](ISSUES.md): короткі `GT-*` записи зі статусами та цільовими Versie.
 - [Двомовна документація](BILINGUAL_DOCUMENTATION.md): обов'язкові українська й англійська пари та CI-перевірка.
+- [Postmortem доставки v42-v55](POSTMORTEM.md): архітектура, підтверджені root causes, межі доказів і стійкі інваріанти.
 - [Versie 1 · 2026-07-19](releases/VERSIE-001-2026-07-19.md): повна кумулятивна історія та release gates.
 
 English mirror: [docs/en/README.md](../en/README.md).
