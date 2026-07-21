@@ -53,6 +53,13 @@ Any future fix must begin in timer scheduling/error classification. `MailClient.
 - v56 and rollback v55 completed `doPost`, session redemption/renewal, and `mailboxRpc`; repeated `checkNewMail_` executions failed in `gmailApiRequest_` with the content-free error `Service invoked too many times for one day: urlfetch`.
 - The same network symptom on the candidate and stable rollback disproves a proven candidate-specific regression. It does not prove that v56 is production-ready.
 
+Follow-up verification with cumulative v57 confirmed the same shared boundary: staging v57 and two fresh production v55 launches showed the same mailbox error; v57 `doPost`, `mailboxRedeemLaunch`, and `mailboxRpc` completed, while the worker logged OAuth refresh failure and the exact daily `urlfetch` quota error. Production remains v55, immutable v56 is historical, one v57 staging deployment is preserved, and the menu points to production.
+
+Separate evidence appendices:
+
+- [CI failure audit: all 26 runs](CI_FAILURE_AUDIT.md)
+- [Runtime quota evidence: v55/v57](RUNTIME_QUOTA_EVIDENCE.md)
+
 ## Atomic findings
 
 | ID | Category | Status | Evidence | Statement |
@@ -67,6 +74,9 @@ Any future fix must begin in timer scheduling/error classification. `MailClient.
 | VR4-008 | release | verified | E2 | Merge/checks/tests do not replace production acceptance evidence. |
 | VR4-009 | safety | recommendation | E0 | Freeze stable account/session/card/OAuth paths until new direct evidence exists. |
 | VR4-010 | release | recommendation | E0 | Continue only through a healthy v55 baseline and controlled owner-only A/B. |
+| VR4-011 | CI | verified | E4 | The GitHub Actions API confirmed exactly 26 historical failures: 12 Request ledger and 14 Verification reports. |
+| VR4-012 | CI | verified | E4 | Follow-up commits fixed the schema/hash defects; historical failed runs remain immutable evidence. |
+| VR4-013 | root-cause | verified | E4 | The same v55/v57 UI symptom and exact worker error confirm a shared quota blocker, not a proven v57 regression. |
 
 ## Root-cause analysis
 
@@ -93,11 +103,11 @@ There is no evidence of a new failure in account registry, avatar/roots, one-cli
 
 1. Do not change code or switch releases until quota recovers.
 2. On v55, complete two fresh production mailbox launches without a network error; this is the mandatory baseline.
-3. Only after that baseline, run an owner-only signed v56 staging launch and verify avatar, three roots, and switching to the second Gmail account and back without OAuth.
-4. If v56 passes A/B, run the standard Promote, two production launches, and `CleanupStaging`.
+3. Only after that baseline, run an owner-only signed v57 staging launch and verify avatar, three roots, and switching to the second Gmail account and back without OAuth.
+4. If v57 passes A/B, run the standard Promote, two production launches, and `CleanupStaging`.
 5. After promotion, observe at least four trigger opportunities; confirm no overlap, the 150-second worker slot, and the 15-minute History slot.
 6. Send one owner self-message with a unique marker; expect exactly one Telegram card and no duplicate after two `/check` runs.
-7. If failure is candidate-only, do not change immutable v56: create cumulative v57 and limit the patch to the timer slot/error-classification block. Exact rollback remains v55.
+7. If a new failure is candidate-only, do not change immutable v56/v57: create cumulative v58 and limit the patch to the proven block. Exact rollback remains v55.
 8. If failure is identical on v55 and the candidate, do not switch releases; keep the shared blocker open and continue quota telemetry.
 
 ## GitHub status map
@@ -109,6 +119,9 @@ There is no evidence of a new failure in account registry, avatar/roots, one-cli
 | #3 | merged | Done; last production-accepted evidence boundary |
 | #4 | merged | Candidate; code/tests merged, production acceptance blocked |
 | #5 | open, clean | Blocked; shared quota baseline and controlled A/B pending |
+| #6 | open, clean | VR-004 and evidence appendices; merge after #5 |
+| #7 | merged | Connection-scoped Gmail metadata identity fix |
+| #8 | merged | Isolated immutable v57 staging launcher |
 
 Repository Issues are disabled. Until GitHub Projects scope is confirmed, PR comments and this report are the authoritative task-status surface.
 

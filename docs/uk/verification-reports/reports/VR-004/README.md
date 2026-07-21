@@ -53,6 +53,13 @@
 - v56 і rollback v55 завершували `doPost`, session redemption/renewal і `mailboxRpc`; повторні `checkNewMail_` падали в `gmailApiRequest_` з content-free error `Service invoked too many times for one day: urlfetch`.
 - Однаковий network symptom на candidate і stable rollback спростовує твердження про доведений candidate-specific regression. Він не доводить, що v56 готовий до production.
 
+Подальша перевірка з cumulative v57 підтвердила ту саму shared boundary: staging v57 і два fresh production v55 launches показали однаковий mailbox error; `doPost`, `mailboxRedeemLaunch` та `mailboxRpc` v57 завершилися, а worker записав OAuth refresh failure і точний daily `urlfetch` quota error. Production лишається v55, immutable v56 є історичним, один staging v57 збережено, menu повернуто на production.
+
+Окремі доказові додатки:
+
+- [CI failure audit: усі 26 runs](CI_FAILURE_AUDIT.md)
+- [Runtime quota evidence: v55/v57](RUNTIME_QUOTA_EVIDENCE.md)
+
 ## Атомарні findings
 
 | ID | Категорія | Статус | Evidence | Твердження |
@@ -67,6 +74,9 @@
 | VR4-008 | release | verified | E2 | Merge/checks/tests не замінюють production acceptance evidence. |
 | VR4-009 | safety | recommendation | E0 | Заморозити стабільні account/session/card/OAuth paths до нового прямого доказу. |
 | VR4-010 | release | recommendation | E0 | Продовжувати лише через healthy v55 baseline і controlled owner-only A/B. |
+| VR4-011 | CI | verified | E4 | GitHub Actions API підтвердив рівно 26 historical failures: 12 Request ledger і 14 Verification reports. |
+| VR4-012 | CI | verified | E4 | Follow-up commits виправили schema/hash defects; historical failed runs лишаються immutable evidence. |
+| VR4-013 | root-cause | verified | E4 | Однаковий v55/v57 UI symptom та exact worker error підтверджують shared quota blocker, а не доведену regression v57. |
 
 ## Root cause analysis
 
@@ -93,11 +103,11 @@ Git `main`, immutable staging і production runtime вказували на рі
 
 1. Не змінювати код і не перемикати release, доки квота не відновиться.
 2. На v55 виконати два свіжі production mailbox launches без network error; це обов'язковий baseline.
-3. Лише після baseline виконати owner-only signed staging launch v56, перевірити avatar, три roots і switch на другий Gmail account та назад без OAuth.
-4. Якщо v56 проходить A/B, виконати стандартний Promote, два production launches і `CleanupStaging`.
+3. Лише після baseline виконати owner-only signed staging launch v57, перевірити avatar, три roots і switch на другий Gmail account та назад без OAuth.
+4. Якщо v57 проходить A/B, виконати стандартний Promote, два production launches і `CleanupStaging`.
 5. Після promotion спостерігати щонайменше чотири trigger opportunities; підтвердити відсутність overlap, 150-секундний worker slot і 15-хвилинний History slot.
 6. Надіслати один owner self-message з унікальним marker; очікувати рівно одну Telegram card і жодного дубля після двох `/check`.
-7. Якщо failure є лише на candidate, не змінювати immutable v56: створити cumulative v57 і обмежити patch timer slot/error classification block. Exact rollback залишається v55.
+7. Якщо новий failure є лише на candidate, не змінювати immutable v56/v57: створити cumulative v58 і обмежити patch доказаним block. Exact rollback залишається v55.
 8. Якщо failure однаковий на v55 і candidate, не перемикати релізи; залишити shared blocker відкритим і продовжити quota telemetry.
 
 ## GitHub status map
@@ -109,6 +119,9 @@ Git `main`, immutable staging і production runtime вказували на рі
 | #3 | merged | Done; остання production-accepted evidence boundary |
 | #4 | merged | Candidate; code/tests merged, production acceptance blocked |
 | #5 | open, clean | Blocked; shared quota baseline та controlled A/B pending |
+| #6 | open, clean | VR-004 та доказові додатки; merge після #5 |
+| #7 | merged | Connection-scoped Gmail metadata identity fix |
+| #8 | merged | Isolated immutable v57 staging launcher |
 
 Repository Issues вимкнені. До підтвердження GitHub Projects scope PR-коментарі та цей report є authoritative task-status surface.
 

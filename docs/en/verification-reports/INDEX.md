@@ -19,4 +19,4 @@ A historical report is not rewritten after publication to hide an error. A new i
 
 ## VR-004 (2026-07-21)
 
-[VR-004](reports/VR-004/README.md) is the stabilization/root-cause audit after the v56 rollback. It separates production-accepted v55 from the merged but not production-accepted v56 candidate, records the 441/441 local test result, the shared URLFetch quota blocker, and the fail-closed A/B plan. Atomic findings are included directly in the report; the current VR-003 machine index is unchanged without a separate validator-contract change.
+[VR-004](reports/VR-004/README.md) is the stabilization/root-cause audit after the v56 rollback and v57 staging. It separates production-accepted v55 from the candidate line, records the shared URLFetch quota blocker, and defines a fail-closed A/B plan. Appendices contain the [complete audit of 26 CI failures](reports/VR-004/CI_FAILURE_AUDIT.md) and [v55/v57 runtime evidence](reports/VR-004/RUNTIME_QUOTA_EVIDENCE.md). The current VR-003 machine index is unchanged without a separate validator-contract change.

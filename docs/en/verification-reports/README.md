@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-004](reports/VR-004/README.md) records the stabilization/root-cause audit after the v56 rollback: the production-accepted v55 boundary, the v56 candidate boundary, the shared URLFetch blocker, and the safe A/B gate. It changes no product code, deployment, or runtime state.
+[VR-004](reports/VR-004/README.md) records the stabilization/root-cause audit after the v56 rollback and v57 staging: the production-accepted v55 boundary, shared URLFetch blocker, 26 historical CI failures, and the safe A/B gate. It changes no product code or production runtime.
