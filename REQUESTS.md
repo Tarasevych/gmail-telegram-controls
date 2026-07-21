@@ -150,15 +150,17 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: дозволити за практичної потреби синхронізований приватний GitLab mirror без створення другої source-of-truth або паралельної Versie.
 - English: authorize a synchronized private GitLab mirror when practically useful, without creating a second source of truth or a parallel Versie.
 - Record: [REQ-0022](requests/2026-07-21/REQ-0022-private-gitlab-mirror-authority.md)
-- Status: `in_progress`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: GitHub remains canonical; ordinary non-force verified-ref pushes only; no secrets, OAuth/session data, mailbox content, production promotion, new Versie, or history rewrite.
+- Evidence: private GitLab mirror, anonymous API `404`, and exact hash parity for `main`, `Запити`, `Інструкції`, and `Повноваження`.
 
 ## REQ-0023 | 2026-07-21
 
 - Українською: повторно дозволити практичне використання вже створеного приватного GitLab mirror у чинних межах `P-007`.
 - English: reaffirm practical use of the existing private GitLab mirror within the current `P-007` boundary.
 - Record: [REQ-0023](requests/2026-07-21/REQ-0023-reaffirm-optional-private-gitlab-mirror.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: no new authority, product/release mutation, history rewrite, secrets, OAuth/session data, mailbox content, or Telegram-zone change.
+- Evidence: ordinary non-force mirror sync completed; exact four-ref hash comparison passed and anonymous GitLab API returned `404`.

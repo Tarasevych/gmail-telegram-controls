@@ -1,8 +1,8 @@
 # REQ-0022: Optional private GitLab mirror authority
 
 - ID: REQ-0022
-- Date: YYYY-MM-DD
-- Status: recorded
+- Date: 2026-07-21
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=no-change; permissions=update; plan=no-change; product=no-change; release=no-change
 - Permission basis: explicit
@@ -42,3 +42,11 @@ The owner authorizes use of the GitLab profile `tarasevych.pavlo` when it is pra
 ### Boundary
 
 This request does not authorize v57 promotion, a new Versie, OAuth repetition, Gmail mutation, or a Telegram-zone change. The current release gate remains blocked until the Apps Script daily `URLFetch` quota recovers.
+
+## Evidence / Докази
+
+- Private mirror: `https://gitlab.com/tarasevych.pavlo/gmail-telegram-controls`.
+- Anonymous GitLab API access returned `404`; no public project content was exposed.
+- Ordinary non-force push synchronized the verified `main`, `Запити`, `Інструкції`, and `Повноваження` refs.
+- Exact GitHub/GitLab commit-hash comparison passed for all four refs.
+- GitHub remains canonical; no credential, mailbox content, OAuth/session material, protected local state, release, or runtime mutation was published.

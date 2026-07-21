@@ -2,7 +2,7 @@
 
 - ID: REQ-0023
 - Date: 2026-07-21
-- Status: recorded
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=reference; product=no-change; release=no-change
 - Permission basis: explicit
@@ -46,3 +46,11 @@
 ### Boundary
 
 There is no authority for a new Versie, immutable release, production promotion, Gmail mutation, repeated OAuth, or Telegram-zone change. The shared Apps Script daily `URLFetch` quota blocker remains a separate runtime fact.
+
+## Evidence / Докази
+
+- Private mirror URL: `https://gitlab.com/tarasevych.pavlo/gmail-telegram-controls`.
+- Anonymous GitLab API access returned `404`.
+- Exact GitHub/GitLab hashes matched for `main`, `Запити`, `Інструкції`, and `Повноваження` after an ordinary non-force push.
+- Canonical GitHub `main`: `fcbceb63e61da2e94e189743959654bffd6098b3`.
+- No product, release, Apps Script, Gmail, OAuth, Telegram-zone, or protected-state mutation was part of mirror synchronization.
