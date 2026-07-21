@@ -177,3 +177,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: source/tests/docs only; no flag activation, immutable release, deployment, production promotion, OAuth, Gmail mutation, trigger change, account/zone mixing, or secret publication.
 - Evidence: adapter `8/8`; full suite `451/452` with only the exact immutable v57 hash gate failing; source commit `0b0c361`, draft PR #11, green documentation/report Actions, and exact private GitLab branch parity. Merge/release requires separate next-immutable authority; live A/B requires quota recovery.
+
+## REQ-0025 | 2026-07-21
+
+- Українською: завершити незалежну autonomous night work парним factual morning/crash report і recovery checkpoint `complete_with_blockers`.
+- English: complete the independent autonomous night work with paired factual morning/crash reports and a `complete_with_blockers` recovery checkpoint.
+- Record: [REQ-0025](requests/2026-07-21/REQ-0025-autonomous-night-completion-report.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: documentation/recovery evidence only; no source-candidate merge, immutable, release-helper, feature-flag, deployment, trigger, OAuth, Gmail, Telegram-menu, or account/zone mutation.
