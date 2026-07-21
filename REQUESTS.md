@@ -90,3 +90,13 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `recorded`
 - Next Versie authorization: `no`
 - Boundary: local code/tests/docs only; no OAuth, mailbox, deployment, production, main, or release change.
+
+## REQ-0016 | 2026-07-21
+
+- Українською: дозвіл на gated E4/E5, deployment, production promotion і merge поточної `Versie 1`.
+- English: authorization for gated E4/E5, deployment, production promotion, and merge of the current `Versie 1`.
+- Record: [REQ-0016](requests/2026-07-21/REQ-0016-authorize-versie-1-release-and-merge.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Source commit: `ae8fa827784296062c1f5cfe65334824d0fcb2c2`
+- Boundary: exact-candidate gated release only; stop at OTP, CAPTCHA, new Google consent, unresolved account/zone identity, or a material manual choice.
