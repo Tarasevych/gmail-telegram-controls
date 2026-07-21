@@ -15,4 +15,8 @@ Source request: `REQ-0004`.
 
 ## VR-003 (2026-07-21)
 
-[VR-003](reports/VR-003/README.md) є найновішою двокорпусною factual verification для Versie 1. Вона публікує 32 очищені атомарні твердження, метадані повного покриття джерел, підтверджені root causes і явні runtime/release gates. Machine-readable артефакти: [manifest](../../verification-reports/VR-003/manifest.json), [claims](../../verification-reports/VR-003/claims.json) і [source manifest](../../verification-reports/VR-003/source-manifest.json).
+[VR-003](reports/VR-003/README.md) є двокорпусною factual verification для Versie 1. Вона публікує 32 очищені атомарні твердження, метадані повного покриття джерел, підтверджені root causes і явні runtime/release gates. Machine-readable артефакти: [manifest](../../verification-reports/VR-003/manifest.json), [claims](../../verification-reports/VR-003/claims.json) і [source manifest](../../verification-reports/VR-003/source-manifest.json).
+
+## VR-004 (2026-07-21)
+
+[VR-004](reports/VR-004/README.md) є stabilization/root-cause audit після rollback v56. Він відділяє production-accepted v55 від злитого, але не прийнятого production candidate v56, фіксує 441/441 локальних тестів, спільний URLFetch quota blocker і fail-closed A/B план. Атомарні findings містяться безпосередньо у звіті; чинний machine index VR-003 не змінено без окремої зміни validator-контракту.
