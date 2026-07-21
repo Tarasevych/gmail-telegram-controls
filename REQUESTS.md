@@ -17,6 +17,7 @@
 | REQ-0007 | 2026-07-19 | completed | Owner-only доступ і межа внутрішніх Codex-даних | [record](requests/2026-07-19/REQ-0007-owner-only-archive-access.md) |
 | REQ-0008 | 2026-07-20 | in_progress | Versie 1 multi-account OAuth return і one-click switch | [record](requests/2026-07-20/REQ-0008-versie-1-multi-account-oauth-return.md) |
 | REQ-0009 | 2026-07-20 | recorded | Versie 1 multi-account Gmail delivery і account-scoped feeds | [record](requests/2026-07-20/REQ-0009-versie-1-multi-account-mail-delivery.md) |
+| REQ-0010 | 2026-07-21 | recorded | Versie 1 postmortem, lessons learned і GitHub publication diagnosis | [record](requests/2026-07-21/REQ-0010-versie-1-postmortem-lessons.md) |
 
 <!-- lang:en -->
 ## English
