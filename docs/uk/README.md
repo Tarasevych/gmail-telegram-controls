@@ -13,6 +13,7 @@
 - [Первинні джерела Gmail](GMAIL_PRIMARY_SOURCES.md): обов'язковий source gate і межі GitHub, Apps Script та Google Developer Profile.
 - [Двомовна документація](BILINGUAL_DOCUMENTATION.md): обов'язкові українська й англійська пари та CI-перевірка.
 - [Postmortem доставки v42-v55](POSTMORTEM.md): архітектура, підтверджені root causes, межі доказів і стійкі інваріанти.
+- [Звіт автономної нічної роботи 2026-07-21](reports/AUTONOMOUS_NIGHT_2026-07-21.md): докази завершення, runtime/release blockers, crash reports і точна recovery action.
 - [Versie 1 · 2026-07-19](releases/VERSIE-001-2026-07-19.md): повна кумулятивна історія та release gates.
 
 English mirror: [docs/en/README.md](../en/README.md).
