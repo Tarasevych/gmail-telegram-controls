@@ -19,4 +19,4 @@ Source request: `REQ-0004`.
 
 ## VR-004 (2026-07-21)
 
-[VR-004](reports/VR-004/README.md) є stabilization/root-cause audit після rollback v56 та staging v57. Він відділяє production-accepted v55 від candidate line, фіксує shared URLFetch quota blocker і fail-closed A/B план. Додатки містять [повний аудит 26 CI failures](reports/VR-004/CI_FAILURE_AUDIT.md) і [runtime evidence v55/v57](reports/VR-004/RUNTIME_QUOTA_EVIDENCE.md). Чинний machine index VR-003 не змінено без окремої зміни validator-контракту.
+[VR-004](reports/VR-004/README.md) є stabilization/root-cause audit після rollback v56 та staging v57. Він відділяє production-accepted v55 від candidate line, фіксує shared URLFetch quota blocker і fail-closed A/B план. Додатки містять [повний аудит 26 CI failures](reports/VR-004/CI_FAILURE_AUDIT.md), [runtime evidence v55/v57](reports/VR-004/RUNTIME_QUOTA_EVIDENCE.md) і [Stage 1 continuation audit](reports/VR-004/STAGE_1_CONTINUATION_AUDIT.md). Чинний machine index VR-003 не змінено без окремої зміни validator-контракту.
