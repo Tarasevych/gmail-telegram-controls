@@ -1,10 +1,14 @@
 # REQ-0011: autonomous continuation and recovery authority
 
-Date: `2026-07-21`
-Status: `recorded`
-Active product: `Versie 1`
-Next Versie authorization: `no`
+- ID: REQ-0011
+- Received: 2026-07-21
+- Status: completed
+- Active Versie: Versie 1
+- Next Versie authorization: no
+- Routes: requests=record; instructions=update; permissions=update; plan=no-change; product=no-change; release=no-change
+- Permission basis: explicit
 
+<!-- lang:uk -->
 ## Українською
 
 Власник дозволив агенту в межах фактично доступних засобів автономно використовувати проєктний ПК, підключені пристрої, браузер, мережу, Git/GitHub, Gmail та інші дозволені конектори; виконувати стандартні дії без повторного погодження; вести checkpoints і журнали; після збою відновлювати саме це завдання з останнього перевіреного стану; показувати короткий прогрес у чаті.
@@ -13,6 +17,7 @@ Next Versie authorization: `no`
 
 Межі: не обходити CAPTCHA, 2FA/OTP, passkey/біометрію; не створювати оплату; не вимикати захисти; не виконувати force-push, переписування історії чи незворотні системні зміни; не публікувати credentials, приватні листи або session data. За неминучого ручного gate завершити незалежну роботу, зберегти checkpoint і попросити одну мінімальну дію.
 
+<!-- lang:en -->
 ## English
 
 The owner authorized the agent, within actually available tools, to autonomously use the project PC, connected devices, browser, network, Git/GitHub, Gmail, and other permitted connectors; perform routine actions without repeated approval; maintain checkpoints and logs; recover this same task from the last verified state after interruption; and provide concise progress in chat.

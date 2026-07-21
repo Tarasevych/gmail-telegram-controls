@@ -7,8 +7,9 @@
 - Next Versie authorization: no
 - Depends on: REQ-0009 delivery evidence and supplied v42-v55 session records
 - Sensitive data persisted: no mail content, account addresses, tokens, cookies, OAuth material, private identifiers, or credentials in Git
-- Routes: requests=record; instructions=update; permissions=no-change; documentation=update; verification=update-from-supplied-evidence; email=read-only-latest-GitHub-message; product=no-code-change; runtime=no-change; release=no-change; main=update-after-document-checks
-- Permission basis: explicit owner request plus P-005 contextual routing
+- Routes: requests=record; instructions=update; permissions=no-change; plan=no-change; product=update; release=no-change
+- Permission basis: explicit
+- Detailed scope: documentation and verification update from supplied evidence; latest relevant GitHub email read-only; no product-code/runtime change; main only after document checks
 
 <!-- lang:uk -->
 ## Українською

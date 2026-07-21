@@ -1,16 +1,21 @@
 # REQ-0013: merge the verified Versie 1 pull request
 
-Date: `2026-07-21`
-Status: `blocked`
-Active product: `Versie 1`
-Next Versie authorization: `no`
+- ID: REQ-0013
+- Received: 2026-07-21
+- Status: blocked
+- Active Versie: Versie 1
+- Next Versie authorization: no
+- Routes: requests=record; instructions=reference; permissions=reference; plan=no-change; product=no-change; release=no-change
+- Permission basis: explicit
 
+<!-- lang:uk -->
 ## Українською
 
 Власник наказав продовжити з останньої перевіреної межі. Наступний безпечний крок: злити перевірений PR `#1` у `main`, не змінюючи його вже підтверджений tree, а потім перевірити exact merge commit, GitHub Actions, remote state і чистоту worktree.
 
 Цей запит не дозволяє створення наступної Versie, Apps Script immutable/staging deployment, production promotion, Gmail mutation, OAuth consent або Telegram production acceptance.
 
+<!-- lang:en -->
 ## English
 
 The owner ordered continuation from the last verified boundary. The next safe action is to merge verified PR `#1` into `main` without changing its already validated tree, then verify the exact merge commit, GitHub Actions, remote state, and worktree cleanliness.

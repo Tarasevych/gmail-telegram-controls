@@ -7,8 +7,9 @@
 - Next Versie authorization: no
 - Depends on: REQ-0008 multi-account account registry and OAuth return
 - Sensitive data persisted: no plaintext OAuth tokens, client secrets, Telegram tokens, cookies, private account addresses, message content, or session credentials in Git
-- Routes: requests=record; instructions=no-change; permissions=reference P-001/P-002/P-004/P-005; plan=update; issues=update; product=update; documentation=update; verification=update; runtime=update-after-tests; main=update-after-acceptance; release=no-change
-- Permission basis: explicit task plus existing scoped owner permissions
+- Routes: requests=record; instructions=no-change; permissions=reference; plan=update; product=update; release=no-change
+- Permission basis: explicit
+- Detailed scope: permissions reference P-001/P-002/P-004/P-005; issues, documentation, verification, and product update; runtime only after tests; main only after acceptance
 
 <!-- lang:uk -->
 ## Українською

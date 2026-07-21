@@ -1,16 +1,21 @@
 # REQ-0012: full two-corpus knowledge-base reconstruction
 
-Date: `2026-07-21`
-Status: `completed`
-Active product: `Versie 1`
-Next Versie authorization: `no`
+- ID: REQ-0012
+- Received: 2026-07-21
+- Status: completed
+- Active Versie: Versie 1
+- Next Versie authorization: no
+- Routes: requests=record; instructions=no-change; permissions=reference; plan=update; product=update; release=no-change
+- Permission basis: explicit
 
+<!-- lang:uk -->
 ## Українською
 
 Власник наказав автономно виконати повний доказовий workflow із `Master_Prompt_Gmail_Telegram_KB_UA.md` та в межах `Agent_Permissions_Gmail_Telegram_UA.md`: Stage 0 inventory; потокове опрацювання двох історичних сесій; coverage manifest та evidence ledger; перевірка/доповнення архітектури; підтверджений RCA; 8–12 enforcement rules; двомовні postmortem/contributing/navigation artifacts; tests, privacy scan, Git commits, push/PR і reboot-safe recovery.
 
 Вхідні назви, версії та твердження не є фактами без locator/evidence. Не змінювати код без відтворюваного доказу. Не повторювати завершені GitHub authorization, email diagnosis, Stage 4 publication або v55 local verification; повторно використовувати їхні commit/run IDs.
 
+<!-- lang:en -->
 ## English
 
 The owner ordered autonomous execution of the complete evidence workflow defined by `Master_Prompt_Gmail_Telegram_KB_UA.md` within `Agent_Permissions_Gmail_Telegram_UA.md`: Stage 0 inventory; streaming analysis of two historical sessions; coverage manifest and evidence ledger; architecture validation; confirmed RCA; 8–12 enforceable rules; bilingual postmortem/contributing/navigation artifacts; tests, privacy scan, Git commits, push/PR, and reboot-safe recovery.
