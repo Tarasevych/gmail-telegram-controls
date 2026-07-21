@@ -590,7 +590,7 @@ var GMAIL_NOTIFICATION_REALTIME_MAX_MESSAGES_ = 25;
 var GMAIL_NOTIFICATION_REALTIME_MAX_RETRIES_ = 20;
 var GMAIL_NOTIFICATION_REALTIME_MAX_ATTEMPTS_ = 8;
 var GMAIL_NOTIFICATION_RUNTIME_STATE_KEY_ = 'GMAIL_NOTIFICATION_RUNTIME_STATE_V1';
-var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v53';
+var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v54';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -987,6 +987,86 @@ function gmailRuntimeTraceCurrentMailbox_(traceToken) {
   return result;
 }
 
+function gmailRuntimeMoveCurrentTraceSpamToInbox_(traceToken) {
+  var query = encodeURIComponent('subject:"' + traceToken + '" newer_than:2d');
+  var data = gmailApi_('/messages?q=' + query + '&includeSpamTrash=true&maxResults=2') || {};
+  var rows = Array.isArray(data.messages) ? data.messages.slice(0, 2) : [];
+  if (rows.length !== 1 || data.nextPageToken) {
+    return { applied: false, errorCode: 'trace_match_guard', beforeSpam: 0, afterInbox: 0 };
+  }
+  var id = String(rows[0] && rows[0].id || '');
+  if (!/^[A-Za-z0-9_-]{5,64}$/.test(id)) {
+    return { applied: false, errorCode: 'trace_id_guard', beforeSpam: 0, afterInbox: 0 };
+  }
+  var before = gmailApi_('/messages/' + encodeURIComponent(id) + '?format=metadata') || {};
+  var beforeLabels = Array.isArray(before.labelIds) ? before.labelIds : [];
+  if (beforeLabels.indexOf('SPAM') < 0 || beforeLabels.indexOf('TRASH') >= 0) {
+    return {
+      applied: false, errorCode: 'trace_not_spam',
+      beforeSpam: beforeLabels.indexOf('SPAM') >= 0 ? 1 : 0,
+      afterInbox: beforeLabels.indexOf('INBOX') >= 0 ? 1 : 0
+    };
+  }
+  gmailApiRequest_('/messages/' + encodeURIComponent(id) + '/modify', {
+    method: 'post', body: { addLabelIds: ['INBOX'], removeLabelIds: ['SPAM'] }
+  });
+  var after = gmailApi_('/messages/' + encodeURIComponent(id) + '?format=metadata') || {};
+  var afterLabels = Array.isArray(after.labelIds) ? after.labelIds : [];
+  var confirmed = afterLabels.indexOf('INBOX') >= 0 && afterLabels.indexOf('SPAM') < 0;
+  return {
+    applied: confirmed,
+    errorCode: confirmed ? '' : 'trace_confirmation_failed',
+    beforeSpam: 1,
+    afterInbox: afterLabels.indexOf('INBOX') >= 0 ? 1 : 0
+  };
+}
+
+function gmailRuntimeTraceSpamToInbox_(traceToken, laneRefValue) {
+  var laneRef = String(laneRefValue || '').toLowerCase();
+  if (!/^[a-f0-9]{20}$/.test(laneRef)) {
+    return { applied: false, errorCode: 'trace_lane_guard', beforeSpam: 0, afterInbox: 0 };
+  }
+  if (typeof mailboxMultiReadRegistry_ !== 'function' ||
+      typeof withMailboxConnectionContext_ !== 'function') {
+    return { applied: false, errorCode: 'trace_runtime_unavailable', beforeSpam: 0, afterInbox: 0 };
+  }
+  var registry = mailboxMultiReadRegistry_(PropertiesService.getScriptProperties());
+  var matches = [];
+  (registry.preferences || []).forEach(function (preference) {
+    var userId = String(preference.userId || '');
+    if (!/^\d{1,24}$/.test(userId)) return;
+    (preference.notificationConnectionIds || []).forEach(function (connectionIdValue) {
+      var connectionId = String(connectionIdValue || '');
+      var connection = (registry.connections || []).find(function (item) {
+        return String(item.id || '') === connectionId && String(item.status || '') === 'active';
+      });
+      var member = connection && (registry.members || []).find(function (item) {
+        return String(item.zoneId || '') === String(connection.zoneId || '') &&
+          String(item.userId || '') === userId && String(item.status || '') === 'active';
+      });
+      if (connection && member && gmailRealtimeLaneReference_(userId, connectionId) === laneRef) {
+        matches.push({ userId: userId, connectionId: connectionId });
+      }
+    });
+  });
+  if (matches.length !== 1) {
+    return { applied: false, errorCode: 'trace_lane_match_guard', beforeSpam: 0, afterInbox: 0 };
+  }
+  try {
+    return withMailboxConnectionContext_(matches[0].userId, matches[0].connectionId, 'viewer', function () {
+      return gmailRuntimeMoveCurrentTraceSpamToInbox_(traceToken);
+    });
+  } catch (error) {
+    return {
+      applied: false,
+      errorCode: gmailRealtimeGmailErrorCode_(error),
+      errorFingerprint: gmailRuntimeFingerprint_(error),
+      beforeSpam: 0,
+      afterInbox: 0
+    };
+  }
+}
+
 function gmailRuntimeTraceMailboxes_(traceToken) {
   var results = [];
   function capture(laneRef, callback) {
@@ -1069,6 +1149,15 @@ function serveGmailRuntimeProbe_(e) {
   }
   var traceToken = gmailRuntimeTraceToken_(e);
   var trace = traceToken ? gmailRuntimeTraceMailboxes_(traceToken) : [];
+  var traceAction = String(e && e.parameter && e.parameter.trace_action || '');
+  var traceMaintenance = { requested: Boolean(traceAction), applied: false, errorCode: '' };
+  if (traceAction) {
+    traceMaintenance = traceAction === 'spam_to_inbox' && traceToken
+      ? gmailRuntimeTraceSpamToInbox_(traceToken, e && e.parameter && e.parameter.trace_lane)
+      : { requested: true, applied: false, errorCode: 'trace_action_guard' };
+    traceMaintenance.requested = true;
+    trace = gmailRuntimeTraceMailboxes_(traceToken);
+  }
   return ContentService.createTextOutput(JSON.stringify({
     ok: true,
     product: 'Versie 1',
@@ -1099,7 +1188,8 @@ function serveGmailRuntimeProbe_(e) {
     },
     trace: {
       requested: Boolean(traceToken),
-      lanes: trace
+      lanes: trace,
+      maintenance: traceMaintenance
     },
     runtime: gmailRuntimeReadState_(props),
     lanes: gmailRealtimeLaneSnapshots_(props, false)

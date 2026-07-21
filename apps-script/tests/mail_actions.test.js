@@ -6491,6 +6491,35 @@ test('protected Gmail trace returns only bounded label counts and never identifi
   } finally { context.gmailApi_ = original; }
 });
 
+test('staging trace maintenance moves only one exact Spam match and returns no Gmail identifier', () => {
+  const originals = { gmailApi_: context.gmailApi_, gmailApiRequest_: context.gmailApiRequest_ };
+  const token = '2026-07-20T23:34:34.365Z';
+  let labels = ['SPAM', 'UNREAD'];
+  const mutations = [];
+  try {
+    context.gmailApi_ = path => path.startsWith('/messages?q=')
+      ? { messages: [{ id: 'controlled_trace_message' }] }
+      : { labelIds: labels.slice() };
+    context.gmailApiRequest_ = (path, options) => {
+      mutations.push({ path, options });
+      labels = ['INBOX', 'UNREAD'];
+      return {};
+    };
+    const result = context.gmailRuntimeMoveCurrentTraceSpamToInbox_(token);
+    assert.equal(result.applied, true);
+    assert.equal(result.beforeSpam, 1);
+    assert.equal(result.afterInbox, 1);
+    assert.equal(mutations.length, 1);
+    assert.equal(
+      JSON.stringify(mutations[0].options.body),
+      JSON.stringify({ addLabelIds: ['INBOX'], removeLabelIds: ['SPAM'] })
+    );
+    const serialized = JSON.stringify(result);
+    assert.doesNotMatch(serialized, /controlled_trace_message/);
+    assert.doesNotMatch(serialized, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  } finally { Object.assign(context, originals); }
+});
+
 test('realtime legacy delivery reuses the canonical scope and never inherits an unrelated global mode', () => {
   const body = code.match(/function runRealtimeMailCheck_\(source\)\s*\{([\s\S]*?)\n\}/);
   const mode = code.match(/function gmailRealtimeNotificationMode_\(rootProps, scope\)\s*\{([\s\S]*?)\n\}/);
