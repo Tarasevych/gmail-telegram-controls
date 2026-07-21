@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-003](reports/VR-003/README.md) перевіряє evidence лінії v42-v55 у Versie 1 за двома приватними корпусами сесій і первинними Git/test артефактами. Він не змінює release або runtime state.
+[VR-004](reports/VR-004/README.md) фіксує stabilization/root-cause audit після rollback v56 і staging v57: production-accepted межу v55, shared URLFetch blocker, 26 історичних CI failures та безпечний A/B gate. Він не змінює продуктовий код або production runtime.

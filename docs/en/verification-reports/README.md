@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-003](reports/VR-003/README.md) verifies the v42-v55 Versie 1 evidence across two private session corpora and primary Git/test artifacts. It changes no release or runtime state.
+[VR-004](reports/VR-004/README.md) records the stabilization/root-cause audit after the v56 rollback and v57 staging: the production-accepted v55 boundary, shared URLFetch blocker, 26 historical CI failures, and the safe A/B gate. It changes no product code or production runtime.
