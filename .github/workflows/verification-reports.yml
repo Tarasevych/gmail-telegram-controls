@@ -1,0 +1,27 @@
+name: Verification reports
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate bilingual documentation
+        run: python3 tools/check_bilingual_docs.py
+
+      - name: Validate knowledge-hub baseline
+        run: python3 tools/check_knowledge_hub.py
+
+      - name: Validate factual verification reports
+        run: python3 tools/check_verification_reports.py

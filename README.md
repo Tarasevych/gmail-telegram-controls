@@ -67,6 +67,9 @@ immediately without a confirmation screen, requires both the private key and
 fresh owner-bound Telegram `initData`, and closes automatically. Delete always
 moves mail to Gmail Trash; it never performs permanent deletion.
 
-## Structured project hub / Структурований хаб проєкту
+## Project knowledge hub / База знань проєкту
 
-Start with [KNOWLEDGE_HUB.md](KNOWLEDGE_HUB.md) for bilingual navigation, request history, instructions, permissions, and the active Versie roadmap. Use [VERIFICATION_REPORTS.md](VERIFICATION_REPORTS.md) for independent claim-level evidence.
+- [Український індекс](docs/uk/knowledge-hub/README.md)
+- [English index](docs/en/knowledge-hub/README.md)
+
+Source request: `REQ-0003`. The hub is report-derived and does not claim a runtime release.

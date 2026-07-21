@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "report_id": "VR-001",
+  "title_uk": "Незалежна factual verification бази deep-research",
+  "title_en": "Independent factual verification of the deep-research baseline",
+  "source_request": "REQ-0004",
+  "baseline_request": "REQ-0003",
+  "target_branch": "codex/versie-001-2026-07-19",
+  "target_commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+  "claim_count": 245,
+  "source_id_count": 295,
+  "category_counts": {
+    "KH-DEC": 25,
+    "KH-DEP": 20,
+    "KH-EVD": 30,
+    "KH-HIS": 6,
+    "KH-INS": 22,
+    "KH-ISS": 23,
+    "KH-LES": 11,
+    "KH-PERM": 3,
+    "KH-PLAN": 48,
+    "KH-PROD": 52,
+    "KH-PRV": 5
+  },
+  "status_counts": {
+    "verified": 17,
+    "contradicted": 13,
+    "partial": 82,
+    "unverified": 35,
+    "blocked": 7,
+    "recommendation": 91
+  },
+  "evidence_grade_counts": {
+    "E0": 24,
+    "E1": 60,
+    "E2": 145,
+    "E3": 16,
+    "E4": 0,
+    "E5": 0
+  },
+  "independent_streams": [
+    {
+      "stream_id": "VR001-GOV",
+      "categories": [
+        "KH-INS",
+        "KH-PERM",
+        "KH-PRV"
+      ],
+      "expected_count": 30,
+      "observed_count": 30,
+      "artifact_sha256": "871a053c4c7a950dededc0a3ae46176c908b5b74f26024fdf4f72d05a95a3242",
+      "status_counts": {
+        "verified": 0,
+        "contradicted": 0,
+        "partial": 2,
+        "unverified": 1,
+        "blocked": 0,
+        "recommendation": 27
+      },
+      "test_runs": [],
+      "findings": [
+        {
+          "finding_id": "VR001-GOV-F001",
+          "severity": "high",
+          "affected_claims": [
+            "KH-INS-001",
+            "KH-INS-002",
+            "KH-INS-003",
+            "KH-INS-004",
+            "KH-INS-005",
+            "KH-INS-006",
+            "KH-INS-007",
+            "KH-INS-008",
+            "KH-INS-009",
+            "KH-INS-010",
+            "KH-INS-011",
+            "KH-INS-012",
+            "KH-INS-013",
+            "KH-INS-014",
+            "KH-INS-015",
+            "KH-INS-016",
+            "KH-INS-017",
+            "KH-INS-018",
+            "KH-INS-019",
+            "KH-INS-020",
+            "KH-INS-021",
+            "KH-INS-022"
+          ],
+          "statement": "No KH-INS ID is explicitly adopted on canonical Інструкції; all 22 remain recommendations even where static code aligns."
+        },
+        {
+          "finding_id": "VR001-GOV-F002",
+          "severity": "high",
+          "affected_claims": [
+            "KH-PERM-001",
+            "KH-PERM-003"
+          ],
+          "statement": "P-001 through P-004 lack traceable REQ-IDs, so REQ-0004's owner-request gate is unsatisfied; only P-005 links to REQ-0002."
+        },
+        {
+          "finding_id": "VR001-GOV-F003",
+          "severity": "medium",
+          "affected_claims": [
+            "KH-PERM-002"
+          ],
+          "statement": "The proposed Telegram action set is partial and nonexclusive in static code."
+        },
+        {
+          "finding_id": "VR001-GOV-F004",
+          "severity": "medium",
+          "affected_claims": [
+            "KH-PRV-001",
+            "KH-PRV-002",
+            "KH-PRV-003",
+            "KH-PRV-004",
+            "KH-PRV-005"
+          ],
+          "statement": "Privacy claims lack complete primary proof; KH-PRV-001 is report-only and one tracking match remains unresolved."
+        },
+        {
+          "finding_id": "VR001-GOV-F005",
+          "severity": "medium",
+          "affected_claims": [
+            "KH-INS-022",
+            "KH-PRV-002",
+            "KH-PRV-003",
+            "KH-PRV-004",
+            "KH-PRV-005"
+          ],
+          "statement": "No E3-E5 proof was produced; Versie 1 acceptance remains incomplete."
+        }
+      ],
+      "limitations": [
+        "No tests were run, as required.",
+        "No Gmail, Telegram, Apps Script, OAuth, deployment, protected store, secret value, browser, runtime, staging, production, or network state was accessed.",
+        "Evidence was limited to immutable local Git objects and static inspection; local origin refs were not network-refreshed.",
+        "Knowledge-hub prose and report extractions were treated only as claims under test.",
+        "File presence and lexical markers do not prove behavior; the single tracking match was not contextually resolved during the one allowed implementation read.",
+        "No contradiction status was assigned because the proven gaps are absent adoption, incomplete request traceability, and missing behavioral proof rather than proven opposite behavior."
+      ]
+    },
+    {
+      "stream_id": "VR001-PLAN",
+      "categories": [
+        "KH-PLAN",
+        "KH-ISS"
+      ],
+      "expected_count": 71,
+      "observed_count": 71,
+      "artifact_sha256": "37a02fa8f41e47d2698be7c19eac3e0e7858cdbc2d44be47c7e3a9a657e5ca52",
+      "status_counts": {
+        "verified": 4,
+        "contradicted": 10,
+        "partial": 31,
+        "unverified": 7,
+        "blocked": 2,
+        "recommendation": 17
+      },
+      "test_runs": [],
+      "findings": [
+        {
+          "finding_id": "VR001-F-001",
+          "severity": "high",
+          "claim_ids": [
+            "KH-PLAN-011",
+            "KH-PLAN-027",
+            "KH-PLAN-030"
+          ],
+          "summary_uk": "Канонічний Gmail/Apps Script/Telegram продукт суперечить report-derived цільовому Mailcow/Stalwart core, запропонованому src-tree та Pub/Sub/Cloud Run event flow.",
+          "summary_en": "The canonical Gmail/Apps Script/Telegram product contradicts the report-derived Mailcow/Stalwart core, proposed src tree, and Pub/Sub/Cloud Run event flow.",
+          "evidence": [
+            {
+              "kind": "canonical_document",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/PROJECT.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/PROJECT.md",
+              "method": "Immutable file inspection reconciled with the Ukrainian twin.",
+              "result": "The current mission is a safe Gmail client in Telegram for one owner and explicitly connected accounts; the active Versie branch and current roadmap/issues are authoritative."
+            },
+            {
+              "kind": "manifest",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/appsscript.json",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/appsscript.json",
+              "method": "Exact immutable manifest inspection.",
+              "result": "The project enables Gmail v1 and requests gmail.modify, drive.readonly, script.external_request, and script.scriptapp; the web app executes as the deployer and allows anonymous ingress that application code must authenticate."
+            },
+            {
+              "kind": "tree_inventory",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "README.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/README.md",
+              "method": "Full immutable git ls-tree inventory plus targeted static inspection.",
+              "result": "The repository is Apps Script, static callback, documentation, tests, and release tooling; no Mailcow, Stalwart, Dovecot, Postfix, Redis, PostgreSQL, Pub/Sub, Cloud Run, or Microsoft Graph implementation exists."
+            },
+            {
+              "kind": "architecture_contract",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/V26_MULTI_ACCOUNT_ARCHITECTURE.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/V26_MULTI_ACCOUNT_ARCHITECTURE.md",
+              "method": "Immutable architecture-contract inspection, corroborated where possible by current code.",
+              "result": "A Gmail/Telegram identity-to-zone-to-role-to-connection contract and a future partitioned storage path are documented; Mailcow, Stalwart, and Microsoft Graph are not the current implementation."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-002",
+          "severity": "high",
+          "claim_ids": [
+            "KH-PLAN-026",
+            "KH-PLAN-032",
+            "KH-PLAN-033",
+            "KH-PLAN-034",
+            "KH-PLAN-035",
+            "KH-PLAN-046"
+          ],
+          "summary_uk": "CI перевіряє лише документацію та knowledge hub; CodeQL, Dependabot config, deploy/dry-run, staging smoke і security lane відсутні, а server-side secret scanning не підтверджено.",
+          "summary_en": "CI validates only documentation and the knowledge hub; CodeQL, Dependabot configuration, deploy/dry-run, staging smoke, and a security lane are absent, while server-side secret scanning is unproven.",
+          "evidence": [
+            {
+              "kind": "ci_configuration",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": ".github/workflows/bilingual-docs.yml",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/.github/workflows/bilingual-docs.yml",
+              "method": "Exact workflow inspection plus immutable .github tree inventory.",
+              "result": "This workflow checks bilingual documentation only with read-only contents permission."
+            },
+            {
+              "kind": "ci_configuration",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": ".github/workflows/knowledge-hub.yml",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/.github/workflows/knowledge-hub.yml",
+              "method": "Exact workflow inspection plus immutable .github tree inventory.",
+              "result": "This workflow validates bilingual knowledge-hub hygiene only; no CodeQL, Dependabot configuration, deploy workflow, staging smoke lane, or separate security lane exists at the commit."
+            },
+            {
+              "kind": "repository_hygiene",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": ".gitignore",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/.gitignore",
+              "method": "Exact ignore-policy inspection.",
+              "result": "Credential-like files, tokens, keys, logs, caches, and local artifacts are excluded by pattern; this does not prove GitHub server-side secret scanning."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-003",
+          "severity": "high",
+          "claim_ids": [
+            "KH-PLAN-044",
+            "KH-PLAN-045",
+            "KH-PLAN-046",
+            "KH-PLAN-048"
+          ],
+          "summary_uk": "Network/runtime traces і повний acceptance package не можуть бути підтверджені Git-only перевіркою; Versie 1 не promoted/tagged і не має release branch.",
+          "summary_en": "Network/runtime traces and the complete acceptance package cannot be established by Git-only verification; Versie 1 is not promoted, tagged, or represented by a release branch.",
+          "evidence": [
+            {
+              "kind": "release_artifact",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/releases/VERSIE-001-2026-07-19.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/releases/VERSIE-001-2026-07-19.md",
+              "method": "Immutable release-article inspection; prose was treated as a claim unless corroborated by code or Git metadata.",
+              "result": "Versie 1 is explicitly in progress and not promoted, tagged, or represented by a release branch; production acceptance remains incomplete."
+            },
+            {
+              "kind": "git_refs",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/releases/VERSIE-001-2026-07-19.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/releases/VERSIE-001-2026-07-19.md",
+              "method": "Local git show-ref, tag, branch, merge-base, and divergence inspection at the assigned commit.",
+              "result": "The active local and origin Versie branch matched the assigned commit; no tag or release/versie-001 ref existed, and main was on a divergent publication lineage."
+            },
+            {
+              "kind": "canonical_roadmap",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/ROADMAP.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/ROADMAP.md",
+              "method": "Immutable bilingual roadmap inspection.",
+              "result": "Versie 1 is the only active version; local fixes, manual OAuth acceptance, immutable staging, promotion, cleanup, tag, and release branch are distinct gates."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-004",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-PLAN-039",
+            "KH-ISS-013"
+          ],
+          "summary_uk": "Більшість state/token paths мають locks, але Gmail refresh function не має локального lock; без concurrency test або trace ризик race залишається частково підтвердженим.",
+          "summary_en": "Most state/token paths use locks, but the Gmail refresh function has no local lock; without a concurrency test or trace, the race risk remains partially substantiated.",
+          "evidence": [
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/MultiAccount.gs",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/MultiAccount.gs",
+              "method": "Single-pass static OAuth, identity, state, and lock inspection with sensitive literals redacted.",
+              "result": "Found Telegram-user/zone/connection authorization, one-use OAuth state, separate protected token records, profile avatar capture, account-scoped registries, and numerous locks; the Gmail access-token refresh function has no lock local to that function."
+            },
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/MailClient.gs",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/MailClient.gs",
+              "method": "Single-pass static function/API/pattern inspection with sensitive literals redacted.",
+              "result": "Found account-scoped RPC, Focus rules, four-way attention triage, backlog rescue, co-processing, functional metrics, evidence-grounded handoff, sanitizers, URL/DNS checks, operation journals, scheduled send, sessions, and lock-protected state paths."
+            },
+            {
+              "kind": "test_definition",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/tests/mail_client.test.js",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/tests/mail_client.test.js",
+              "method": "Static test-name and relevant contract inspection only; tests were not executed.",
+              "result": "Definitions cover replay-resistant sessions, token/state locks, account isolation, Focus, triage, energy/reminders, co-processing, backlog rescue, content-free metrics, URL safety, idempotent send, and scheduled send."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-005",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-PLAN-038",
+            "KH-ISS-015",
+            "KH-ISS-020"
+          ],
+          "summary_uk": "Release/callback artifacts містять environment-specific identifiers, а release helper також machine-local recovery path; значення вилучено. Прямого secret logging не знайдено, але повний historical/dataflow scan не виконувався.",
+          "summary_en": "Release/callback artifacts contain environment-specific identifiers, and the release helper also contains a machine-local recovery path; values are redacted. No direct secret logging was found, but a full historical/dataflow scan was not performed.",
+          "evidence": [
+            {
+              "kind": "static_finding",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/tools/release_apps_script_versie_001_20260719.ps1",
+              "method": "Static inspection with all values redacted.",
+              "result": "The public helper contains environment-specific project/deployment identifiers and a machine-local recovery-path literal; no value is reproduced in this report."
+            },
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "gmail-oauth-callback.html",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/gmail-oauth-callback.html",
+              "method": "Exact immutable callback-relay inspection; environment-specific endpoint value omitted.",
+              "result": "The relay clears the query from browser history, validates bounded state and code, forwards only action/state/code, and fails closed on malformed input."
+            },
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/Code.gs",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/Code.gs",
+              "method": "Single-pass static function/API/pattern inspection with sensitive literals redacted.",
+              "result": "Found owner/same-email notification deduplication, bounded delivery ledgers, polling and continuation state, Script/User locks, one-use launch nonces, webhook-key validation, reminders, Gmail History synchronization, and Telegram callbacks."
+            },
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/MailClient.gs",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/MailClient.gs",
+              "method": "Single-pass static function/API/pattern inspection with sensitive literals redacted.",
+              "result": "Found account-scoped RPC, Focus rules, four-way attention triage, backlog rescue, co-processing, functional metrics, evidence-grounded handoff, sanitizers, URL/DNS checks, operation journals, scheduled send, sessions, and lock-protected state paths."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-006",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-ISS-001",
+            "KH-ISS-002",
+            "KH-ISS-003",
+            "KH-ISS-004",
+            "KH-ISS-005",
+            "KH-ISS-011",
+            "KH-ISS-012"
+          ],
+          "summary_uk": "Загальні human-factor, AI-risk і зовнішні mail-stack твердження не верифікуються Git evidence цього продукту та залишаються unverified.",
+          "summary_en": "General human-factor, AI-risk, and external mail-stack claims cannot be verified from this product's Git evidence and remain unverified.",
+          "evidence": [
+            {
+              "kind": "claim_provenance",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/knowledge-hub/PROBLEMS.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/knowledge-hub/PROBLEMS.md",
+              "method": "The English and Ukrainian source pages were read once and reconciled by canonical ID.",
+              "result": "This records the assigned report-derived claim and is not independent evidence of implementation or runtime behavior."
+            },
+            {
+              "kind": "canonical_document",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/en/PROJECT.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/en/PROJECT.md",
+              "method": "Immutable file inspection reconciled with the Ukrainian twin.",
+              "result": "The current mission is a safe Gmail client in Telegram for one owner and explicitly connected accounts; the active Versie branch and current roadmap/issues are authoritative."
+            }
+          ]
+        },
+        {
+          "finding_id": "VR001-F-007",
+          "severity": "low",
+          "claim_ids": [
+            "KH-PLAN-036"
+          ],
+          "summary_uk": "Твердження про недоступний repository audit застаріло: commit доступний, code/tests/history індексуються, а audit artifacts присутні; runtime audit усе ще не доведено.",
+          "summary_en": "The unavailable-repository-audit claim is stale: the commit is accessible, code/tests/history are indexable, and audit artifacts exist; a runtime audit remains unproven.",
+          "evidence": [
+            {
+              "kind": "governance",
+              "commit": "4bd94b5a589182ece0c25e086486decec6d5e5da",
+              "path": "KNOWLEDGE_HUB.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/4bd94b5a589182ece0c25e086486decec6d5e5da/KNOWLEDGE_HUB.md",
+              "method": "Immutable canonical main-branch governance inspection.",
+              "result": "The hub is explicitly report-derived baseline, not production-state evidence; Requests, Instructions, Permissions, and the active Versie are separate canonical areas."
+            },
+            {
+              "kind": "file_presence",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "docs/audit/v45-nonworking-functions-fix-list.md",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/audit/v45-nonworking-functions-fix-list.md",
+              "method": "Immutable tree and history inspection only; audit prose was not accepted as proof by repetition.",
+              "result": "Multiple audit artifacts exist, disproving repository unavailability but not proving a complete runtime audit."
+            },
+            {
+              "kind": "implementation",
+              "commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+              "path": "apps-script/Code.gs",
+              "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/apps-script/Code.gs",
+              "method": "Single-pass static function/API/pattern inspection with sensitive literals redacted.",
+              "result": "Found owner/same-email notification deduplication, bounded delivery ledgers, polling and continuation state, Script/User locks, one-use launch nonces, webhook-key validation, reminders, Gmail History synchronization, and Telegram callbacks."
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "No tests were executed by instruction; static test definitions are not E3 evidence.",
+        "No Gmail, Telegram, Apps Script, OAuth browser flow, staging, production, protected store, deployment, or external service was accessed.",
+        "No web browsing or external primary-source verification was performed; general human-factor and external mail-stack claims remain E0 where Git cannot prove them.",
+        "Remote-tracking refs were inspected from the local repository without a network fetch; conclusions are commit-bound to the assigned immutable hash and locally available canonical refs.",
+        "File presence proves presence only. Static implementation inspection is capped at E2 and does not prove runtime behavior.",
+        "Environment-specific identifiers, credential values, private message data, and machine-local paths are omitted or redacted."
+      ]
+    },
+    {
+      "stream_id": "VR001-PROD",
+      "categories": [
+        "KH-PROD",
+        "KH-DEP"
+      ],
+      "expected_count": 72,
+      "observed_count": 72,
+      "artifact_sha256": "5a31eefc995268853f39ac9bbd605e7dfc048b7576a656f351c9e9fc0a16c982",
+      "status_counts": {
+        "verified": 13,
+        "contradicted": 1,
+        "partial": 26,
+        "unverified": 12,
+        "blocked": 4,
+        "recommendation": 16
+      },
+      "test_runs": [],
+      "findings": [
+        {
+          "finding_id": "VR001-F01",
+          "severity": "high",
+          "type": "contradiction",
+          "claim_ids": [
+            "KH-DEP-017"
+          ],
+          "summary": "The pinned repository does not use the claimed apps-script-oauth2 dependency. It implements custom external-provider OAuth handlers with Properties/Lock practices and declares no Apps Script OAuth2 library."
+        },
+        {
+          "finding_id": "VR001-F02",
+          "severity": "high",
+          "type": "implementation_gap",
+          "claim_ids": [
+            "KH-PROD-037",
+            "KH-DEP-011"
+          ],
+          "summary": "The active manifest declares a web app and Gmail API advanced service but no Gmail add-on configuration."
+        },
+        {
+          "finding_id": "VR001-F03",
+          "severity": "medium",
+          "type": "dependency_gap",
+          "claim_ids": [
+            "KH-PROD-022",
+            "KH-PROD-023",
+            "KH-PROD-024",
+            "KH-PROD-025",
+            "KH-PROD-034",
+            "KH-PROD-035",
+            "KH-PROD-036",
+            "KH-DEP-002",
+            "KH-DEP-005",
+            "KH-DEP-006",
+            "KH-DEP-007",
+            "KH-DEP-008",
+            "KH-DEP-009",
+            "KH-DEP-010",
+            "KH-DEP-014",
+            "KH-DEP-020"
+          ],
+          "summary": "No mail-server stack, Node mail package, Redis, Pub/Sub, Cloud Run, PGP/S-MIME, PWA push, native-mobile, or desktop-framework dependency/configuration is declared in the pinned tree."
+        },
+        {
+          "finding_id": "VR001-F04",
+          "severity": "medium",
+          "type": "evidence_gap",
+          "claim_ids": [
+            "KH-PROD-021",
+            "KH-PROD-041",
+            "KH-PROD-049",
+            "KH-DEP-001"
+          ],
+          "summary": "Executive-function, cognitive-load, low-friction, and accessibility outcomes cannot be proven statically; each blocked claim names the exact safe acceptance or standards evidence required."
+        },
+        {
+          "finding_id": "VR001-F05",
+          "severity": "medium",
+          "type": "implementation_gap",
+          "claim_ids": [
+            "KH-PROD-018",
+            "KH-PROD-020",
+            "KH-PROD-044"
+          ],
+          "summary": "The source implements deterministic heuristics and labels some output as automated AI analysis, but no statistical-model or external AI dependency is declared."
+        },
+        {
+          "finding_id": "VR001-F06",
+          "severity": "info",
+          "type": "status_totals",
+          "claim_ids": [],
+          "summary": "verified=13; partial=26; contradicted=1; unverified=12; blocked=4; recommendation=16"
+        }
+      ],
+      "limitations": [
+        "Verification was read-only at immutable commit 2b3b9e2f678f9fa0c787247f92d7827f81e95c9a.",
+        "Only the bilingual PRODUCT.md and DEPENDENCIES.md knowledge-hub pages supplied assigned claims; report prose was not treated as evidence.",
+        "No tests were run, so test_runs is empty and no claim exceeds E2.",
+        "No Gmail, Telegram, Apps Script, OAuth browser flow, protected credential store, staging/runtime, deployment, or production system was accessed.",
+        "No external browsing was performed; current vendor capabilities, versions, licenses, standards, policies, and limits remain unverified unless repository implementation alone was the claim.",
+        "Local canonical branch refs and ancestry were inspected without fetching; branch-tip freshness beyond the local repository was not established.",
+        "File presence and release scripts do not prove deployment, runtime activation, or acceptance."
+      ]
+    },
+    {
+      "stream_id": "VR001-HIST",
+      "categories": [
+        "KH-DEC",
+        "KH-LES",
+        "KH-HIS"
+      ],
+      "expected_count": 42,
+      "observed_count": 42,
+      "artifact_sha256": "d19d63744f180d7c3cf394f4383f77f4c2c66e7639764b742faf0653963e672b",
+      "status_counts": {
+        "verified": 0,
+        "contradicted": 1,
+        "partial": 5,
+        "unverified": 5,
+        "blocked": 0,
+        "recommendation": 31
+      },
+      "test_runs": [
+        {
+          "kind": "automated_tests",
+          "status": "not_run",
+          "reason": "The assigned stream explicitly prohibited running tests. Test files were inspected statically only, so no claim received E3."
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "VR001-HIST-F001",
+          "severity": "high",
+          "claim_ids": [
+            "KH-DEC-023"
+          ],
+          "disposition": "implementation_conflict",
+          "summary": "The tracked backend creates a recurring time-based checkNewMail_ trigger; watch/history checkpoint ingestion is not the active tracked implementation."
+        },
+        {
+          "finding_id": "VR001-HIST-F002",
+          "severity": "high",
+          "claim_ids": [
+            "KH-DEC-012",
+            "KH-LES-010"
+          ],
+          "disposition": "implementation_conflict",
+          "summary": "Apps Script is the full authenticated mailbox backend and owns polling, notifications, Telegram transport, sessions, drafts, attachments, and Gmail operations rather than acting only as thin ingress/control plane."
+        },
+        {
+          "finding_id": "VR001-HIST-F003",
+          "severity": "high",
+          "claim_ids": [
+            "KH-HIS-005"
+          ],
+          "disposition": "contradicted",
+          "summary": "The pinned repository and canonical Instructions branch designate Versie 1 as the active working line; v45 remains lineage, not the current baseline designation."
+        },
+        {
+          "finding_id": "VR001-HIST-F004",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-DEC-006",
+            "KH-DEC-007",
+            "KH-DEC-009",
+            "KH-DEC-010",
+            "KH-DEC-011",
+            "KH-DEC-014",
+            "KH-DEC-016"
+          ],
+          "disposition": "scope_gap",
+          "summary": "The inspected implementation is Gmail/Apps Script/Telegram and contains no tracked Mailcow, Stalwart, Postfix/Dovecot, Rspamd/SpamAssassin, or DAV-stack implementation."
+        },
+        {
+          "finding_id": "VR001-HIST-F005",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-DEC-024"
+          ],
+          "disposition": "implementation_conflict",
+          "summary": "The tracked Mini App is explicitly a full Gmail mail client, not only a dashboard/control surface, although Telegram cards are bounded and Gmail links remain available."
+        },
+        {
+          "finding_id": "VR001-HIST-F006",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-LES-001",
+            "KH-LES-006",
+            "KH-HIS-001",
+            "KH-HIS-002",
+            "KH-HIS-003"
+          ],
+          "disposition": "primary_evidence_gap",
+          "summary": "Behavioral generalizations, concrete provenance markers, and upstream licensing/maintenance histories lack admissible primary evidence in the inspected project Git record."
+        }
+      ],
+      "limitations": [
+        "Read-only verification was limited to the pinned repository commit, immutable ancestor commits, release and architecture artifacts, static implementation and test-contract inspection, and canonical governance branch records.",
+        "No tests were run; no claim is graded E3.",
+        "No Gmail, Telegram, Apps Script deployment, OAuth flow, protected store, credential, or runtime state was accessed; no claim is graded E4 or E5.",
+        "Knowledge-hub pages and prior report prose were treated as claims and provenance only, never as corroboration by repetition.",
+        "File presence and static code establish tracked implementation only; they do not prove current deployment or runtime behavior.",
+        "Negative repository searches do not rule out external, private, deleted, or untracked artifacts."
+      ]
+    },
+    {
+      "stream_id": "VR001-EVD",
+      "categories": [
+        "KH-EVD"
+      ],
+      "expected_count": 30,
+      "observed_count": 30,
+      "artifact_sha256": "1c852c3596baa284c99d663e4aa7e0005cac9509db3f1203336898b2c1e44e53",
+      "status_counts": {
+        "verified": 0,
+        "contradicted": 1,
+        "partial": 18,
+        "unverified": 10,
+        "blocked": 1,
+        "recommendation": 0
+      },
+      "test_runs": [
+        {
+          "run_id": "TR-001",
+          "command": "node --test --test-concurrency=1 apps-script/tests/deployment_scripts.test.js apps-script/tests/mail_actions.test.js apps-script/tests/mail_app_contract.test.js apps-script/tests/mail_client.test.js apps-script/tests/mail_sanitizer.test.js apps-script/tests/notification_formatting.test.js apps-script/tests/oauth_callback_bridge.test.js apps-script/tests/public_project_docs.test.js apps-script/tests/release_v37_product_v45.test.js apps-script/tests/release_v38_product_v46.test.js apps-script/tests/release_versie_001_20260719.test.js",
+          "working_directory": "repository root at the assigned immutable commit",
+          "safety_review": "Entrypoints were inspected first. Selected files use local Node assertions, filesystem/source fixtures, VM mocks, and one PowerShell syntax-parse subprocess. No OAuth, Gmail, Telegram, Apps Script, production, network, or protected-store access was performed.",
+          "exit_code": 0,
+          "tests": 399,
+          "suites": 0,
+          "passed": 399,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "duration_ms": 13021.6994,
+          "result": "pass",
+          "verification_scope": "local deterministic implementation tests only; not runtime acceptance"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "F-001",
+          "severity": "high",
+          "claim_ids": [
+            "KH-EVD-016"
+          ],
+          "summary": "The checked project is a web app, not the claimed Gmail contextual add-on: the manifest has no addOns/contextualTriggers and the implementation has no CardService.",
+          "disposition": "contradicted",
+          "evidence_grade": "E2"
+        },
+        {
+          "finding_id": "F-002",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-EVD-015"
+          ],
+          "summary": "v45 is an immutable ancestor, but it is not an unchanged active tree; core UI/routing files changed after v45 and Versie 1 still has uncompleted release gates.",
+          "disposition": "partial",
+          "evidence_grade": "E3"
+        },
+        {
+          "finding_id": "F-003",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-EVD-023",
+            "KH-EVD-027",
+            "KH-EVD-028",
+            "KH-EVD-029",
+            "KH-EVD-030"
+          ],
+          "summary": "The repository supports web-app, Gmail History, state/lock, and partial clasp mechanics, but contains no add-on, Pub/Sub/Cloud Run, CodeQL, or Dependabot configuration.",
+          "disposition": "gap",
+          "evidence_grade": "E3"
+        },
+        {
+          "finding_id": "F-004",
+          "severity": "medium",
+          "claim_ids": [
+            "KH-EVD-001",
+            "KH-EVD-005",
+            "KH-EVD-006",
+            "KH-EVD-011",
+            "KH-EVD-012",
+            "KH-EVD-013",
+            "KH-EVD-014",
+            "KH-EVD-017",
+            "KH-EVD-022",
+            "KH-EVD-025",
+            "KH-EVD-026"
+          ],
+          "summary": "External scientific, product, standards, regulatory, library, documentation, and indexing assertions have no independent primary evidence in the assigned local Git scope.",
+          "disposition": "unverified_or_blocked",
+          "evidence_grade": "E0"
+        },
+        {
+          "finding_id": "F-005",
+          "severity": "info",
+          "claim_ids": [],
+          "summary": "Status totals: {\"unverified\":10,\"partial\":18,\"contradicted\":1,\"blocked\":1}. TR-001 passed 399/399 local deterministic tests, which does not constitute E4/E5 runtime or production acceptance.",
+          "disposition": "test_scope",
+          "evidence_grade": "E3"
+        }
+      ],
+      "limitations": [
+        "Verification was restricted to the assigned local repository and immutable Git objects; no external browsing or network evidence was used.",
+        "No Gmail, Telegram, Apps Script, OAuth, staging, production, deployment, runtime, or protected credential store was accessed.",
+        "E3 results are local automated tests with mocks/static fixtures and one PowerShell syntax parse; they cannot establish runtime behavior.",
+        "Release and knowledge-hub prose were treated as claims/status artifacts, not proof by repetition; only implementation, immutable hashes/history, manifests, and executed tests raised evidence grades.",
+        "No claim reached E4 or E5. Runtime/production assertions require exact safe read-only deployment/version readback and acceptance evidence in a separately authorized stream."
+      ]
+    }
+  ],
+  "safe_local_test_result": {
+    "passed": 399,
+    "failed": 0,
+    "total": 399,
+    "evidence_grade": "E3"
+  },
+  "runtime_or_production_tested": false,
+  "release_change": false,
+  "next_versie_authorized": false,
+  "sensitive_values_persisted": false,
+  "limitations": [
+    "No OAuth, Gmail, Telegram, Apps Script, network, staging, or production action was executed for VR-001.",
+    "E1 and E2 findings prove repository history or implementation presence only, not runtime behavior.",
+    "Absence findings are scoped to tracked repository artifacts at the target commit and named governance commits.",
+    "The source baseline is report-derived; VR-001 assigns claim-level status rather than blanket trust."
+  ]
+}

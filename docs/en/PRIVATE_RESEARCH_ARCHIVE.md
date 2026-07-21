@@ -1,19 +1,12 @@
-# Private research archive
+# Private research archive for Versie 1
 
-## Purpose
+The private repository [Tarasevych/gmail-telegram-onderzoeksarchief](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief) retains the evidence history supporting `Versie 1`: exact visible events are encrypted, while decisions, problems, verified outcomes, and unresolved items are available in sanitized bilingual registers.
 
-The separate private repository [Tarasevych/gmail-telegram-onderzoeksarchief](https://github.com/Tarasevych/gmail-telegram-onderzoeksarchief) is the evidence archive for related Codex task history. It retains exact user-visible messages, operational events, attachments, private sources, and sanitized factual findings.
+## Rules
 
-## Source-of-truth boundaries
-
-- Product code and current behavior are defined by the active sequential `Versie` in this repository.
-- The private archive is the source for history, provenance, failures, decisions, and avoiding repeated failed work; it is not production configuration.
-- Secrets, OAuth material, cookies, passwords, and keys are never published as plaintext. Exact confidential payload is retained only with client-side encryption.
-- Hidden reasoning, system prompts, and developer prompts are not exported. The archive retains exact visible events and a verifiable action/evidence trace.
-
-## Required use order
-
-1. Before repeating historical analysis, consult the bilingual index, chronology, decisions, failures, unresolved items, and factual verification in the private archive.
-2. Open exact ciphertext locally only when sanitized findings are insufficient and owner access is confirmed.
-3. Never move restored plaintext into this public repository, issues, pull requests, logs, or chat responses.
-4. Add new events as append-only segments with byte offsets, hashes, and a manifest; never rewrite prior segments.
+- All new product fixes go only into active `Versie 1` until the owner explicitly orders the next release.
+- Use the archive for provenance and avoiding repeated mistakes, never for automatically restoring old code or a prior deployment.
+- Open exact ciphertext only locally through the owner-only DPAPI key reference.
+- Never move restored secrets or confidential payload into Git, the GitHub UI, issues, logs, or messages.
+- New archive segments are append-only and must pass hash and readback verification.
+- Hidden reasoning, system prompts, and developer prompts are not exported; visible messages and a verifiable action/evidence trace are retained.

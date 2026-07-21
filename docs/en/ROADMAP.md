@@ -9,11 +9,14 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-03 | Completed locally | Owner mailbox dedupe, avatar, direct OAuth start, stale account count | local contracts pass |
 | B1-04 | Completed locally | Neutral GitHub OAuth callback with a credentialless POST to Apps Script | query cleared before transfer; one-use user/chat/zone state; Google multi-login cookies omitted |
 | B1-05 | Completed | Save the new redirect URI in the Google OAuth client | `OAuth client saved`; exact URI read back |
-| B1-06 | In progress | Create Apps Script immutable v41 with the credentialless relay receiver; replace only the exact v40 staging | one exact v41 staging; stable v37 unchanged before acceptance |
-| B1-07 | Manual gate | Add a controlled Gmail account through the new flow | owner completes account choice/consent; callback succeeds |
-| B1-08 | Planned | Full real-time acceptance in `@TarasevychGmailNotifierBot` | functional log shows no duplication or zone mixing |
-| B1-09 | Planned | Promote Versie 1, clean up, restore production menu | stable v39, staging 0, menu `📬 Пошта · Versie 1` |
-| B1-10 | Planned | Update UK/EN docs, commit, tag, release branch | `versie-001-2026-07-19` and `release/versie-001-2026-07-19` |
+| B1-06 | Completed | Credentialless OAuth relay and sequential immutable v41/v42 | stable v42, staging 0, exact v41 rollback |
+| B1-07 | Manual gate active | Add a controlled Gmail account through the new flow | production reached Google “app not verified”; owner confirms consent for the intended account |
+| B1-08 | In progress | Full real-time acceptance in @TarasevychGmailNotifierBot | v55 Sent-copy guard passed 432/432 and PreflightOnly; staging and a controlled one-card live acceptance are not yet evidenced |
+| B1-09 | Completed | Promote, clean up, and install the production command menu | stable v42, staging 0, setup execution completed |
+| B1-10 | Completed | Update UK/EN docs, commit, and push | postmortem and lessons published at c98e69e; three documentation Actions passed; release tag remains gated by B1-07/B1-08 |
+
+| B1-11 | Completed locally | Separate realtime delivery from the frozen backlog and run it before maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 still required |
+| B1-12 | Completed locally | Aggregate every notification account into one physical Telegram feed with account identity and account-scoped actions | the main chat is “All messages”; account roots switch context without duplicating a card; second-account E5 is consent-blocked |
 
 ## Movement rule
 
@@ -25,4 +28,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## Verification gate
 
-`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0008`.
+`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0009`.
+
+### B1-13 — Concurrent Gmail OAuth refresh isolation
+
+- **Status:** completed locally; E4/E5 have not passed yet.
+- **Result:** each Gmail connection now uses a short ScriptLock only for claim/commit/release plus a lease in protected Script Properties; HTTP refresh runs outside the lock.
+- **Invariants:** an active lease prevents a second provider fetch; connection ID, email, token generation, and the current token record are rechecked before commit; a failure releases its owned lease without changing the protected token.
+- **Evidence:** deterministic local tests and the candidate hash pin for the current Versie 1.
+- **Source request:** REQ-0015.
+- **Not performed:** immutable deployment, staging/production rollout, or a real OAuth cycle.

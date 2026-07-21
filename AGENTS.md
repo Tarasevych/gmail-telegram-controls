@@ -11,7 +11,7 @@
 - Кожен запит завжди йде в `Запити`. До `Інструкції` вносити лише постійні правила процесу. До `Повноваження` вносити лише явно наданий, змінений, обмежений або відкликаний власником дозвіл; дозволи не припускати.
 - План, реєстр проблем, документацію або код активної Versie змінювати лише за відповідною частиною запиту. Нерелевантні гілки й записи не читати та не змінювати.
 - Для routine-роботи після request record починати з `docs/uk/knowledge-hub/README.md` активної Versie та читати лише потрібний тематичний реєстр; source dossiers і великі deep-research reports відкривати лише для provenance gap або конфлікту.
-- Перед використанням report-derived твердження відкрити актуальний verification-report index активної Versie та claim-level evidence; repository evidence не є runtime або production acceptance.
+- Перед використанням report-derived твердження прочитати його запис в актуальному `docs/uk/verification-reports/INDEX.md`; repository-доказ не прирівнювати до test, runtime або production acceptance.
 - Кожна похідна зміна має посилатися на `REQ-ID`. Після виконання оновити канонічний запис статусом і commit, test або deployment evidence.
 - Ніколи не переносити до публічного журналу secrets, приватні листи, конкретні credential values, OTP, recovery values або приватний вміст повідомлень.
 - Поточна робоча версія є Versie 1. Наступну Versie, branch, article, tag чи immutable deployment не створювати без прямого наказу й поля `Next Versie authorization: yes, Versie N`.
@@ -37,7 +37,7 @@
 - Every request always goes to `Запити`. Update `Інструкції` only for standing process rules. Update `Повноваження` only when the owner explicitly grants, changes, narrows, or revokes authority; never infer authority.
 - Change the active Versie's plan, issue register, documentation, or code only for the applicable request part. Do not read or change unrelated branches or records.
 - For routine work after the request record, start from the active Versie's `docs/en/knowledge-hub/README.md` and read only the relevant thematic register; open source dossiers or large deep-research reports only for a provenance gap or conflict.
-- Before relying on a report-derived claim, open the active Versie's current verification-report index and claim-level evidence; repository evidence is not runtime or production acceptance.
+- Before relying on a report-derived claim, read its record through the current `docs/en/verification-reports/INDEX.md`; repository evidence is not equivalent to test, runtime, or production acceptance.
 - Every derived change references its `REQ-ID`. After execution, update the canonical record with status and commit, test, or deployment evidence.
 - Never copy secrets, private mail, concrete credential values, OTP values, recovery values, or private message content into the public ledger.
 - The current working release is Versie 1. Do not create a next Versie, branch, article, tag, or immutable deployment without a direct order and `Next Versie authorization: yes, Versie N`.

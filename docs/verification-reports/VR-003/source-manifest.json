@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "report_id": "VR-003",
+  "source_request": "REQ-0012",
+  "raw_sources_published": false,
+  "private_normalized_corpus_published": false,
+  "normalization": {
+    "encoding": "UTF-8 strict",
+    "bom": false,
+    "canonical_newline": "LF",
+    "max_lines_per_chunk": 750,
+    "max_chars_per_chunk": 90000,
+    "overlap_lines": 5
+  },
+  "source_count": 2,
+  "total_lines": 167176,
+  "total_chunks": 231,
+  "coverage_complete": true,
+  "sources": [
+    {
+      "source_id": "SESSION-CURRENT",
+      "title_uk": "Поточна сесія Gmail Telegram Versie 1",
+      "title_en": "Current Gmail Telegram Versie 1 session",
+      "original_bytes": 2924526,
+      "original_sha256": "05380a2833e7b35f0cd8492efab2ac3e889d2add426f9ccebfc9557a69e61249",
+      "encoding": "UTF-8 strict",
+      "bom": false,
+      "newline_style": "CRLF",
+      "logical_lines": 32569,
+      "normalized_bytes": 2891957,
+      "normalized_sha256": "8608a65aac0e67a98cb8dfb85da50bae5e060430fa77893e77a0f7be6549f7e9",
+      "chunk_count": 49,
+      "overlong_segments": 2,
+      "coverage_complete": true
+    },
+    {
+      "source_id": "SESSION-PREVIOUS",
+      "title_uk": "Попередня сесія налаштування Gmail у Telegram",
+      "title_en": "Previous Gmail-to-Telegram setup session",
+      "original_bytes": 7836113,
+      "original_sha256": "1091a6f740588bf5148a8c9eb8653c4c36c86112e3bb47ec45d96f16887e0e48",
+      "encoding": "UTF-8 strict",
+      "bom": false,
+      "newline_style": "CRLF",
+      "logical_lines": 134607,
+      "normalized_bytes": 7701506,
+      "normalized_sha256": "354dc33502a1aed97e05cd079eeb52760353263ccc987307ef3ae3ae4717867f",
+      "chunk_count": 182,
+      "overlong_segments": 0,
+      "coverage_complete": true
+    }
+  ],
+  "coverage_validation": {
+    "gaps": 0,
+    "boundary_errors": 0,
+    "overlong_line": {
+      "source_id": "SESSION-CURRENT",
+      "line": 16648,
+      "character_ranges": [
+        [
+          0,
+          90000
+        ],
+        [
+          90000,
+          121467
+        ]
+      ],
+      "contiguous": true
+    }
+  },
+  "privacy": {
+    "raw_transcript": "private recovery state only",
+    "public_artifacts": "sanitized atomic claims, aggregate metadata, and cryptographic hashes",
+    "excluded": [
+      "email addresses",
+      "tokens",
+      "OAuth codes",
+      "private URLs",
+      "local paths",
+      "mail content"
+    ]
+  }
+}

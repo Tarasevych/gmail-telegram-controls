@@ -39,3 +39,11 @@ Public Git excludes bot tokens, OAuth client secrets, refresh/access tokens, aut
 - no obsolete staging deployment or temporary process remains;
 - UK/EN articles, the problem register, and roadmap are updated;
 - the release branch/tag is created after verification, not before it.
+
+## Cumulative knowledge base
+
+The [knowledge hub](knowledge-hub/README.md) preserves sanitized, traceable context from the three deep-research reports. This file remains the current mission source; the hub is long-term context and never replaces live verification.
+
+## Independent factual verification
+
+[Verification reports](verification-reports/INDEX.md) are a separate evidence layer. `VR-001` classifies all 245 `KH-*` claims against primary Git artifacts and safe local tests. A `verified` status applies only within its declared scope; `E1/E2` does not prove runtime or production behavior. Source request: `REQ-0004`.

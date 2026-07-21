@@ -39,3 +39,11 @@
 - немає зайвих staging deployments або тимчасових процесів;
 - статті UK/EN, реєстр проблем і roadmap оновлені;
 - release branch/tag створені після перевірки, а не до неї.
+
+## Кумулятивна база знань
+
+[Knowledge hub](knowledge-hub/README.md) зберігає очищений і трасований контекст трьох deep-research reports. Цей файл залишається джерелом поточної мети, а hub є довгостроковим контекстом і не замінює live verification.
+
+## Незалежна factual verification
+
+[Verification reports](verification-reports/INDEX.md) є окремим доказовим шаром. `VR-001` класифікує всі 245 `KH-*` тверджень за первинними Git-артефактами й безпечними локальними тестами. Статус `verified` діє лише в указаному scope; `E1/E2` не доводить runtime або production. Source request: `REQ-0004`.

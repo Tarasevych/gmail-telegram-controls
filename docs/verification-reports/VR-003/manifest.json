@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "report_id": "VR-003",
+  "title_uk": "Двокорпусна factual verification історії Versie 1",
+  "title_en": "Two-corpus factual verification of the Versie 1 history",
+  "source_request": "REQ-0012",
+  "verification_framework": "REQ-0004",
+  "target_branch": "codex/versie-001-2026-07-19",
+  "target_commit": "4ff66ca94312a2959798af3773e70cd0ac7c0879",
+  "verified_at": "2026-07-21",
+  "claim_count": 32,
+  "status_counts": {
+    "verified": 19,
+    "unverified": 3,
+    "partial": 3,
+    "blocked": 2,
+    "recommendation": 5
+  },
+  "evidence_grade_counts": {
+    "E0": 10,
+    "E1": 5,
+    "E2": 5,
+    "E3": 12,
+    "E4": 0,
+    "E5": 0
+  },
+  "category_counts": {
+    "governance": 1,
+    "realtime-delivery": 3,
+    "frozen-backlog": 1,
+    "multi-account": 2,
+    "card-capacity": 1,
+    "root-cause": 3,
+    "retention": 2,
+    "dedupe": 1,
+    "safety": 1,
+    "tests": 1,
+    "release": 7,
+    "recovery": 1,
+    "oauth": 2,
+    "permissions": 1,
+    "evidence-policy": 1,
+    "lesson": 4
+  },
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "f2d0cb5790e273b0691d0a0b06133ba958baea22deceb6d38d199271717162b4",
+  "source_count": 2,
+  "source_line_count": 167176,
+  "source_chunk_count": 231,
+  "coverage_complete": true,
+  "candidate_extraction": {
+    "sanitized_hit_count": 6483,
+    "deduplicated_hit_count": 4295,
+    "review_sample_count": 600,
+    "candidate_ledger_sha256": "72e371ad53d898f87adbd43dded67929958091ad736a9dd3e02a7a9843de1cfe",
+    "candidate_ledger_published": false
+  },
+  "independent_streams": [
+    {
+      "stream_id": "VR003-GOV",
+      "claim_count": 5
+    },
+    {
+      "stream_id": "VR003-HISTORY",
+      "claim_count": 6
+    },
+    {
+      "stream_id": "VR003-RCA",
+      "claim_count": 7
+    },
+    {
+      "stream_id": "VR003-STATIC",
+      "claim_count": 5
+    },
+    {
+      "stream_id": "VR003-TEST",
+      "claim_count": 9
+    }
+  ],
+  "local_test_result": {
+    "scope": "complete apps-script test directory",
+    "files": 19,
+    "passed": 432,
+    "failed": 0,
+    "total": 432,
+    "commit": "b5a5452646d26479b4a74fc00e31df0d56e23898",
+    "evidence_grade": "E3"
+  },
+  "preflight_result": {
+    "mode": "PreflightOnly",
+    "ok": true,
+    "stable_version": 50,
+    "legacy_staging_version": 54,
+    "legacy_staging_count": 1,
+    "current_staging_count": 0,
+    "candidate_version": 55,
+    "immutable_ready": false,
+    "ready_to_stage": true,
+    "mutation_performed": false,
+    "evidence_grade": "E3"
+  },
+  "runtime_or_production_tested": false,
+  "release_change": false,
+  "next_versie_authorized": false,
+  "sensitive_values_persisted": false,
+  "limitations": [
+    "Transcript repetition is E0 unless matched to primary Git or test evidence.",
+    "Static E2 evidence proves tracked implementation, not runtime behavior.",
+    "Local E3 tests and preflight do not prove staging or production behavior.",
+    "No Gmail, Telegram, OAuth, Apps Script deployment, or production mutation was performed for VR-003.",
+    "Current live deployment state may drift after the last recorded readback."
+  ]
+}

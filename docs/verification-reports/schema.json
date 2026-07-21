@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "title": "Gmail Telegram Controls factual verification claim",
+  "report_id_format": "VR-NNN",
+  "required_claim_fields": [
+    "claim_id",
+    "source_ids",
+    "category",
+    "statement_uk",
+    "statement_en",
+    "claim_type",
+    "relevance",
+    "verification_status",
+    "implementation_status",
+    "verification_scope",
+    "evidence_grade",
+    "dependencies",
+    "conflicts",
+    "sensitivity",
+    "provenance",
+    "evidence",
+    "verified_at",
+    "limitations",
+    "report_id",
+    "analysis_stream"
+  ],
+  "verification_status": [
+    "verified",
+    "contradicted",
+    "partial",
+    "unverified",
+    "blocked",
+    "recommendation"
+  ],
+  "verification_scope": [
+    "repository",
+    "test",
+    "runtime",
+    "governance",
+    "external",
+    "mixed"
+  ],
+  "evidence_grade": [
+    "E0",
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5"
+  ],
+  "sensitivity": [
+    "public",
+    "internal",
+    "restricted",
+    "secret-redacted"
+  ],
+  "rules": [
+    "Prior-report repetition is not evidence.",
+    "Verified test claims require E3 or higher.",
+    "Verified runtime claims require E4 or higher.",
+    "Permission claims require canonical owner-granted permission evidence.",
+    "Every Git evidence link binds a full immutable commit."
+  ]
+}

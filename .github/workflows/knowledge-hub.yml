@@ -1,0 +1,23 @@
+name: Knowledge hub
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate bilingual documentation
+        run: python3 tools/check_bilingual_docs.py
+
+      - name: Validate knowledge-hub coverage and hygiene
+        run: python3 tools/check_knowledge_hub.py

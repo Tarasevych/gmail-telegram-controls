@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "latest_report": "VR-003",
+  "reports": [
+    {
+      "report_id": "VR-001",
+      "date": "2026-07-19",
+      "source_request": "REQ-0004",
+      "target_commit": "2b3b9e2f678f9fa0c787247f92d7827f81e95c9a",
+      "claim_count": 245,
+      "status_counts": {
+        "verified": 17,
+        "contradicted": 13,
+        "partial": 82,
+        "unverified": 35,
+        "blocked": 7,
+        "recommendation": 91
+      },
+      "manifest": "VR-001/manifest.json",
+      "claims": "VR-001/claims.json",
+      "uk_report": "../uk/verification-reports/reports/VR-001/README.md",
+      "en_report": "../en/verification-reports/reports/VR-001/README.md",
+      "machine_readable": true
+    },
+    {
+      "report_id": "VR-002",
+      "date": "2026-07-20",
+      "source_request": "REQ-0009",
+      "claim_count": 8,
+      "uk_report": "../uk/verification-reports/reports/VR-002/README.md",
+      "en_report": "../en/verification-reports/reports/VR-002/README.md",
+      "machine_readable": false,
+      "historical_snapshot": true
+    },
+    {
+      "report_id": "VR-003",
+      "date": "2026-07-21",
+      "source_request": "REQ-0012",
+      "target_commit": "4ff66ca94312a2959798af3773e70cd0ac7c0879",
+      "claim_count": 32,
+      "status_counts": {
+        "verified": 19,
+        "unverified": 3,
+        "partial": 3,
+        "blocked": 2,
+        "recommendation": 5
+      },
+      "manifest": "VR-003/manifest.json",
+      "claims": "VR-003/claims.json",
+      "source_manifest": "VR-003/source-manifest.json",
+      "uk_report": "../uk/verification-reports/reports/VR-003/README.md",
+      "en_report": "../en/verification-reports/reports/VR-003/README.md",
+      "machine_readable": true,
+      "release_change": false
+    }
+  ]
+}
