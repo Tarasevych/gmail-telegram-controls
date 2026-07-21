@@ -7,6 +7,8 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260719.ps1'), 'utf8');
 const candidateHelper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v56.ps1'), 'utf8');
+const stagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v56.html'), 'utf8');
+const menuUpdater = fs.readFileSync(path.join(root, '..', 'tools', 'update_bot_menu_versie_001.py'), 'utf8');
 const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
   Code: '34515ca570d1d869ca096eb837e8523bdb8f889259b2272b0d1a79d914245a53',
@@ -47,6 +49,15 @@ test('current Versie 1 helper pins immutable v55 rollback and v56 runtime-budget
   assert.match(candidateHelper, /versie-001-20260721-v56-release\.json/);
   assert.match(candidateHelper, /TarasevychGmailNotifierVersie00120260721V56Release/);
   assert.match(candidateHelper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v55/);
+});
+
+test('v56 staging launcher is isolated from the production Web App menu', () => {
+  assert.match(menuUpdater, /versie-001-staging-acceptance-20260721-v56\.html/);
+  assert.match(stagingBridge, /AKfycby76_MRDK8YJyPdI5gl_leGCmDJSJRlUoGZPA6FSgjlMm9ltvfhZo2e-ascD06wXl1m/);
+  assert.match(stagingBridge, /form\.method\s*=\s*'post'/);
+  assert.match(stagingBridge, /addField\('init_data',\s*tg\.initData\)/);
+  assert.match(stagingBridge, /noindex,nofollow,noarchive/);
+  assert.doesNotMatch(stagingBridge, /(?:refresh_token|client_secret|bot_token)\s*[:=]/i);
 });
 
 test('Versie 1 v56 keeps v55 safety and adds bounded timer maintenance', () => {
