@@ -60,6 +60,7 @@ Separate evidence appendices:
 - [CI failure audit: all 26 runs](CI_FAILURE_AUDIT.md)
 - [Runtime quota evidence: v55/v57](RUNTIME_QUOTA_EVIDENCE.md)
 - [Stage 1 continuation audit: Git/runtime/process baseline](STAGE_1_CONTINUATION_AUDIT.md)
+- [Advanced Gmail service: multi-account compatibility](ADVANCED_GMAIL_COMPATIBILITY.md)
 
 ## Atomic findings
 
