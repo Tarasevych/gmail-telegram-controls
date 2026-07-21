@@ -84,3 +84,11 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Next gate:** after daily quota recovery, two fresh production v55 mailbox launches without a network error, then signed staging v57 with avatar, three roots, switching to the controlled second account and back without OAuth.
 - **Release rule:** if the error is shared, do not switch releases again; if a new candidate-only defect is proven, create cumulative immutable v58 without rewriting v56/v57 and preserve the exact v55 rollback.
 - **Source requests:** REQ-0019, REQ-0021.
+
+### B1-20 — Owner-only Advanced Gmail read adapter
+
+- Add an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
+- Resolve the current connection through the registry and fail closed unless its provider is `apps_script_owner`; every external OAuth connection keeps its own direct HTTP token path.
+- Keep mutations and unsupported reads on direct HTTP, and propagate Advanced Service failures without an automatic fallback.
+- **Evidence boundary:** deterministic adapter tests pass 8/8. The full suite is 451/452 because the immutable v57 hash gate correctly rejects the changed `Code.gs`; this branch is not mergeable or deployable without separate authority for the next immutable. The flag remains unset, production remains v55, and E4/E5 quota reduction is unverified.
+- **Source request:** `REQ-0024`.
