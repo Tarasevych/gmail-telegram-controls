@@ -29,6 +29,7 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-021 | Open in production | 1 | The first production Web App open can remain on the skeleton for more than 15 seconds | One refresh loaded the mailbox; add content-free bridge/backend bootstrap timing and inspect cold-start timeout without Gmail mutations |
 | GT-022 | Platform constraint | 1 | `clasp logs` is unavailable because production uses an Apps Script-managed default GCP project without a standard project ID | Do not migrate only for logs: that would permanently revoke current authorizations. Use the Apps Script Executions UI or a separate content-free telemetry reader |
 | GT-023 | In progress; root cause production verified | 1 | The single minute `checkNewMail_` takes 80–106 seconds, so invocations overlap and exhaust the daily `URLFETCH` quota | There is no second trigger. The candidate adds an atomic 150-second timer slot with a short ScriptLock, keeps realtime first, and limits the full Gmail History backfill to once per 15 minutes; local tests, staging, and production evidence after the external quota resets remain required |
+| GT-024 | Blocked by external quota; candidate regression not confirmed | 1 | After v56 promotion the Web App showed a network error; after the exact rollback the same error reproduced on v55 | Apps Script Executions confirmed completed `doPost`/session/`mailboxRpc` calls for both versions and a concurrent `URLFETCH` daily-quota failure in the Gmail API worker. Preserve stable v55 and immutable staging v56; repeat the controlled A/B only after quota recovery |
 
 ## Production evidence 2026-07-20
 
@@ -50,6 +51,15 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 - The first production open required one refresh after a skeleton; `clasp logs` could not start without a verified GCP project ID. Both observations remain open as GT-021/GT-022.
 - Apps Script Executions confirmed the new delivery-outage cause: one minute trigger produced overlapping 80–106-second invocations, while the per-minute Gmail History fan-out ended with `Service invoked too many times for one day: urlfetch`. The trigger list contained exactly one `checkNewMail_`; its configuration was not changed.
 - GT-022 is now classified as a platform constraint: production uses an Apps Script-managed default GCP project. Moving to a standard GCP project only for `clasp logs` would permanently revoke current authorizations, so it was not performed; the Apps Script Executions UI remains the safe evidence source.
+
+## Recovery evidence 2026-07-21 — REQ-0019
+
+- PR #4 merged normally as `23927148cfa616dbd1504e81768d013b01a9ed37`; the full suite passed `440/440`, the additional release tests passed `5/5`, and GitHub checks succeeded.
+- Immutable v56 is preserved. Owner-only staging v56 opened the mailbox without a Drive error and showed the profile photo plus three account roots; the automated switch attempt produced no verifiable state change, so switching remains `unverified`.
+- After promotion, production v56 showed a network error. The exact rollback restored stable v55 while preserving staging v56; two production v55 bootstrap launches showed the same error, so no candidate-specific regression is proven.
+- Apps Script Executions for v56 and v55 showed successful `doPost`, `mailboxRedeemLaunch`/`mailboxRenewSession`, and `mailboxRpc` calls. In the same time windows, `checkNewMail_` ended with `Service invoked too many times for one day: urlfetch` in `gmailApiRequest_`; this separates callback/session replay from the confirmed Gmail API quota blocker.
+- Current safe state: stable and HEAD v55, one preserved v56 staging deployment, journal `rolled_back`, and the Telegram menu on production. The default GCP project was not migrated, and secret properties were neither read nor published.
+- Source request: `REQ-0019`.
 
 ## Update procedure
 

@@ -53,9 +53,18 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-16 — Timer runtime budget and URLFetch quota isolation
 
-- **Status:** Versie 1 candidate; production root cause verified, release gates pending.
+- **Status:** immutable v56 preserved; production restored to exact v55; the A/B gate is blocked by the shared external `URLFETCH` quota.
 - **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
 - **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
 - **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
-- **Gates:** regression/full tests, hash-pinned PreflightOnly, staging E4, and production E5 after the external quota resets.
-- **Source request:** REQ-0018.
+- **Gates:** the `440/440` full suite and `5/5` release tests passed; staging v56 confirmed mailbox/avatar/three roots, but switching remains `unverified`; two clean v55 launches and the complete v56/v57 A/B await external quota recovery.
+- **Source request:** REQ-0018; continuation: REQ-0019.
+
+### B1-17 — Shared bootstrap A/B after the v56 rollback
+
+- **Status:** blocked by external quota; no code fix is created without evidence.
+- **Safe state:** stable and HEAD v55; immutable v56 and one owner-only v56 staging deployment are preserved; the journal is `rolled_back`; the menu is back on production.
+- **Diagnosis:** v56 and v55 completed callback/session/`mailboxRpc`; in the same windows the Gmail API worker exhausted daily `URLFETCH`, so no v56 regression is confirmed.
+- **Next gate:** two fresh production v55 mailbox launches without a network error, then signed staging v56 with avatar, three roots, switching to the controlled second account and back without OAuth.
+- **Release rule:** if the error is shared, do not switch releases again; if a code-level defect is proven, create cumulative immutable v57 without rewriting v56 and preserve the exact v55 rollback.
+- **Source request:** REQ-0019.
