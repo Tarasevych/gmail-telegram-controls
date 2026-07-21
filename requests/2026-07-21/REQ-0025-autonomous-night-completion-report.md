@@ -2,7 +2,7 @@
 
 - ID: REQ-0025
 - Date: 2026-07-21
-- Status: recorded
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=no-change
 - Permission basis: explicit
@@ -50,3 +50,14 @@
 ### Boundary
 
 There is no authority to merge the source candidate, create the next immutable, change a release helper, feature flag, deployment, trigger, OAuth, Gmail data, Telegram menu, or account/zone mapping.
+
+## Evidence / Докази
+
+- Initial paired report commit `f0e424a7b13522b3780ee7b4f2e84274af7be7bc` merged normally through [PR #12](https://github.com/Tarasevych/gmail-telegram-controls/pull/12) as `99b32b30847ea589e35a182cd5be6dc0049807c6`.
+- Factual cutoff/final-preflight correction `09a6cd98cc676ef69646bb08ca6ba7409012c9da` merged normally through [PR #13](https://github.com/Tarasevych/gmail-telegram-controls/pull/13) as final main `e838180cde18e8d7f5441bec54b30a170bd2e005`.
+- Published paired paths: `docs/en/reports/AUTONOMOUS_NIGHT_2026-07-21.md` and `docs/uk/reports/AUTONOMOUS_NIGHT_2026-07-21.md`.
+- Final main Actions succeeded: Verification reports `29869865468`, Bilingual documentation `29869865331`, Knowledge hub `29869865322`, Pages `29869864278`.
+- Final read-only `PreflightOnly` passed: stable v55, HEAD `stable_v55`, immutable ready, zero legacy staging, one staging, journal `staging_verified`, exact immutable v57 hashes.
+- GitHub and private GitLab exact hashes match for final `main` and the report branch; all used worktrees are clean and no temporary process or matching heartbeat task remains.
+- Local recovery checkpoint `019f7620-bb25-7bd0-a9ea-9034d55103ac.md` is `complete_with_blockers`.
+- Draft source PR #11 remains unmerged; production v55, historical v56, owner-only staging v57, feature flag, OAuth, Gmail, triggers, Telegram menu, and account/zone mappings were not mutated.

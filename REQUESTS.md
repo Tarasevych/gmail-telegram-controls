@@ -183,6 +183,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: завершити незалежну autonomous night work парним factual morning/crash report і recovery checkpoint `complete_with_blockers`.
 - English: complete the independent autonomous night work with paired factual morning/crash reports and a `complete_with_blockers` recovery checkpoint.
 - Record: [REQ-0025](requests/2026-07-21/REQ-0025-autonomous-night-completion-report.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: documentation/recovery evidence only; no source-candidate merge, immutable, release-helper, feature-flag, deployment, trigger, OAuth, Gmail, Telegram-menu, or account/zone mutation.
+- Evidence: paired report PR #12 and factual correction PR #13 merged normally; final `main=e838180cde18e8d7f5441bec54b30a170bd2e005`; all main workflows and final read-only preflight passed; GitHub/GitLab parity and `complete_with_blockers` checkpoint confirmed.
