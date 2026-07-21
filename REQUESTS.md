@@ -137,3 +137,10 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: no code, production, deployment, trigger, OAuth, Gmail, Telegram-zone, history-rewrite, force-push, or unrelated-worktree changes; checkpoint only factual dirty state and update only audit/governance/status evidence.
+
+## REQ-0021 | 2026-07-21
+
+- Українською: Gmail primary-source gate, CI validator hardening і factual межа для Google Developer Program Profile.
+- English: Gmail primary-source gate, CI validator hardening, and the factual Google Developer Program Profile boundary.
+- Record: [REQ-0021](requests/2026-07-21/REQ-0021-gmail-primary-source-ci-hardening-dual-publication.md)
+- Status: `in_progress`
