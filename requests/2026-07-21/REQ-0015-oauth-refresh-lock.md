@@ -39,3 +39,22 @@ Work is limited to static analysis, a local concurrency-contract fix, tests, and
 - Deterministic concurrency/reuse/failure tests are added without real credentials or network access.
 - Relevant local tests, privacy, and diff checks pass.
 - Changes and `GT-010` evidence are committed and pushed only to active Versie 1.
+## Completion evidence / Доказ завершення
+
+### Українська
+
+- **Статус:** завершено локально та опубліковано у поточній `Versie 1`; E4/E5 не виконувалися.
+- **Product commit:** `ae8fa827784296062c1f5cfe65334824d0fcb2c2` (`fix(versie-1): serialize Gmail token refresh`).
+- **Локальні докази:** `mail_client.test.js` — 148/148; release test — 3/3; bilingual parity — 44/44; `git diff --check` — pass.
+- **GitHub Actions:** успішні runs `29833104122`, `29833104134`, `29833104138`, `29833108424`, `29833108448`, `29833108519`.
+- **PR:** #1 — `OPEN`, `CLEAN`, `MERGEABLE`, head `ae8fa827784296062c1f5cfe65334824d0fcb2c2`.
+- **Межа:** immutable deployment, staging/production rollout, реальний OAuth і Gmail mutation не виконувалися.
+
+### English
+
+- **Status:** completed locally and published to the current `Versie 1`; E4/E5 were not performed.
+- **Product commit:** `ae8fa827784296062c1f5cfe65334824d0fcb2c2` (`fix(versie-1): serialize Gmail token refresh`).
+- **Local evidence:** `mail_client.test.js` — 148/148; release test — 3/3; bilingual parity — 44/44; `git diff --check` — pass.
+- **GitHub Actions:** successful runs `29833104122`, `29833104134`, `29833104138`, `29833108424`, `29833108448`, `29833108519`.
+- **PR:** #1 — `OPEN`, `CLEAN`, `MERGEABLE`, head `ae8fa827784296062c1f5cfe65334824d0fcb2c2`.
+- **Boundary:** immutable deployment, staging/production rollout, real OAuth, and Gmail mutation were not performed.
