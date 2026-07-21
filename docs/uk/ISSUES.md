@@ -29,7 +29,7 @@
 | GT-021 | Відкрита production | 1 | Перше відкриття production Web App інколи лишається на skeleton понад 15 секунд | Після одного refresh mailbox завантажився; додати content-free timing для bridge/backend bootstrap і перевірити cold-start timeout без Gmail mutations |
 | GT-022 | Обмеження платформи | 1 | `clasp logs` недоступний, бо production використовує Apps Script-managed default GCP project без standard project ID | Не мігрувати лише заради логів: це незворотно скасувало б чинні authorizations. Використовувати Apps Script Executions UI або окремий content-free telemetry reader |
 | GT-023 | В роботі; root cause перевірено production | 1 | Єдиний хвилинний `checkNewMail_` виконується 80–106 секунд, тому запуски перекриваються та вичерпують денну квоту `URLFETCH` | Другого trigger немає. Candidate додає атомарний 150-секундний timer slot через короткий ScriptLock, лишає realtime першим, а повний Gmail History backfill обмежує одним запуском на 15 хвилин; потрібні локальні тести, staging і production evidence після відновлення зовнішньої квоти |
-| GT-024 | Відкрита shared blocker | 1 | Web App bootstrap повернув однаковий network error на production v56 і після exact rollback на v55 | Candidate-specific regression не підтверджена; не перемикати релізи повторно до контрольованого A/B після відновлення зовнішньої квоти |
+| GT-024 | Заблокована зовнішньою квотою; regression candidate не підтверджена | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 | Apps Script завершив v57 `doPost`, redemption запуску і `mailboxRpc`; worker далі записав OAuth refresh failure, а потім `Service invoked too many times for one day: urlfetch`. Лишити production v55, immutable v56 як історію та один staging v57; відновити A/B лише після повернення квоти |
 | GT-025 | Виправлена у source candidate; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | Вибирати `mailboxMultiGmailAccessToken_` для активного `connectionId`, залишаючи `ScriptApp.getOAuthToken()` лише для legacy/owner lane; regression test забороняє hardcoded owner token |
 
 ## Production-доказ 2026-07-20
@@ -52,6 +52,15 @@
 - Перше production-відкриття вимагало одного refresh після skeleton; `clasp logs` не запустився без підтвердженого GCP project ID. Обидва спостереження лишаються відкритими як GT-021/GT-022.
 - Apps Script Executions підтвердив причину нового delivery outage: один хвилинний trigger породжував перекривні 80–106-секундні виконання, а Gmail History fan-out щохвилини завершився `Service invoked too many times for one day: urlfetch`. Trigger list містив рівно один `checkNewMail_`; конфігурацію trigger не змінено.
 - GT-022 перекласифіковано як platform constraint: production використовує Apps Script-managed default GCP project. Перехід на standard GCP project лише заради `clasp logs` незворотно скасував би чинні authorizations, тому його не виконано; безпечним доказовим джерелом лишається Apps Script Executions UI.
+
+## Recovery evidence 2026-07-21 — REQ-0019
+
+- PR #4 злитий normal merge як `23927148cfa616dbd1504e81768d013b01a9ed37`; повний suite пройшов `440/440`, додаткові release-тести `5/5`, GitHub checks успішні.
+- Immutable v56 збережено. Owner-only staging v56 відкрив mailbox без Drive error, показав profile photo і три account roots; автоматизована спроба switch не дала перевірюваної зміни стану, тому switch лишається `unverified`.
+- Після promotion production v56 показав network error. Exact rollback повернув stable на v55 зі збереженим staging v56; два production v55 bootstrap-запуски показали той самий error, тому candidate-specific regression не доведена.
+- Apps Script Executions для v56 і v55 показали успішні `doPost`, `mailboxRedeemLaunch`/`mailboxRenewSession` та `mailboxRpc`. У ті самі часові вікна `checkNewMail_` завершувався `Service invoked too many times for one day: urlfetch` у `gmailApiRequest_`; це відділяє callback/session replay від підтвердженого Gmail API quota blocker.
+- Поточний safe state: stable і HEAD v55, один preserved staging v56, journal `rolled_back`, Telegram menu на production. Default GCP project не мігрувався, secret properties не читалися й не публікувалися.
+- Source request: `REQ-0019`.
 
 ## Як оновлювати
 

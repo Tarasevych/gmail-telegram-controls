@@ -53,12 +53,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-16 — Timer runtime budget and URLFetch quota isolation
 
-- **Status:** Versie 1 candidate; production root cause verified, release gates pending.
+- **Status:** production remains exact v55; immutable v56 is preserved as history; immutable v57 has one owner-only staging deployment; the A/B gate is blocked by the shared external `URLFETCH` quota.
 - **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
 - **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
 - **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
-- **Gates:** regression/full tests, hash-pinned PreflightOnly, staging E4, and production E5 after the external quota resets.
-- **Source request:** REQ-0018.
+- **Gates:** the complete suite passed `443/443`, hash-pinned v57 `PreflightOnly` passed, and owner-only v57 staging exists; production acceptance and the account-switch A/B await external quota recovery.
+- **Source requests:** REQ-0018, REQ-0019, REQ-0021.
 
 ### B1-17 — Google primary-source gate and publication surfaces
 
@@ -75,3 +75,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - Next quota-reduction spike: one Gmail HTTP batch with a fail-closed multipart/Content-ID parser and no connection-token mixing.
 - **Status:** source candidate; live staging/production is `unverified`.
 - **Source:** `REQ-0021`.
+
+### B1-19 — Shared bootstrap A/B after the v56 rollback
+
+- **Status:** blocked by external quota; no further code fix is created without evidence.
+- **Safe state:** stable and HEAD v55; immutable v56 is historical; one owner-only v57 staging deployment is preserved; the Telegram menu points to production.
+- **Diagnosis:** v57 callback/launch redemption/`mailboxRpc` completed, while the worker logged OAuth refresh failure and exact daily `urlfetch` exhaustion; the same UI error reproduced on two production v55 launches, so no v57 regression is confirmed.
+- **Next gate:** after daily quota recovery, two fresh production v55 mailbox launches without a network error, then signed staging v57 with avatar, three roots, switching to the controlled second account and back without OAuth.
+- **Release rule:** if the error is shared, do not switch releases again; if a new candidate-only defect is proven, create cumulative immutable v58 without rewriting v56/v57 and preserve the exact v55 rollback.
+- **Source requests:** REQ-0019, REQ-0021.
