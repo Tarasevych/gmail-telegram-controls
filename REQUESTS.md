@@ -44,3 +44,9 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `completed`
 - Evidence: requests `bcd2509`, permissions `9653434`, instructions `976cba0`, resumed product evidence `c98e69e`.
 - Boundary: no next Versie or release authorization.
+
+## REQ-0009 v55 update | 2026-07-21
+
+- Status: `partial`.
+- Evidence: code `b5a5452`; docs `4ff66ca`; `432/432`; PreflightOnly passed; three GitHub Actions passed.
+- Remaining: authorized staging/deployment and controlled live one-card acceptance.

@@ -55,3 +55,19 @@ The owner ordered restoration of the broken Gmail-to-Telegram delivery within ac
 - “All messages” and account-scoped views work in Telegram.
 - Local tests, preflight, staging, and a controlled real-time acceptance pass without arbitrary Gmail mutations.
 - Code, bilingual documentation, and factual verification evidence are committed and published; runtime advances only after tests.
+
+## v55 local verification evidence: b5a5452 / 4ff66ca
+
+Status: `partial`
+Updated: `2026-07-21`
+
+- Product code commit `b5a5452646d26479b4a74fc00e31df0d56e23898` excludes a Sent copy from realtime, quarantine, and frozen notification paths even when Gmail also labels it Inbox.
+- The obsolete v54 staging mailbox-mutation test was replaced with a v55 assertion that the mutation surface is absent.
+- The exact v55 Code.gs SHA-256 was pinned in the release contract and helper.
+- Targeted tests passed: `153/153` mail actions and `3/3` release contracts.
+- Full local suite passed: `19` files, `432/432` tests.
+- `PreflightOnly` passed: stable v50, HEAD `stable_v50`, current staging `0`, one legacy staging deployment, `readyToStage=true`, and candidate hashes matched.
+- Cumulative bilingual evidence was published in `4ff66ca94312a2959798af3773e70cd0ac7c0879`.
+- GitHub Actions passed: knowledge hub `29811294529`, bilingual docs `29811294530`, verification reports `29811294569`.
+- No Gmail message was selected or mutated, no OAuth flow was repeated, and no staging/immutable/production deployment occurred.
+- Remaining evidence: explicit release authorization, staging/immutable readback, and one controlled live message proving exactly one Telegram card with correct account identity.
