@@ -100,3 +100,13 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Source commit: `ae8fa827784296062c1f5cfe65334824d0fcb2c2`
 - Boundary: exact-candidate gated release only; stop at OTP, CAPTCHA, new Google consent, unresolved account/zone identity, or a material manual choice.
+
+## REQ-0017 | 2026-07-21
+
+- Українською: звірити й без втрати прибрати застарілий cherry-pick conflict, задокументувати замінені напрацювання та продовжити menu/App release поточної `Versie 1`.
+- English: reconcile and safely remove an obsolete cherry-pick conflict, document replaced work, and continue the current `Versie 1` menu/App release.
+- Record: [REQ-0017](requests/2026-07-21/REQ-0017-reconcile-obsolete-cherry-pick-and-menu-release.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Preserved source: `f96d8f083ec548105a8eb5a153ac8acb8dade8ff`, already contained by current product commit `ae8fa827784296062c1f5cfe65334824d0fcb2c2`.
+- Boundary: no destructive history rewrite, parallel version, arbitrary mailbox mutation, zone mixing, OTP, CAPTCHA, or new Google consent.
