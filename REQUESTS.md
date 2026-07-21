@@ -58,5 +58,5 @@ The table above is the canonical machine-checked index. Every record is internal
 - Record: [REQ-0012](requests/2026-07-21/REQ-0012-full-two-corpus-knowledge-base.md)
 - Status: `completed`
 - Next Versie authorization: `no`
-- Evidence: product HEAD `b9cc4d2`; VR-003 32 claims; 167,176 source lines with zero coverage gaps; three GitHub Actions passed; PR [#1](https://github.com/Tarasevych/gmail-telegram-controls/pull/1).
+- Evidence: product HEAD `df493b7`; VR-003 32 claims; 167,176 source lines with zero coverage gaps; three GitHub Actions passed; PR [#1](https://github.com/Tarasevych/gmail-telegram-controls/pull/1) is clean and mergeable.
 - Boundary: no v55 deployment, production promotion, OAuth/Telegram acceptance, or next Versie.
