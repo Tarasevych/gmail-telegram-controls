@@ -11,6 +11,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
+def canonical_lf_sha256(text: str) -> str:
+    """Hash text after normalizing platform line endings to canonical LF."""
+    canonical = text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 ROOT = Path(__file__).resolve().parents[1]
 META = ROOT / "docs" / "verification-reports"
 UK = ROOT / "docs" / "uk" / "verification-reports"
@@ -342,9 +348,9 @@ def main() -> int:
     )
     complete_vr3_grade_counts = {grade: vr3_grade_counts.get(grade, 0) for grade in GRADES}
     source_manifest_path = META / LATEST_REPORT_ID / "source-manifest.json"
-    source_manifest_text = source_manifest_path.read_text(encoding="utf-8")
-    source_manifest_bytes = source_manifest_text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
-    source_manifest_sha = hashlib.sha256(source_manifest_bytes).hexdigest()
+    source_manifest_sha = canonical_lf_sha256(
+        source_manifest_path.read_text(encoding="utf-8")
+    )
     if (
         vr3_manifest.get("report_id") != LATEST_REPORT_ID
         or vr3_manifest.get("source_request") != "REQ-0012"
@@ -359,7 +365,13 @@ def main() -> int:
         or vr3_manifest.get("release_change") is not False
         or vr3_manifest.get("next_versie_authorized") is not False
     ):
-        errors.append("VR-003 manifest totals or no-release boundary are invalid")
+        errors.append(
+            "VR-003 manifest mismatch: inspect report_id, source_request, "
+            "verification_framework, claim_count, status_counts, "
+            "evidence_grade_counts, category_counts, source_manifest_sha256, "
+            "coverage_complete, runtime_or_production_tested, release_change, "
+            "and next_versie_authorized"
+        )
 
     report_entries = {
         str(item.get("report_id")): item

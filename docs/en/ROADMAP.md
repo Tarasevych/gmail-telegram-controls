@@ -57,14 +57,30 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
 - **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
 - **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
-- **Gates:** the `440/440` full suite and `5/5` release tests passed; staging v56 confirmed mailbox/avatar/three roots, but switching remains `unverified`; two clean v55 launches and the complete v56/v57 A/B await external quota recovery.
-- **Source request:** REQ-0018; continuation: REQ-0019.
+- **Gates:** the complete suite passed `443/443`, hash-pinned v57 `PreflightOnly` passed, and owner-only v57 staging exists; production acceptance and the account-switch A/B await external quota recovery.
+- **Source requests:** REQ-0018, REQ-0019, REQ-0021.
 
-### B1-17 — Shared bootstrap A/B after the v56 rollback
+### B1-17 — Google primary-source gate and publication surfaces
 
-- **Status:** blocked by external quota; no code fix is created without evidence.
+- Review the canonical Advanced Gmail Service and Advanced Google services pages before Gmail/Apps Script changes, and record the access date and decision.
+- GitHub remains the canonical code/history repository; Apps Script is runtime; Developer Profile is a discovery index, not a Git mirror.
+- CI must test LF/CRLF-stable evidence hashing before factual verification report validation.
+- **Status:** tooling/docs candidate; Gmail runtime and Versie are unchanged.
+- **Source:** `REQ-0021`.
+
+### B1-18 — Connection-scoped metadata transport
+
+- **GT-025:** remove the hardcoded Apps Script owner token from parallel `threads.get` metadata.
+- Keep direct Gmail API transport for external OAuth connections; evaluate Advanced Gmail Service only as a separate owner-lane adapter.
+- Next quota-reduction spike: one Gmail HTTP batch with a fail-closed multipart/Content-ID parser and no connection-token mixing.
+- **Status:** source candidate; live staging/production is `unverified`.
+- **Source:** `REQ-0021`.
+
+### B1-19 — Shared bootstrap A/B after the v56 rollback
+
+- **Status:** blocked by external quota; no further code fix is created without evidence.
 - **Safe state:** stable and HEAD v55; immutable v56 is historical; one owner-only v57 staging deployment is preserved; the Telegram menu points to production.
-- **Diagnosis:** v56 and v55 completed callback/session/`mailboxRpc`; in the same windows the Gmail API worker exhausted daily `URLFETCH`, so no v56 regression is confirmed.
+- **Diagnosis:** v57 callback/launch redemption/`mailboxRpc` completed, while the worker logged OAuth refresh failure and exact daily `urlfetch` exhaustion; the same UI error reproduced on two production v55 launches, so no v57 regression is confirmed.
 - **Next gate:** after daily quota recovery, two fresh production v55 mailbox launches without a network error, then signed staging v57 with avatar, three roots, switching to the controlled second account and back without OAuth.
 - **Release rule:** if the error is shared, do not switch releases again; if a new candidate-only defect is proven, create cumulative immutable v58 without rewriting v56/v57 and preserve the exact v55 rollback.
-- **Source request:** REQ-0019.
+- **Source requests:** REQ-0019, REQ-0021.

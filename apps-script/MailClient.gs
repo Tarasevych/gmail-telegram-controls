@@ -2450,7 +2450,9 @@ function mailboxFinalizeThreadSummary_(dtoValue, translatedValue) {
 function mailboxFetchThreadMetadataBatch_(references, metadataQuery) {
   const items = references || [];
   if (!items.length) return [];
-  const token = ScriptApp.getOAuthToken();
+  const token = mailboxCurrentSessionContext_
+    ? mailboxMultiGmailAccessToken_(mailboxCurrentSessionContext_)
+    : ScriptApp.getOAuthToken();
   const requests = items.map(reference => {
     const threadId = mailboxRequireGmailId_(reference && reference.id, 'threadId');
     return {

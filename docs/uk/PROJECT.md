@@ -19,6 +19,8 @@
 
 ## Джерело істини
 
+Для Gmail/Apps Script змін обов'язковим технічним gate є [перелік первинних джерел Google](GMAIL_PRIMARY_SOURCES.md). GitHub лишається канонічним сховищем коду та історії; Apps Script є runtime-поверхнею; Google Developer Profile використовується лише як підтримуваний discovery-індекс.
+
 - Активний код: гілка поточної Versie.
 - Останній підтверджений public release: `main` плюс release branch/tag.
 - Поточні задачі: [ROADMAP.md](ROADMAP.md).

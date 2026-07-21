@@ -19,6 +19,8 @@ Build a safe, neuroinclusive Gmail client in Telegram for one owner and explicit
 
 ## Source of truth
 
+For Gmail/Apps Script changes, the [Google primary-source register](GMAIL_PRIMARY_SOURCES.md) is a mandatory technical gate. GitHub remains the canonical code and history repository; Apps Script is the runtime surface; Google Developer Profile is used only as a supported discovery index.
+
 - Active code: the current Versie branch.
 - Latest verified public release: `main` plus its release branch/tag.
 - Current work: [ROADMAP.md](ROADMAP.md).
