@@ -79,3 +79,21 @@ The owner instructed continuation of the current `Versie 1` from the verified ex
 - Do not bypass unavailable-content messages or other safety controls; preserve only the sanitized visible fact of refusal.
 - Do not mix Gmail connections, Telegram user/chat, or mail zones, and do not mutate arbitrary mail.
 - Stop at CAPTCHA, OTP/2FA, passkey/biometric/hardware key, new Google OAuth consent, payment, physical action, or unresolved account/zone identity.
+
+<!-- lang:uk -->
+## Проміжний доказ 2026-07-21
+
+- Перший ledger commit `f4fc31f` мав неканонічні значення `Routes`, тому GitHub Request ledger правильно завершився failure. Історію не переписано: follow-up commit `fc1d0a6` виправив лише routing vocabulary; Request ledger і Bilingual documentation для нього пройшли.
+- Apps Script Executions показали completed `doPost`, session redemption/renewal і `mailboxRpc` на v56 та exact-rollback v55. У ті самі часові вікна worker падав з `Service invoked too many times for one day: urlfetch` у Gmail API path.
+- Candidate-specific regression не підтверджена. Safe state лишається stable і HEAD v55, immutable staging v56 збережено, journal `rolled_back`, Telegram menu на production.
+- `GT-024`, оновлений `B1-16`, A/B gate і cumulative release evidence опубліковані у PR #5 на commit `5596493`; локальні docs/release contracts пройшли `17/17`, bilingual parity — `44` пари, усі шість PR checks успішні.
+- PR #5 не зливається до A/B pass. Наступна safe action — не створювати додаткові quota-consuming launches, а після factual quota recovery отримати два чисті v55 launches і лише потім перевірити preserved staging v56.
+
+<!-- lang:en -->
+## Interim evidence 2026-07-21
+
+- The first ledger commit `f4fc31f` used non-canonical `Routes` values, so the GitHub Request ledger correctly failed. History was not rewritten: follow-up commit `fc1d0a6` changed only the routing vocabulary; its Request ledger and Bilingual documentation checks passed.
+- Apps Script Executions showed completed `doPost`, session redemption/renewal, and `mailboxRpc` calls on v56 and exact-rollback v55. In the same time windows, the worker failed with `Service invoked too many times for one day: urlfetch` in the Gmail API path.
+- No candidate-specific regression is confirmed. The safe state remains stable and HEAD v55, immutable staging v56 preserved, journal `rolled_back`, and the Telegram menu on production.
+- `GT-024`, the updated `B1-16`, the A/B gate, and cumulative release evidence are published in PR #5 at commit `5596493`; local docs/release contracts passed `17/17`, bilingual parity passed `44` pairs, and all six PR checks succeeded.
+- PR #5 is not merged before the A/B pass. The next safe action is to avoid additional quota-consuming launches and, after factual quota recovery, obtain two clean v55 launches before testing preserved staging v56.
