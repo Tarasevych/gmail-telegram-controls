@@ -38,3 +38,9 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `completed`
 - Evidence: product `c98e69e`, instructions `80d79ab`, GitHub Actions `29810786984`, `29810787010`, `29810787006`.
 - Boundary: v55 runtime candidate remains separate and unverified.
+
+## REQ-0011 completion | 2026-07-21
+
+- Status: `completed`
+- Evidence: requests `bcd2509`, permissions `9653434`, instructions `976cba0`, resumed product evidence `c98e69e`.
+- Boundary: no next Versie or release authorization.

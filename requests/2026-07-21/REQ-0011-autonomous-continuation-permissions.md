@@ -34,3 +34,16 @@ Boundaries: do not bypass CAPTCHA, 2FA/OTP, passkeys/biometrics; do not create c
 - The relevant permission and instruction records are bilingual and sanitized.
 - A same-thread recovery checkpoint records the exact resume state.
 - Work resumes from the unfinished Stage 4 step without repeating completed authentication or analysis.
+
+## Completion evidence: 9653434 / 976cba0
+
+Status: `completed`
+Completed: `2026-07-21`
+
+- Sanitized owner request was published before derived changes in commit `bcd2509` on `Запити`.
+- Explicit autonomous continuation authority was published as `P-006` in commit `9653434` on `Повноваження`.
+- Standing autonomous recovery/logging protocol was published in commit `976cba0` on `Інструкції`.
+- Same-thread local recovery checkpoint and an allowed ad-hoc memory note were created without secrets.
+- Work resumed from the unfinished Stage 4 step; GitHub authentication and CI diagnosis were not repeated.
+- The resumed documentation work reached green GitHub Actions at product commit `c98e69e`.
+- No next Versie, immutable deployment, production promotion, or broader permission was created.
