@@ -128,3 +128,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `blocked`
 - Next Versie authorization: `no`
 - Boundary: preserve immutable v56 and exact v55 rollback; no repeated OAuth, arbitrary mailbox mutation, account/zone mixing, secret publication, safety-control bypass, CAPTCHA, OTP/2FA, passkey/biometric/hardware key, payment, or unavoidable physical action.
+
+## REQ-0020 | 2026-07-21
+
+- Українською: встановити fail-closed stabilization process, заморозити вже перевірені блоки, зберегти фактичний поточний стан, ізолювати діагностику та визначити одну-дві першопричини без змін коду.
+- English: establish a fail-closed stabilization process, freeze already verified blocks, preserve the factual current state, isolate diagnostics, and identify one or two root causes without code changes.
+- Record: [REQ-0020](requests/2026-07-21/REQ-0020-stabilization-root-cause-audit.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Boundary: no code, production, deployment, trigger, OAuth, Gmail, Telegram-zone, history-rewrite, force-push, or unrelated-worktree changes; checkpoint only factual dirty state and update only audit/governance/status evidence.
