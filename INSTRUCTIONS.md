@@ -21,6 +21,8 @@
 
 Для тривалої автономної роботи, checkpoints, heartbeat, progress log і відновлення після переривання дотримуйтеся [протоколу автономного recovery](instructions/AUTONOMOUS_RECOVERY.md). Source request: `REQ-0011`.
 
+Коли нові виправлення загрожують уже перевіреним суміжним модулям, застосовуйте [протокол стабілізації та root-cause analysis](instructions/STABILIZATION_ROOT_CAUSE.md): заморозити production-verified blocks, не створювати порожніх checkpoint commits, ізолювати diagnostics і змінювати код лише після доказової першопричини. Source request: `REQ-0020`.
+
 ## Заборона несанкціонованої наступної Versie
 
 Поточна робоча версія: **Versie 1**. Наступна Versie, її branch, article, tag, immutable deployment або production release дозволені лише за прямим наказом власника та полем `Next Versie authorization: yes, Versie N` у новому записі `Запити`.
@@ -49,6 +51,8 @@ Detailed order: [EXECUTION_ORDER.md](instructions/EXECUTION_ORDER.md). Source re
 For routine continuation, use the [knowledge-hub maintenance order](instructions/KNOWLEDGE_HUB_MAINTENANCE.md) and read only the relevant thematic register on the active Versie. Source request: `REQ-0003`.
 
 For long-running autonomous work, checkpoints, heartbeat, progress logging, and interruption recovery, follow the [autonomous recovery protocol](instructions/AUTONOMOUS_RECOVERY.md). Source request: `REQ-0011`.
+
+When new fixes threaten already verified adjacent modules, apply the [stabilization and root-cause protocol](instructions/STABILIZATION_ROOT_CAUSE.md): freeze production-verified blocks, do not create empty checkpoint commits, isolate diagnostics, and change code only after an evidence-backed root cause. Source request: `REQ-0020`.
 
 ## No unauthorized next Versie
 
