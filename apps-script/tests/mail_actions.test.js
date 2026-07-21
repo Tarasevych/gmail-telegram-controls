@@ -6398,6 +6398,43 @@ test('realtime lane delivers mail newer than the frozen backlog upper bound exac
   } finally { Object.assign(context, originals); }
 });
 
+test('realtime notifications durably ignore a Sent copy even when Gmail also labels it Inbox', () => {
+  const now = Date.now();
+  const memory = memoryProperties({
+    BOT_TOKEN: 'test-token', CHAT_ID: '123',
+    STARTED_AT: String(now - 3600000), SEEN_MESSAGE_IDS: '[]',
+  });
+  const originals = {
+    PropertiesService: context.PropertiesService, LockService: context.LockService,
+    Session: context.Session, listGmailNotificationPage_: context.listGmailNotificationPage_,
+    getGmailMessage_: context.getGmailMessage_, notifyMessage_: context.notifyMessage_,
+  };
+  let fetched = 0;
+  let notified = 0;
+  try {
+    context.PropertiesService = memory.service;
+    context.LockService = immediateScriptLock();
+    context.Session = { getEffectiveUser: () => ({ getEmail: () => 'owner@example.com' }) };
+    context.listGmailNotificationPage_ = () => ({ ids: ['sent_inbox_copy_12345'], nextPageToken: '' });
+    context.getGmailMessage_ = id => {
+      fetched += 1;
+      return { id, timestamp: now - 10000, labelIds: ['INBOX', 'SENT', 'UNREAD'] };
+    };
+    context.notifyMessage_ = () => { notified += 1; return { message_id: notified }; };
+
+    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX', 'SENT'], 'all'), false);
+    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX'], 'all'), true);
+    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
+    const firstState = JSON.parse(memory.store.GMAIL_NOTIFICATION_REALTIME_V1_123_legacy);
+    assert.equal(firstState.lastScanLabelSkipped, 1);
+    assert.equal(firstState.lastScanEligible, 0);
+    assert.deepEqual(JSON.parse(memory.store.SEEN_MESSAGE_IDS), ['sent_inbox_copy_12345']);
+    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
+    assert.equal(fetched, 1, 'the durable seen boundary must avoid refetching the Sent copy');
+    assert.equal(notified, 0);
+  } finally { Object.assign(context, originals); }
+});
+
 test('minute trigger runs realtime fan-out before maintenance and frozen recovery', () => {
   const start = code.indexOf('function checkNewMail_()');
   const realtime = code.indexOf("runRealtimeMailChecks_('timer', 5)", start);
@@ -6491,33 +6528,9 @@ test('protected Gmail trace returns only bounded label counts and never identifi
   } finally { context.gmailApi_ = original; }
 });
 
-test('staging trace maintenance moves only one exact Spam match and returns no Gmail identifier', () => {
-  const originals = { gmailApi_: context.gmailApi_, gmailApiRequest_: context.gmailApiRequest_ };
-  const token = '2026-07-20T23:34:34.365Z';
-  let labels = ['SPAM', 'UNREAD'];
-  const mutations = [];
-  try {
-    context.gmailApi_ = path => path.startsWith('/messages?q=')
-      ? { messages: [{ id: 'controlled_trace_message' }] }
-      : { labelIds: labels.slice() };
-    context.gmailApiRequest_ = (path, options) => {
-      mutations.push({ path, options });
-      labels = ['INBOX', 'UNREAD'];
-      return {};
-    };
-    const result = context.gmailRuntimeMoveCurrentTraceSpamToInbox_(token);
-    assert.equal(result.applied, true);
-    assert.equal(result.beforeSpam, 1);
-    assert.equal(result.afterInbox, 1);
-    assert.equal(mutations.length, 1);
-    assert.equal(
-      JSON.stringify(mutations[0].options.body),
-      JSON.stringify({ addLabelIds: ['INBOX'], removeLabelIds: ['SPAM'] })
-    );
-    const serialized = JSON.stringify(result);
-    assert.doesNotMatch(serialized, /controlled_trace_message/);
-    assert.doesNotMatch(serialized, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  } finally { Object.assign(context, originals); }
+test('v55 removes the staging trace mailbox mutation surface', () => {
+  assert.equal(context.gmailRuntimeMoveCurrentTraceSpamToInbox_, undefined);
+  assert.doesNotMatch(code, /function gmailRuntimeMoveCurrentTraceSpamToInbox_/);
 });
 
 test('realtime legacy delivery reuses the canonical scope and never inherits an unrelated global mode', () => {
