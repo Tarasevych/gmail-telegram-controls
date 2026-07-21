@@ -71,3 +71,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Boundary: no Apps Script deployment, production promotion, OAuth/Telegram acceptance, or next Versie.
 - Blocker: `main` merge requires completed E4/E5 acceptance and an explicit release decision; v55 currently has E3 evidence only.
 - Required authorization: Versie 1 v55 immutable/staging candidate plus controlled E4/E5 acceptance; production promotion and `main` merge remain separate.
+
+## REQ-0014 | 2026-07-21
+
+- Українською: виправити невдалий GitHub Actions `Request ledger` шляхом schema-only нормалізації REQ-0009–REQ-0013.
+- English: repair failed GitHub Actions `Request ledger` through schema-only normalization of REQ-0009 through REQ-0013.
+- Record: [REQ-0014](requests/2026-07-21/REQ-0014-repair-request-ledger-ci.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: request metadata only; no instruction, permission, product, runtime, release, or main change.
