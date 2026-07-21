@@ -1,6 +1,6 @@
 # Roadmap
 
-Updated: **2026-07-20**. Single active version: **Versie 1**.
+Updated: **2026-07-21**. Single active version: **Versie 1**.
 
 | ID | Status | Step | Completion evidence |
 |---|---|---|---|
@@ -10,17 +10,17 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-04 | Completed locally | Neutral GitHub OAuth callback with a credentialless POST to Apps Script | query cleared before transfer; one-use user/chat/zone state; Google multi-login cookies omitted |
 | B1-05 | Completed | Save the new redirect URI in the Google OAuth client | `OAuth client saved`; exact URI read back |
 | B1-06 | Completed | Credentialless OAuth relay and sequential immutable v41/v42 | stable v42, staging 0, exact v41 rollback |
-| B1-07 | Manual gate active | Add a controlled Gmail account through the new flow | production reached Google “app not verified”; owner confirms consent for the intended account |
-| B1-08 | In progress | Full real-time acceptance in @TarasevychGmailNotifierBot | v55 Sent-copy guard passed 432/432 and PreflightOnly; staging and a controlled one-card live acceptance are not yet evidenced |
-| B1-09 | Completed | Promote, clean up, and install the production command menu | stable v42, staging 0, setup execution completed |
+| B1-07 | Unverified | Add a new controlled Gmail account through a fresh OAuth flow | existing connections work; no new account choice/consent/callback was performed during E4/E5 |
+| B1-08 | Completed in production for the owner lane | Full real-time acceptance in @TarasevychGmailNotifierBot | stable v55 automatically delivered one card; two `/check` runs created no duplicate; exact-marker count remained 1 |
+| B1-09 | Completed | Promote, clean up, and install the production Web App menu | stable v55, staging 0, legacy staging 0, journal `cleaned`; menu opens the neutral GitHub Pages bridge |
 | B1-10 | Completed | Update UK/EN docs, commit, and push | postmortem and lessons published at c98e69e; three documentation Actions passed; release tag remains gated by B1-07/B1-08 |
 
-| B1-11 | Completed locally | Separate realtime delivery from the frozen backlog and run it before maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 still required |
-| B1-12 | Completed locally | Aggregate every notification account into one physical Telegram feed with account identity and account-scoped actions | the main chat is “All messages”; account roots switch context without duplicating a card; second-account E5 is consent-blocked |
+| B1-11 | Completed in production | Separate realtime delivery from the frozen backlog and run it before maintenance | the bounded recent-window lane in stable v55 delivered the controlled message before backlog maintenance |
+| B1-12 | Partially staging verified | Aggregate every notification account into one physical Telegram feed with account identity and account-scoped actions | three isolated account roots and one-click switching passed; independent live fan-out from a second account remains unverified |
 
 ## Movement rule
 
-Versie 2 is not opened until B1-05 through B1-10 are complete. New findings receive a `GT-*` record in [ISSUES.md](ISSUES.md); their fix is added to Versie 1 while Versie 1 is unreleased. After release, every new correction belongs only to Versie 2.
+Versie 2 is not opened without the exact owner instruction `Next Versie authorization: yes, Versie 2`. Until that instruction, every authorized change remains on the active Versie 1 line, but no existing immutable Apps Script artifact is rewritten. New findings receive a `GT-*` record in [ISSUES.md](ISSUES.md).
 
 ## Cumulative research roadmap
 
@@ -28,13 +28,25 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## Verification gate
 
-`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). It does not close B1-07 through B1-09: staging OAuth callback, real-time Telegram acceptance, and production promotion remain separate E4/E5 evidence. Current continuation: `REQ-0009`.
+`VR-001` completed repository/test classification for 245/245 `KH-*` claims: [report](verification-reports/reports/VR-001/README.md). E4/E5 for the existing owner connection and the v55 promotion are now evidenced; they do not close B1-07 fresh OAuth or B1-12 second-account fan-out. Current continuation: `REQ-0016`/`REQ-0017`.
 
 ### B1-13 — Concurrent Gmail OAuth refresh isolation
 
-- **Status:** completed locally; E4/E5 have not passed yet.
+- **Status:** deployed in stable v55; concurrency verified by deterministic local tests.
 - **Result:** each Gmail connection now uses a short ScriptLock only for claim/commit/release plus a lease in protected Script Properties; HTTP refresh runs outside the lock.
 - **Invariants:** an active lease prevents a second provider fetch; connection ID, email, token generation, and the current token record are rechecked before commit; a failure releases its owned lease without changing the protected token.
 - **Evidence:** deterministic local tests and the candidate hash pin for the current Versie 1.
 - **Source request:** REQ-0015.
-- **Not performed:** immutable deployment, staging/production rollout, or a real OAuth cycle.
+- **Production evidence:** immutable v55, E4/E5, and cleanup passed; no forced live token refresh or fresh OAuth cycle was performed.
+
+### B1-14 — Conflict-free bridge and product integration
+
+- **Status:** completed.
+- **Result:** bridge-only PR #2 (`a7df53c`) and product PR #1 (`ee9286e`) merged normally; the `delete/modify` conflict kept the verified bridge from `main`.
+- **No loss:** product fixes, immutable history, and rollback v50 remain; the obsolete bridge deletion was not carried forward.
+
+### B1-15 — Cold start and production observability
+
+- **Status:** in progress.
+- **GT-021:** the first Web App open can require a refresh after a prolonged skeleton.
+- **GT-022:** `clasp logs` requires the exact verified GCP project ID; do not guess identity.
