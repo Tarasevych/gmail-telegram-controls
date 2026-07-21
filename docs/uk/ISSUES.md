@@ -27,7 +27,8 @@
 | GT-019 | Перевірена production | 1 | Ручна `/check` перевіряла лише legacy mailbox | Два послідовні `/check` після автоматичної доставки не створили повторної картки; exact-marker search залишився на одному результаті |
 | GT-020 | Відкрита операційна | 1 | У protected credential store лишився застарілий alias Telegram bot token, який повертає 401 | Runtime використовує окреме підтверджене protected посилання; не ротувати чинний token без окремого безпечного плану |
 | GT-021 | Відкрита production | 1 | Перше відкриття production Web App інколи лишається на skeleton понад 15 секунд | Після одного refresh mailbox завантажився; додати content-free timing для bridge/backend bootstrap і перевірити cold-start timeout без Gmail mutations |
-| GT-022 | Відкрита операційна | 1 | `clasp logs` недоступний, бо локальний Apps Script config не містить GCP project ID | Прив’язати лише правильний підтверджений GCP project ID або додати безпечний Apps Script API log reader; не вгадувати project identity |
+| GT-022 | Обмеження платформи | 1 | `clasp logs` недоступний, бо production використовує Apps Script-managed default GCP project без standard project ID | Не мігрувати лише заради логів: це незворотно скасувало б чинні authorizations. Використовувати Apps Script Executions UI або окремий content-free telemetry reader |
+| GT-023 | В роботі; root cause перевірено production | 1 | Єдиний хвилинний `checkNewMail_` виконується 80–106 секунд, тому запуски перекриваються та вичерпують денну квоту `URLFETCH` | Другого trigger немає. Candidate додає атомарний 150-секундний timer slot через короткий ScriptLock, лишає realtime першим, а повний Gmail History backfill обмежує одним запуском на 15 хвилин; потрібні локальні тести, staging і production evidence після відновлення зовнішньої квоти |
 
 ## Production-доказ 2026-07-20
 
@@ -47,6 +48,8 @@
 - Production E5: контрольний owner self-message з `SENT+INBOX` автоматично створив одну картку; два `/check` повернули «Нових листів немає», а exact-marker search двічі показав один результат.
 - Production menu: `📬 Пошта · Versie 1` відкриває статичний GitHub Pages bridge. Випадкові листи, OAuth records і Gmail-зони не змінювалися.
 - Перше production-відкриття вимагало одного refresh після skeleton; `clasp logs` не запустився без підтвердженого GCP project ID. Обидва спостереження лишаються відкритими як GT-021/GT-022.
+- Apps Script Executions підтвердив причину нового delivery outage: один хвилинний trigger породжував перекривні 80–106-секундні виконання, а Gmail History fan-out щохвилини завершився `Service invoked too many times for one day: urlfetch`. Trigger list містив рівно один `checkNewMail_`; конфігурацію trigger не змінено.
+- GT-022 перекласифіковано як platform constraint: production використовує Apps Script-managed default GCP project. Перехід на standard GCP project лише заради `clasp logs` незворотно скасував би чинні authorizations, тому його не виконано; безпечним доказовим джерелом лишається Apps Script Executions UI.
 
 ## Як оновлювати
 
