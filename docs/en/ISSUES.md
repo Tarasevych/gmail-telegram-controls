@@ -70,6 +70,7 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 - The Telegram control plane remained healthy: production menu, 0 pending updates, no webhook last error, max connections 1, and `message`/`callback_query` allowed updates.
 - The clean local baseline passed 444/444 tests and all documentation/report gates. Fresh account switching, delivery, dedupe, and Mini App acceptance remain `unverified` until quota recovery.
 - Full sanitized evidence: [VR-004 Stage 1 appendix](verification-reports/reports/VR-004/STAGE_1_CONTINUATION_AUDIT.md). Source requests: `REQ-0019`, `REQ-0020`.
+- Advanced Gmail research: a wholesale direct-HTTP replacement is incompatible with external connection tokens; only an owner-lane hybrid is a safe candidate, and quota reduction remains `unverified`. [Compatibility evidence](verification-reports/reports/VR-004/ADVANCED_GMAIL_COMPATIBILITY.md). Source request: `REQ-0021`.
 
 ## Update procedure
 

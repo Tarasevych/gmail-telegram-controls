@@ -45,3 +45,14 @@ Every platform or library claim requires current capability, version, license, a
 ---
 
 Source request / Джерело запиту: `REQ-0003`. Report-derived baseline; live claims require current-state verification.
+
+## Current verified Google/Gmail sources
+
+Source request: `REQ-0021`.
+
+- [Advanced Gmail Service](https://developers.google.com/apps-script/advanced/gmail) is the required primary source before changing the Gmail Advanced service integration.
+- [Advanced Google services](https://developers.google.com/apps-script/guides/services/advanced) defines automatic advanced-service authorization and direct `UrlFetch` as separate integration paths.
+- [Authorization for Google Services](https://developers.google.com/apps-script/guides/services/authorization) defines execution identity and the possible new-consent boundary.
+- [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas) is the primary source for daily URL Fetch, trigger runtime, and Gmail service limits.
+- [Gmail users.messages.list](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list) defines `me` as the authenticated user, not an arbitrary connected mailbox.
+- Project-specific compatibility result: [VR-004 Advanced Gmail appendix](../verification-reports/reports/VR-004/ADVANCED_GMAIL_COMPATIBILITY.md).
