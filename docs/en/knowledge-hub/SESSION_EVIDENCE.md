@@ -1,7 +1,7 @@
 # Session evidence register
 
-**Knowledge-hub source request:** REQ-0003  
-**Evidence request:** REQ-0012
+- **Knowledge-hub source request:** REQ-0003
+- **Evidence request:** REQ-0012
 
 REQ-0012 processed two private session exports as evidence sources for VR-003.
 

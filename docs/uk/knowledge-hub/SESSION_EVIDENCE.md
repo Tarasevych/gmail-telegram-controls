@@ -1,7 +1,7 @@
 # Реєстр доказів із сесій
 
-**Базовий запит knowledge hub:** REQ-0003  
-**Запит evidence:** REQ-0012
+- **Базовий запит knowledge hub:** REQ-0003
+- **Запит evidence:** REQ-0012
 
 REQ-0012 опрацював два приватні експорти сесій як evidence sources для VR-003.
 

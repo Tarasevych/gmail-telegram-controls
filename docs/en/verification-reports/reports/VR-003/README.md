@@ -1,10 +1,10 @@
 # VR-003: Two-corpus factual verification of Versie 1
 
-**Date:** 2026-07-21  
-**Request:** REQ-0012  
-**Framework:** REQ-0004  
-**Product line:** Versie 1  
-**Release change:** no
+- **Date:** 2026-07-21
+- **Request:** REQ-0012
+- **Framework:** REQ-0004
+- **Product line:** Versie 1
+- **Release change:** no
 
 VR-003 converts two private session exports into sanitized atomic claims and checks those claims against immutable Git objects and local test evidence. It does not publish either transcript, mailbox content, credentials, private URLs, or local paths.
 
@@ -46,4 +46,3 @@ The complete machine-readable ledger is [claims.json](../../../../verification-r
 - [Release lineage](RELEASES.md)
 - [Open gates](OPEN_GATES.md)
 - [Machine-readable manifest](../../../../verification-reports/VR-003/manifest.json)
-
