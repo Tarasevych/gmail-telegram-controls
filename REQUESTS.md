@@ -50,3 +50,11 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `partial`.
 - Evidence: code `b5a5452`; docs `4ff66ca`; `432/432`; PreflightOnly passed; three GitHub Actions passed.
 - Remaining: authorized staging/deployment and controlled live one-card acceptance.
+
+## REQ-0012 | 2026-07-21
+
+- Українською: повна двокорпусна доказова реконструкція knowledge base з coverage manifest і evidence ledger.
+- English: full two-corpus evidence-backed knowledge-base reconstruction with coverage manifest and evidence ledger.
+- Record: [REQ-0012](requests/2026-07-21/REQ-0012-full-two-corpus-knowledge-base.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
