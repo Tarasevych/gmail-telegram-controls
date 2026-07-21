@@ -2,7 +2,7 @@
 
 - ID: REQ-0019
 - Date: 2026-07-21
-- Status: in_progress
+- Status: blocked
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
@@ -97,3 +97,21 @@ The owner instructed continuation of the current `Versie 1` from the verified ex
 - No candidate-specific regression is confirmed. The safe state remains stable and HEAD v55, immutable staging v56 preserved, journal `rolled_back`, and the Telegram menu on production.
 - `GT-024`, the updated `B1-16`, the A/B gate, and cumulative release evidence are published in PR #5 at commit `5596493`; local docs/release contracts passed `17/17`, bilingual parity passed `44` pairs, and all six PR checks succeeded.
 - PR #5 is not merged before the A/B pass. The next safe action is to avoid additional quota-consuming launches and, after factual quota recovery, obtain two clean v55 launches before testing preserved staging v56.
+
+<!-- lang:uk -->
+## Blocked audit 2026-07-21
+
+- Три послідовні goal turns дали однаковий read-only результат: Apps Script daily `urlfetch` quota лишається вичерпаною.
+- У третьому audit execution `18:11` зафіксував два scoped Gmail History quota failures і фінальний exception у `gmailApiRequest_`; наступний minute worker уже запускався.
+- A/B gate неможливо доказово пройти до external quota reset. Повторний promotion, trigger mutation або створення v57 без code-level evidence порушили б approved fail-closed strategy.
+- Safe state збережено: stable і HEAD v55, immutable staging v56, journal `rolled_back`, Telegram menu на production, PR #5 відкритий без merge.
+- Resume condition: Apps Script Executions більше не показують daily `urlfetch` failure, після чого два fresh production v55 launches мають пройти до staging v56 A/B.
+
+<!-- lang:en -->
+## Blocked audit 2026-07-21
+
+- Three consecutive goal turns produced the same read-only result: the Apps Script daily `urlfetch` quota remains exhausted.
+- In the third audit, execution `18:11` recorded two scoped Gmail History quota failures and a final exception in `gmailApiRequest_`; the next minute worker was already starting.
+- The A/B gate cannot be proven before the external quota resets. Another promotion, trigger mutation, or v57 creation without code-level evidence would violate the approved fail-closed strategy.
+- The safe state is preserved: stable and HEAD v55, immutable staging v56, journal `rolled_back`, Telegram menu on production, and PR #5 open without merge.
+- Resume condition: Apps Script Executions no longer show the daily `urlfetch` failure, then two fresh production v55 launches must pass before the staging v56 A/B.
