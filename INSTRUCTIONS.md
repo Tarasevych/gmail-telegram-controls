@@ -23,6 +23,8 @@
 
 Коли нові виправлення загрожують уже перевіреним суміжним модулям, застосовуйте [протокол стабілізації та root-cause analysis](instructions/STABILIZATION_ROOT_CAUSE.md): заморозити production-verified blocks, не створювати порожніх checkpoint commits, ізолювати diagnostics і змінювати код лише після доказової першопричини. Source request: `REQ-0020`.
 
+Перед будь-якою Gmail/Apps Script інтеграцією, зміною authorization або quota remediation застосовуйте [протокол первинних джерел і publication surfaces](instructions/GMAIL_PRIMARY_SOURCES_AND_PUBLICATION.md). Він вимагає перевірки офіційного Advanced Gmail Service, але забороняє автоматичну міграцію multi-account OAuth без доказу сумісності. Source request: `REQ-0021`.
+
 ## Заборона несанкціонованої наступної Versie
 
 Поточна робоча версія: **Versie 1**. Наступна Versie, її branch, article, tag, immutable deployment або production release дозволені лише за прямим наказом власника та полем `Next Versie authorization: yes, Versie N` у новому записі `Запити`.
@@ -53,6 +55,8 @@ For routine continuation, use the [knowledge-hub maintenance order](instructions
 For long-running autonomous work, checkpoints, heartbeat, progress logging, and interruption recovery, follow the [autonomous recovery protocol](instructions/AUTONOMOUS_RECOVERY.md). Source request: `REQ-0011`.
 
 When new fixes threaten already verified adjacent modules, apply the [stabilization and root-cause protocol](instructions/STABILIZATION_ROOT_CAUSE.md): freeze production-verified blocks, do not create empty checkpoint commits, isolate diagnostics, and change code only after an evidence-backed root cause. Source request: `REQ-0020`.
+
+Before any Gmail/Apps Script integration, authorization change, or quota remediation, apply the [primary-source and publication-surface protocol](instructions/GMAIL_PRIMARY_SOURCES_AND_PUBLICATION.md). It requires consulting the official Advanced Gmail Service while prohibiting automatic multi-account OAuth migration without compatibility evidence. Source request: `REQ-0021`.
 
 ## No unauthorized next Versie
 

@@ -11,10 +11,12 @@
 - Кожен запит завжди йде в `Запити`. До `Інструкції` вносити лише постійні правила процесу. До `Повноваження` вносити лише явно наданий, змінений, обмежений або відкликаний власником дозвіл; дозволи не припускати.
 - План, реєстр проблем, документацію або код активної Versie змінювати лише за відповідною частиною запиту. Нерелевантні гілки й записи не читати та не змінювати.
 - Для routine-роботи після request record починати з `docs/uk/knowledge-hub/README.md` активної Versie та читати лише потрібний тематичний реєстр; source dossiers і великі deep-research reports відкривати лише для provenance gap або конфлікту.
+- Перед Gmail/Apps Script design, integration, quota або authorization зміною обов'язково прочитати офіційні [Advanced Gmail Service](https://developers.google.com/apps-script/advanced/gmail) та [Advanced Google services](https://developers.google.com/apps-script/guides/services/advanced), зафіксувати дату й висновок у request evidence. Advanced Service розглядати першим, але не замінювати connection-scoped OAuth/`UrlFetch` без доказу сумісності multi-account identity, scopes і callbacks.
 - Перед використанням report-derived твердження відкрити актуальний `verification-reports/INDEX.md` активної Versie та claim-level evidence; не переносити E1/E2 як runtime або production proof.
 - Кожна похідна зміна має посилатися на `REQ-ID`. Після виконання оновити канонічний запис статусом і commit, test або deployment evidence.
 - Ніколи не переносити до публічного журналу secrets, приватні листи, конкретні credential values, OTP, recovery values або приватний вміст повідомлень.
 - Поточна робоча версія є Versie 1. Наступну Versie, branch, article, tag чи immutable deployment не створювати без прямого наказу й поля `Next Versie authorization: yes, Versie N`.
+- GitHub є канонічним source/history host, Apps Script project/deployments — hash-pinned executable surface. Google Developer Program Profile є лише discovery/profile surface із social links і Saved Pages; він не є repository mirror, і заборонено заявляти про подвійну публікацію коду туди.
 - Перед дозволеною наступною Versie прочитати всі tracked Markdown-сторінки `main`, `Запити`, `Інструкції`, `Повноваження` та активної Versie й зафіксувати повний аудит.
 
 ### Двомовна документація є обов'язковою
@@ -37,10 +39,12 @@
 - Every request always goes to `Запити`. Update `Інструкції` only for standing process rules. Update `Повноваження` only when the owner explicitly grants, changes, narrows, or revokes authority; never infer authority.
 - Change the active Versie's plan, issue register, documentation, or code only for the applicable request part. Do not read or change unrelated branches or records.
 - For routine work after the request record, start from the active Versie's `docs/en/knowledge-hub/README.md` and read only the relevant thematic register; open source dossiers or large deep-research reports only for a provenance gap or conflict.
+- Before any Gmail/Apps Script design, integration, quota, or authorization change, read the official [Advanced Gmail Service](https://developers.google.com/apps-script/advanced/gmail) and [Advanced Google services](https://developers.google.com/apps-script/guides/services/advanced), then record the access date and decision in request evidence. Consider the Advanced Service first, but never replace connection-scoped OAuth/`UrlFetch` without proving compatibility with multi-account identity, scopes, and callbacks.
 - Before relying on a report-derived claim, open the active Versie's current `verification-reports/INDEX.md` and claim-level evidence; never promote E1/E2 into runtime or production proof.
 - Every derived change references its `REQ-ID`. After execution, update the canonical record with status and commit, test, or deployment evidence.
 - Never copy secrets, private mail, concrete credential values, OTP values, recovery values, or private message content into the public ledger.
 - The current working release is Versie 1. Do not create a next Versie, branch, article, tag, or immutable deployment without a direct order and `Next Versie authorization: yes, Versie N`.
+- GitHub is the canonical source/history host; Apps Script projects/deployments are the hash-pinned executable surface. Google Developer Program Profile is only a discovery/profile surface with social links and Saved Pages; it is not a repository mirror, and claiming dual code publication there is prohibited.
 - Before an authorized next Versie, read every tracked Markdown page from `main`, `Запити`, `Інструкції`, `Повноваження`, and the active Versie and record a full audit.
 
 ### Bilingual documentation is mandatory
