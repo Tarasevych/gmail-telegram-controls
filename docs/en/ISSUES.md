@@ -1,10 +1,10 @@
 # Known problem register
 
-Updated: **2026-07-20**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Verified in production`.
+Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Production verified`.
 
 | ID | Status | Since Versie | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
-| GT-001 | Resolved locally | 1 | One email reaches Telegram twice | Do not rescan the owner mailbox through OAuth and dedupe same-user/same-email; real-time acceptance remains |
+| GT-001 | Resolved locally | 1 | One mail message reaches Telegram twice | v55 excludes a Sent copy even when Gmail also labels it Inbox; 432/432 tests and PreflightOnly pass; staging and one-card live acceptance remain required |
 | GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | Direct Apps Script callback was rejected because Google multi-login is officially unsupported; neutral GitHub callback plus credentialless POST is being implemented; live acceptance remains |
 | GT-003 | Resolved locally | 1 | Header shows an initial instead of the Google profile photo | Header uses the real photo with an initial fallback; staging readback remains |
 | GT-004 | Resolved locally | 1 | `Add Gmail account` requires an extra `Continue with Google` click | Open the authorization URL immediately; show fallback only when browser navigation is blocked |

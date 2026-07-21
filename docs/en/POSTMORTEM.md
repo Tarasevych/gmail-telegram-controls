@@ -91,3 +91,7 @@ This postmortem is a structured reconstruction of the supplied v42-v55 agent-ses
 ## Publication verification
 
 GitHub Actions run [29788979153](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29788979153) proved that bilingual and knowledge-hub checks passed but the verification-report check failed because both VR-002 pages lacked the repository-wide `REQ-0004` framework marker. The paired VR-002 correction is part of this documentation phase; a new green run is required before publication is considered verified.
+
+## Current local verification update
+
+After the supplied-log boundary, candidate commit `b5a5452` passed all `432/432` local tests and `PreflightOnly`. The preflight readback reported stable v50, current staging 0, one legacy staging deployment, and `readyToStage=true`. This upgrades v55 from source-only `unverified` to locally verified; staging deployment and controlled live one-card acceptance remain `unverified`.

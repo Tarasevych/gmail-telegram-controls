@@ -11,9 +11,9 @@ Updated: **2026-07-20**. Single active version: **Versie 1**.
 | B1-05 | Completed | Save the new redirect URI in the Google OAuth client | `OAuth client saved`; exact URI read back |
 | B1-06 | Completed | Credentialless OAuth relay and sequential immutable v41/v42 | stable v42, staging 0, exact v41 rollback |
 | B1-07 | Manual gate active | Add a controlled Gmail account through the new flow | production reached Google “app not verified”; owner confirms consent for the intended account |
-| B1-08 | In progress | Full real-time acceptance in `@TarasevychGmailNotifierBot` | menu and /settings verified; callback success and one-card controlled mail test remain |
+| B1-08 | In progress | Full real-time acceptance in @TarasevychGmailNotifierBot | v55 Sent-copy guard passed 432/432 and PreflightOnly; staging and a controlled one-card live acceptance are not yet evidenced |
 | B1-09 | Completed | Promote, clean up, and install the production command menu | stable v42, staging 0, setup execution completed |
-| B1-10 | In progress | Update UK/EN docs, commit, and push | v42 evidence is being published in Versie 1; tag/release branch wait for B1-07/B1-08 |
+| B1-10 | Completed | Update UK/EN docs, commit, and push | postmortem and lessons published at c98e69e; three documentation Actions passed; release tag remains gated by B1-07/B1-08 |
 
 | B1-11 | Completed locally | Separate realtime delivery from the frozen backlog and run it before maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 still required |
 | B1-12 | Completed locally | Aggregate every notification account into one physical Telegram feed with account identity and account-scoped actions | the main chat is “All messages”; account roots switch context without duplicating a card; second-account E5 is consent-blocked |

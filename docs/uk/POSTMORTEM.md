@@ -91,3 +91,7 @@
 ## Перевірка публікації
 
 GitHub Actions run [29788979153](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29788979153) довів, що bilingual і knowledge-hub checks пройшли, але verification-report check упав, бо обидві сторінки VR-002 не містили repository-wide framework marker `REQ-0004`. Парне виправлення VR-002 входить до цього документаційного етапу; до нового green run публікація не вважається перевіреною.
+
+## Поточне локальне оновлення перевірки
+
+Після межі наданого логу candidate commit `b5a5452` пройшов усі `432/432` локальні tests і `PreflightOnly`. Preflight readback показав stable v50, current staging 0, один legacy staging deployment і `readyToStage=true`. Це підвищує v55 із source-only `unverified` до локально перевіреного; staging deployment і контрольний live acceptance однієї картки лишаються `unverified`.
