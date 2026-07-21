@@ -60,3 +60,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Evidence: product HEAD `df493b7`; VR-003 32 claims; 167,176 source lines with zero coverage gaps; three GitHub Actions passed; PR [#1](https://github.com/Tarasevych/gmail-telegram-controls/pull/1) is clean and mergeable.
 - Boundary: no v55 deployment, production promotion, OAuth/Telegram acceptance, or next Versie.
+
+## REQ-0013 | 2026-07-21
+
+- Українською: merge перевіреного Versie 1 PR `#1` у `main` із post-merge verification.
+- English: merge verified Versie 1 PR `#1` into `main` with post-merge verification.
+- Record: [REQ-0013](requests/2026-07-21/REQ-0013-merge-verified-versie-1-pr.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: no Apps Script deployment, production promotion, OAuth/Telegram acceptance, or next Versie.
