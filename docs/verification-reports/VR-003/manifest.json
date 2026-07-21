@@ -43,7 +43,7 @@
     "lesson": 4
   },
   "source_manifest": "source-manifest.json",
-  "source_manifest_sha256": "b52a4b996cb4ed538e2a51321cb79ca23f8e32df2df0f60c32bd77c471113ee2",
+  "source_manifest_sha256": "f2d0cb5790e273b0691d0a0b06133ba958baea22deceb6d38d199271717162b4",
   "source_count": 2,
   "source_line_count": 167176,
   "source_chunk_count": 231,

@@ -342,7 +342,9 @@ def main() -> int:
     )
     complete_vr3_grade_counts = {grade: vr3_grade_counts.get(grade, 0) for grade in GRADES}
     source_manifest_path = META / LATEST_REPORT_ID / "source-manifest.json"
-    source_manifest_sha = hashlib.sha256(source_manifest_path.read_bytes()).hexdigest()
+    source_manifest_text = source_manifest_path.read_text(encoding="utf-8")
+    source_manifest_bytes = source_manifest_text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+    source_manifest_sha = hashlib.sha256(source_manifest_bytes).hexdigest()
     if (
         vr3_manifest.get("report_id") != LATEST_REPORT_ID
         or vr3_manifest.get("source_request") != "REQ-0012"
