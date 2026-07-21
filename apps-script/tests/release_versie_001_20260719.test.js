@@ -8,7 +8,8 @@ const root = path.resolve(__dirname, '..');
 const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260719.ps1'), 'utf8');
 const v56Helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v56.ps1'), 'utf8');
 const currentHelper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v57.ps1'), 'utf8');
-const stagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v56.html'), 'utf8');
+const v56StagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v56.html'), 'utf8');
+const stagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v57.html'), 'utf8');
 const menuUpdater = fs.readFileSync(path.join(root, '..', 'tools', 'update_bot_menu_versie_001.py'), 'utf8');
 const code = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const expected = {
@@ -64,9 +65,14 @@ test('v57 helper preserves v56 staging history and exact v55 rollback', () => {
   assert.match(currentHelper, /Rollback to verified Telegram Gmail Versie 1 Apps Script v55/);
 });
 
-test('v56 staging launcher is isolated from the production Web App menu', () => {
-  assert.match(menuUpdater, /versie-001-staging-acceptance-20260721-v56\.html/);
-  assert.match(stagingBridge, /AKfycby76_MRDK8YJyPdI5gl_leGCmDJSJRlUoGZPA6FSgjlMm9ltvfhZo2e-ascD06wXl1m/);
+test('immutable v56 staging launcher remains exact historical evidence', () => {
+  assert.match(v56StagingBridge, /AKfycby76_MRDK8YJyPdI5gl_leGCmDJSJRlUoGZPA6FSgjlMm9ltvfhZo2e-ascD06wXl1m/);
+  assert.match(v56StagingBridge, /staging v56/);
+});
+
+test('v57 staging launcher is isolated from the production Web App menu', () => {
+  assert.match(menuUpdater, /versie-001-staging-acceptance-20260721-v57\.html/);
+  assert.match(stagingBridge, /AKfycbxrSlQT6NKQooVkyKZE4LaDVO7lHUUChE2ih2Q7oprHHoUHY0YKLEkhT8Ojcon2qr7h/);
   assert.match(stagingBridge, /form\.method\s*=\s*'post'/);
   assert.match(stagingBridge, /addField\('init_data',\s*tg\.initData\)/);
   assert.match(stagingBridge, /noindex,nofollow,noarchive/);
