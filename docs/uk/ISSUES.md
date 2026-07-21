@@ -62,6 +62,15 @@
 - Поточний safe state: stable і HEAD v55, один preserved staging v56, journal `rolled_back`, Telegram menu на production. Default GCP project не мігрувався, secret properties не читалися й не публікувалися.
 - Source request: `REQ-0019`.
 
+## Stage 1 continuation evidence 2026-07-21
+
+- Git boundary: `origin/main` `535a77d...`; 16 clean worktrees, no stashes or unfinished Git operations, no open PR, latest main checks green.
+- Release boundary: GET-only `PreflightOnly` passed with production v55, one preserved staging v57, journal `staging_verified` and legacy staging 0. Immutable v56 remained historical.
+- Runtime: exactly one `checkNewMail_` trigger; recent 45-149-second executions overlapped, and a failed run ended with the daily `urlfetch` quota exception in `gmailApiRequest_`.
+- Telegram control plane remained healthy: production menu, pending updates 0, no webhook last error, max connections 1, allowed updates `message`/`callback_query`.
+- Clean local baseline passed 444/444 tests and all documentation/report gates. Fresh account-switch, delivery, dedupe and Mini App acceptance remain `unverified` until quota recovery.
+- Full sanitized evidence: [VR-004 Stage 1 appendix](verification-reports/reports/VR-004/STAGE_1_CONTINUATION_AUDIT.md). Source requests: `REQ-0019`, `REQ-0020`.
+
 ## Як оновлювати
 
 1. Нову проблему додати один раз із наступним `GT-*` ID.
