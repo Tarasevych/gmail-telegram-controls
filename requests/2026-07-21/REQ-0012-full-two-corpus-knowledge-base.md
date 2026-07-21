@@ -1,7 +1,7 @@
 # REQ-0012: full two-corpus knowledge-base reconstruction
 
 Date: `2026-07-21`
-Status: `recorded`
+Status: `completed`
 Active product: `Versie 1`
 Next Versie authorization: `no`
 
@@ -33,3 +33,15 @@ Input names, versions, and claims are not facts without a locator/evidence. Do n
 - Existing Stage 4 and v55 evidence is reused, not recomputed without need.
 - Relevant checks, staged-diff privacy scan, commits, remote state, and CI/PR evidence are recorded.
 - A same-thread checkpoint permits exact continuation after interruption.
+
+## Completion evidence
+
+- Source coverage: `SESSION-CURRENT` 32,569 logical lines in 49 chunks; `SESSION-PREVIOUS` 134,607 logical lines in 182 chunks; total 167,176 lines in 231 chunks, zero gaps.
+- Original source SHA-256: `05380a2833e7b35f0cd8492efab2ac3e889d2add426f9ccebfc9557a69e61249` and `1091a6f740588bf5148a8c9eb8653c4c36c86112e3bb47ec45d96f16887e0e48`.
+- Published report: VR-003 with 32 atomic claims: 19 verified, 3 partial, 3 unverified, 2 blocked, and 5 recommendations.
+- Product commits: [`d5d34f2`](https://github.com/Tarasevych/gmail-telegram-controls/commit/d5d34f27110e0628df88e9b1653e56ebe5f79103), [`347e6d3`](https://github.com/Tarasevych/gmail-telegram-controls/commit/347e6d305696cf8dc838acc4242d523048ab74fb), and [`b9cc4d2`](https://github.com/Tarasevych/gmail-telegram-controls/commit/b9cc4d2a5df9d9990106e821e521f2c9249e6225).
+- Local checks: Python syntax passed; bilingual documentation 44/44 pairs; knowledge hub 17 pairs; VR-001 245 claims and VR-003 32 claims passed; privacy scan passed for all 35 changed files; `git diff --check` passed after an immutable cleanup commit.
+- GitHub Actions on `b9cc4d2`: [Bilingual documentation](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29815102358), [Knowledge hub](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29815102411), and [Verification reports](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29815102339) all succeeded.
+- Pull request: [#1 Versie 1: v55 delivery hardening and VR-003 evidence](https://github.com/Tarasevych/gmail-telegram-controls/pull/1).
+- Raw transcripts, normalized chunks, candidate excerpts, credentials, mailbox content, private URLs, and local paths were not published.
+- Release boundary retained: no immutable v55 creation, staging deployment, production promotion, Gmail mutation, OAuth acceptance, Telegram production acceptance, or next-Versie authorization occurred in REQ-0012.
