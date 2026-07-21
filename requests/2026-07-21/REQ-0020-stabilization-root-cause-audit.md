@@ -2,7 +2,7 @@
 
 - ID: REQ-0020
 - Date: 2026-07-21
-- Status: in_progress
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=update; permissions=reference; plan=update; product=no-change; release=no-change
 - Permission basis: explicit
@@ -71,3 +71,16 @@ The owner ordered an end to chaotic fixes, prohibited code changes, and requeste
 - Do not run `git add .` or create a checkpoint commit in a clean worktree.
 - Do not transfer dirty state between worktrees or delete historical branches/tags/deployments.
 - Do not publish credentials, tokens, cookies, `initData`, identifiers, secret properties, or private mail.
+## Докази завершення / Completion evidence
+
+- **Статус / Status:** `completed`
+- **Audit branch:** `audit/diagnostic-fix`
+- **Audit commit:** [`03c1fefedc30e7717499a560b222ea5967b2fef7`](https://github.com/Tarasevych/gmail-telegram-controls/commit/03c1fefedc30e7717499a560b222ea5967b2fef7)
+- **Verification report:** [VR-004](https://github.com/Tarasevych/gmail-telegram-controls/blob/03c1fefedc30e7717499a560b222ea5967b2fef7/docs/uk/verification-reports/reports/VR-004/README.md)
+- **Documentation PR:** [PR #6](https://github.com/Tarasevych/gmail-telegram-controls/pull/6), clean; bilingual, knowledge-hub and verification checks passed.
+- **Status comments:** [stable/Done PR #3](https://github.com/Tarasevych/gmail-telegram-controls/pull/3#issuecomment-5037003854), [candidate-blocked PR #4](https://github.com/Tarasevych/gmail-telegram-controls/pull/4#issuecomment-5037004083), [shared-blocker PR #5](https://github.com/Tarasevych/gmail-telegram-controls/pull/5#issuecomment-5037004374).
+- **Local diagnostics:** 20 tracked test files, 441/441 passed; 14/14 worktrees clean; no development/autofix loop found.
+- **Root causes:** shared Apps Script `URLFetch` daily-quota exhaustion; split Git-candidate versus production-accepted release authority.
+- **GitHub Projects/Issues:** the only owner Project is unrelated private `SlimWoonbeheer` with zero items and was intentionally left untouched; repository Issues are disabled. PR comments are the authoritative status surface for this audit.
+- **Safety boundary:** no Apps Script source, release helper, deployment, trigger, OAuth, Gmail message, Telegram production state, or secret property was changed.
+- **Завершено / Completed:** 2026-07-21.
