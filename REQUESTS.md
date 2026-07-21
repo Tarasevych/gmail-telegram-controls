@@ -81,3 +81,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: request metadata only; no instruction, permission, product, runtime, release, or main change.
 - Evidence: schema fix `42d341e`; Request ledger run [29831638800](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29831638800) and bilingual run [29831638784](https://github.com/Tarasevych/gmail-telegram-controls/actions/runs/29831638784) succeeded.
+
+## REQ-0015 | 2026-07-21
+
+- Українською: виправити й тестами довести function-local concurrency contract для OAuth token refresh (`GT-010`).
+- English: repair and test the function-local OAuth token-refresh concurrency contract (`GT-010`).
+- Record: [REQ-0015](requests/2026-07-21/REQ-0015-oauth-refresh-lock.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: local code/tests/docs only; no OAuth, mailbox, deployment, production, main, or release change.
