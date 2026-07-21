@@ -5,7 +5,7 @@
 - Status: in_progress
 - Active Versie: Versie 1
 - Next Versie authorization: no
-- Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=no-change; release=update
+- Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
 
 <!-- lang:uk -->
@@ -31,7 +31,7 @@ Random mail mutation, replacing the candidate with an older version, creating a 
 - `Запити`: this authorization and atomic completion evidence.
 - `Інструкції`: reference the current execution order and release gates; no standing-rule change.
 - `Повноваження`: use only P-006 and the explicit one-time owner authorization; no authority expansion.
-- Product/plan: update only evidence and statuses required by verified release results.
+- Product/plan: update release evidence and the exact static staging bridge URL only; the Apps Script candidate bundle remains unchanged.
 - Runtime/release: authorized only for the exact current Versie 1 candidate and gated rollback.
 
 ## Completion gates
