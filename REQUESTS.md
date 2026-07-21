@@ -25,3 +25,10 @@
 The `Запити` branch is the single canonical ledger of owner project requests. Each request is recorded before execution as a sanitized interpretation, split into logical parts, and assigned explicit routes. `Інструкції` and `Повноваження` do not keep ledger copies; they contain only derived normative records linked to the originating `REQ-ID`.
 
 The table above is the canonical machine-checked index. Every record is internally bilingual.
+
+## REQ-0011 | 2026-07-21
+
+- Українською: автономне продовження, журналювання та recovery-повноваження в межах безпеки.
+- English: autonomous continuation, logging, and recovery authority within safety boundaries.
+- Record: [REQ-0011](requests/2026-07-21/REQ-0011-autonomous-continuation-permissions.md)
+- Status: `recorded`
