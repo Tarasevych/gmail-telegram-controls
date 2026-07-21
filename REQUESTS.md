@@ -66,6 +66,8 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: merge перевіреного Versie 1 PR `#1` у `main` із post-merge verification.
 - English: merge verified Versie 1 PR `#1` into `main` with post-merge verification.
 - Record: [REQ-0013](requests/2026-07-21/REQ-0013-merge-verified-versie-1-pr.md)
-- Status: `recorded`
+- Status: `blocked`
 - Next Versie authorization: `no`
 - Boundary: no Apps Script deployment, production promotion, OAuth/Telegram acceptance, or next Versie.
+- Blocker: `main` merge requires completed E4/E5 acceptance and an explicit release decision; v55 currently has E3 evidence only.
+- Required authorization: Versie 1 v55 immutable/staging candidate plus controlled E4/E5 acceptance; production promotion and `main` merge remain separate.
