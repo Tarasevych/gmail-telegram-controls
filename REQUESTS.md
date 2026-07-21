@@ -96,7 +96,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: дозвіл на gated E4/E5, deployment, production promotion і merge поточної `Versie 1`.
 - English: authorization for gated E4/E5, deployment, production promotion, and merge of the current `Versie 1`.
 - Record: [REQ-0016](requests/2026-07-21/REQ-0016-authorize-versie-1-release-and-merge.md)
-- Status: `in_progress`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Source commit: `ae8fa827784296062c1f5cfe65334824d0fcb2c2`
 - Boundary: exact-candidate gated release only; stop at OTP, CAPTCHA, new Google consent, unresolved account/zone identity, or a material manual choice.
@@ -106,7 +106,16 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: звірити й без втрати прибрати застарілий cherry-pick conflict, задокументувати замінені напрацювання та продовжити menu/App release поточної `Versie 1`.
 - English: reconcile and safely remove an obsolete cherry-pick conflict, document replaced work, and continue the current `Versie 1` menu/App release.
 - Record: [REQ-0017](requests/2026-07-21/REQ-0017-reconcile-obsolete-cherry-pick-and-menu-release.md)
-- Status: `in_progress`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Preserved source: `f96d8f083ec548105a8eb5a153ac8acb8dade8ff`, already contained by current product commit `ae8fa827784296062c1f5cfe65334824d0fcb2c2`.
 - Boundary: no destructive history rewrite, parallel version, arbitrary mailbox mutation, zone mixing, OTP, CAPTCHA, or new Google consent.
+
+## REQ-0018 | 2026-07-21
+
+- Українською: продовжити `Versie 1` з останньої перевіреної production v55 точки: відновити observability, перевірити fresh OAuth і незалежний second-account fan-out, не повторюючи release.
+- English: continue `Versie 1` from the last verified production v55 point: restore observability, verify fresh OAuth and independent second-account fan-out, without repeating the release.
+- Record: [REQ-0018](requests/2026-07-21/REQ-0018-versie-1-observability-oauth-fanout.md)
+- Status: `in_progress`
+- Next Versie authorization: `no`
+- Boundary: no new Versie, rollback, repeated deployment, arbitrary mailbox mutation, account/zone mixing, guessed cloud project identity, CAPTCHA, OTP/2FA, passkey/biometric/hardware key, payment, or unavoidable physical action.

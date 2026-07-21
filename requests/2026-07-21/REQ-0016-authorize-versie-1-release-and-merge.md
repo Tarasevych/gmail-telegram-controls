@@ -2,7 +2,7 @@
 
 - ID: REQ-0016
 - Received: 2026-07-21
-- Status: in_progress
+- Status: completed
 - Active Versie: Versie 1
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
