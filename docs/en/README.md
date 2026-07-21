@@ -10,6 +10,7 @@ This directory is the short entry point into the project. The latest release art
 - [Project and expectations](PROJECT.md): mission, boundaries, quality criteria, and data protection.
 - [Roadmap](ROADMAP.md): completed, in progress, blocked, and next.
 - [Problem register](ISSUES.md): concise `GT-*` records with status and target Versie.
+- [Gmail primary sources](GMAIL_PRIMARY_SOURCES.md): mandatory source gate and the GitHub, Apps Script, and Google Developer Profile boundaries.
 - [Bilingual documentation](BILINGUAL_DOCUMENTATION.md): mandatory Ukrainian and English pairs with CI enforcement.
 - [Delivery postmortem v42-v55](POSTMORTEM.md): architecture, confirmed root causes, evidence boundaries, and durable invariants.
 - [Versie 1 · 2026-07-19](releases/VERSIE-001-2026-07-19.md): complete cumulative history and release gates.
