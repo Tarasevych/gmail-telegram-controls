@@ -143,7 +143,10 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: Gmail primary-source gate, CI validator hardening і factual межа для Google Developer Program Profile.
 - English: Gmail primary-source gate, CI validator hardening, and the factual Google Developer Program Profile boundary.
 - Record: [REQ-0021](requests/2026-07-21/REQ-0021-gmail-primary-source-ci-hardening-dual-publication.md)
-- Status: `in_progress`
+- Status: `completed`
+- Next Versie authorization: `no`
+- Evidence: primary-source/publishing policy, validator hardening, 444/444 baseline, paired compatibility report, green GitHub checks, and GitHub/GitLab `main` parity at `660bc6a...`.
+- Boundary: Google Developer Program Profile is not a repository mirror; no profile, release, OAuth, Gmail, Telegram-zone, or runtime mutation was performed.
 
 ## REQ-0022 | 2026-07-21
 

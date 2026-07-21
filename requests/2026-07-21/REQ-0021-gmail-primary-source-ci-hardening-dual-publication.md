@@ -2,7 +2,7 @@
 
 - ID: REQ-0021
 - Date: 2026-07-21
-- Status: in_progress
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=update; permissions=reference; plan=update; product=update; release=no-change
 - Permission basis: explicit
@@ -70,3 +70,14 @@
 - Preserve LF-normalized verification hashing and add field-specific diagnostics.
 - Pass all local and GitHub checks.
 - Make no false repository-mirror claim for Developer Profile.
+
+## Evidence / Докази
+
+- Canonical Instructions contain the fail-closed Gmail primary-source and publication policy; current `Інструкції` ref is `9079c19f4f4e04537f519c896607604331ca78b1`.
+- Product documentation now registers the official Advanced Gmail, advanced-services, authorization, quota, and Gmail API sources in both languages.
+- VR-004 publishes the project-specific multi-account compatibility boundary: owner-lane hybrid is a recommendation; external connections retain connection-scoped direct HTTP; quota reduction is `unverified`.
+- Request-ledger schema/parser diagnostics and verification LF-normalized hashing/field diagnostics were merged through normal GitHub history; historical failed runs were not rewritten.
+- Clean baseline passed 444/444 Node tests; current paired documentation reached 50 UK/EN pages; knowledge-hub and verification validators passed locally and in GitHub Actions.
+- GitHub PR #10 merged normally as `660bc6a52e949925f1855dcaaf79ac5de9b2d188`; private GitLab `main` matches the same hash.
+- No repository-mirror claim was made for Google Developer Program Profile, because it is not a source-hosting service. No Developer Profile mutation was performed without a separate owner choice.
+- No new Versie, immutable release, production promotion, OAuth, Gmail, Telegram-zone, or Apps Script runtime mutation was authorized or performed by this request.
