@@ -173,6 +173,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: розробити feature-flagged owner-only Advanced Gmail read adapter без зміни external connection transport або live runtime.
 - English: develop a feature-flagged owner-only Advanced Gmail read adapter without changing external-connection transport or live runtime.
 - Record: [REQ-0024](requests/2026-07-21/REQ-0024-owner-only-advanced-gmail-read-adapter.md)
-- Status: `recorded`
+- Status: `blocked`
 - Next Versie authorization: `no`
 - Boundary: source/tests/docs only; no flag activation, immutable release, deployment, production promotion, OAuth, Gmail mutation, trigger change, account/zone mixing, or secret publication.
+- Evidence: adapter `8/8`; full suite `451/452` with only the exact immutable v57 hash gate failing; source commit `0b0c361`, draft PR #11, green documentation/report Actions, and exact private GitLab branch parity. Merge/release requires separate next-immutable authority; live A/B requires quota recovery.

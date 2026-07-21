@@ -2,7 +2,7 @@
 
 - ID: REQ-0024
 - Date: 2026-07-21
-- Status: recorded
+- Status: blocked
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=no-change
 - Permission basis: explicit
@@ -52,3 +52,13 @@ Production лишається immutable v55; історичний v56 і оди�
 ### Boundary
 
 Production remains immutable v55; historical v56 and the single owner-only staging v57 are not rewritten. There is no authority to enable the feature flag, create a new immutable, promote production, repeat OAuth, mutate Gmail, change triggers, or change a Telegram zone. Live A/B resumes only after external quota recovery.
+
+## Evidence / Докази
+
+- Apps Script Executions о 2026-07-21 22:49:14 підтвердив exact shared blocker: `Service invoked too many times for one day: urlfetch` у `gmailApiRequest_` через notification scan path.
+- Ізольований source commit: `0b0c361a7edf0cdca2099090fe0d5c25185e63f8`; GitHub draft PR: [#11](https://github.com/Tarasevych/gmail-telegram-controls/pull/11).
+- Новий behavioral adapter suite пройшов `8/8`; повний suite має `451/452`, де єдиний fail є exact immutable v57 source-hash gate (`Code.gs` candidate `685aa67...` проти pinned v57 `5c609754...`).
+- Bilingual `50/50`, knowledge hub, verification reports, `diff --check` і secret-signature scan пройшли; GitHub Actions для source commit успішні.
+- GitHub і приватний GitLab branch refs мають однаковий exact commit `0b0c361a7edf0cdca2099090fe0d5c25185e63f8`.
+- Feature flag не встановлено; source не merged; deployment, immutable creation, production promotion, OAuth, Gmail data, trigger і Telegram zone не змінювалися.
+- Blocker для merge/release: окремий прямий дозвіл власника на наступний immutable і matching hash-pinned release helper. Blocker для live evidence: відновлення external daily quota та чинний v55-to-staging A/B gate.
