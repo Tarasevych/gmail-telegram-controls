@@ -167,3 +167,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: no new authority, product/release mutation, history rewrite, secrets, OAuth/session data, mailbox content, or Telegram-zone change.
 - Evidence: ordinary non-force mirror sync completed; exact four-ref hash comparison passed and anonymous GitLab API returned `404`.
+
+## REQ-0024 | 2026-07-21
+
+- Українською: розробити feature-flagged owner-only Advanced Gmail read adapter без зміни external connection transport або live runtime.
+- English: develop a feature-flagged owner-only Advanced Gmail read adapter without changing external-connection transport or live runtime.
+- Record: [REQ-0024](requests/2026-07-21/REQ-0024-owner-only-advanced-gmail-read-adapter.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: source/tests/docs only; no flag activation, immutable release, deployment, production promotion, OAuth, Gmail mutation, trigger change, account/zone mixing, or secret publication.
