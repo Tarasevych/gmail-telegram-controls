@@ -152,3 +152,48 @@
 - **Межа:** OAuth, Gmail permissions, account membership і mail-flow composition не змінюються. Source не є production v57; immutable v60 не створено через відкритий GT-030.
 - **Звіт:** [VR-008](verification-reports/reports/VR-008/README.md).
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-032 — Типографіка відрізняється від читального контексту Gmail
+
+- **Статус:** PARTIAL — live Gmail CSS і source fix VERIFIED; candidate visual та production acceptance лишаються UNVERIFIED.
+- **Дата:** 2026-07-22. Source request: `REQ-0033`.
+- **Першопричина:** клієнт змішував замалий 11–13 px interface text, важкі заголовки та message line-height 1.65 без єдиної типографічної шкали.
+- **Source fix:** local-first Gmail-compatible UI stack, окремий reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading і compose rhythm, responsive sizing та відсутність remote font dependency або layout-blocking font request.
+- **Доказ:** authenticated read-only Gmail inspection в однаковому масштабі повернув чинний UI stack і 14 px/20 px mail-list cells; жодного листа не відкрито й не змінено. Див. [VR-009](verification-reports/reports/VR-009/README.md).
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-033 — Повторне завантаження та блокування внутрішньої навігації
+
+- **Статус:** PARTIAL — root cause і source implementation VERIFIED; post-change browser/performance та production acceptance UNVERIFIED.
+- **Першопричина:** list routes очищували всі rows перед кожним RPC; кожне відкриття листа відкидало detail; `threadLoading` втрачав другий клік; прийняті responses перебудовували весь list DOM.
+- **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace показує три `getThread` плюс три `attentionState` RPC для `A -> B -> A`.
+- **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, збережені scroll/view state і відсутність document reload для звичайної навігації.
+- **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-034 — Відсутній bounded cache і background revalidation
+
+- **Статус:** PARTIAL — bounded architecture реалізовано в source; browser quota, eviction і live account-isolation acceptance лишаються UNVERIFIED.
+- **Першопричина:** клієнт не мав memory cache, IndexedDB, Cache Storage, Service Worker або persistent view state; усі freshness checks блокували видимий UI.
+- **Source fix:** normalized account-scoped records, memory LRU на 60 entries, persistent budget 120 records/4 MiB, seven-day hard expiry, per-record cap, stale-while-revalidate, 45-second visible-tab refresh, stable IDs, stale-response rejection та account purge.
+- **Межа:** token, session, credential або staging value не зберігаються. Service Worker/Background Sync не заявляються; Apps Script staging boundary треба протестувати до зміни статусу.
+- **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-035 — Текст чернетки не мав негайного persistent recovery checkpoint
+
+- **Статус:** PARTIAL — чинний Gmail autosave і новий local checkpoint source-verified; offline/restart/cross-session acceptance лишається UNVERIFIED.
+- **Першопричина:** Gmail autosave вже використовував stable operation ID і stale-response guards, але незбережені зміни лишалися лише в пам’яті до завершення debounced server request.
+- **Source fix:** негайний bounded IndexedDB text checkpoint для кожного connection, чинне debounced Gmail Draft save, lifecycle flushes, виключення attachment bytes, cleanup після canonical acknowledgement та явний local-versus-Gmail conflict choice.
+- **Межа:** інший пристрій може продовжити лише Gmail-confirmed draft. Browser-local recovery ніколи не позначається server-confirmed.
+- **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-036 — Новий production client може лишитися stale у відкритому Mini App
+
+- **Статус:** PARTIAL — source mechanism реалізовано; Apps Script staging і production one-reload acceptance лишаються UNVERIFIED.
+- **Першопричина:** звичайний mail state і client-code version не мали окремого lifecycle; вже відкритий document не отримував production release signal.
+- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard та manual reopen state після однієї невдалої activation attempt.
+- **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не імітується, а routine mail synchronization ніколи не reload-ить document.
+- **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).

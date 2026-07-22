@@ -4463,7 +4463,108 @@
       }
     }
   </style>
-</head>
+    <style id="p0-client-performance-typography">
+      :root {
+        --mail-font-ui: "Google Sans", Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+        --mail-font-text: Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+
+      html,
+      body,
+      button,
+      input,
+      select,
+      textarea {
+        font-family: var(--mail-font-ui);
+        font-synthesis: none;
+      }
+
+      body {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4286;
+        letter-spacing: normal;
+        text-rendering: optimizeLegibility;
+      }
+
+      .thread-sender,
+      .thread-subject {
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: normal;
+      }
+
+      .thread-sender,
+      .thread-row.unread .thread-subject {
+        font-weight: 600;
+      }
+
+      .thread-summary,
+      .thread-account-badge,
+      .thread-time {
+        font-family: var(--mail-font-text);
+        font-size: 13px;
+        line-height: 18px;
+        letter-spacing: normal;
+      }
+
+      .reader-content,
+      .message-body,
+      .compose-editor {
+        font-family: var(--mail-font-text);
+        font-size: 14px;
+        line-height: 1.5;
+        letter-spacing: normal;
+      }
+
+      .reader-content h2 {
+        font-family: var(--mail-font-ui);
+        font-size: clamp(20px, 2.2vw, 24px);
+        font-weight: 400;
+        line-height: 1.3;
+        letter-spacing: normal;
+      }
+
+      button,
+      .outline-button,
+      .primary-button {
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: normal;
+      }
+
+      .p0-sync-status {
+        min-height: 18px;
+        color: var(--muted);
+        font-family: var(--mail-font-text);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .p0-draft-conflict-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 560px) {
+        .thread-sender,
+        .thread-subject,
+        .reader-content,
+        .message-body,
+        .compose-editor {
+          font-size: 14px;
+        }
+
+        .thread-summary,
+        .thread-account-badge,
+        .thread-time {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
 <body>
   <svg class="sr-only" aria-hidden="true" focusable="false">
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
@@ -5753,6 +5854,8 @@
 
       function applyListRoute(route) {
         if (!route || route.view !== "list") return false;
+        p0SaveReaderScroll();
+        p0SaveListScroll();
         state.currentFolderId = route.folderId || state.currentFolderId;
         state.currentLabelId = route.labelId || "";
         state.filter = safeMailboxFilter(route.filter || "all");
@@ -5763,6 +5866,7 @@
         closeDrawer();
         closeActionMenus();
         renderNavigation();
+        p0ScheduleUiStateSave();
         return true;
       }
 
@@ -5786,7 +5890,7 @@
         var route = parseLocationRoute();
         if (!route) return;
         if (applyListRoute(route)) {
-          await loadThreads(true);
+          await loadThreads(true, { navigation: true });
           return;
         }
         var routeOpened = await openThread(route.threadId, true, route.connectionId, {
@@ -6595,9 +6699,15 @@
 
       function rpc(request) {
         var payload = translateRpcRequest(request);
-        if (state.preview) return previewRpc(payload).then(normalizeResponse);
+        var dedupeKey = p0RpcDedupeKey(payload);
+        if (dedupeKey && p0Runtime.inflight.has(dedupeKey)) return p0Runtime.inflight.get(dedupeKey);
+        p0RecordRpc(payload);
+        var work;
+        if (state.preview) {
+          work = previewRpc(payload).then(normalizeResponse);
+        } else {
         var attemptedSession = state.session;
-        return executeMailboxRpc(payload, attemptedSession).catch(function (error) {
+          work = executeMailboxRpc(payload, attemptedSession).catch(function (error) {
           if (!isMailboxSessionExpired(error)) {
             handleMailboxSessionFailure(error);
             throw error;
@@ -6612,9 +6722,18 @@
             return executeMailboxRpc(payload, state.session).catch(function (retryError) {
               handleMailboxSessionFailure(retryError);
               throw retryError;
+              });
             });
           });
-        });
+        }
+        if (dedupeKey) {
+          p0Runtime.inflight.set(dedupeKey, work);
+          var clearInflight = function () {
+            if (p0Runtime.inflight.get(dedupeKey) === work) p0Runtime.inflight.delete(dedupeKey);
+          };
+          work.then(clearInflight, clearInflight);
+        }
+        return work;
       }
 
       function applyTheme() {
@@ -8045,6 +8164,7 @@
           await rpc({ op: "acceptInvite", payload: { inviteToken: value } });
           var bootstrap = await rpc({ op: "bootstrap" });
           initializeFromBootstrap(bootstrap || {});
+          await p0HydratePersistentState();
           await loadWorkspaceAccess();
           showSnackbar("Поштову зону додано.", { success: true });
         } catch (error) {
@@ -8600,6 +8720,755 @@
           : "all";
       }
 
+      var P0_CACHE_SCHEMA = 1;
+      var P0_CLIENT_RELEASE_VERSION = 60;
+      var P0_CLIENT_RELEASE_ID = "Versie-1-v60-p0";
+      var P0_RELEASE_MANIFEST_URL = "https://raw.githubusercontent.com/Tarasevych/gmail-telegram-controls/main/docs/release-state.json";
+      var P0_CACHE_MAX_RECORDS = 120;
+      var P0_CACHE_MAX_BYTES = 4 * 1024 * 1024;
+      var P0_CACHE_MAX_RECORD_BYTES = 640 * 1024;
+      var P0_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+      var p0Runtime = {
+        dbPromise: null,
+        memory: new Map(),
+        inflight: new Map(),
+        allowedAccountIds: [],
+        currentListKey: "",
+        currentThreadKey: "",
+        readerGeneration: 0,
+        readerScrolls: new Map(),
+        listScrolls: new Map(),
+        restoredUi: null,
+        pendingDrafts: [],
+        composeConflict: null,
+        uiSaveTimer: 0,
+        backgroundTimer: 0,
+        releaseTimer: 0,
+        syncStatusTimer: 0,
+        started: false,
+        metrics: {
+          rpcTotal: 0,
+          rpcByOp: {},
+          listCacheHits: 0,
+          threadCacheHits: 0,
+          listRenders: 0,
+          rowCreates: 0,
+          rowReuses: 0,
+          staleResponses: 0,
+          reloadAttempts: 0,
+          lastThreadUsableMs: 0
+        }
+      };
+
+      function p0Clone(value) {
+        if (value == null) return value;
+        try { return JSON.parse(JSON.stringify(value)); }
+        catch (error) { return null; }
+      }
+
+      function p0StableValue(value) {
+        if (Array.isArray(value)) return value.map(p0StableValue);
+        if (!value || typeof value !== "object") return value;
+        var output = {};
+        Object.keys(value).sort().forEach(function (key) {
+          if (value[key] !== undefined) output[key] = p0StableValue(value[key]);
+        });
+        return output;
+      }
+
+      function p0StableStringify(value) {
+        try { return JSON.stringify(p0StableValue(value)); }
+        catch (error) { return ""; }
+      }
+
+      function p0NamespaceAllowed(namespace, accountIds) {
+        var ids = Array.isArray(accountIds) ? accountIds.map(safeId).filter(Boolean) : [];
+        var allowed = new Set(ids);
+        var value = safeText(namespace);
+        if (value.indexOf("a:") === 0) return allowed.has(safeId(value.slice(2)));
+        if (value.indexOf("u:") === 0) {
+          var members = value.slice(2).split(",").map(safeId).filter(Boolean);
+          return members.length > 1 && members.every(function (id) { return allowed.has(id); });
+        }
+        return false;
+      }
+
+      function p0EvictionKeys(records, maxRecords, maxBytes) {
+        var rows = (records || []).slice().sort(function (left, right) {
+          return Number(left.accessedAt || left.updatedAt || 0) - Number(right.accessedAt || right.updatedAt || 0);
+        });
+        var count = rows.length;
+        var bytes = rows.reduce(function (total, row) { return total + Number(row.bytes || 0); }, 0);
+        var remove = [];
+        while (rows.length && (count > maxRecords || bytes > maxBytes)) {
+          var row = rows.shift();
+          remove.push(row.key);
+          count -= 1;
+          bytes -= Number(row.bytes || 0);
+        }
+        return remove;
+      }
+
+      function p0OpenDb() {
+        if (p0Runtime.dbPromise) return p0Runtime.dbPromise;
+        if (!window.indexedDB) return Promise.resolve(null);
+        p0Runtime.dbPromise = new Promise(function (resolve) {
+          try {
+            var request = window.indexedDB.open("gmail-telegram-controls-versie-1", P0_CACHE_SCHEMA);
+            request.onupgradeneeded = function () {
+              var db = request.result;
+              if (!db.objectStoreNames.contains("records")) db.createObjectStore("records", { keyPath: "key" });
+            };
+            request.onsuccess = function () { resolve(request.result); };
+            request.onerror = function () { resolve(null); };
+            request.onblocked = function () { resolve(null); };
+          } catch (error) {
+            resolve(null);
+          }
+        });
+        return p0Runtime.dbPromise;
+      }
+
+      function p0DbGet(key) {
+        return p0OpenDb().then(function (db) {
+          if (!db) return null;
+          return new Promise(function (resolve) {
+            try {
+              var request = db.transaction("records", "readonly").objectStore("records").get(key);
+              request.onsuccess = function () { resolve(request.result || null); };
+              request.onerror = function () { resolve(null); };
+            } catch (error) { resolve(null); }
+          });
+        });
+      }
+
+      function p0DbGetAll() {
+        return p0OpenDb().then(function (db) {
+          if (!db) return [];
+          return new Promise(function (resolve) {
+            try {
+              var request = db.transaction("records", "readonly").objectStore("records").getAll();
+              request.onsuccess = function () { resolve(Array.isArray(request.result) ? request.result : []); };
+              request.onerror = function () { resolve([]); };
+            } catch (error) { resolve([]); }
+          });
+        });
+      }
+
+      function p0DbPut(record) {
+        return p0OpenDb().then(function (db) {
+          if (!db) return false;
+          return new Promise(function (resolve) {
+            try {
+              var request = db.transaction("records", "readwrite").objectStore("records").put(record);
+              request.onsuccess = function () { resolve(true); };
+              request.onerror = function () { resolve(false); };
+            } catch (error) { resolve(false); }
+          });
+        });
+      }
+
+      function p0DbDelete(key) {
+        p0Runtime.memory.delete(key);
+        return p0OpenDb().then(function (db) {
+          if (!db) return false;
+          return new Promise(function (resolve) {
+            try {
+              var request = db.transaction("records", "readwrite").objectStore("records").delete(key);
+              request.onsuccess = function () { resolve(true); };
+              request.onerror = function () { resolve(false); };
+            } catch (error) { resolve(false); }
+          });
+        });
+      }
+
+      function p0RecordKey(kind, key) {
+        return "p0:" + P0_CACHE_SCHEMA + ":" + kind + ":" + key;
+      }
+
+      function p0MemoryPut(record) {
+        if (!record || !record.key) return;
+        record.accessedAt = Date.now();
+        p0Runtime.memory.delete(record.key);
+        p0Runtime.memory.set(record.key, record);
+        while (p0Runtime.memory.size > 60) {
+          p0Runtime.memory.delete(p0Runtime.memory.keys().next().value);
+        }
+      }
+
+      function p0PeekRecord(kind, key) {
+        var fullKey = p0RecordKey(kind, key);
+        var record = p0Runtime.memory.get(fullKey);
+        if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= Date.now() ||
+            !p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds)) return null;
+        p0MemoryPut(record);
+        return record;
+      }
+
+      async function p0ReadRecord(kind, key) {
+        var memory = p0PeekRecord(kind, key);
+        if (memory) return memory;
+        var fullKey = p0RecordKey(kind, key);
+        var record = await p0DbGet(fullKey);
+        if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= Date.now() ||
+            !p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds)) {
+          if (record) p0DbDelete(fullKey);
+          return null;
+        }
+        p0MemoryPut(record);
+        return record;
+      }
+
+      function p0WriteRecord(kind, key, namespace, value, freshMs) {
+        if (!p0NamespaceAllowed(namespace, p0Runtime.allowedAccountIds)) return Promise.resolve(false);
+        var safeValue = p0Clone(value);
+        if (safeValue == null) return Promise.resolve(false);
+        var now = Date.now();
+        var bytes = p0StableStringify(safeValue).length * 2;
+        if (bytes > P0_CACHE_MAX_RECORD_BYTES) return Promise.resolve(false);
+        var record = {
+          key: p0RecordKey(kind, key),
+          schema: P0_CACHE_SCHEMA,
+          kind: kind,
+          namespace: namespace,
+          value: safeValue,
+          bytes: bytes,
+          updatedAt: now,
+          accessedAt: now,
+          freshUntil: now + Math.max(0, Number(freshMs || 0)),
+          expiresAt: now + P0_CACHE_MAX_AGE_MS
+        };
+        if (kind !== "draft") p0MemoryPut(record);
+        return p0DbPut(record).then(function (saved) {
+          if (!saved || kind === "draft") return saved;
+          p0DbGetAll().then(function (all) {
+            var cacheRows = all.filter(function (row) { return row.kind !== "draft"; });
+            p0EvictionKeys(cacheRows, P0_CACHE_MAX_RECORDS, P0_CACHE_MAX_BYTES).forEach(p0DbDelete);
+          });
+          return true;
+        });
+      }
+
+      function p0CurrentNamespace() {
+        var activeId = safeId(state.account && state.account.id);
+        var selected = state.unifiedMode
+          ? (state.accountSettings.unifiedConnectionIds || []).map(safeId).filter(Boolean)
+          : [activeId].filter(Boolean);
+        selected = Array.from(new Set(selected)).sort();
+        return selected.length > 1 ? "u:" + selected.join(",") : (selected[0] ? "a:" + selected[0] : "");
+      }
+
+      function p0ListCacheKey(view) {
+        return p0CurrentNamespace() + ":" + p0StableStringify(view || mailboxViewContext());
+      }
+
+      function p0ThreadCacheKey(threadId, connectionId) {
+        return "a:" + safeId(connectionId) + ":" + safeId(threadId);
+      }
+
+      function p0ListSnapshot() {
+        return {
+          threads: p0Clone(state.threads) || [],
+          nextPageToken: safeText(state.nextPageToken),
+          totalEstimate: state.totalEstimate == null ? null : Number(state.totalEstimate)
+        };
+      }
+
+      function p0ListSignature(snapshot) {
+        return p0StableStringify(snapshot || p0ListSnapshot());
+      }
+
+      function p0ApplyListSnapshot(snapshot, cacheKey) {
+        var value = snapshot || {};
+        state.threads = (p0Clone(value.threads) || []).map(normalizeThread).filter(function (thread) { return thread.id; });
+        state.nextPageToken = safeText(value.nextPageToken);
+        state.totalEstimate = value.totalEstimate == null ? null : Number(value.totalEstimate);
+        p0Runtime.currentListKey = cacheKey;
+      }
+
+      function p0RememberList(cacheKey) {
+        var namespace = p0CurrentNamespace();
+        if (!cacheKey || !namespace) return;
+        p0WriteRecord("list", cacheKey, namespace, p0ListSnapshot(), 2 * 60 * 1000);
+      }
+
+      function p0RememberThread(thread) {
+        var detail = thread || state.thread;
+        var connectionId = safeId(detail && detail.accountId);
+        var threadId = safeId(detail && detail.id);
+        if (!connectionId || !threadId) return;
+        p0WriteRecord("thread", p0ThreadCacheKey(threadId, connectionId), "a:" + connectionId, detail, 10 * 60 * 1000);
+      }
+
+      function p0SetSyncStatus(text, options) {
+        var opts = options || {};
+        if (!els.listResultCount || !els.listResultCount.parentNode) return;
+        var host = document.getElementById("p0-sync-status");
+        if (!host) {
+          host = make("span", {
+            className: "p0-sync-status",
+            attrs: { id: "p0-sync-status", role: "status", "aria-live": "polite", "aria-atomic": "true" }
+          });
+          els.listResultCount.parentNode.append(host);
+        }
+        host.textContent = safeText(text);
+        clearTimeout(p0Runtime.syncStatusTimer);
+        if (host.textContent && !opts.persistent) {
+          p0Runtime.syncStatusTimer = window.setTimeout(function () { host.textContent = ""; }, 2600);
+        }
+      }
+
+      function p0SaveReaderScroll() {
+        if (!state.selectedThreadId || !state.selectedConnectionId) return;
+        var scroll = els.readerContentHost && els.readerContentHost.querySelector(".reader-scroll");
+        if (!scroll) return;
+        var key = p0ThreadCacheKey(state.selectedThreadId, state.selectedConnectionId);
+        p0Runtime.readerScrolls.set(key, Number(scroll.scrollTop || 0));
+      }
+
+      function p0RestoreReaderScroll(scroll) {
+        if (!scroll || !state.selectedThreadId || !state.selectedConnectionId) return;
+        var key = p0ThreadCacheKey(state.selectedThreadId, state.selectedConnectionId);
+        if (!p0Runtime.readerScrolls.has(key)) return;
+        var top = Number(p0Runtime.readerScrolls.get(key) || 0);
+        window.requestAnimationFrame(function () { scroll.scrollTop = top; });
+      }
+
+      function p0SaveListScroll() {
+        if (!els.listPane) return;
+        var key = p0Runtime.currentListKey || p0ListCacheKey(mailboxViewContext());
+        if (key) p0Runtime.listScrolls.set(key, Number(els.listPane.scrollTop || 0));
+      }
+
+      function p0RestoreListScroll(cacheKey) {
+        if (!els.listPane || !p0Runtime.listScrolls.has(cacheKey)) return;
+        var top = Number(p0Runtime.listScrolls.get(cacheKey) || 0);
+        window.requestAnimationFrame(function () { els.listPane.scrollTop = top; });
+      }
+
+      function p0UiStateValue() {
+        var readerScrolls = {};
+        var listScrolls = {};
+        p0Runtime.readerScrolls.forEach(function (value, key) { readerScrolls[key] = value; });
+        p0Runtime.listScrolls.forEach(function (value, key) { listScrolls[key] = value; });
+        return {
+          folderId: state.currentFolderId,
+          labelId: state.currentLabelId,
+          query: state.query,
+          filter: state.filter,
+          selectedThreadId: state.selectedThreadId,
+          selectedConnectionId: state.selectedConnectionId,
+          listKey: p0Runtime.currentListKey,
+          readerScrolls: readerScrolls,
+          listScrolls: listScrolls,
+          updatedAt: Date.now()
+        };
+      }
+
+      function p0ScheduleUiStateSave() {
+        clearTimeout(p0Runtime.uiSaveTimer);
+        p0Runtime.uiSaveTimer = window.setTimeout(function () {
+          p0SaveReaderScroll();
+          p0SaveListScroll();
+          var namespace = p0CurrentNamespace();
+          if (namespace) p0WriteRecord("view", namespace, namespace, p0UiStateValue(), 24 * 60 * 60 * 1000);
+        }, 180);
+      }
+
+      async function p0HydratePersistentState() {
+        p0Runtime.allowedAccountIds = state.accounts.map(function (account) { return safeId(account.id); }).filter(Boolean);
+        var all = await p0DbGetAll();
+        var now = Date.now();
+        var usable = [];
+        all.forEach(function (record) {
+          if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= now ||
+              !p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds)) {
+            if (record && record.key) p0DbDelete(record.key);
+            return;
+          }
+          usable.push(record);
+          if (record.kind !== "draft") p0MemoryPut(record);
+        });
+        var namespace = p0CurrentNamespace();
+        var views = usable.filter(function (record) { return record.kind === "view" && record.namespace === namespace; })
+          .sort(function (left, right) { return right.updatedAt - left.updatedAt; });
+        p0Runtime.restoredUi = views.length ? p0Clone(views[0].value) : null;
+        p0Runtime.pendingDrafts = usable.filter(function (record) { return record.kind === "draft"; })
+          .sort(function (left, right) { return right.updatedAt - left.updatedAt; });
+        if (p0Runtime.restoredUi) {
+          Object.keys(p0Runtime.restoredUi.readerScrolls || {}).forEach(function (key) {
+            p0Runtime.readerScrolls.set(key, Number(p0Runtime.restoredUi.readerScrolls[key] || 0));
+          });
+          Object.keys(p0Runtime.restoredUi.listScrolls || {}).forEach(function (key) {
+            p0Runtime.listScrolls.set(key, Number(p0Runtime.restoredUi.listScrolls[key] || 0));
+          });
+        }
+      }
+
+      function p0ApplyPersistedView() {
+        var saved = p0Runtime.restoredUi;
+        if (!saved) return;
+        var folderId = safeId(saved.folderId).toUpperCase();
+        var labelId = safeId(saved.labelId);
+        if (labelId && state.labels.some(function (label) { return label.id === labelId; })) {
+          state.currentLabelId = labelId;
+        } else if (folderId && state.folders.some(function (folder) { return folder.id === folderId; })) {
+          state.currentFolderId = folderId;
+          state.currentLabelId = "";
+        }
+        state.query = safeText(saved.query).slice(0, 512);
+        state.filter = safeMailboxFilter(saved.filter);
+        if (els.filterSelect) els.filterSelect.value = state.filter;
+        renderNavigation();
+      }
+
+      function p0DraftRecoveryKey(compose) {
+        var draft = compose || {};
+        var identity = safeId(draft.id) || [safeText(draft.mode), safeId(draft.threadId), safeId(draft.replyToMessageId)].join(":");
+        return safeId(draft.connectionId) + ":" + identity;
+      }
+
+      function p0ComposeRecoveryValue(compose) {
+        var draft = compose || {};
+        return {
+          connectionId: safeId(draft.connectionId),
+          id: safeId(draft.id),
+          mode: safeText(draft.mode),
+          threadId: safeId(draft.threadId),
+          replyToMessageId: safeId(draft.replyToMessageId),
+          from: safeText(draft.from),
+          to: safeText(draft.to),
+          cc: safeText(draft.cc),
+          bcc: safeText(draft.bcc),
+          subject: safeText(draft.subject),
+          body: draft.body == null ? "" : String(draft.body),
+          bodyHtml: draft.bodyHtml == null ? "" : String(draft.bodyHtml),
+          revision: Number(draft.revision || 0),
+          savedRevision: Number(draft.savedRevision || 0),
+          serverFingerprint: safeText(draft.baselineFingerprint),
+          attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length,
+          updatedAt: Date.now()
+        };
+      }
+
+      function p0PersistComposeRecovery() {
+        if (!state.compose || !safeId(state.compose.connectionId)) return Promise.resolve(false);
+        var value = p0ComposeRecoveryValue(state.compose);
+        var bytes = p0StableStringify(value).length * 2;
+        if (bytes > 512 * 1024) {
+          if (els.composeRestoreStatus) els.composeRestoreStatus.textContent = "Локальна копія завелика — дочекайтеся підтвердження Gmail";
+          return Promise.resolve(false);
+        }
+        var key = p0DraftRecoveryKey(state.compose);
+        var oldKey = safeText(state.compose.p0RecoveryKey);
+        state.compose.p0RecoveryKey = key;
+        if (oldKey && oldKey !== key) p0DbDelete(p0RecordKey("draft", oldKey));
+        return p0WriteRecord("draft", key, "a:" + value.connectionId, value, 24 * 60 * 60 * 1000).then(function (saved) {
+          if (saved) {
+            p0DbGetAll().then(function (all) {
+              all.filter(function (record) { return record.kind === "draft"; })
+                .sort(function (left, right) { return right.updatedAt - left.updatedAt; })
+                .slice(8).forEach(function (record) { p0DbDelete(record.key); });
+            });
+          }
+          return saved;
+        });
+      }
+
+      function p0ClearComposeRecoveryKey(key) {
+        var value = safeText(key);
+        if (!value) return Promise.resolve(false);
+        return p0DbDelete(p0RecordKey("draft", value));
+      }
+
+      function p0DraftMatches(base, value) {
+        if (!base || !value || safeId(base.connectionId) !== safeId(value.connectionId)) return false;
+        if (base.id && value.id) return safeId(base.id) === safeId(value.id);
+        return safeText(base.mode) === safeText(value.mode) &&
+          safeId(base.threadId) === safeId(value.threadId) &&
+          safeId(base.replyToMessageId) === safeId(value.replyToMessageId);
+      }
+
+      function p0RenderDraftConflictControls() {
+        if (!els.composeRestoreStatus || !p0Runtime.composeConflict || !state.compose) return;
+        clear(els.composeRestoreStatus);
+        els.composeRestoreStatus.append(make("span", {
+          text: "Локальна і Gmail-версія відрізняються. Оберіть, яку продовжити."
+        }));
+        var actions = make("span", { className: "p0-draft-conflict-actions" });
+        var keepLocal = make("button", { className: "outline-button", type: "button", text: "Залишити локальну" });
+        var useGmail = make("button", { className: "outline-button", type: "button", text: "Використати Gmail" });
+        keepLocal.addEventListener("click", function () {
+          p0Runtime.composeConflict = null;
+          state.compose.dirty = true;
+          p0PersistComposeRecovery();
+          scheduleComposeAutosave(0);
+          renderCompose({ preserveSelection: true });
+        });
+        useGmail.addEventListener("click", function () {
+          var conflict = p0Runtime.composeConflict;
+          p0Runtime.composeConflict = null;
+          p0ClearComposeRecoveryKey(state.compose.p0RecoveryKey);
+          state.compose = conflict.server;
+          renderCompose({ preserveSelection: true });
+        });
+        actions.append(keepLocal, useGmail);
+        els.composeRestoreStatus.append(actions);
+      }
+
+      function p0ApplyRecoveredDraft(base) {
+        var matchIndex = -1;
+        for (var index = 0; index < p0Runtime.pendingDrafts.length; index += 1) {
+          if (p0DraftMatches(base, p0Runtime.pendingDrafts[index].value)) { matchIndex = index; break; }
+        }
+        if (matchIndex < 0) return base;
+        var record = p0Runtime.pendingDrafts.splice(matchIndex, 1)[0];
+        var value = record.value;
+        var server = p0Clone(base);
+        var recovered = Object.assign({}, base, {
+          from: value.from,
+          to: value.to,
+          cc: value.cc,
+          bcc: value.bcc,
+          subject: value.subject,
+          body: value.body,
+          bodyHtml: value.bodyHtml,
+          revision: Math.max(Number(base.revision || 0), Number(value.revision || 0)),
+          savedRevision: Number(value.savedRevision || 0),
+          dirty: true,
+          baselineFingerprint: safeText(value.serverFingerprint, base.baselineFingerprint),
+          p0RecoveryKey: p0DraftRecoveryKey(value),
+          p0LocalRecovery: true
+        });
+        var serverFingerprint = composeFingerprint(server);
+        if (base.id && value.serverFingerprint && serverFingerprint !== value.serverFingerprint) {
+          p0Runtime.composeConflict = { server: server, local: recovered };
+        }
+        window.setTimeout(function () {
+          if (p0Runtime.composeConflict) p0RenderDraftConflictControls();
+          else if (els.composeRestoreStatus) {
+            els.composeRestoreStatus.textContent = value.attachmentCount
+              ? "Локальний текст відновлено; вкладення потрібно перевірити перед надсиланням"
+              : "Локальний текст відновлено; Gmail ще не підтвердив цю версію";
+          }
+        }, 0);
+        return recovered;
+      }
+
+      function p0SnapshotMailboxState() {
+        return { threads: p0Clone(state.threads) || [], thread: p0Clone(state.thread) };
+      }
+
+      function p0RestoreMailboxState(snapshot) {
+        if (!snapshot) return;
+        state.threads = snapshot.threads || [];
+        state.thread = snapshot.thread || null;
+        renderThreadList();
+        if (state.thread) renderThread();
+      }
+
+      function p0ApplyOptimisticLabels(addLabelIds, removeLabelIds, threadId, connectionId) {
+        var add = new Set((addLabelIds || []).map(safeId));
+        var remove = new Set((removeLabelIds || []).map(safeId));
+        [state.thread].concat(state.threads).forEach(function (thread) {
+          if (!thread || thread.id !== threadId || thread.accountId !== connectionId) return;
+          var labels = new Set((thread.labelIds || []).map(safeId));
+          add.forEach(function (id) { labels.add(id); });
+          remove.forEach(function (id) { labels.delete(id); });
+          thread.labelIds = Array.from(labels);
+        });
+      }
+
+      function p0RpcDedupeKey(payload) {
+        var op = safeText(payload && payload.op);
+        if (["bootstrap", "listThreads", "getThread", "attentionState", "clientRelease"].indexOf(op) === -1) return "";
+        return op + ":" + p0StableStringify(payload);
+      }
+
+      function p0RecordRpc(payload) {
+        var op = safeText(payload && payload.op, "unknown");
+        p0Runtime.metrics.rpcTotal += 1;
+        p0Runtime.metrics.rpcByOp[op] = Number(p0Runtime.metrics.rpcByOp[op] || 0) + 1;
+        p0PublishDiagnostics();
+      }
+
+      function p0ThreadRenderSignature(thread) {
+        return p0StableStringify(thread || {});
+      }
+
+      function p0ReleaseAction(loadedVersion, targetVersion, attemptedVersion) {
+        var loaded = Number(loadedVersion || 0);
+        var target = Number(targetVersion || 0);
+        var attempted = Number(attemptedVersion || 0);
+        if (!loaded || !target || target <= loaded) return "none";
+        return attempted === target ? "manual" : "reload";
+      }
+
+      function p0ExtractReleaseVersion(manifest) {
+        var production = manifest && manifest.production || {};
+        var candidates = [
+          production.immutableVersion, production.appsScriptVersion, production.version,
+          manifest && manifest.stableVersion, manifest && manifest.productionVersion
+        ];
+        for (var index = 0; index < candidates.length; index += 1) {
+          var match = String(candidates[index] == null ? "" : candidates[index]).match(/\d+/);
+          if (match) return Number(match[0]);
+        }
+        return 0;
+      }
+
+      async function p0CheckClientRelease() {
+        if (state.preview || !P0_CLIENT_RELEASE_VERSION || !window.fetch) return;
+        try {
+          var response = await window.fetch(P0_RELEASE_MANIFEST_URL, {
+            method: "GET", cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer"
+          });
+          if (!response.ok) return;
+          var target = p0ExtractReleaseVersion(await response.json());
+          var attempted = 0;
+          try { attempted = Number(window.sessionStorage.getItem("p0-release-reload") || 0); }
+          catch (storageError) { attempted = 0; }
+          var action = p0ReleaseAction(P0_CLIENT_RELEASE_VERSION, target, attempted);
+          if (action === "manual") {
+            p0SetSyncStatus("Доступне оновлення клієнта — відкрийте Mini App повторно", { persistent: true });
+            return;
+          }
+          if (action !== "reload") return;
+          if (state.compose && state.compose.dirty) {
+            var saved = await flushComposeAutosave("release-update");
+            if (!saved || (state.compose && state.compose.dirty)) {
+              p0SetSyncStatus("Оновлення очікує підтвердженого збереження чернетки", { persistent: true });
+              return;
+            }
+          }
+          try { window.sessionStorage.setItem("p0-release-reload", String(target)); }
+          catch (storageError) { /* A missing guard fails closed to a visible manual update. */ }
+          p0Runtime.metrics.reloadAttempts += 1;
+          window.location.reload();
+        } catch (error) {
+          /* Release discovery is advisory and must never block mail. */
+        }
+      }
+
+      function p0RevalidateVisible() {
+        if (!state.routeReady || state.needsGoogleConnection || document.visibilityState === "hidden") return;
+        loadThreads(true, { background: true });
+        if (state.selectedThreadId && state.selectedConnectionId) {
+          openThread(state.selectedThreadId, true, state.selectedConnectionId, { background: true });
+        }
+      }
+
+      function p0DiagnosticSnapshot() {
+        return {
+          releaseId: P0_CLIENT_RELEASE_ID,
+          cacheSchema: P0_CACHE_SCHEMA,
+          metrics: p0Runtime.metrics,
+          memoryEntries: p0Runtime.memory.size,
+          inflightReads: p0Runtime.inflight.size,
+          currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey))
+        };
+      }
+
+      function p0PublishDiagnostics() {
+        if (!state.preview || !document.documentElement) return;
+        document.documentElement.setAttribute("data-p0-diagnostics", p0StableStringify(p0DiagnosticSnapshot()));
+      }
+
+      function p0ExposeDiagnostics() {
+        if (!state.preview) return;
+        window.__mailClientDiagnostics = function () {
+          return p0Clone({
+            releaseId: P0_CLIENT_RELEASE_ID,
+            cacheSchema: P0_CACHE_SCHEMA,
+            metrics: p0Runtime.metrics,
+            memoryEntries: p0Runtime.memory.size,
+            inflightReads: p0Runtime.inflight.size,
+            currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey))
+          });
+        };
+        p0PublishDiagnostics();
+      }
+
+      function p0StartBackgroundWork() {
+        if (p0Runtime.started) return;
+        p0Runtime.started = true;
+        p0ExposeDiagnostics();
+        if (els.listPane) els.listPane.addEventListener("scroll", p0ScheduleUiStateSave, { passive: true });
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") p0RevalidateVisible();
+        });
+        window.addEventListener("online", p0RevalidateVisible);
+        p0Runtime.backgroundTimer = window.setInterval(p0RevalidateVisible, 45000);
+        p0Runtime.releaseTimer = window.setInterval(p0CheckClientRelease, 5 * 60 * 1000);
+        window.setTimeout(p0CheckClientRelease, 15000);
+      }
+
+      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {
+        var options = openOptions || {};
+        state.threadLoading = true;
+        try {
+          var responses = await Promise.all([
+            rpc({ op: "getThread", threadId: id, connectionId: connectionId }),
+            rpc({ op: "attentionState", threadId: id, connectionId: connectionId }).catch(function () { return null; })
+          ]);
+          if (generation !== p0Runtime.readerGeneration ||
+              state.selectedThreadId !== id || state.selectedConnectionId !== connectionId) {
+            p0Runtime.metrics.staleResponses += 1;
+            return false;
+          }
+          var detail = normalizeThreadDetail(responses[0]);
+          if (responses[1]) {
+            var attentionState = normalizeAttentionState(responses[1], id);
+            detail.attention = attentionState.thread;
+            state.resumeRail = attentionState.resume;
+            state.attentionPreferences = attentionState.preferences;
+            state.backlogRescue = Object.assign({}, state.backlogRescue, attentionState.rescue, {
+              threads: state.backlogRescue.threads
+            });
+            state.coProcessing = attentionState.presence;
+            syncCoProcessingTicker();
+          }
+          var changed = p0ThreadRenderSignature(state.thread) !== p0ThreadRenderSignature(detail);
+          state.thread = detail;
+          p0RememberThread(detail);
+          if (changed || !hadCache) renderThread();
+          else renderThreadList();
+          if (!hadCache) {
+            p0Runtime.metrics.lastThreadUsableMs = Math.max(
+              0,
+              Date.now() - Number(options.navigationStartedAt || Date.now())
+            );
+          }
+          p0PublishDiagnostics();
+          p0SetSyncStatus("");
+          p0ScheduleUiStateSave();
+          state.threadLoading = false;
+          if (detail.unread) {
+            window.setTimeout(function () {
+              changeThreadAction("markRead", id, {
+                preserveOpen: true, silentSuccess: true, connectionId: connectionId
+              });
+            }, 0);
+          }
+          if (!state.currentLabelId && state.currentFolderId === "DRAFT" && detail.drafts.length) {
+            openExistingDraft(detail.drafts[detail.drafts.length - 1]);
+          }
+          return true;
+        } catch (error) {
+          if (generation !== p0Runtime.readerGeneration) return false;
+          if (hadCache) {
+            p0SetSyncStatus("Показано кеш; фонове оновлення недоступне", { persistent: false });
+          } else if (options.recoverToListOnFailure) {
+            recoverFailedAutomaticThreadRoute();
+          } else {
+            renderReaderError(safeText(error.message, "Спробуйте ще раз."));
+          }
+          return false;
+        } finally {
+          if (generation === p0Runtime.readerGeneration) state.threadLoading = false;
+        }
+      }
+
       function mailboxViewContext() {
         return {
           folderId: state.currentLabelId ? "" : state.currentFolderId,
@@ -9090,7 +9959,73 @@
         renderCoProcessingCard();
       }
 
+      function p0BuildThreadRow(thread) {
+        var hasFocus = thread.focus && thread.focus.priority !== "none" && thread.focus.color;
+        var key = safeId(thread.accountId) + ":" + thread.id;
+        var row = make("article", {
+          className: "thread-row" + (thread.unread ? " unread" : "") + (hasFocus ? " focus-priority" : ""),
+          attrs: {
+            role: "listitem", tabindex: "0", "data-p0-thread-key": key,
+            "data-p0-signature": p0ThreadRenderSignature(thread),
+            "aria-current": thread.id === state.selectedThreadId && thread.accountId === state.selectedConnectionId ? "true" : null,
+            "aria-label": thread.senderName + ": " + thread.subject
+          }
+        });
+        if (hasFocus) row.style.setProperty("--focus-color", thread.focus.color);
+        if (thread.unread) row.append(make("span", { className: "unread-dot", attrs: { "aria-hidden": "true" } }));
+        row.append(makeAvatar(thread));
+        var copy = make("div", { className: "thread-copy" });
+        var top = make("div", { className: "thread-line" });
+        top.append(make("span", { className: "thread-sender", text: thread.senderName }));
+        if (state.accounts.length > 1 && thread.accountEmail) {
+          top.append(make("span", { className: "thread-account-badge", text: thread.accountEmail,
+            attrs: { title: "Gmail-акаунт: " + thread.accountEmail } }));
+        }
+        if (hasFocus) {
+          var focusBadge = make("span", { className: "focus-badge", text: thread.focus.label,
+            attrs: { title: thread.focus.reason || "Персональний пріоритет" } });
+          focusBadge.style.setProperty("--focus-color", thread.focus.color);
+          top.append(focusBadge);
+        }
+        if (thread.attention && thread.attention.triage !== "none") {
+          top.append(make("span", { className: "attention-badge attention-" + thread.attention.triage,
+            text: thread.attention.triageLabel }));
+        }
+        top.append(make("time", { className: "thread-time", text: thread.timestampLabel,
+          attrs: thread.timestamp ? { datetime: new Date(thread.timestamp).toISOString() } : {} }));
+        copy.append(top);
+        copy.append(make("div", { className: "thread-subject", text: thread.subject }));
+        copy.append(make("div", { className: "thread-summary", text: thread.summary }));
+        var indicators = make("div", { className: "thread-indicators" });
+        if (thread.hasAttachments) indicators.append(svgIcon("paperclip", 15));
+        if (thread.important) {
+          var important = svgIcon("important", 15);
+          important.style.color = "var(--warning)";
+          indicators.append(important);
+        }
+        var star = make("button", { className: "row-star", type: "button",
+          title: thread.starred ? "Прибрати зірочку" : "Додати зірочку",
+          attrs: { "aria-label": thread.starred ? "Прибрати зірочку" : "Додати зірочку",
+            "aria-pressed": thread.starred ? "true" : "false",
+            "data-mail-action": thread.starred ? "unstar" : "star" } }, svgIcon("star", 15));
+        star.disabled = state.actionBusy;
+        star.addEventListener("click", function (event) {
+          event.stopPropagation();
+          changeThreadAction(thread.starred ? "unstar" : "star", thread.id, {
+            rowOnly: true, connectionId: thread.accountId
+          });
+        });
+        indicators.append(star);
+        copy.append(indicators);
+        row.append(copy);
+        row.addEventListener("click", function () { openThread(thread.id, false, thread.accountId); });
+        row.addEventListener("keydown", function (event) { handleThreadRowKeydown(event, row); });
+        p0Runtime.metrics.rowCreates += 1;
+        return row;
+      }
+
       function renderThreadList() {
+        p0Runtime.metrics.listRenders += 1;
         var visibleListTitle = updateListHeader();
         var focusMode = !state.currentLabelId && state.currentFolderId === "FOCUS";
         renderFocusSessionBar(focusMode);
@@ -9112,8 +10047,8 @@
         els.listResultCount.textContent = focusMode
           ? formatCount(visibleThreads.length) + " у фокусі"
           : (state.totalEstimate == null ? "" : formatCount(state.totalEstimate) + " листів");
-        clear(els.threadList);
         if (!visibleThreads.length) {
+          clear(els.threadList);
           renderListState("empty", focusMode
             ? (state.backlogRescue.active
               ? "У цьому короткому блоці більше немає доступних листів. Можна завершити сесію."
@@ -9122,84 +10057,21 @@
           return;
         }
 
+        var existing = new Map();
+        Array.from(els.threadList.querySelectorAll(".thread-row[data-p0-thread-key]")).forEach(function (row) {
+          existing.set(row.getAttribute("data-p0-thread-key"), row);
+        });
+        var fragment = document.createDocumentFragment();
         visibleThreads.forEach(function (thread) {
-          var hasFocus = thread.focus && thread.focus.priority !== "none" && thread.focus.color;
-          var row = make("article", {
-            className: "thread-row" + (thread.unread ? " unread" : "") + (hasFocus ? " focus-priority" : ""),
-            attrs: {
-              role: "listitem",
-              tabindex: "0",
-              "aria-current": thread.id === state.selectedThreadId &&
-                thread.accountId === state.selectedConnectionId ? "true" : null,
-              "aria-label": thread.senderName + ": " + thread.subject
-            }
-          });
-          if (hasFocus) row.style.setProperty("--focus-color", thread.focus.color);
-          if (thread.unread) row.append(make("span", { className: "unread-dot", attrs: { "aria-hidden": "true" } }));
-          row.append(makeAvatar(thread));
-          var copy = make("div", { className: "thread-copy" });
-          var top = make("div", { className: "thread-line" });
-          top.append(make("span", { className: "thread-sender", text: thread.senderName }));
-          if (state.accounts.length > 1 && thread.accountEmail) {
-            top.append(make("span", {
-              className: "thread-account-badge",
-              text: thread.accountEmail,
-              attrs: { title: "Gmail-акаунт: " + thread.accountEmail }
-            }));
-          }
-          if (hasFocus) {
-            var focusBadge = make("span", {
-              className: "focus-badge", text: thread.focus.label,
-              attrs: { title: thread.focus.reason || "Персональний пріоритет" }
-            });
-            focusBadge.style.setProperty("--focus-color", thread.focus.color);
-            top.append(focusBadge);
-          }
-          if (thread.attention && thread.attention.triage !== "none") {
-            top.append(make("span", {
-              className: "attention-badge attention-" + thread.attention.triage,
-              text: thread.attention.triageLabel
-            }));
-          }
-          top.append(make("time", {
-            className: "thread-time",
-            text: thread.timestampLabel,
-            attrs: thread.timestamp ? { datetime: new Date(thread.timestamp).toISOString() } : {}
-          }));
-          copy.append(top);
-          copy.append(make("div", { className: "thread-subject", text: thread.subject }));
-          copy.append(make("div", { className: "thread-summary", text: thread.summary }));
-          var indicators = make("div", { className: "thread-indicators" });
-          if (thread.hasAttachments) indicators.append(svgIcon("paperclip", 15));
-          if (thread.important) {
-            var important = svgIcon("important", 15);
-            important.style.color = "var(--warning)";
-            indicators.append(important);
-          }
-          var star = make("button", {
-            className: "row-star",
-            type: "button",
-            title: thread.starred ? "Прибрати зірочку" : "Додати зірочку",
-            attrs: {
-              "aria-label": thread.starred ? "Прибрати зірочку" : "Додати зірочку",
-              "aria-pressed": thread.starred ? "true" : "false",
-              "data-mail-action": thread.starred ? "unstar" : "star"
-            }
-          }, svgIcon("star", 15));
-          star.disabled = state.actionBusy;
-          star.addEventListener("click", function (event) {
-            event.stopPropagation();
-            changeThreadAction(thread.starred ? "unstar" : "star", thread.id, {
-              rowOnly: true,
-              connectionId: thread.accountId
-            });
-          });
-          indicators.append(star);
-          copy.append(indicators);
-          row.append(copy);
-          row.addEventListener("click", function () { openThread(thread.id, false, thread.accountId); });
-          row.addEventListener("keydown", function (event) { handleThreadRowKeydown(event, row); });
-          els.threadList.append(row);
+          var key = safeId(thread.accountId) + ":" + thread.id;
+          var signature = p0ThreadRenderSignature(thread);
+          var row = existing.get(key);
+          if (!row || row.getAttribute("data-p0-signature") !== signature) row = p0BuildThreadRow(thread);
+          else p0Runtime.metrics.rowReuses += 1;
+          row.setAttribute("aria-current", thread.id === state.selectedThreadId && thread.accountId === state.selectedConnectionId ? "true" : "false");
+          var actionButton = row.querySelector("[data-mail-action]");
+          if (actionButton) actionButton.disabled = state.actionBusy;
+          fragment.append(row);
         });
 
         if (state.nextPageToken && !focusMode) {
@@ -9207,17 +10079,23 @@
           var more = make("button", { className: "outline-button", type: "button", text: "Завантажити ще" });
           more.addEventListener("click", function () { loadThreads(false); });
           moreWrap.append(more);
-          els.threadList.append(moreWrap);
+          fragment.append(moreWrap);
         }
+        els.threadList.replaceChildren(fragment);
+        p0RestoreListScroll(p0Runtime.currentListKey);
       }
 
-      async function loadThreads(reset) {
+      async function loadThreads(reset, options) {
+        var opts = options || {};
         var shouldReset = Boolean(reset);
         var view = mailboxViewContext();
+        var cacheKey = p0ListCacheKey(view);
         var intent = {
           version: ++state.requestVersion,
           reset: shouldReset,
-          request: listRequest(shouldReset ? "" : state.nextPageToken, view)
+          request: listRequest(shouldReset ? "" : state.nextPageToken, view),
+          cacheKey: cacheKey,
+          background: Boolean(opts.background)
         };
 
         // Only the newest navigation/search/filter intent is useful. Keeping it
@@ -9225,10 +10103,21 @@
         // results into a newer view.
         state.pendingListIntent = intent;
         if (shouldReset) {
-          state.threads = [];
-          state.nextPageToken = "";
-          state.totalEstimate = null;
-          renderListLoading();
+          p0SaveListScroll();
+          var cached = p0PeekRecord("list", cacheKey) || await p0ReadRecord("list", cacheKey);
+          if (intent.version !== state.requestVersion) return;
+          if (cached) {
+            p0Runtime.metrics.listCacheHits += 1;
+            p0ApplyListSnapshot(cached.value, cacheKey);
+            renderThreadList();
+            p0SetSyncStatus("Оновлюю у фоні…", { persistent: true });
+          } else {
+            state.threads = [];
+            state.nextPageToken = "";
+            state.totalEstimate = null;
+            p0Runtime.currentListKey = cacheKey;
+            renderListLoading();
+          }
         }
         if (state.listLoading) return;
 
@@ -9242,23 +10131,36 @@
             state.pendingListIntent = null;
             try {
               var data = await rpc(activeIntent.request);
-              if (activeIntent.version !== state.requestVersion) continue;
+              if (activeIntent.version !== state.requestVersion) {
+                p0Runtime.metrics.staleResponses += 1;
+                continue;
+              }
               var items = data && (data.threads || data.items || data.messages) || [];
               var normalized = items.map(normalizeThread).filter(function (thread) { return thread.id; });
               var threadKey = function (thread) { return safeId(thread.accountId) + ":" + thread.id; };
               var known = new Set(activeIntent.reset ? [] : state.threads.map(threadKey));
-              state.threads = sortThreadsNewest((activeIntent.reset ? [] : state.threads).concat(normalized.filter(function (thread) {
+              var nextThreads = sortThreadsNewest((activeIntent.reset ? [] : state.threads).concat(normalized.filter(function (thread) {
                 var key = threadKey(thread);
                 if (known.has(key)) return false;
                 known.add(key);
                 return true;
               })));
-              state.nextPageToken = safeText(data && (data.nextPageToken || data.nextToken));
-              state.totalEstimate = data && (data.totalEstimate != null ? data.totalEstimate : data.resultSizeEstimate);
-              renderThreadList();
+              var nextSnapshot = {
+                threads: nextThreads,
+                nextPageToken: safeText(data && (data.nextPageToken || data.nextToken)),
+                totalEstimate: data && (data.totalEstimate != null ? data.totalEstimate : data.resultSizeEstimate)
+              };
+              var changed = p0ListSignature(nextSnapshot) !== p0ListSignature();
+              p0ApplyListSnapshot(nextSnapshot, activeIntent.cacheKey);
+              p0RememberList(activeIntent.cacheKey);
+              if (changed) renderThreadList();
+              else updateListHeader();
+              p0SetSyncStatus("");
+              p0ScheduleUiStateSave();
             } catch (error) {
               if (activeIntent.version === state.requestVersion) {
-                renderListState("error", safeText(error.message, "Спробуйте ще раз."));
+                if (state.threads.length) p0SetSyncStatus("Показано кеш; оновлення недоступне");
+                else renderListState("error", safeText(error.message, "Спробуйте ще раз."));
               }
             }
           }
@@ -9643,73 +10545,68 @@
       }
 
       async function openThread(threadId, force, connectionId) {
+        var navigationStartedAt = Date.now();
         var openOptions = arguments.length > 3 && arguments[3] && typeof arguments[3] === "object"
           ? arguments[3]
           : {};
+        openOptions = Object.assign({}, openOptions, { navigationStartedAt: navigationStartedAt });
         var id = safeId(threadId);
         var requestedConnectionId = safeId(
           connectionId || state.selectedConnectionId || (state.account && state.account.id)
         );
         var sameSelection = state.selectedThreadId === id && state.selectedConnectionId === requestedConnectionId;
-        if (!id || state.threadLoading || state.handoffBusy || (!force && sameSelection && state.thread)) return false;
+        if (!id || state.handoffBusy) return false;
+        if (!force && sameSelection && state.thread) {
+          app.classList.add("reader-open");
+          renderThreadList();
+          var existingScroll = els.readerContentHost.querySelector(".reader-scroll");
+          p0RestoreReaderScroll(existingScroll);
+          p0Runtime.metrics.lastThreadUsableMs = Math.max(0, Date.now() - navigationStartedAt);
+          p0PublishDiagnostics();
+          return true;
+        }
         if (!els.handoffLayer.hidden) closeThreadHandoff(false);
+        p0SaveReaderScroll();
         if (state.selectedThreadId && !sameSelection) releaseAttachmentResources();
         state.selectedThreadId = id;
         state.selectedConnectionId = requestedConnectionId;
-        state.thread = null;
-        state.threadLoading = true;
-        renderThreadList();
-        renderReaderLoading();
+        var cacheKey = p0ThreadCacheKey(id, requestedConnectionId);
+        p0Runtime.currentThreadKey = cacheKey;
+        var generation = ++p0Runtime.readerGeneration;
         app.classList.add("reader-open");
         closeDrawer();
         closeActionMenus();
-        try {
-          var responses = await Promise.all([
-            rpc({ op: "getThread", threadId: id, connectionId: requestedConnectionId }),
-            rpc({ op: "attentionState", threadId: id, connectionId: requestedConnectionId }).catch(function () { return null; })
-          ]);
-          var data = responses[0];
-          if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return false;
-          state.thread = normalizeThreadDetail(data);
-          if (responses[1]) {
-            var attentionState = normalizeAttentionState(responses[1], id);
-            state.thread.attention = attentionState.thread;
-            state.resumeRail = attentionState.resume;
-            state.attentionPreferences = attentionState.preferences;
-            state.backlogRescue = Object.assign({}, state.backlogRescue, attentionState.rescue, {
-              threads: state.backlogRescue.threads
-            });
-            state.coProcessing = attentionState.presence;
-            syncCoProcessingTicker();
-          }
+        var cached = p0PeekRecord("thread", cacheKey) || await p0ReadRecord("thread", cacheKey);
+        var cacheFresh = Boolean(cached && Number(cached.freshUntil || 0) > Date.now());
+        if (generation !== p0Runtime.readerGeneration) return false;
+        if (cached) {
+          p0Runtime.metrics.threadCacheHits += 1;
+          state.thread = normalizeThreadDetail(cached.value);
           renderThread();
-          if (state.thread.unread) {
-            await changeThreadAction("markRead", id, {
-              preserveOpen: true,
-              silentSuccess: true,
-              connectionId: requestedConnectionId
-            });
-            if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return false;
-          }
-          if (!state.currentLabelId && state.currentFolderId === "DRAFT" && state.thread.drafts.length) {
-            openExistingDraft(state.thread.drafts[state.thread.drafts.length - 1]);
-          }
-          return true;
-        } catch (error) {
-          if (state.selectedThreadId === id && state.selectedConnectionId === requestedConnectionId) {
-            if (openOptions.recoverToListOnFailure) {
-              recoverFailedAutomaticThreadRoute();
-            } else {
-              renderReaderError(safeText(error.message, "Спробуйте ще раз."));
-            }
-          }
-          return false;
-        } finally {
-          state.threadLoading = false;
+          renderThreadList();
+          p0Runtime.metrics.lastThreadUsableMs = Math.max(0, Date.now() - navigationStartedAt);
+          p0PublishDiagnostics();
+          p0SetSyncStatus("Оновлюю лист у фоні…", { persistent: true });
+        } else {
+          state.thread = null;
+          renderThreadList();
+          renderReaderLoading();
         }
+        p0ScheduleUiStateSave();
+        if (cached && cacheFresh && !force && !openOptions.background) {
+          p0SetSyncStatus("");
+          return true;
+        }
+        var refresh = p0RefreshThread(id, requestedConnectionId, generation, Boolean(cached), openOptions);
+        if (cached) {
+          refresh.catch(function () { /* The cached reader stays usable. */ });
+          return true;
+        }
+        return refresh;
       }
 
       function closeReader() {
+        p0SaveReaderScroll();
         app.classList.remove("reader-open");
         closeActionMenus();
         closeSnoozePanel(false);
@@ -9720,6 +10617,7 @@
           state.thread = null;
           renderThreadList();
         }
+        p0ScheduleUiStateSave();
       }
 
       function currentReaderProgress(scroll) {
@@ -11092,7 +11990,10 @@
           }
         }
         scroll.append(content);
-        scroll.addEventListener("scroll", function () { scheduleReadingProgress(scroll); }, { passive: true });
+        scroll.addEventListener("scroll", function () {
+          scheduleReadingProgress(scroll);
+          p0ScheduleUiStateSave();
+        }, { passive: true });
         els.readerContentHost.append(scroll);
         els.readerContentHost.append(buildMobileActionBar());
         if (state.resumeRail && state.resumeRail.threadId === state.thread.id && state.resumeRail.readingProgress > 0) {
@@ -11101,6 +12002,7 @@
             scroll.scrollTop = Math.round((available * state.resumeRail.readingProgress) / 100);
           }, 0);
         }
+        p0RestoreReaderScroll(scroll);
         renderThreadList();
       }
 
@@ -11672,6 +12574,15 @@
           showSnackbar("Цей лист не містить перевіреного способу відписки.", { error: true });
           return false;
         }
+        var optimisticSnapshot = p0SnapshotMailboxState();
+        var optimisticRemove = actionRemovesFromCurrentView(action) && !actionOptions.preserveOpen;
+        applyActionState(action, threadId, {}, connectionId);
+        if (optimisticRemove) removeThreadFromCurrentView(threadId, connectionId);
+        else {
+          renderThreadList();
+          if (state.thread && state.thread.id === threadId && state.thread.accountId === connectionId) renderThread();
+        }
+        p0SetSyncStatus("Застосовую зміну…", { persistent: true });
         setMailboxActionBusy(true);
         closeActionMenus();
         try {
@@ -11686,7 +12597,8 @@
           var removeFromView = data && typeof data.removeFromView === "boolean"
             ? data.removeFromView
             : actionRemovesFromCurrentView(action);
-          if (removeFromView && !actionOptions.preserveOpen) removeThreadFromCurrentView(threadId, connectionId);
+          if (optimisticRemove && !removeFromView) p0RestoreMailboxState(optimisticSnapshot);
+          if (removeFromView && !actionOptions.preserveOpen && !optimisticRemove) removeThreadFromCurrentView(threadId, connectionId);
           else {
             renderThreadList();
             if (state.thread && state.thread.id === threadId && state.thread.accountId === connectionId) renderThread();
@@ -11701,8 +12613,13 @@
           if (action === "unsubscribe" && data && data.openUrl) openSafeUrl(data.openUrl, true);
           if (!actionOptions.silentSuccess) await completeBacklogRescueThread(threadId, connectionId);
           if (!actionOptions.silentSuccess) haptic("success");
+          p0RememberList(p0Runtime.currentListKey);
+          if (state.thread) p0RememberThread(state.thread);
+          p0SetSyncStatus("");
           return data || true;
         } catch (error) {
+          p0RestoreMailboxState(optimisticSnapshot);
+          p0SetSyncStatus("Зміну скасовано: сервер її не підтвердив");
           showSnackbar(safeText(error.message, "Дію не виконано."), { error: true });
           haptic("error");
           return false;
@@ -11988,6 +12905,11 @@
           closeActionMenus();
           return;
         }
+        var optimisticSnapshot = p0SnapshotMailboxState();
+        p0ApplyOptimisticLabels(addLabelIds, removeLabelIds, threadId, connectionId);
+        renderThreadList();
+        renderThread();
+        p0SetSyncStatus("Оновлюю мітки…", { persistent: true });
         setMailboxActionBusy(true);
         closeActionMenus();
         try {
@@ -12009,7 +12931,12 @@
             undoRequest: data && data.undo ? Object.assign({}, data.undo, { connectionId: connectionId }) : null
           });
           haptic("success");
+          p0RememberList(p0Runtime.currentListKey);
+          if (state.thread) p0RememberThread(state.thread);
+          p0SetSyncStatus("");
         } catch (error) {
+          p0RestoreMailboxState(optimisticSnapshot);
+          p0SetSyncStatus("Мітки повернено: сервер не підтвердив зміну");
           showSnackbar(safeText(error.message, "Не вдалося оновити мітки."), { error: true });
           haptic("error");
         } finally {
@@ -12158,7 +13085,7 @@
         var sendAs = mode === "compose"
           ? state.sendAs.slice()
           : ((state.thread && state.thread.sendAs) || []).slice();
-        return setComposeBaseline({
+        var draft = setComposeBaseline({
           mode: mode || "compose",
           connectionId: safeId(
             mode === "compose"
@@ -12192,6 +13119,7 @@
           dirty: false,
           baselineFingerprint: ""
         });
+        return p0ApplyRecoveredDraft(draft);
       }
 
       function normalizeDraft(value, mode) {
@@ -12202,7 +13130,7 @@
         var draftAccountEmail = safeText(
           draft.accountEmail || (state.thread && state.thread.accountEmail) || (state.account && state.account.email)
         );
-        return setComposeBaseline({
+        var normalized = setComposeBaseline({
           mode: safeText(draft.mode, mode || "compose"),
           connectionId: safeId(
             draft.connectionId ||
@@ -12238,6 +13166,7 @@
           dirty: false,
           baselineFingerprint: ""
         });
+        return p0ApplyRecoveredDraft(normalized);
       }
 
       function composeFingerprint(draftValue) {
@@ -12552,7 +13481,9 @@
           label = pending === "draft" ? "Перевірити збереження" : "Зберігаю в Gmail…";
         } else if (state.compose && state.compose.dirty) {
           stateName = "local";
-          label = "Є локальні зміни";
+          label = navigator.onLine === false
+            ? "Немає з’єднання · локально збережено"
+            : "Локально збережено · Gmail ще не підтвердив";
         }
         els.composeSaveStatusButton.dataset.state = stateName;
         els.composeSaveStatusText.textContent = label;
@@ -12647,6 +13578,7 @@
         if (!localJobs.length && els.composeRestoreStatus) {
           els.composeRestoreStatus.textContent = "Закриття може перервати збереження — поверніться до чернетки для перевірки";
         }
+        p0PersistComposeRecovery();
         var work = flushComposeAutosave(reason);
         if (work && typeof work.catch === "function") {
           work.catch(function () {
@@ -12818,7 +13750,7 @@
               draft.forwardSource = forwardSelection.forwardSource;
               draft.attachments = forwardSelection.attachments;
             }
-            state.compose = setComposeBaseline(draft);
+            state.compose = p0ApplyRecoveredDraft(setComposeBaseline(draft));
           }
           // The editor is fully prepared at this point. Release the opening guard
           // before rendering so reply attachment controls are immediately usable.
@@ -14044,6 +14976,7 @@
         var opts = options || {};
         state.compose.revision = Number(state.compose.revision || 0) + 1;
         updateComposeDirty();
+        p0PersistComposeRecovery();
         if (!opts.skipHistory) recordComposeHistory();
         if (!opts.skipAutosave) scheduleComposeAutosave();
         else updateComposeLifecycleControls();
@@ -14256,6 +15189,7 @@
             if (state.compose === composeAtStart) {
               var currentRevision = Number(composeAtStart.revision || 0);
               if (currentRevision === snapshot.revision) {
+                var completedRecoveryKey = safeText(composeAtStart.p0RecoveryKey);
                 canonical.scheduleOperationId = composeAtStart.scheduleOperationId;
                 canonical.scheduledSend = composeAtStart.scheduledSend;
                 canonical.inlineAttachments = mergeCanonicalInlineAttachments(
@@ -14267,6 +15201,7 @@
                 canonical.savedRevision = currentRevision;
                 state.compose = canonical;
                 composeAtStart = canonical;
+                p0ClearComposeRecoveryKey(completedRecoveryKey);
                 renderCompose({ preserveSelection: true });
               } else {
                 composeAtStart.id = canonical.id;
@@ -16841,6 +17776,7 @@
             bootstrap = await rpc({ op: "bootstrap" });
           }
           initializeFromBootstrap(bootstrap || {});
+          await p0HydratePersistentState();
           var savedAttention = null;
           if (!state.needsGoogleConnection && state.account && state.account.id) {
             try {
@@ -16867,17 +17803,21 @@
             state.query = safeText(resume.query);
             state.filter = safeMailboxFilter(resume.filter);
             renderNavigation();
+          } else if (!initialRoute) {
+            p0ApplyPersistedView();
           }
           bootState.hidden = true;
           app.setAttribute("aria-busy", "false");
           if (state.needsGoogleConnection) {
             state.routeReady = true;
+            p0StartBackgroundWork();
             setAccountPanelOpen(true, els.accountAvatar, false);
             return;
           }
           await loadThreads(true);
           if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
           state.routeReady = true;
+          p0StartBackgroundWork();
           if (!state.attentionPreferences.onboardingCompletedAt) {
             setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
             return;
@@ -16891,6 +17831,14 @@
             await openThread(resume.threadId, true, state.account.id, {
               recoverToListOnFailure: true
             });
+          } else if (!initialRoute && p0Runtime.restoredUi &&
+              p0Runtime.restoredUi.selectedThreadId && p0Runtime.restoredUi.selectedConnectionId) {
+            await openThread(
+              p0Runtime.restoredUi.selectedThreadId,
+              true,
+              p0Runtime.restoredUi.selectedConnectionId,
+              { recoverToListOnFailure: true }
+            );
           }
         } catch (error) {
           renderMailContext({ status: "error" });
@@ -17958,6 +18906,10 @@
               return;
             }
             if (op === "saveDraft") {
+              if (state.preview && new URLSearchParams(location.search).get("draft-save") === "fail") {
+                reject(new Error("Preview draft save failure."));
+                return;
+              }
               resolve({
                 message: "Чернетку збережено",
                 draft: {
@@ -18057,6 +19009,7 @@
 
       cacheElements();
       bindEvents();
+      p0ExposeDiagnostics();
       applyTheme();
       if (tg && typeof tg.onEvent === "function") tg.onEvent("themeChanged", applyTheme);
       boot();

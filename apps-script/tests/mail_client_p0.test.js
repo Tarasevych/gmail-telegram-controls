@@ -1,0 +1,160 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const source = fs.readFileSync(path.join(__dirname, '..', 'MailApp.html'), 'utf8');
+
+function functionSource(name) {
+  const marker = new RegExp(`(?:async\\s+)?function\\s+${name}\\s*\\(`);
+  const match = marker.exec(source);
+  assert.ok(match, `missing function ${name}`);
+  const start = match.index + match[0].indexOf('function');
+  const open = source.indexOf('{', match.index);
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'" || char === '`') { quote = char; continue; }
+    if (char === '{') depth += 1;
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, index + 1);
+    }
+  }
+  throw new Error(`unterminated function ${name}`);
+}
+
+function loadFunctions(names) {
+  const context = {
+    safeId: value => String(value == null ? '' : value).replace(/[^A-Za-z0-9._:-]/g, '').slice(0, 256),
+    safeText: (value, fallback = '') => String(value == null || value === '' ? fallback : value),
+    Set,
+    Array,
+    Object,
+    JSON,
+    Number,
+  };
+  vm.createContext(context);
+  vm.runInContext(names.map(functionSource).join('\n'), context);
+  return context;
+}
+
+test('P0 cache is bounded, versioned and account-scoped', () => {
+  assert.match(source, /var P0_CACHE_SCHEMA = 1;/);
+  assert.match(source, /P0_CACHE_MAX_RECORDS = 120/);
+  assert.match(source, /P0_CACHE_MAX_BYTES = 4 \* 1024 \* 1024/);
+  assert.match(source, /indexedDB\.open\("gmail-telegram-controls-versie-1"/);
+  assert.match(source, /p0NamespaceAllowed\(record\.namespace, p0Runtime\.allowedAccountIds\)/);
+});
+
+test('namespace contract rejects cross-account and malformed shared records', () => {
+  const context = loadFunctions(['p0NamespaceAllowed']);
+  assert.equal(context.p0NamespaceAllowed('a:alpha', ['alpha', 'beta']), true);
+  assert.equal(context.p0NamespaceAllowed('a:gamma', ['alpha', 'beta']), false);
+  assert.equal(context.p0NamespaceAllowed('u:alpha,beta', ['alpha', 'beta']), true);
+  assert.equal(context.p0NamespaceAllowed('u:alpha,gamma', ['alpha', 'beta']), false);
+  assert.equal(context.p0NamespaceAllowed('u:alpha', ['alpha']), false);
+});
+
+test('LRU eviction is deterministic by access time and byte budget', () => {
+  const context = loadFunctions(['p0EvictionKeys']);
+  const records = [
+    { key: 'old', accessedAt: 1, bytes: 40 },
+    { key: 'middle', accessedAt: 2, bytes: 40 },
+    { key: 'new', accessedAt: 3, bytes: 40 },
+  ];
+  assert.deepEqual(Array.from(context.p0EvictionKeys(records, 2, 100)), ['old']);
+  assert.deepEqual(Array.from(context.p0EvictionKeys(records, 3, 60)), ['old', 'middle']);
+});
+
+test('warm list and thread paths render cached state before background revalidation', () => {
+  const list = functionSource('loadThreads');
+  const thread = functionSource('openThread');
+  assert.match(list, /p0PeekRecord\("list"/);
+  assert.match(list, /Оновлюю у фоні/);
+  assert.match(thread, /p0PeekRecord\("thread"/);
+  assert.match(thread, /refresh\.catch/);
+  assert.doesNotMatch(thread, /state\.threadLoading \|\|/);
+});
+
+test('thread list reconciliation reuses stable keyed rows', () => {
+  const render = functionSource('renderThreadList');
+  assert.match(render, /data-p0-thread-key/);
+  assert.match(render, /rowReuses/);
+  assert.match(render, /replaceChildren\(fragment\)/);
+  assert.doesNotMatch(render, /clear\(els\.threadList\);\s*visibleThreads\.forEach/);
+});
+
+test('mutations are optimistic but restore the prior state on API failure', () => {
+  const action = functionSource('changeThreadAction');
+  const labels = functionSource('applyUserLabels');
+  assert.match(action, /p0SnapshotMailboxState/);
+  assert.match(action, /p0RestoreMailboxState\(optimisticSnapshot\)/);
+  assert.match(labels, /p0ApplyOptimisticLabels/);
+  assert.match(labels, /Мітки повернено/);
+});
+
+test('draft recovery stores text locally without tokens or attachment bytes', () => {
+  const recovery = functionSource('p0ComposeRecoveryValue');
+  assert.match(recovery, /bodyHtml/);
+  assert.match(recovery, /attachmentCount/);
+  assert.doesNotMatch(recovery, /accessToken|refreshToken|sessionToken|dataBase64|attachmentId/);
+  assert.match(functionSource('markComposeChanged'), /p0PersistComposeRecovery/);
+  assert.match(functionSource('bestEffortLifecycleAutosave'), /p0PersistComposeRecovery/);
+});
+
+test('release decision performs at most one automatic reload per target', () => {
+  const context = loadFunctions(['p0ReleaseAction']);
+  assert.equal(context.p0ReleaseAction(60, 60, 0), 'none');
+  assert.equal(context.p0ReleaseAction(60, 61, 0), 'reload');
+  assert.equal(context.p0ReleaseAction(60, 61, 61), 'manual');
+  assert.equal((functionSource('p0CheckClientRelease').match(/location\.reload\(\)/g) || []).length, 1);
+});
+
+test('P0 does not pretend to install a Service Worker or Background Sync', () => {
+  const p0Block = source.slice(source.indexOf('var P0_CACHE_SCHEMA'), source.indexOf('function mailboxViewContext'));
+  assert.doesNotMatch(p0Block, /serviceWorker\.register|SyncManager|registration\.sync/);
+  assert.match(p0Block, /P0_RELEASE_MANIFEST_URL/);
+});
+
+test('typography uses the measured Gmail-compatible local fallback stacks', () => {
+  assert.match(source, /--mail-font-ui: "Google Sans", Roboto, RobotoDraft, Helvetica, Arial, sans-serif/);
+  assert.match(source, /\.thread-sender,\s*\.thread-subject[\s\S]*font-size: 14px/);
+  assert.match(source, /\.message-body,\s*\.compose-editor[\s\S]*line-height: 1\.5/);
+  assert.doesNotMatch(source, /fonts\.googleapis\.com/);
+});
+
+test('preview diagnostics expose only content-free counters', () => {
+  const diagnostics = functionSource('p0ExposeDiagnostics');
+  assert.match(diagnostics, /metrics: p0Runtime\.metrics/);
+  assert.match(diagnostics, /cacheSchema/);
+  assert.doesNotMatch(diagnostics, /accountEmail|subject|body|token|session/);
+});
+
+test('fresh cached thread navigation skips an immediate duplicate RPC', () => {
+  assert.match(source, /cacheFresh\s*=\s*Boolean\(cached\s*&&\s*Number\(cached\.freshUntil\s*\|\|\s*0\)\s*>\s*Date\.now\(\)\)/,
+    'thread cache freshness must be derived from the bounded record TTL');
+  assert.match(source, /if\s*\(cached\s*&&\s*cacheFresh\s*&&\s*!force\s*&&\s*!openOptions\.background\)[\s\S]{0,180}return true/,
+    'a fresh cache hit must render locally without an immediate duplicate read RPC');
+  assert.match(source, /data-p0-diagnostics/,
+    'preview must publish content-free counters for measured browser acceptance');
+  assert.match(source, /lastThreadUsableMs/,
+    'preview diagnostics must report internal reader usability time without identifiers');
+  assert.match(functionSource('boot'),
+    /initializeFromBootstrap\(bootstrap \|\| \{\}\);[\s\S]{0,120}await p0HydratePersistentState\(\);[\s\S]*await loadThreads\(true\)/,
+    'initial bootstrap must establish the account allowlist before cached state and list reads');
+  assert.match(functionSource('openCompose'),
+    /draft\.replyToMessageId[\s\S]*state\.compose = p0ApplyRecoveredDraft\(setComposeBaseline\(draft\)\)/,
+    'reply recovery must match only after the stable thread and message identity is populated');
+  assert.match(source, /draft-save["']\) === ["']fail["'][\s\S]{0,120}Preview draft save failure/,
+    'local preview must support deterministic failed-server-save recovery acceptance');
+});

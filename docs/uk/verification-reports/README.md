@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-004](reports/VR-004/README.md) фіксує stabilization/root-cause audit після rollback v56 і staging v57: production-accepted межу v55, shared URLFetch blocker, 26 історичних CI failures та безпечний A/B gate. Він не змінює продуктовий код або production runtime.
+[VR-009](reports/VR-009/README.md) фіксує baseline і candidate evidence P0 instant navigation, bounded cache, draft recovery, typography та client update. Runtime acceptance лишається окремим gate.
