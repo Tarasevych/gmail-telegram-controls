@@ -1,6 +1,6 @@
 # Реєстр знайдених проблем
 
-Оновлено: **2026-07-21**. Статуси: `Відкрита`, `В роботі`, `Заблокована`, `Вирішена локально`, `Перевірена staging`, `Розгорнута production`, `Перевірена production`.
+Оновлено: **2026-07-22**. Статуси: `Відкрита`, `В роботі`, `Заблокована`, `Вирішена локально`, `Перевірена staging`, `Розгорнута production`, `Перевірена production`.
 
 | ID | Статус | З Versie | Проблема | Рішення / наступний доказ |
 |---|---|---:|---|---|
@@ -30,8 +30,10 @@
 | GT-022 | Обмеження платформи | 1 | `clasp logs` недоступний, бо production використовує Apps Script-managed default GCP project без standard project ID | Не мігрувати лише заради логів: це незворотно скасувало б чинні authorizations. Використовувати Apps Script Executions UI або окремий content-free telemetry reader |
 | GT-023 | Вирішена і перевірена production v57 | 1 | Єдиний хвилинний `checkNewMail_` виконувався довше хвилини, тому повні worker-проходи перекривалися та вичерпували денну квоту `URLFETCH` | Immutable v57 використовує атомарний 150-секундний timer slot, лишає realtime першим і обмежує повний Gmail History backfill 15-хвилинним slot. `444/444` tests пройшли; production показав completed full/skip cadence без failed worker у acceptance window |
 | GT-024 | Вирішена і перевірена production v57 | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 під час quota incident | Після quota recovery два v55 launches і staging v57 A/B пройшли; v57 просунуто, двічі перевірено production, staging очищено. Валідний external `INBOX` автоматично створив одну картку без дубля після двох `/check` |
-| GT-025 | Виправлена у source candidate; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | Вибирати `mailboxMultiGmailAccessToken_` для активного `connectionId`, залишаючи `ScriptApp.getOAuthToken()` лише для legacy/owner lane; regression test забороняє hardcoded owner token |
-| GT-026 | Ізольований source candidate; release hash gate заблокував | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Protected feature flag може спрямувати лише owner-виклики `messages.list`, `messages.get` і `history.list` через Advanced Gmail; його тести проходять 8/8, але повний suite правильно зупиняється на immutable v57 hash gate з результатом 451/452. Не merge, не вмикати й не deploy без окремо дозволеного наступного immutable. Source request: `REQ-0024` |
+| GT-025 | Інтегрована в immutable v58; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | `mailboxMultiGmailAccessToken_` вибирається для активного `connectionId`, а `ScriptApp.getOAuthToken()` лишається тільки для legacy/owner lane; cumulative v58 suite пройшов, але mailbox acceptance заблокований GT-028 |
+| GT-026 | Інтегрована в immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Allowlisted owner-read adapter включено в cumulative v58, але protected flag не вмикався; зовнішні OAuth connections лишаються на власних token paths. Live quota reduction не перевірена через GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
+| GT-027 | Інтегрована в immutable v58; staging acceptance заблокований | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | Shared USER/SYSTEM renderer, доступні create/rename/delete controls, full-path nesting, bounded scroll і account isolation пройшли cumulative tests; live label UI не прийнято, бо mailbox bootstrap зупинився на GT-028 |
+| GT-028 | Заблокована; shared pre-handler incident | 1 | Два fresh staging v58 і два fresh production v57 запуски показали однакову mailbox-operation error до входу в Apps Script handler | Web App execution filter не показав жодного execution у test windows; candidate-specific regression не підтверджена. Production лишається v57, menu повернуто на production, immutable/staging v58 збережено, promotion заборонений до нового контрольованого A/B. Source request: `REQ-0028` |
 
 ## Production-доказ 2026-07-20
 
@@ -97,15 +99,26 @@
 - Видимий viewport Telegram не є достатнім доказом відсутності картки. Остаточний count перевіряється accessibility-index за унікальним sanitized marker.
 - GT-018, GT-019, GT-023 і GT-024 не мають відкритого secondary-root acceptance blocker для production v57.
 
-## GT-026 — Узгоджене керування Gmail-мітками
+## GT-027 — Узгоджене керування Gmail-мітками
 
-- **Статус:** PARTIAL
+- **Статус:** PARTIAL — інтегровано в immutable v58; staging acceptance заблокований GT-028.
 - **Дата:** 2026-07-22
 - **Запит:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Першопричина:** VERIFIED — профільний список резервував ширину для кількох постійно видимих дій, sidebar не мав create/manage controls, а два представлення залежали від різних зрізів стану. Під час acceptance також виявлено спливання click до глобального close-handler і стискання implicit CSS-grid rows до 44 px.
 - **Виправлення:** VERIFIED локально у [коміті 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): спільний state/render path, `+` біля заголовка, одна доступна pencil-action для кожної USER-мітки, progressive disclosure, bounded scroll, нормалізація вкладеного повного шляху, захист SYSTEM-міток, permission/retry states і синхронне оновлення обох поверхонь.
-- **Перевірка:** VERIFIED — фінальний UI contract `84/84`; повний suite `447/448`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
-- **Release boundary:** BLOCKED — єдина помилка повного suite є навмисним exact-hash gate immutable v57. Новий immutable candidate або production promotion не дозволені REQ-0026.
+- **Перевірка:** VERIFIED локально — фінальний UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
+- **Release boundary:** PARTIAL — cumulative immutable v58 і один owner-only staging створені за REQ-0028; production promotion BLOCKED через GT-028.
 - **Production:** UNVERIFIED — зміни не розгорнуті.
 - **Звіт:** [VR-005](verification-reports/reports/VR-005/README.md)
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
+
+## GT-028 — Shared pre-handler Mini App bootstrap blocker
+
+- **Статус:** BLOCKED.
+- **Дата:** 2026-07-22.
+- **Фактичний A/B:** два fresh v58 staging launches і два fresh v57 production launches відтворили однакову content-free mailbox-operation error.
+- **Локалізація:** Apps Script Executions, відфільтрований за `Web app`, не містить execution для жодного test window; збій виникає до server handler. Direct owner-browser probe staging endpoint також завершився Drive error без handler execution.
+- **Висновок:** candidate-specific regression UNVERIFIED; точна transport/deployment-access причина UNVERIFIED. Історичний GT-024 не відкривається повторно, бо він стосувався доведеного URLFetch quota incident після входу в handler.
+- **Безпечний стан:** stable production v57; immutable v58 і один staging збережені; Telegram menu повернуто на production; promotion і cleanup не виконані.
+- **Звіт:** [VR-006](verification-reports/reports/VR-006/README.md).
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)

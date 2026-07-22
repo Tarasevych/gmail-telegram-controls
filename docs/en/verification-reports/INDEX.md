@@ -29,3 +29,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-005/README.md](reports/VR-005/README.md)
 - **Note:** the shared machine index remains at VR-003; VR-005 does not change the machine-report contract.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-006 — Cumulative v58 staging A/B
+
+- **Status:** BLOCKED
+- **Date:** 2026-07-22
+- **Coverage:** PR #16/#11 integration, immutable v58, local/CI gates, owner-only staging, controlled v57/v58 A/B, Apps Script execution localization, and the safe-state boundary.
+- **Report:** [reports/VR-006/README.md](reports/VR-006/README.md)
+- **Conclusion:** no candidate-specific regression is proven; the shared pre-handler transport/deployment-access cause remains UNVERIFIED, so promotion is blocked.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

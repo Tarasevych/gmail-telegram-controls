@@ -87,6 +87,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-20 — Owner-only Advanced Gmail read adapter
 
+- **Status:** PARTIAL — integrated into immutable v58, the protected flag is not enabled, and live evidence is blocked by GT-028.
 - Keep an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
 - Resolve the current connection through the registry and fail closed unless its provider is `apps_script_owner`; every external OAuth connection keeps its own direct HTTP token path.
 - Keep mutations and unsupported reads on direct HTTP, and propagate Advanced Service failures without an automatic fallback.
@@ -104,12 +105,22 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - [ ] New Google OAuth consent remains a separate manual gate and is not initiated without demonstrated technical need.
 - [ ] The next Versie is not authorized; all further fixes remain within Versie 1.
 
-## B1-20 — Unified accessible Gmail label management
+## B1-21 — Unified accessible Gmail label management
 
-- **Status:** PARTIAL
+- **Status:** PARTIAL — integrated into immutable v58; staging acceptance is blocked by GT-028.
 - **Date:** 2026-07-22
 - **Scope:** one USER/SYSTEM label model for the sidebar and profile panel; create, rename, guarded delete, full-path nesting, accessibility, responsive layout, loading/error/retry, and account isolation.
 - **Implemented:** VERIFIED locally in [4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91).
-- **Evidence:** [GT-026](ISSUES.md), [VR-005](verification-reports/reports/VR-005/README.md).
-- **Remaining:** BLOCKED pending separate owner authorization for a new immutable candidate; staging acceptance, controlled promote/rollback gating, and production verification are then required.
+- **Evidence:** [GT-027](ISSUES.md), [VR-005](verification-reports/reports/VR-005/README.md).
+- **Remaining:** BLOCKED until GT-028 is cleared and staging acceptance is repeated; production verification follows only after a pass.
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
+
+## B1-22 — v58 shared pre-handler bootstrap A/B
+
+- **Status:** BLOCKED.
+- **Completed:** PR #16 and PR #11 were normal-merged; cumulative immutable v58 was created; one staging deployment is preserved; local full suite passed `460/460`; main checks are green.
+- **A/B:** v58 staging and v57 production reproduce the same mailbox-operation error, while the test windows create no Web App executions.
+- **Boundary:** production remains v57; the menu points to production; promotion, cleanup, and another immutable are not run.
+- **Next evidence:** repeat the fail-closed A/B only after transport/deployment access recovers; if v57 passes and v58 fails, diagnose the candidate; if both fail, do not toggle releases.
+- **Evidence:** [GT-028](ISSUES.md), [VR-006](verification-reports/reports/VR-006/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
