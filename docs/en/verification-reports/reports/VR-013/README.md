@@ -23,3 +23,10 @@
 ## Conclusion
 
 The v64 helper source is locally verified. Overall status remains PARTIAL until normal merge, read-only preflight, exact staging, owner acceptance and promotion evidence.
+## Staging bridge contract correction
+
+- Status: `VERIFIED`
+- The first cumulative bridge suite exposed that the historical v63 test incorrectly required the mutable owner-menu updater to keep targeting v63 forever.
+- Root cause: immutable bridge evidence and the current staging pointer were coupled in one assertion.
+- Fix: v63 remains tested as preserved immutable evidence, while the mutable updater is now required not to reactivate the historical v63 launcher after advancing to v64.
+- Evidence: the focused v64 bridge contract and the cumulative Apps Script suite must both pass before publication.

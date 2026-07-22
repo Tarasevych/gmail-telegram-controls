@@ -18,7 +18,7 @@ BOT_ID = 8990322470
 BOT_USERNAME = "TarasevychGmailNotifierBot"
 OWNER_ID = 427886279
 PRODUCTION_URL = "https://tarasevych.github.io/gmail-telegram-controls/?v=20260715-5&action=mailbox"
-STAGING_URL = "https://tarasevych.github.io/gmail-telegram-controls/versie-001-staging-acceptance-20260722-v63.html"
+STAGING_URL = "https://tarasevych.github.io/gmail-telegram-controls/versie-001-staging-acceptance-20260722-v64.html"
 
 
 class MenuError(RuntimeError):
