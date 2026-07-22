@@ -83,3 +83,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-012/README.md](reports/VR-012/README.md)
 - **Conclusion:** the source correction is locally verified; production remains v63 and native staging/production visual acceptance is still unverified.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-013 — v64 helper and GT-037 reconciliation source candidate
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** exact v57 rollback, frozen v63 history, cumulative v64 hashes, bounded deployment reconciliation, local release contracts and pre-immutable boundary.
+- **Report:** [reports/VR-013/README.md](reports/VR-013/README.md)
+- **Conclusion:** helper source is locally verified; no v64 immutable or staging deployment exists until a merged helper passes read-only preflight and one guarded StageOnly.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

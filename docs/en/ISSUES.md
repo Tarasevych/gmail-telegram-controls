@@ -35,7 +35,7 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-027 | PARTIAL; live UI verified on v59, production rolled back | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | v59 staging showed `+ Create`, an accessible management action for USER labels, bounded scrolling, and long nested names without overlap; mutating operations were not run. Production returned to v57 because of GT-030 |
 | GT-028 | PARTIAL; fix live-verified on v59, production rolled back | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | v59 staging and two production launches recovered a stale automatic route to the list without a network/Drive error; a Telegram-persisted route can still produce a content-free recovery notice. Production returned to v57 because of separate GT-030 |
 | GT-029 | Resolved and synchronized | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
-| GT-030 | BLOCKED; exact rollback to v57 completed after v59 and v62 attempts | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | v62 retained the same worker code and lacked the required execution trace, so exact v62 -> v57 rollback restored stable/HEAD v57, staging 0 and journal `rolled_back`; two fresh v57 mailbox launches passed. Root cause and a safe cumulative fix remain `UNVERIFIED` |
+| GT-030 | BLOCKED; exact rollback to v63 completed after v59 and v62 attempts | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | v62 retained the same worker code and lacked the required execution trace, so exact v62 -> v63 rollback restored stable/HEAD v63, staging 0 and journal `rolled_back`; two fresh v63 mailbox launches passed. Root cause and a safe cumulative fix remain `UNVERIFIED` |
 | GT-031 | PARTIAL; source candidate | 1 | The main heading and profile fallbacks were hard-wired to one name and did not expose the actual active or shared mail context | REQ-0032 adds a view derived from current opaque connection IDs, full email, an accessible shared mapping, and synchronous render hooks; production remains v57 pending separate acceptance |
 
 ## Production evidence 2026-07-20
@@ -111,7 +111,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Fix:** VERIFIED locally in [commit 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): shared state/render path, a `+` beside the heading, one accessible pencil action for every USER label, progressive disclosure, bounded scrolling, nested full-path normalization, SYSTEM-label protection, permission/retry states, and synchronous refresh of both surfaces.
 - **Verification:** VERIFIED locally — final UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
 - **Live verification:** VERIFIED on v59 staging — the profile panel exposed `+ Create`, an accessible management action for every USER label, separate SYSTEM labels, bounded scrolling, and long nested names without overlap. Create/rename/delete were intentionally not run to avoid mutating arbitrary Gmail labels.
-- **Release boundary:** PARTIAL — v59 was promoted after UI acceptance, but an exact rollback returned production to v57 because of the separate GT-030 runtime blocker.
+- **Release boundary:** PARTIAL — v59 was promoted after UI acceptance, but an exact rollback returned production to v63 because of the separate GT-030 runtime blocker.
 - **Production:** UNVERIFIED — the label changes are not part of current production v57.
 - **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
@@ -125,7 +125,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Source fix:** REQ-0029 makes the hash one-shot, while failed automatic initial/hash/resume opens clear the reader and expose the already loaded list. Manual message selection retains the error and `Retry`.
 - **Local evidence:** targeted bridge/route suite `238/238`; all non-release tests `440/440`; bilingual, knowledge-hub, and verification validators passed. The full release suite fails closed only at two expected immutable hash guards because changed source intentionally does not match historical v57/v58 pins.
 - **Live evidence:** v59 staging opened the mailbox, avatar, and three account roots; a stale automatic route returned to the already loaded list with a content-free notice instead of a reader/network failure. Two v59 production launches also loaded the mailbox.
-- **Release boundary:** v59 promotion and cleanup were executed under REQ-0030/P-009, but the post-cleanup GT-030 runtime gate caused an exact rollback to v57. Immutable v59 is preserved and staging is `0`.
+- **Release boundary:** v59 promotion and cleanup were executed under REQ-0030/P-009, but the post-cleanup GT-030 runtime gate caused an exact rollback to v63. Immutable v59 is preserved and staging is `0`.
 - **Report:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
@@ -194,12 +194,14 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-037 — Promotion helper can report a false negative after a successful deployment update
 
-- **Status:** PARTIAL — the v63 deployment was reconciled safely and completed, but helper hardening is not yet implemented.
+- **Status:** PARTIAL — the v63 deployment was reconciled safely; bounded helper hardening is locally VERIFIED in the v64 source candidate, while live promotion acceptance remains UNVERIFIED.
 - **Observed behavior:** `Promote` advanced stable v57 to v63, then its immediate read returned stale state and raised `Stable deployment did not advance to the candidate.`
 - **Root cause:** the helper has no bounded read-after-write reconciliation window. The propagation mechanism is inferred from the later authoritative readback rather than claimed as a platform guarantee.
 - **Safe handling:** no second promotion was attempted. A read-only preflight proved stable v63 before cleanup.
-- **Recommended fix:** add bounded retry with exact candidate/deployment matching and fail closed on contradictory state. Never rewrite immutable v63.
-- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md).
+- **Source fix:** the v64 helper performs at most five read-only deployment checks after one PUT, accepts only the exact prior version while state converges, and fails closed on any contradictory version. Rollback uses the same bounded contract.
+- **Tests:** focused release contracts `2/2`, PowerShell parser clean, cumulative suite `503/503`.
+- **Release boundary:** production remains exact immutable v63; the v64 helper is not an immutable or deployment until its source PR merges and `StageOnly` passes preflight.
+- **Evidence:** [VR-013](verification-reports/reports/VR-013/README.md).
 ## GT-038 — Telegram Web K/A shows a blank signed Mini App while native Desktop succeeds
 
 - **Status:** PARTIAL — native Telegram Desktop staging and production are VERIFIED; the web-only failure and its root cause remain UNVERIFIED.

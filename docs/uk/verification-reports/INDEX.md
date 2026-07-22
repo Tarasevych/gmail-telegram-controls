@@ -83,3 +83,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-012/README.md](reports/VR-012/README.md)
 - **Висновок:** source correction локально verified; production лишається v63, native staging/production visual acceptance ще unverified.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-013 — v64 helper і GT-037 reconciliation source candidate
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** exact v57 rollback, frozen v63 history, cumulative v64 hashes, bounded deployment reconciliation, local release contracts і pre-immutable boundary.
+- **Звіт:** [reports/VR-013/README.md](reports/VR-013/README.md)
+- **Висновок:** helper source локально verified; v64 immutable або staging deployment не існує до merged helper, read-only preflight і одного guarded StageOnly.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
