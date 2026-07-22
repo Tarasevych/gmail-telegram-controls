@@ -4,7 +4,7 @@
 
 | ID | Статус | З Versie | Проблема | Рішення / наступний доказ |
 |---|---|---:|---|---|
-| GT-001 | Перевірена production | 1 | Один лист надходить у Telegram двічі | Stable v55 виключає Sent-копію, навіть коли Gmail також додає Inbox; контрольний `SENT+INBOX` лист дав рівно одну картку після автоматичної доставки та двох `/check` |
+| GT-001 | Вирішена і перевірена production v57 | 1 | Один лист надходить у Telegram двічі | `INBOX+SENT` self/alias копії повністю пропускаються і фіксуються як seen. Чистий external `INBOX` marker автоматично створив рівно одну картку; після двох `/check` Telegram містив один marker list item |
 | GT-002 | В роботі | 1 | Google callback відкриває сторінку Диска замість сервісу | Direct Apps Script callback відхилено через офіційно непідтримуваний Google multi-login; впроваджується neutral GitHub callback + credentialless POST; потрібен live acceptance |
 | GT-003 | Перевірена production | 1 | У header показується літера замість Google profile photo | Header використовує реальне Google profile photo з fallback; фото прочитано у staging та production v55 |
 | GT-004 | Вирішена локально | 1 | `Додати Gmail-акаунт` вимагає зайвий клік `Продовжити в Google` | Відкривати authorization URL одразу; показувати fallback лише якщо браузер блокує перехід |
@@ -23,13 +23,13 @@
 | GT-016 | Обмеження платформи | 1 | Telegram Web показує стандартний Open Link перед зовнішнім Google OAuth | Власний зайвий Continue with Google усунуто; системне попередження Telegram не обходити |
 | GT-017 | Відкрита | 1 | Старі кнопки листів «Відкрити гілку в Mini App» ще можуть відкрити Apps Script Drive error у multi-login Chrome | Account/OAuth flow вже chat-native; повний Mini App потребує нейтрального response-capable backend або заміни legacy deep links |
 
-| GT-018 | Перевірена production | 1 | Нові Gmail-листи не доходять, доки frozen scan відпрацьовує старий backlog | Bounded realtime-смуга stable v55 доставила контрольний новий лист автоматично; frozen scan лишається backfill |
-| GT-019 | Перевірена production | 1 | Ручна `/check` перевіряла лише legacy mailbox | Два послідовні `/check` після автоматичної доставки не створили повторної картки; exact-marker search залишився на одному результаті |
+| GT-018 | Перевірена production v57 | 1 | Нові Gmail-листи не доходять, доки frozen scan відпрацьовує старий backlog | Bounded realtime-смуга автоматично доставила чистий external `INBOX` marker; frozen scan лишається backfill |
+| GT-019 | Перевірена production v57 | 1 | Ручна `/check` перевіряла лише legacy mailbox | Два послідовні `/check` після автоматичної доставки повернули «нових листів немає» і не створили повторної картки; marker лишився одним Telegram list item |
 | GT-020 | Відкрита операційна | 1 | У protected credential store лишився застарілий alias Telegram bot token, який повертає 401 | Runtime використовує окреме підтверджене protected посилання; не ротувати чинний token без окремого безпечного плану |
 | GT-021 | Відкрита production | 1 | Перше відкриття production Web App інколи лишається на skeleton понад 15 секунд | Після одного refresh mailbox завантажився; додати content-free timing для bridge/backend bootstrap і перевірити cold-start timeout без Gmail mutations |
 | GT-022 | Обмеження платформи | 1 | `clasp logs` недоступний, бо production використовує Apps Script-managed default GCP project без standard project ID | Не мігрувати лише заради логів: це незворотно скасувало б чинні authorizations. Використовувати Apps Script Executions UI або окремий content-free telemetry reader |
-| GT-023 | В роботі; root cause перевірено production | 1 | Єдиний хвилинний `checkNewMail_` виконується 80–106 секунд, тому запуски перекриваються та вичерпують денну квоту `URLFETCH` | Другого trigger немає. Candidate додає атомарний 150-секундний timer slot через короткий ScriptLock, лишає realtime першим, а повний Gmail History backfill обмежує одним запуском на 15 хвилин; потрібні локальні тести, staging і production evidence після відновлення зовнішньої квоти |
-| GT-024 | Заблокована зовнішньою квотою; regression candidate не підтверджена | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 | Apps Script завершив v57 `doPost`, redemption запуску і `mailboxRpc`; worker далі записав OAuth refresh failure, а потім `Service invoked too many times for one day: urlfetch`. Лишити production v55, immutable v56 як історію та один staging v57; відновити A/B лише після повернення квоти |
+| GT-023 | Вирішена і перевірена production v57 | 1 | Єдиний хвилинний `checkNewMail_` виконувався довше хвилини, тому повні worker-проходи перекривалися та вичерпували денну квоту `URLFETCH` | Immutable v57 використовує атомарний 150-секундний timer slot, лишає realtime першим і обмежує повний Gmail History backfill 15-хвилинним slot. `444/444` tests пройшли; production показав completed full/skip cadence без failed worker у acceptance window |
+| GT-024 | Вирішена і перевірена production v57 | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 під час quota incident | Після quota recovery два v55 launches і staging v57 A/B пройшли; v57 просунуто, двічі перевірено production, staging очищено. Валідний external `INBOX` автоматично створив одну картку без дубля після двох `/check` |
 | GT-025 | Виправлена у source candidate; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | Вибирати `mailboxMultiGmailAccessToken_` для активного `connectionId`, залишаючи `ScriptApp.getOAuthToken()` лише для legacy/owner lane; regression test забороняє hardcoded owner token |
 | GT-026 | Ізольований source candidate; release hash gate заблокував | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Protected feature flag може спрямувати лише owner-виклики `messages.list`, `messages.get` і `history.list` через Advanced Gmail; його тести проходять 8/8, але повний suite правильно зупиняється на immutable v57 hash gate з результатом 451/452. Не merge, не вмикати й не deploy без окремо дозволеного наступного immutable. Source request: `REQ-0024` |
 
@@ -87,3 +87,12 @@
 ## Незалежна перевірка
 
 [VR-001](verification-reports/reports/VR-001/README.md) зберігає всі спростовані, часткові, неперевірені й заблоковані `KH-*` твердження. Вони не стають `GT-*` автоматично: `GT-010` додано окремо через статично підтверджену прогалину в поточному коді. Source request: `REQ-0004`.
+
+## Доповнення від 2026-07-22: приймання всіх Gmail-коренів
+
+- Попередню примітку про неперевірений inbound fan-out для другорядних коренів скасовано новим production evidence.
+- Root-2: чистий Inbox-вхід створив рівно одну картку з правильною позначкою акаунта; два повторні /check не створили дубль.
+- Root-3: чистий Inbox-вхід створив рівно одну картку з правильною позначкою акаунта; два повторні /check не створили дубль.
+- Початкове потрапляння контрольного root-2 листа у Spam є зовнішньою Gmail-класифікацією, а не дефектом delivery: production навмисно виключає Spam.
+- Видимий viewport Telegram не є достатнім доказом відсутності картки. Остаточний count перевіряється accessibility-index за унікальним sanitized marker.
+- GT-018, GT-019, GT-023 і GT-024 не мають відкритого secondary-root acceptance blocker для production v57.

@@ -53,11 +53,11 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-16 — Timer runtime budget and URLFetch quota isolation
 
-- **Status:** production remains exact v55; immutable v56 is preserved as history; immutable v57 has one owner-only staging deployment; the A/B gate is blocked by the shared external `URLFETCH` quota.
+- **Status:** completed and production verified on v57; immutable v56 is preserved as history, exact v55 rollback is preserved, staging is `0`, and the journal is `cleaned`.
 - **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
 - **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
 - **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
-- **Gates:** the complete suite passed `443/443`, hash-pinned v57 `PreflightOnly` passed, and owner-only v57 staging exists; production acceptance and the account-switch A/B await external quota recovery.
+- **Gates:** the complete suite passed `444/444`; hash-pinned v57 staging A/B, two production launches, cleanup, and post-cleanup `PreflightOnly` passed. The production trigger window showed completed full/slot-skip cadence with no failed worker.
 - **Source requests:** REQ-0018, REQ-0019, REQ-0021.
 
 ### B1-17 — Google primary-source gate and publication surfaces
@@ -78,17 +78,28 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-19 — Shared bootstrap A/B after the v56 rollback
 
-- **Status:** blocked by external quota; no further code fix is created without evidence.
-- **Safe state:** stable and HEAD v55; immutable v56 is historical; one owner-only v57 staging deployment is preserved; the Telegram menu points to production.
-- **Diagnosis:** v57 callback/launch redemption/`mailboxRpc` completed, while the worker logged OAuth refresh failure and exact daily `urlfetch` exhaustion; the same UI error reproduced on two production v55 launches, so no v57 regression is confirmed.
-- **Next gate:** after daily quota recovery, two fresh production v55 mailbox launches without a network error, then signed staging v57 with avatar, three roots, switching to the controlled second account and back without OAuth.
-- **Release rule:** if the error is shared, do not switch releases again; if a new candidate-only defect is proven, create cumulative immutable v58 without rewriting v56/v57 and preserve the exact v55 rollback.
+- **Status:** completed and verified on 2026-07-22.
+- **Safe state:** stable production v57; immutable v56 is historical; exact v55 rollback is preserved; staging is `0`; the Telegram menu points to production.
+- **A/B evidence:** two fresh v55 mailbox launches passed; signed v57 staging showed the avatar, three roots, and switching to the controlled second account and back without OAuth; after promotion two v57 production launches passed.
+- **Delivery gate:** an independent owner-controlled external `INBOX` automatically created one Telegram card with the correct account marker; two `/check` runs created no duplicate. Self/alias `INBOX+SENT` probes were correctly skipped.
+- **Release rule:** do not rewrite immutable v56/v57; do not create Versie 2 or the next immutable without a new exact owner instruction.
 - **Source requests:** REQ-0019, REQ-0021.
 
 ### B1-20 — Owner-only Advanced Gmail read adapter
 
-- Add an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
+- Keep an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
 - Resolve the current connection through the registry and fail closed unless its provider is `apps_script_owner`; every external OAuth connection keeps its own direct HTTP token path.
 - Keep mutations and unsupported reads on direct HTTP, and propagate Advanced Service failures without an automatic fallback.
-- **Evidence boundary:** deterministic adapter tests pass 8/8. The full suite is 451/452 because the immutable v57 hash gate correctly rejects the changed `Code.gs`; this branch is not mergeable or deployable without separate authority for the next immutable. The flag remains unset, production remains v55, and E4/E5 quota reduction is unverified.
-- **Source request:** `REQ-0024`.
+- **Evidence boundary:** pre-sync deterministic adapter tests passed 8/8. Current `main` evidence is preserved, while the candidate still intentionally differs from immutable v57, so the exact release-hash gate remains expected until a separately authorized next immutable. The flag remains unset, production remains exact v57, staging is `0`, and live quota reduction is `unverified`.
+- **Source requests:** `REQ-0024`, `REQ-0027`.
+
+## Roadmap update — 2026-07-22
+
+- [x] Verify automatic delivery for the primary Gmail root.
+- [x] Verify automatic delivery for root-2 with the correct account marker.
+- [x] Verify automatic delivery for root-3 with the correct account marker.
+- [x] Verify deduplication for each secondary root with two repeated /check operations.
+- [x] Separate Gmail Spam classification from a product delivery failure.
+- [x] Close the secondary-root portion of B1-16 and B1-19 production evidence.
+- [ ] New Google OAuth consent remains a separate manual gate and is not initiated without demonstrated technical need.
+- [ ] The next Versie is not authorized; all further fixes remain within Versie 1.

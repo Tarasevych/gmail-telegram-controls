@@ -4,7 +4,7 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 
 | ID | Status | Since Versie | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
-| GT-001 | Production verified | 1 | One mail message reaches Telegram twice | Stable v55 excludes a Sent copy even when Gmail also labels it Inbox; a controlled `SENT+INBOX` message produced exactly one card after automatic delivery and two `/check` runs |
+| GT-001 | Resolved and production verified on v57 | 1 | One mail message reaches Telegram twice | `INBOX+SENT` self/alias copies are skipped entirely and persisted as seen. A clean external `INBOX` marker automatically created exactly one card; after two `/check` runs Telegram contained one marker list item |
 | GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | Direct Apps Script callback was rejected because Google multi-login is officially unsupported; neutral GitHub callback plus credentialless POST is being implemented; live acceptance remains |
 | GT-003 | Production verified | 1 | Header shows an initial instead of the Google profile photo | Header uses the real Google profile photo with a fallback; the photo was read back on staging and production v55 |
 | GT-004 | Resolved locally | 1 | `Add Gmail account` requires an extra `Continue with Google` click | Open the authorization URL immediately; show fallback only when browser navigation is blocked |
@@ -23,13 +23,13 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-016 | Platform constraint | 1 | Telegram Web shows its standard Open Link warning before external Google OAuth | The product-owned extra Continue with Google step is gone; do not bypass Telegram security UI |
 | GT-017 | Open | 1 | Legacy “Open thread in Mini App” mail buttons can still reach the Apps Script Drive error in multi-login Chrome | Account/OAuth is now chat-native; the full Mini App requires a neutral response-capable backend or replacement of legacy deep links |
 
-| GT-018 | Production verified | 1 | New Gmail mail is not delivered while the frozen scan drains an old backlog | The bounded realtime lane in stable v55 delivered a controlled new message automatically; frozen scan remains the backfill |
-| GT-019 | Production verified | 1 | Manual `/check` inspected only the legacy mailbox | Two consecutive `/check` runs after automatic delivery created no duplicate; exact-marker search remained at one result |
+| GT-018 | Production verified on v57 | 1 | New Gmail mail is not delivered while the frozen scan drains an old backlog | The bounded realtime lane automatically delivered a clean external `INBOX` marker; frozen scan remains the backfill |
+| GT-019 | Production verified on v57 | 1 | Manual `/check` inspected only the legacy mailbox | Two consecutive `/check` runs after automatic delivery returned “no new mail” and created no duplicate; the marker remained one Telegram list item |
 | GT-020 | Open operational | 1 | Protected credential storage still contains an obsolete Telegram bot-token alias that returns 401 | Runtime uses a separately verified protected reference; do not rotate the current token without a separate safe plan |
 | GT-021 | Open in production | 1 | The first production Web App open can remain on the skeleton for more than 15 seconds | One refresh loaded the mailbox; add content-free bridge/backend bootstrap timing and inspect cold-start timeout without Gmail mutations |
 | GT-022 | Platform constraint | 1 | `clasp logs` is unavailable because production uses an Apps Script-managed default GCP project without a standard project ID | Do not migrate only for logs: that would permanently revoke current authorizations. Use the Apps Script Executions UI or a separate content-free telemetry reader |
-| GT-023 | In progress; root cause production verified | 1 | The single minute `checkNewMail_` takes 80–106 seconds, so invocations overlap and exhaust the daily `URLFETCH` quota | There is no second trigger. The candidate adds an atomic 150-second timer slot with a short ScriptLock, keeps realtime first, and limits the full Gmail History backfill to once per 15 minutes; local tests, staging, and production evidence after the external quota resets remain required |
-| GT-024 | Blocked by external quota; candidate regression not confirmed | 1 | The same mailbox network error reproduced on production v55 and owner-only staging v57 | Apps Script completed v57 `doPost`, launch redemption, and `mailboxRpc`; the worker then logged OAuth refresh failure followed by `Service invoked too many times for one day: urlfetch`. Keep production v55, immutable v56 as history, and one v57 staging deployment; resume A/B only after quota recovery |
+| GT-023 | Resolved and production verified on v57 | 1 | The single minute `checkNewMail_` ran longer than a minute, so full worker passes overlapped and exhausted the daily `URLFETCH` quota | Immutable v57 uses an atomic 150-second timer slot, keeps realtime first, and limits full Gmail History backfill with a 15-minute slot. `444/444` tests passed; production showed completed full/skip cadence with no failed worker in the acceptance window |
+| GT-024 | Resolved and production verified on v57 | 1 | The same mailbox network error reproduced on production v55 and owner-only staging v57 during the quota incident | After quota recovery, two v55 launches and the v57 staging A/B passed; v57 was promoted, accepted twice in production, and staging was cleaned. A valid external `INBOX` automatically created one card with no duplicate after two `/check` runs |
 | GT-025 | Fixed in source candidate; live unverified | 1 | Parallel thread metadata always used the Apps Script owner token, including an external multi-account context | Select `mailboxMultiGmailAccessToken_` for the active `connectionId`, retaining `ScriptApp.getOAuthToken()` only for the legacy/owner lane; a regression test forbids the hardcoded owner token |
 | GT-026 | Isolated source candidate; release hash gate blocked | 1 | Allowlisted owner Gmail reads always consume Apps Script `URLFETCH` quota even though the official Advanced Gmail Service is enabled | A protected feature flag can route only owner `messages.list`, `messages.get`, and `history.list` calls through Advanced Gmail; its tests pass 8/8, but the full suite correctly fails the immutable v57 hash gate at 451/452. Do not merge, enable, or deploy without a separately authorized next immutable. Source request: `REQ-0024` |
 
@@ -87,3 +87,12 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ## Independent verification
 
 [VR-001](verification-reports/reports/VR-001/README.md) preserves every contradicted, partial, unverified, and blocked `KH-*` claim. They do not become `GT-*` automatically; `GT-010` was added separately because the current code has a statically confirmed gap. Source request: `REQ-0004`.
+
+## 2026-07-22 addendum: all Gmail roots accepted
+
+- The earlier note that inbound fan-out for secondary roots was unverified is superseded by new production evidence.
+- Root-2: a clean Inbox arrival produced exactly one card with the correct account marker; two repeated /check operations produced no duplicate.
+- Root-3: a clean Inbox arrival produced exactly one card with the correct account marker; two repeated /check operations produced no duplicate.
+- The initial root-2 probe landing in Spam was an external Gmail classification, not a delivery defect: production deliberately excludes Spam.
+- The visible Telegram viewport is not sufficient evidence that a card is absent. Final counts use the accessibility index and a unique sanitized marker.
+- GT-018, GT-019, GT-023, and GT-024 have no open secondary-root acceptance blocker for production v57.
