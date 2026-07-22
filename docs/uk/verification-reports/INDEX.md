@@ -20,3 +20,12 @@ Source request: `REQ-0004`.
 ## VR-004 (2026-07-21)
 
 [VR-004](reports/VR-004/README.md) є stabilization/root-cause audit після rollback v56 та staging v57. Він відділяє production-accepted v55 від candidate line, фіксує shared URLFetch quota blocker і fail-closed A/B план. Додатки містять [повний аудит 26 CI failures](reports/VR-004/CI_FAILURE_AUDIT.md), [runtime evidence v55/v57](reports/VR-004/RUNTIME_QUOTA_EVIDENCE.md), [Stage 1 continuation audit](reports/VR-004/STAGE_1_CONTINUATION_AUDIT.md) і [Advanced Gmail compatibility analysis](reports/VR-004/ADVANCED_GMAIL_COMPATIBILITY.md). Чинний machine index VR-003 не змінено без окремої зміни validator-контракту.
+
+## VR-005 — Керування Gmail-мітками
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** офіційні Gmail API constraints, production baseline без мутацій, root cause, реалізація, автоматичні й responsive visual checks, release boundary.
+- **Звіт:** [reports/VR-005/README.md](reports/VR-005/README.md)
+- **Примітка:** shared machine index залишається на VR-003; VR-005 не змінює machine-report contract.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
