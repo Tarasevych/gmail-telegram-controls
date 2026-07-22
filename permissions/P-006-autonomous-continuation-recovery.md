@@ -1,6 +1,7 @@
 # P-006: Автономне продовження і recovery / Autonomous continuation and recovery
 
 Source request: `REQ-0011`
+Amended by: `REQ-0030` (release-only exception governed by `P-009`)
 Status: `active`
 Granted by: project owner on `2026-07-21`
 
@@ -23,7 +24,7 @@ Granted by: project owner on `2026-07-21`
 - Не вимикати 2FA, SSO, branch protection, required checks, push protection, secret scanning, antivirus або firewall.
 - Не виконувати force-push, rewrite history, видалення історичних branches/tags/repos або незворотні системні зміни без нової прямої вказівки й окремої safety-перевірки.
 - Не експортувати й не публікувати passwords, tokens, cookies, OAuth codes, private keys, recovery values, приватні листи або session data.
-- Цей дозвіл не є дозволом на Versie 2, новий immutable release або production promotion; вони потребують окремого owner request.
+- Цей дозвіл сам по собі не є дозволом на Versie 2, immutable release або production promotion. Release-дія потребує окремого active explicit authority; для bounded Versie 1 automation таким записом є `P-009`.
 
 ## English
 
@@ -44,4 +45,4 @@ Granted by: project owner on `2026-07-21`
 - Do not disable 2FA, SSO, branch protection, required checks, push protection, secret scanning, antivirus, or firewall.
 - Do not force-push, rewrite history, delete historical branches/tags/repositories, or make irreversible system changes without a new direct instruction and separate safety verification.
 - Do not export or publish passwords, tokens, cookies, OAuth codes, private keys, recovery values, private mail, or session data.
-- This authority does not authorize Versie 2, a new immutable release, or production promotion; each requires a separate owner request.
+- This authority by itself does not authorize Versie 2, an immutable release, or production promotion. A release action requires separate active explicit authority; `P-009` provides that record for bounded Versie 1 automation.
