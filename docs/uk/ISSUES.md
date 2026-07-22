@@ -35,7 +35,7 @@
 | GT-027 | PARTIAL; live UI перевірено у v59, production відкочено | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | v59 staging показав `+ Створити`, доступну manage-action для USER labels, bounded scroll і довгі вкладені назви без overlap; mutating operations не виконувалися. Production повернуто на v57 через GT-030 |
 | GT-028 | PARTIAL; fix live-перевірено у v59, production відкочено | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
 | GT-029 | Вирішена та синхронізована | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
-| GT-030 | BLOCKED; exact rollback до v57 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v57 exact rollback; stable і HEAD v57, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
+| GT-030 | BLOCKED; exact rollback до v63 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v63 exact rollback; stable і HEAD v63, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
 | GT-031 | PARTIAL; source candidate | 1 | Головний заголовок і fallback-профіль були жорстко прив’язані до одного імені та не показували фактичний активний або спільний поштовий контекст | REQ-0032 додає похідний від чинних opaque connection IDs блок, повний email, доступне shared mapping і синхронні render-hooks; production лишається v57 до окремого acceptance |
 
 ## Production-доказ 2026-07-20
@@ -111,7 +111,7 @@
 - **Виправлення:** VERIFIED локально у [коміті 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): спільний state/render path, `+` біля заголовка, одна доступна pencil-action для кожної USER-мітки, progressive disclosure, bounded scroll, нормалізація вкладеного повного шляху, захист SYSTEM-міток, permission/retry states і синхронне оновлення обох поверхонь.
 - **Перевірка:** VERIFIED локально — фінальний UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
 - **Live verification:** VERIFIED у v59 staging — profile panel показав `+ Створити`, доступну manage-action для кожної USER-мітки, окремі SYSTEM labels, bounded scroll і довгі вкладені назви без overlap. Create/rename/delete навмисно не запускалися, щоб не мутувати випадкові Gmail labels.
-- **Release boundary:** PARTIAL — v59 було просунуто після UI acceptance, але exact rollback повернув production на v57 через окремий runtime blocker GT-030.
+- **Release boundary:** PARTIAL — v59 було просунуто після UI acceptance, але exact rollback повернув production на v63 через окремий runtime blocker GT-030.
 - **Production:** UNVERIFIED — label changes не є частиною чинного production v57.
 - **Звіт:** [VR-005](verification-reports/reports/VR-005/README.md)
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
@@ -125,7 +125,7 @@
 - **Source fix:** REQ-0029 робить hash одноразовим, а automatic initial/hash/resume open у разі failure очищає reader і показує вже завантажений list. Manual message selection зберігає error і `Повторити`.
 - **Локальні докази:** targeted bridge/route suite `238/238`; усі non-release tests `440/440`; bilingual, knowledge-hub і verification validators пройшли. Повний release suite fail-closed лише на двох очікуваних immutable hash guards, бо змінений source навмисно не відповідає історичним v57/v58 pins.
 - **Live evidence:** v59 staging відкрив mailbox, avatar і три account roots; stale automatic route повернувся до вже завантаженого списку з content-free notice замість reader/network failure. Два v59 production launches також завантажили mailbox.
-- **Release boundary:** v59 promotion і cleanup були виконані за REQ-0030/P-009, але post-cleanup runtime gate GT-030 спричинив exact rollback до v57. Immutable v59 збережено, staging `0`.
+- **Release boundary:** v59 promotion і cleanup були виконані за REQ-0030/P-009, але post-cleanup runtime gate GT-030 спричинив exact rollback до v63. Immutable v59 збережено, staging `0`.
 - **Звіт:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
 
@@ -194,12 +194,14 @@
 
 ## GT-037 — Promotion helper може повідомити false negative після успішного deployment update
 
-- **Статус:** PARTIAL — deployment v63 безпечно reconciled і завершено, але helper hardening ще не реалізовано.
+- **Статус:** PARTIAL — deployment v63 безпечно reconciled; bounded helper hardening локально VERIFIED у v64 source candidate, а live promotion acceptance лишається UNVERIFIED.
 - **Спостережена поведінка:** `Promote` просунув stable v57 до v63, після чого immediate read повернув stale state і створив помилку `Stable deployment did not advance to the candidate.`
 - **Першопричина:** helper не має bounded read-after-write reconciliation window. Propagation mechanism виведено з пізнішого authoritative readback, а не заявлено як platform guarantee.
 - **Безпечна обробка:** другий promotion не запускався. Read-only preflight довів stable v63 до cleanup.
-- **Рекомендоване виправлення:** додати bounded retry з exact candidate/deployment matching і fail closed за contradictory state. Immutable v63 не переписувати.
-- **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md).
+- **Source fix:** v64 helper виконує щонайбільше п'ять read-only deployment checks після одного PUT, приймає лише exact prior version під час convergence і fail closed за будь-якої contradictory version. Rollback використовує той самий bounded contract.
+- **Тести:** focused release contracts `2/2`, PowerShell parser clean, cumulative suite `503/503`.
+- **Release boundary:** production лишається exact immutable v63; v64 helper не є immutable або deployment, доки source PR не merged і `StageOnly` не пройшов preflight.
+- **Доказ:** [VR-013](verification-reports/reports/VR-013/README.md).
 ## GT-038 — Telegram Web K/A показує blank signed Mini App, тоді як native Desktop працює
 
 - **Статус:** PARTIAL — native Telegram Desktop staging і production VERIFIED; web-only failure та його root cause лишаються UNVERIFIED.

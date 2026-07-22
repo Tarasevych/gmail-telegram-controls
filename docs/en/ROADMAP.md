@@ -26,14 +26,14 @@ Versie 2 is not opened without the exact owner instruction `Next Versie authoriz
 
 - **B1-20:** the owner-only Advanced Gmail adapter is integrated into immutable v59, but the protected flag remained disabled; mailbox acceptance does not prove quota reduction. Status: `PARTIAL`.
 - **B1-21:** the label UI was live-verified on v59 staging: create/manage controls, USER/SYSTEM separation, bounded scrolling, and long nested names worked without overlap. Mutating label operations were not run; production is v57 again after GT-030. Status: `PARTIAL`.
-- **B1-22:** stale automatic-route recovery was live-verified on v59 staging and two production launches. The fix is not part of current v57 after the exact rollback. Status: `PARTIAL`.
+- **B1-22:** stale automatic-route recovery was live-verified on v59 staging and two production launches. The fix is not part of current v63 after the exact rollback. Status: `PARTIAL`.
 
 ## B1-23 — v59 runtime gate and exact rollback
 
 - **Status:** BLOCKED; safe state restored.
 - **Completed:** immutable v59 was staged once, UI acceptance passed, promotion and two production launches passed, and cleanup removed staging.
 - **Blocker:** a post-cleanup `214.96 s` execution exceeded the 150-second target and overlapped the next execution window; root cause is `UNVERIFIED`.
-- **Protection:** exact rollback to v57; stable and HEAD v57, staging `0`, journal `rolled_back`; a fresh rollback mailbox launch passed.
+- **Protection:** exact rollback to v63; stable and HEAD v63, staging `0`, journal `rolled_back`; a fresh rollback mailbox launch passed.
 - **Next:** investigate GT-030 without creating a repeat immutable. The next cumulative candidate is allowed only for a new causal code delta, not an endless staging loop.
 - **Evidence:** [VR-007](verification-reports/reports/VR-007/README.md). Source requests: `REQ-0030`, `REQ-0031`.
 
@@ -93,7 +93,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 ### B1-19 — Shared bootstrap A/B after the v56 rollback
 
 - **Status:** completed and verified on 2026-07-22.
-- **Safe state:** stable production v57; immutable v56 is historical; exact v55 rollback is preserved; staging is `0`; the Telegram menu points to production.
+- **Safe state:** stable production v63; immutable v56 is historical; exact v55 rollback is preserved; staging is `0`; the Telegram menu points to production.
 - **A/B evidence:** two fresh v55 mailbox launches passed; signed v57 staging showed the avatar, three roots, and switching to the controlled second account and back without OAuth; after promotion two v57 production launches passed.
 - **Delivery gate:** an independent owner-controlled external `INBOX` automatically created one Telegram card with the correct account marker; two `/check` runs created no duplicate. Self/alias `INBOX+SENT` probes were correctly skipped.
 - **Release rule:** do not rewrite immutable v56/v57; do not create Versie 2 or the next immutable without a new exact owner instruction.
@@ -156,7 +156,8 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Production boundary:** the cumulative P0 source is now deployed as immutable v63; native staging/production mailbox and account-isolation acceptance passed.
 - **Verified:** dynamic active context, three isolated roots, account switching without OAuth, production app-shell load, worker no-overlap gate and exact release-state cleanup.
 - **Current source step:** GT-031 now has a tested narrow-screen full-address disclosure (`88/88` focused, `501/501` full); staging and production visual acceptance are still required.
+- **Current release step:** the cumulative v64 helper pins source `da8b2768323db8fd8c1ba886b556bbfd2148d6de` and adds bounded GT-037 reconciliation; local release contracts are green, but no v64 immutable exists yet.
 - **Still required:** measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; same-scale production typography comparison; and stale-open-client exactly-one-reload/no-loop acceptance.
 - **Related issues:** GT-031 through GT-038.
 - **Rule:** continue within Versie 1. Do not create another immutable candidate until a code change requires it and the existing release operation is in a terminal state.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), [VR-011](verification-reports/reports/VR-011/README.md), and [VR-012](verification-reports/reports/VR-012/README.md).
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), [VR-011](verification-reports/reports/VR-011/README.md), [VR-012](verification-reports/reports/VR-012/README.md), and [VR-013](verification-reports/reports/VR-013/README.md).
