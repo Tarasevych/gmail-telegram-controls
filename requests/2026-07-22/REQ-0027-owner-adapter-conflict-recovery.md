@@ -2,7 +2,7 @@
 
 - ID: REQ-0027
 - Date: 2026-07-22
-- Status: recorded
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=no-change
 - Permission basis: explicit
@@ -48,3 +48,16 @@
 ### Boundary
 
 There is no authority to activate the protected property, create an immutable, staging or production deployment, promote production, repeat OAuth, mutate Gmail records, change a trigger, Telegram menu, account mapping, or zone. Current production exact v57 and staging count 0 must be preserved.
+
+<!-- REQ-0027-COMPLETION-EVIDENCE -->
+## Доказ завершення / Completion evidence
+
+- Scope status / Статус обсягу: `completed` for conflict recovery and verification only; source integration remains an open draft and is not deployed.
+- Feature HEAD: `a6648ccb25b0f0d8cfc2384625ab5fc8f66ad91a`; normal merge of current `main`, with no force, reset, rebase, or history rewrite.
+- Pull request: `#11`, `OPEN`, `DRAFT`, `CLEAN`.
+- Tests: owner adapter `8/8`; full Apps Script suite `451/452` with the sole expected immutable-v57 source-hash guard mismatch because the candidate intentionally changes `Code.gs`.
+- Documentation/tooling: bilingual docs `52` pairs; knowledge hub `17` pairs, `295` source IDs, `245` canonical items, `8` recorded conflicts; verification reports passed; tooling `3/3`; privacy scan `208` tracked text files and `0` high-confidence findings.
+- GitHub checks passed: `29916165072`, `29916167216`, `29916164896`, `29916167227`, `29916164948`, `29916167209`.
+- GitHub/GitLab feature-branch parity: exact HEAD `a6648ccb25b0f0d8cfc2384625ab5fc8f66ad91a`.
+- Runtime boundary: production remains exact Apps Script `v57`; staging count remains `0`; protected adapter flag was not activated; no OAuth, Gmail, trigger, Telegram-menu, account, zone, immutable, staging, promotion, or deployment operation was performed.
+- Source records / Джерела: `REQ-0024`, `REQ-0027`; PR `https://github.com/Tarasevych/gmail-telegram-controls/pull/11`.

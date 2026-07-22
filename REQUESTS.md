@@ -202,6 +202,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: продовжити незалежну роботу `Versie 1`, узгодивши owner-only Advanced Gmail read adapter PR #11 з актуальним `main` без втрати новішої release-доказовості.
 - English: continue independent `Versie 1` work by reconciling owner-only Advanced Gmail read adapter PR #11 with current `main` without losing newer release evidence.
 - Record: [REQ-0027](requests/2026-07-22/REQ-0027-owner-adapter-conflict-recovery.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: normal feature-branch conflict recovery, tests, paired documentation, GitHub PR evidence, and private GitLab parity only; no flag activation, immutable, staging, production promotion, OAuth, Gmail mutation, trigger, menu, account, or zone change.
+- Evidence: conflict recovery verified at `a6648ccb25b0f0d8cfc2384625ab5fc8f66ad91a`; PR #11 is open, draft, clean, unmerged, undeployed; adapter tests `8/8`; full suite `451/452` with only the expected immutable-v57 hash guard; all six GitHub checks passed; GitHub/GitLab parity confirmed.
