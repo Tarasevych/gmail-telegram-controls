@@ -22,6 +22,21 @@ Updated: **2026-07-21**. Single active version: **Versie 1**.
 
 Versie 2 is not opened without the exact owner instruction `Next Versie authorization: yes, Versie 2`. Until that instruction, every authorized change remains on the active Versie 1 line, but no existing immutable Apps Script artifact is rewritten. New findings receive a `GT-*` record in [ISSUES.md](ISSUES.md).
 
+## B1-20–B1-22 superseding update after v59 — 2026-07-22
+
+- **B1-20:** the owner-only Advanced Gmail adapter is integrated into immutable v59, but the protected flag remained disabled; mailbox acceptance does not prove quota reduction. Status: `PARTIAL`.
+- **B1-21:** the label UI was live-verified on v59 staging: create/manage controls, USER/SYSTEM separation, bounded scrolling, and long nested names worked without overlap. Mutating label operations were not run; production is v57 again after GT-030. Status: `PARTIAL`.
+- **B1-22:** stale automatic-route recovery was live-verified on v59 staging and two production launches. The fix is not part of current v57 after the exact rollback. Status: `PARTIAL`.
+
+## B1-23 — v59 runtime gate and exact rollback
+
+- **Status:** BLOCKED; safe state restored.
+- **Completed:** immutable v59 was staged once, UI acceptance passed, promotion and two production launches passed, and cleanup removed staging.
+- **Blocker:** a post-cleanup `214.96 s` execution exceeded the 150-second target and overlapped the next execution window; root cause is `UNVERIFIED`.
+- **Protection:** exact rollback to v57; stable and HEAD v57, staging `0`, journal `rolled_back`; a fresh rollback mailbox launch passed.
+- **Next:** investigate GT-030 without creating a repeat immutable. The next cumulative candidate is allowed only for a new causal code delta, not an endless staging loop.
+- **Evidence:** [VR-007](verification-reports/reports/VR-007/README.md). Source requests: `REQ-0030`, `REQ-0031`.
+
 ## Cumulative research roadmap
 
 Long-term report-derived phases, dependencies, and evidence gates are in the [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). The current `B1-*` release gates above remain authoritative for Versie 1.
