@@ -1956,8 +1956,9 @@ test('mailbox bridge strips Telegram launch metadata and preserves initData exac
   });
   assert.equal(
     submitted.historyUrl,
-    '/gmail-telegram-controls/?v=test&action=mailbox#view=list&folder=inbox&filter=unread'
+    '/gmail-telegram-controls/?v=test&action=mailbox'
   );
+  assert.doesNotMatch(submitted.historyUrl, /#/);
   assert.doesNotMatch(submitted.historyUrl, /tgWebAppData|query_id|hash=/);
   assert.match(miniAppSource, /\['view', 'thread', 'message', 'folder', 'filter', 'panel'\]/);
 });

@@ -115,12 +115,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Remaining:** BLOCKED until GT-028 is cleared and staging acceptance is repeated; production verification follows only after a pass.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
 
-## B1-22 — v58 shared pre-handler bootstrap A/B
+## B1-22 — Recovery from a stale automatic thread route
 
-- **Status:** BLOCKED.
-- **Completed:** PR #16 and PR #11 were normal-merged; cumulative immutable v58 was created; one staging deployment is preserved; local full suite passed `460/460`; main checks are green.
-- **A/B:** v58 staging and v57 production reproduce the same mailbox-operation error, while the test windows create no Web App executions.
-- **Boundary:** production remains v57; the menu points to production; promotion, cleanup, and another immutable are not run.
-- **Next evidence:** repeat the fail-closed A/B only after transport/deployment access recovers; if v57 passes and v58 fails, diagnose the candidate; if both fail, do not toggle releases.
+- **Status:** PARTIAL — root cause VERIFIED; source candidate prepared; live release UNVERIFIED.
+- **Completed:** direct production v57 inspection proved that mailbox/bootstrap, avatar, Inbox, and delivery work; the failure is localized to replayed automatic thread routing and reader recovery.
+- **Source candidate:** the launcher consumes the route once; automatic initial/hash/resume failures return to the list; manual opens retain retry semantics. Targeted `238/238`, non-release `440/440`, and docs validators are green; two release hash guards correctly prevent changed source from masquerading as immutable v57/v58. Source request: `REQ-0029`.
+- **Boundary:** production exact v57, immutable v58, and its single staging deployment are unchanged; promotion, cleanup, and v59 are not authorized.
+- **Next evidence:** targeted/full/docs tests, a normal PR, and required checks; after separate release authority, run a new immutable staging acceptance with two fresh launches before any promotion.
 - **Evidence:** [GT-028](ISSUES.md), [VR-006](verification-reports/reports/VR-006/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)

@@ -5665,8 +5665,10 @@
           await loadThreads(true);
           return;
         }
-        await openThread(route.threadId, true, route.connectionId);
-        openThreadRoutePanel(route);
+        var routeOpened = await openThread(route.threadId, true, route.connectionId, {
+          recoverToListOnFailure: true
+        });
+        if (routeOpened) openThreadRoutePanel(route);
       }
 
       function safeColor(value, fallback) {
@@ -9354,13 +9356,40 @@
         els.readerContentHost.append(stateNode);
       }
 
+      function recoverFailedAutomaticThreadRoute() {
+        // Source request: REQ-0029. A launch/deep-link route is best effort:
+        // when its thread is stale, retain the already loaded mailbox list
+        // instead of trapping every subsequent Mini App launch in the reader.
+        embeddedLaunchRoute = "";
+        try {
+          if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+        } catch (error) {
+          /* Sandboxed Apps Script frames may reject history mutation. */
+        }
+        releaseAttachmentResources();
+        state.selectedThreadId = "";
+        state.selectedConnectionId = "";
+        state.thread = null;
+        state.threadLoading = false;
+        app.classList.remove("reader-open");
+        els.readerContentHost.hidden = true;
+        clear(els.readerContentHost);
+        els.readerEmpty.hidden = false;
+        renderThreadList();
+        renderNavigation();
+        showSnackbar("Посилання на цю розмову застаріло. Показую список листів.", { error: true });
+      }
+
       async function openThread(threadId, force, connectionId) {
+        var openOptions = arguments.length > 3 && arguments[3] && typeof arguments[3] === "object"
+          ? arguments[3]
+          : {};
         var id = safeId(threadId);
         var requestedConnectionId = safeId(
           connectionId || state.selectedConnectionId || (state.account && state.account.id)
         );
         var sameSelection = state.selectedThreadId === id && state.selectedConnectionId === requestedConnectionId;
-        if (!id || state.threadLoading || state.handoffBusy || (!force && sameSelection && state.thread)) return;
+        if (!id || state.threadLoading || state.handoffBusy || (!force && sameSelection && state.thread)) return false;
         if (!els.handoffLayer.hidden) closeThreadHandoff(false);
         if (state.selectedThreadId && !sameSelection) releaseAttachmentResources();
         state.selectedThreadId = id;
@@ -9378,7 +9407,7 @@
             rpc({ op: "attentionState", threadId: id, connectionId: requestedConnectionId }).catch(function () { return null; })
           ]);
           var data = responses[0];
-          if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return;
+          if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return false;
           state.thread = normalizeThreadDetail(data);
           if (responses[1]) {
             var attentionState = normalizeAttentionState(responses[1], id);
@@ -9398,15 +9427,21 @@
               silentSuccess: true,
               connectionId: requestedConnectionId
             });
-            if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return;
+            if (state.selectedThreadId !== id || state.selectedConnectionId !== requestedConnectionId) return false;
           }
           if (!state.currentLabelId && state.currentFolderId === "DRAFT" && state.thread.drafts.length) {
             openExistingDraft(state.thread.drafts[state.thread.drafts.length - 1]);
           }
+          return true;
         } catch (error) {
           if (state.selectedThreadId === id && state.selectedConnectionId === requestedConnectionId) {
-            renderReaderError(safeText(error.message, "Спробуйте ще раз."));
+            if (openOptions.recoverToListOnFailure) {
+              recoverFailedAutomaticThreadRoute();
+            } else {
+              renderReaderError(safeText(error.message, "Спробуйте ще раз."));
+            }
           }
+          return false;
         } finally {
           state.threadLoading = false;
         }
@@ -16579,10 +16614,14 @@
             return;
           }
           if (initialRoute && initialRoute.view === "thread") {
-            await openThread(initialRoute.threadId, true);
-            openThreadRoutePanel(initialRoute);
+            var initialThreadOpened = await openThread(initialRoute.threadId, true, initialRoute.connectionId, {
+              recoverToListOnFailure: true
+            });
+            if (initialThreadOpened) openThreadRoutePanel(initialRoute);
           } else if (!initialRoute && resumeFresh) {
-            await openThread(resume.threadId, true, state.account.id);
+            await openThread(resume.threadId, true, state.account.id, {
+              recoverToListOnFailure: true
+            });
           }
         } catch (error) {
           var capacity = safeText(error && error.code).toUpperCase() === "SESSION_CAPACITY";
