@@ -30,6 +30,15 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Note:** the shared machine index remains at VR-003; VR-005 does not change the machine-report contract.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
+## VR-007 — v59 release attempt and exact rollback
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** bounded authority, PR #16/#11 integration, immutable v59, local/CI gates, owner-only UI acceptance, promotion, production launches, cleanup, post-cleanup execution overlap, and exact rollback.
+- **Report:** [reports/VR-007/README.md](reports/VR-007/README.md)
+- **Conclusion:** UI/stale-route acceptance passed, but the runtime gate failed; safe production was restored to v57, staging is `0`, and v60 was not created.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
 ## VR-006 — Cumulative v58 staging A/B
 
 - **Status:** BLOCKED

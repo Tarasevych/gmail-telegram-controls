@@ -30,6 +30,15 @@ Source request: `REQ-0004`.
 - **Примітка:** shared machine index залишається на VR-003; VR-005 не змінює machine-report contract.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
 
+## VR-007 — v59 release attempt і exact rollback
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** bounded authority, PR #16/#11 integration, immutable v59, local/CI gates, owner-only UI acceptance, promotion, production launches, cleanup, post-cleanup execution overlap і exact rollback.
+- **Звіт:** [reports/VR-007/README.md](reports/VR-007/README.md)
+- **Висновок:** UI/stale-route acceptance пройдено, але runtime gate не пройдено; safe production відновлено на v57, staging `0`, v60 не створено.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
 ## VR-006 — Cumulative v58 staging A/B
 
 - **Статус:** BLOCKED

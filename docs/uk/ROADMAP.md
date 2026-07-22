@@ -22,6 +22,21 @@
 
 Versie 2 не відкривається без точного owner-наказу `Next Versie authorization: yes, Versie 2`. До такого наказу всі дозволені зміни лишаються в активній лінії Versie 1, але жоден уже створений immutable Apps Script artifact не переписується. Нові проблеми отримують `GT-*` у [ISSUES.md](ISSUES.md).
 
+## Актуалізація B1-20–B1-22 після v59 — 2026-07-22
+
+- **B1-20:** owner-only Advanced Gmail adapter інтегровано в immutable v59, але protected flag лишився вимкненим; mailbox acceptance не доводить quota reduction. Статус `PARTIAL`.
+- **B1-21:** label UI live-перевірено у v59 staging: create/manage controls, USER/SYSTEM separation, bounded scroll і довгі nested names працювали без overlap. Mutating label operations не виконувалися; після GT-030 production знову v57. Статус `PARTIAL`.
+- **B1-22:** stale automatic route recovery live-перевірено у v59 staging і двох production launches. Fix не є частиною чинного v57 після exact rollback. Статус `PARTIAL`.
+
+## B1-23 — Runtime gate v59 та exact rollback
+
+- **Статус:** BLOCKED; safe state відновлено.
+- **Виконано:** immutable v59 staged один раз, UI acceptance пройдено, promotion і два production launches пройшли, cleanup видалив staging.
+- **Blocker:** post-cleanup execution `214.96 с` перевищив 150-секундний target і перекрився з наступним execution window; root cause `UNVERIFIED`.
+- **Захист:** exact rollback до v57; stable і HEAD v57, staging `0`, journal `rolled_back`; fresh rollback mailbox launch пройшов.
+- **Далі:** дослідити GT-030 без створення повторного immutable. Наступний cumulative candidate дозволений лише для нового причинного code delta, а не для нескінченного staging-loop.
+- **Доказ:** [VR-007](verification-reports/reports/VR-007/README.md). Source requests: `REQ-0030`, `REQ-0031`.
+
 ## Кумулятивна дослідницька roadmap
 
 Довгострокові report-derived етапи, залежності й evidence gates містяться в [Master Roadmap](knowledge-hub/MASTER_ROADMAP.md). Поточні `B1-*` release gates вище мають пріоритет для Versie 1.

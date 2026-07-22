@@ -32,9 +32,10 @@
 | GT-024 | Вирішена і перевірена production v57 | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 під час quota incident | Після quota recovery два v55 launches і staging v57 A/B пройшли; v57 просунуто, двічі перевірено production, staging очищено. Валідний external `INBOX` автоматично створив одну картку без дубля після двох `/check` |
 | GT-025 | Інтегрована в immutable v58; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | `mailboxMultiGmailAccessToken_` вибирається для активного `connectionId`, а `ScriptApp.getOAuthToken()` лишається тільки для legacy/owner lane; cumulative v58 suite пройшов, але mailbox acceptance заблокований GT-028 |
 | GT-026 | Інтегрована в immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Allowlisted owner-read adapter включено в cumulative v58, але protected flag не вмикався; зовнішні OAuth connections лишаються на власних token paths. Live quota reduction не перевірена через GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
-| GT-027 | Інтегрована в immutable v58; staging acceptance заблокований | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | Shared USER/SYSTEM renderer, доступні create/rename/delete controls, full-path nesting, bounded scroll і account isolation пройшли cumulative tests; live label UI не прийнято, бо mailbox bootstrap зупинився на GT-028 |
-| GT-028 | PARTIAL; immutable v59 staged; acceptance pending | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | Fix merged через PR #20; exact v59 source/helper merged через PR #21. Immutable v59 і один owner-only staging створені, production лишається v57; live acceptance ще `UNVERIFIED`. |
-| GT-029 | Вирішена локально та перевірена CI | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
+| GT-027 | PARTIAL; live UI перевірено у v59, production відкочено | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | v59 staging показав `+ Створити`, доступну manage-action для USER labels, bounded scroll і довгі вкладені назви без overlap; mutating operations не виконувалися. Production повернуто на v57 через GT-030 |
+| GT-028 | PARTIAL; fix live-перевірено у v59, production відкочено | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
+| GT-029 | Вирішена та синхронізована | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
+| GT-030 | BLOCKED; exact rollback до v57 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v57 exact rollback; stable і HEAD v57, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
 
 ## Production-доказ 2026-07-20
 
@@ -102,25 +103,38 @@
 
 ## GT-027 — Узгоджене керування Gmail-мітками
 
-- **Статус:** PARTIAL — інтегровано в immutable v58; staging acceptance заблокований GT-028.
+- **Статус:** PARTIAL — інтегровано в immutable v58/v59; live UI прийнято у v59, але production повернуто на v57 через GT-030.
 - **Дата:** 2026-07-22
 - **Запит:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Першопричина:** VERIFIED — профільний список резервував ширину для кількох постійно видимих дій, sidebar не мав create/manage controls, а два представлення залежали від різних зрізів стану. Під час acceptance також виявлено спливання click до глобального close-handler і стискання implicit CSS-grid rows до 44 px.
 - **Виправлення:** VERIFIED локально у [коміті 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): спільний state/render path, `+` біля заголовка, одна доступна pencil-action для кожної USER-мітки, progressive disclosure, bounded scroll, нормалізація вкладеного повного шляху, захист SYSTEM-міток, permission/retry states і синхронне оновлення обох поверхонь.
 - **Перевірка:** VERIFIED локально — фінальний UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
-- **Release boundary:** PARTIAL — cumulative immutable v58 і один owner-only staging створені за REQ-0028; production promotion BLOCKED через GT-028.
-- **Production:** UNVERIFIED — зміни не розгорнуті.
+- **Live verification:** VERIFIED у v59 staging — profile panel показав `+ Створити`, доступну manage-action для кожної USER-мітки, окремі SYSTEM labels, bounded scroll і довгі вкладені назви без overlap. Create/rename/delete навмисно не запускалися, щоб не мутувати випадкові Gmail labels.
+- **Release boundary:** PARTIAL — v59 було просунуто після UI acceptance, але exact rollback повернув production на v57 через окремий runtime blocker GT-030.
+- **Production:** UNVERIFIED — label changes не є частиною чинного production v57.
 - **Звіт:** [VR-005](verification-reports/reports/VR-005/README.md)
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
 
 ## GT-028 — Застарілий automatic thread route у Telegram Mini App
 
-- **Статус:** PARTIAL — першопричина VERIFIED; source fix підготовлено, live release UNVERIFIED.
+- **Статус:** PARTIAL — першопричина і recovery behavior VERIFIED у v59; чинний production після GT-030 знову v57.
 - **Дата:** 2026-07-22.
 - **Фактичне уточнення:** окреме вікно production v57 успішно завантажило avatar, Inbox і реальний список листів; у Telegram також був свіжий доставлений notification. Отже попередня локалізація «до server handler» не підтвердилася.
 - **Першопричина:** VERIFIED — GitHub Pages launcher передавав hash route у POST, але зберігав той самий route у history Telegram WebView. `openThread()` перехоплював failure автоматичного deep-link, показував reader error і не очищав selection/route, тому fresh menu launch повторював stale thread.
 - **Source fix:** REQ-0029 робить hash одноразовим, а automatic initial/hash/resume open у разі failure очищає reader і показує вже завантажений list. Manual message selection зберігає error і `Повторити`.
 - **Локальні докази:** targeted bridge/route suite `238/238`; усі non-release tests `440/440`; bilingual, knowledge-hub і verification validators пройшли. Повний release suite fail-closed лише на двох очікуваних immutable hash guards, бо змінений source навмисно не відповідає історичним v57/v58 pins.
-- **Release boundary:** production лишається exact v57; immutable v58 та один staging збережені; v59/deployment/promotion не дозволені цим запитом.
+- **Live evidence:** v59 staging відкрив mailbox, avatar і три account roots; stale automatic route повернувся до вже завантаженого списку з content-free notice замість reader/network failure. Два v59 production launches також завантажили mailbox.
+- **Release boundary:** v59 promotion і cleanup були виконані за REQ-0030/P-009, але post-cleanup runtime gate GT-030 спричинив exact rollback до v57. Immutable v59 збережено, staging `0`.
 - **Звіт:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
+
+## GT-030 — Post-cleanup worker-slot overrun після v59
+
+- **Статус:** BLOCKED; exact rollback VERIFIED, root cause `UNVERIFIED`.
+- **Дата:** 2026-07-22.
+- **Симптом:** після v59 cleanup один `checkNewMail_` завершився за `214.96 с`, хоча worker slot має бути 150 секунд. Наступний execution почався до завершення попереднього; обидва завершилися успішно.
+- **Межа доказу:** execution-window overlap є VERIFIED, але не доводить одночасну Gmail fan-out роботу всередині обох invocations. Не стверджувати lock, quota або Gmail API root cause без окремого trace.
+- **Захисна дія:** exact rollback v59 -> v57; post-rollback preflight: stable і HEAD v57, staging `0`, journal `rolled_back`; fresh v57 mailbox launch пройшов.
+- **Наступний крок:** дослідити content-free slot telemetry і execution phases на чинній Versie 1 source line. Не створювати v60 лише для повтору того самого acceptance.
+- **Звіт:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)

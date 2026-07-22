@@ -8,8 +8,8 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v57; candidate=v59; staging=1; status=UNVERIFIED; as-of=2026-07-22 -->
-- Поточний production працює на перевіреному Apps Script immutable v57. Immutable v59 і один owner-only staging deployment створені для acceptance без promotion; v58 збережено як historical immutable.
+<!-- release-state: production=v57; candidate=v59; staging=0; status=UNVERIFIED; as-of=2026-07-22 -->
+- Поточний production працює на перевіреному Apps Script immutable v57 після exact rollback. Immutable v59 збережено як історичний candidate: UI acceptance пройдено, але post-cleanup runtime gate виявив 214.96-секундне виконання та overlap execution windows; staging `0`, v60 не створено.
 - Канонічний актуальний стан: [Українською](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Датовані release/postmortem статті є історичними доказами, а не current-state джерелом.
 - Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.
 - Номери Apps Script immutable є технічними deployment ID, а не назвами продуктових версій.
@@ -35,7 +35,7 @@ Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 ## Current project line
 
 - Active development version: **Versie 1 · 2026-07-19**.
-- Current production runs verified Apps Script immutable v57. Immutable v59 and one owner-only staging deployment were created for acceptance without promotion; v58 remains a historical immutable.
+- Current production runs verified Apps Script immutable v57 after an exact rollback. Immutable v59 is preserved as a historical candidate: UI acceptance passed, but the post-cleanup runtime gate found a 214.96-second execution and overlapping execution windows; staging is `0`, and v60 was not created.
 - Canonical current state: [Українська](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Dated release and postmortem articles are historical evidence, not the current-state source.
 - Product builds now advance only sequentially: Versie 1, Versie 2, Versie 3, and so on.
 - Apps Script immutable numbers are technical deployment IDs, not product version names.

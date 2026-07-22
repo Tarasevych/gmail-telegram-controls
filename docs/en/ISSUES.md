@@ -32,9 +32,10 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-024 | Resolved and production verified on v57 | 1 | The same mailbox network error reproduced on production v55 and owner-only staging v57 during the quota incident | After quota recovery, two v55 launches and the v57 staging A/B passed; v57 was promoted, accepted twice in production, and staging was cleaned. A valid external `INBOX` automatically created one card with no duplicate after two `/check` runs |
 | GT-025 | Integrated into immutable v58; live unverified | 1 | Parallel thread metadata always used the Apps Script owner token, including an external multi-account context | `mailboxMultiGmailAccessToken_` is selected for the active `connectionId`, while `ScriptApp.getOAuthToken()` remains limited to the legacy/owner lane; the cumulative v58 suite passed, but mailbox acceptance is blocked by GT-028 |
 | GT-026 | Integrated into immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads always consume Apps Script `URLFETCH` quota even though the official Advanced Gmail Service is enabled | The allowlisted owner-read adapter is included in cumulative v58, but the protected flag was not enabled; external OAuth connections retain their own token paths. Live quota reduction is unverified because of GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
-| GT-027 | Integrated into immutable v58; staging acceptance blocked | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | The shared USER/SYSTEM renderer, accessible create/rename/delete controls, full-path nesting, bounded scrolling, and account isolation passed cumulative tests; live label UI acceptance is blocked because mailbox bootstrap stopped at GT-028 |
-| GT-028 | PARTIAL; immutable v59 staged; acceptance pending | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | The fix merged through PR #20 and the exact v59 source/helper through PR #21. Immutable v59 and one owner-only staging deployment exist, production remains v57, and live acceptance is still `UNVERIFIED`. |
-| GT-029 | Resolved locally and verified by CI | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
+| GT-027 | PARTIAL; live UI verified on v59, production rolled back | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | v59 staging showed `+ Create`, an accessible management action for USER labels, bounded scrolling, and long nested names without overlap; mutating operations were not run. Production returned to v57 because of GT-030 |
+| GT-028 | PARTIAL; fix live-verified on v59, production rolled back | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | v59 staging and two production launches recovered a stale automatic route to the list without a network/Drive error; a Telegram-persisted route can still produce a content-free recovery notice. Production returned to v57 because of separate GT-030 |
+| GT-029 | Resolved and synchronized | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
+| GT-030 | BLOCKED; exact rollback to v57 completed | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | Exact v59 -> v57 rollback; stable and HEAD v57, staging 0, journal `rolled_back`, and a rollback mailbox launch passed. Root cause and a safe cumulative fix remain `UNVERIFIED`; v60 was not created |
 
 ## Production evidence 2026-07-20
 
@@ -102,25 +103,38 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-027 — Unified Gmail label management
 
-- **Status:** PARTIAL — integrated into immutable v58; staging acceptance is blocked by GT-028.
+- **Status:** PARTIAL — integrated into immutable v58/v59; the live UI was accepted on v59, but production returned to v57 because of GT-030.
 - **Date:** 2026-07-22
 - **Request:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Root cause:** VERIFIED — the profile list reserved label width for several permanently visible actions, the sidebar had no create/manage controls, and the two surfaces depended on different state slices. Acceptance also exposed click bubbling into the global close handler and implicit CSS grid rows shrinking to 44 px.
 - **Fix:** VERIFIED locally in [commit 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): shared state/render path, a `+` beside the heading, one accessible pencil action for every USER label, progressive disclosure, bounded scrolling, nested full-path normalization, SYSTEM-label protection, permission/retry states, and synchronous refresh of both surfaces.
 - **Verification:** VERIFIED locally — final UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
-- **Release boundary:** PARTIAL — cumulative immutable v58 and one owner-only staging deployment were created under REQ-0028; production promotion is BLOCKED by GT-028.
-- **Production:** UNVERIFIED — the changes are not deployed.
+- **Live verification:** VERIFIED on v59 staging — the profile panel exposed `+ Create`, an accessible management action for every USER label, separate SYSTEM labels, bounded scrolling, and long nested names without overlap. Create/rename/delete were intentionally not run to avoid mutating arbitrary Gmail labels.
+- **Release boundary:** PARTIAL — v59 was promoted after UI acceptance, but an exact rollback returned production to v57 because of the separate GT-030 runtime blocker.
+- **Production:** UNVERIFIED — the label changes are not part of current production v57.
 - **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
 ## GT-028 — Stale automatic thread route in the Telegram Mini App
 
-- **Status:** PARTIAL — root cause VERIFIED; source fix prepared, live release UNVERIFIED.
+- **Status:** PARTIAL — root cause and recovery behavior VERIFIED on v59; current production is v57 again after GT-030.
 - **Date:** 2026-07-22.
 - **Factual correction:** a separately targeted production v57 window successfully loaded the avatar, Inbox, and a real message list; Telegram also contained a fresh delivered notification. The earlier “before server handler” localization was therefore not supported.
 - **Root cause:** VERIFIED — the GitHub Pages launcher forwarded the hash route in the POST but retained the same route in Telegram WebView history. `openThread()` caught an automatic deep-link failure, rendered a reader error, and did not clear selection/route, so a fresh menu launch replayed the stale thread.
 - **Source fix:** REQ-0029 makes the hash one-shot, while failed automatic initial/hash/resume opens clear the reader and expose the already loaded list. Manual message selection retains the error and `Retry`.
 - **Local evidence:** targeted bridge/route suite `238/238`; all non-release tests `440/440`; bilingual, knowledge-hub, and verification validators passed. The full release suite fails closed only at two expected immutable hash guards because changed source intentionally does not match historical v57/v58 pins.
-- **Release boundary:** production remains exact v57; immutable v58 and one staging deployment are preserved; v59/deployment/promotion are not authorized by this request.
+- **Live evidence:** v59 staging opened the mailbox, avatar, and three account roots; a stale automatic route returned to the already loaded list with a content-free notice instead of a reader/network failure. Two v59 production launches also loaded the mailbox.
+- **Release boundary:** v59 promotion and cleanup were executed under REQ-0030/P-009, but the post-cleanup GT-030 runtime gate caused an exact rollback to v57. Immutable v59 is preserved and staging is `0`.
 - **Report:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
+
+## GT-030 — Post-cleanup worker-slot overrun after v59
+
+- **Status:** BLOCKED; exact rollback VERIFIED, root cause `UNVERIFIED`.
+- **Date:** 2026-07-22.
+- **Symptom:** after v59 cleanup, one `checkNewMail_` execution completed in `214.96 s` although the worker slot target is 150 seconds. The next execution started before the previous one completed; both completed successfully.
+- **Evidence boundary:** execution-window overlap is VERIFIED, but it does not prove simultaneous Gmail fan-out work inside both invocations. Do not claim a lock, quota, or Gmail API root cause without a separate trace.
+- **Protective action:** exact v59 -> v57 rollback; post-rollback preflight showed stable and HEAD v57, staging `0`, and journal `rolled_back`; a fresh v57 mailbox launch passed.
+- **Next step:** investigate content-free slot telemetry and execution phases on the current Versie 1 source line. Do not create v60 merely to repeat the same acceptance.
+- **Report:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
