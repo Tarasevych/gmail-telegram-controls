@@ -8,6 +8,7 @@
 | ID | Дата | Статус | Коротка тема | Запис |
 |---|---|---|---|---|
 <!-- request-index -->
+| REQ-0033 | 2026-07-22 | recorded | P0 навігація, кеш, чернетки й типографіка | [record](requests/2026-07-22/REQ-0033-p0-instant-navigation-cache-drafts-typography.md) |
 | REQ-0031 | 2026-07-22 | recorded | Синхронізація актуального стану документації | [record](requests/2026-07-22/REQ-0031-current-state-documentation-synchronization.md) |
 | REQ-0030 | 2026-07-22 | recorded | Обмежене постійне release-повноваження Versie 1 | [record](requests/2026-07-22/REQ-0030-bounded-standing-versie-1-release-authority.md) |
 | REQ-0001 | 2026-07-19 | superseded | Початковий спільний журнал та gate Versie | [record](requests/2026-07-19/REQ-0001-instruction-ledger-and-version-gate.md) |
@@ -234,6 +235,17 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: замінити статичний заголовок головної поштової сторінки на доступний динамічний блок фактичного активного акаунта або спільного поштового контексту.
 - English: replace the static main-mail-page heading with an accessible dynamic block for the actual active account or shared mail context.
 - Record: [REQ-0032](requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: reuse the existing stable connection state; source/tests/paired documentation and normal PR only; no access-rule, OAuth, Gmail-permission, shared-membership, immutable-release, staging, production-promotion, account/zone, or secret mutation.
+- Evidence: source `a3d24b740fb0069f2fc5cf3baecaa39c90a9774c`; PR #24 normal merge `0000686383069bdaf34c6077e4891ed02991d8e7`; targeted `88/88`; non-release `443/443`; green GitHub checks and GitHub/GitLab `main` parity.
+
+## REQ-0033 | 2026-07-22
+
+- Українською: P0 окремий cause-linked контур для миттєвої навігації, bounded account-isolated cache, background revalidation, Gmail-backed draft recovery, Gmail-подібної типографіки та одноразової активації нового production client.
+- English: a separate cause-linked P0 contour for instant navigation, bounded account-isolated caching, background revalidation, Gmail-backed draft recovery, Gmail-like typography, and one-time activation of a new production client.
+- Record: [REQ-0033](requests/2026-07-22/REQ-0033-p0-instant-navigation-cache-drafts-typography.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Permission basis: existing bounded `P-009`; this request creates no broader authority.
+- Boundary: Versie 1 only; no unrelated PR/immutable mutation, arbitrary mail change, account/zone mixing, secret publication, protection bypass, or promotion before complete VERIFIED staging acceptance.

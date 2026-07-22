@@ -2,7 +2,7 @@
 
 - ID: REQ-0032
 - Date: 2026-07-22
-- Status: recorded
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=reference
 - Permission basis: none
@@ -52,3 +52,10 @@
 - The implementation reuses current active-connection state and does not change OAuth, Gmail permissions, or mail-flow composition.
 - Relevant UK/EN pages, issue ledger, plan, and verification evidence are updated in pairs and pass the current documentation checks.
 - This record alone does not authorize a new immutable release; release and promotion remain subject to the existing bounded gates and open runtime blockers.
+
+### Completion evidence
+
+- Source commit `a3d24b740fb0069f2fc5cf3baecaa39c90a9774c`; normal GitHub PR #24 merge `0000686383069bdaf34c6077e4891ed02991d8e7`.
+- Targeted tests `88/88`; full non-release suite `443/443`; documentation, release-state, privacy, desktop, and mobile `390x760` gates passed.
+- GitHub required checks passed and GitHub/GitLab `main` parity was confirmed at the merge commit.
+- Production remained exact v57; no immutable, staging, OAuth, Gmail mutation, account/zone, trigger, or menu change occurred.
