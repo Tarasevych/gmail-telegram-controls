@@ -112,7 +112,7 @@ test('Versie 1 v57 keeps v56 safety and adds connection-scoped metadata identity
   assert.match(code, /if \(!props\.getProperty\(propertyKey\)\)/);
   assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v59'/);
   assert.match(code, /mailboxMultiGmailAccessToken_\(mailboxCurrentSessionContext_\)/);
-  assert.match(code, /claimGmailTimerSlot_\('worker', GMAIL_TIMER_WORKER_SLOT_MS_\)/);
+  assert.match(code, /claimGmailTimerWorkerLease_\(\)/);
   assert.match(code, /claimGmailTimerSlot_\('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_\)/);
   assert.match(code, /function gmailRealtimeLaneSnapshots_\(propsValue, includeAccounts\)/);
   assert.match(code, /lanes: gmailRealtimeLaneSnapshots_\(props, false\)/);

@@ -530,10 +530,140 @@ function claimGmailTimerSlot_(slotName, durationMs) {
   }
 }
 
+function gmailTimerWorkerPropertyKey_() {
+  return GMAIL_TIMER_SLOT_PROPERTY_PREFIX_ + 'worker';
+}
+
+function gmailTimerWorkerReadLease_(rawValue) {
+  var raw = String(rawValue || '');
+  var legacyUntil = Number(raw);
+  if (Number.isFinite(legacyUntil) && legacyUntil > 0) {
+    return { token: '', leaseUntil: legacyUntil };
+  }
+  try {
+    var parsed = JSON.parse(raw);
+    return {
+      token: String(parsed.t || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 80),
+      leaseUntil: Math.max(0, Number(parsed.u || 0)),
+    };
+  } catch (error) {
+    return { token: '', leaseUntil: 0 };
+  }
+}
+
+function gmailTimerWorkerCode_(value, fallback) {
+  var code = String(value || fallback || 'unknown')
+    .toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 48);
+  return code || String(fallback || 'unknown');
+}
+
+function gmailTimerWorkerTelemetry_(lease, status, stage, errorCode) {
+  try {
+    var now = Date.now();
+    var record = {
+      v: 1,
+      status: gmailTimerWorkerCode_(status, 'unknown'),
+      stage: gmailTimerWorkerCode_(stage, 'unknown'),
+      startedAt: Math.max(0, Number(lease && lease.startedAt || 0)),
+      deadlineAt: Math.max(0, Number(lease && lease.deadlineAt || 0)),
+      leaseUntil: Math.max(0, Number(lease && lease.leaseUntil || 0)),
+      observedAt: now,
+      durationMs: Math.max(0, now - Math.max(0, Number(lease && lease.startedAt || now))),
+      errorCode: gmailTimerWorkerCode_(errorCode, 'none'),
+    };
+    PropertiesService.getScriptProperties().setProperty(
+      GMAIL_TIMER_WORKER_TELEMETRY_KEY_, JSON.stringify(record)
+    );
+    console.log(JSON.stringify({
+      event: 'gmail_timer_worker', status: record.status, stage: record.stage,
+      durationMs: record.durationMs, errorCode: record.errorCode,
+    }));
+  } catch (error) {
+    console.error('Gmail timer worker telemetry unavailable.');
+  }
+}
+
+function claimGmailTimerWorkerLease_() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(250)) {
+    console.log(JSON.stringify({ event: 'gmail_timer_worker_skip', code: 'lease_lock_busy' }));
+    return null;
+  }
+  try {
+    var now = Date.now();
+    var properties = PropertiesService.getScriptProperties();
+    var propertyKey = gmailTimerWorkerPropertyKey_();
+    var current = gmailTimerWorkerReadLease_(properties.getProperty(propertyKey));
+    if (current.leaseUntil > now) {
+      console.log(JSON.stringify({ event: 'gmail_timer_worker_skip', code: 'lease_active' }));
+      return null;
+    }
+    var token = now.toString(36) + '_' +
+      Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+    var lease = {
+      token: token,
+      startedAt: now,
+      deadlineAt: now + GMAIL_TIMER_WORKER_SLOT_MS_,
+      leaseUntil: now + GMAIL_TIMER_WORKER_LEASE_MS_,
+      stage: 'claimed',
+    };
+    properties.setProperty(propertyKey, JSON.stringify({ v: 1, t: token, u: lease.leaseUntil }));
+    gmailTimerWorkerTelemetry_(lease, 'running', lease.stage, 'none');
+    return lease;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function gmailTimerWorkerStartStage_(lease, stage) {
+  lease.stage = gmailTimerWorkerCode_(stage, 'unknown');
+  if (Date.now() >= Number(lease.deadlineAt || 0)) {
+    gmailTimerWorkerTelemetry_(lease, 'budget_exhausted', lease.stage, 'none');
+    return false;
+  }
+  gmailTimerWorkerTelemetry_(lease, 'running', lease.stage, 'none');
+  return true;
+}
+
+function finishGmailTimerWorkerLease_(lease, status, errorCode) {
+  var released = false;
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(2000)) {
+    try {
+      var properties = PropertiesService.getScriptProperties();
+      var propertyKey = gmailTimerWorkerPropertyKey_();
+      var current = gmailTimerWorkerReadLease_(properties.getProperty(propertyKey));
+      if (lease && lease.token && current.token === lease.token) {
+        properties.deleteProperty(propertyKey);
+        released = true;
+      }
+    } finally {
+      lock.releaseLock();
+    }
+  }
+  gmailTimerWorkerTelemetry_(
+    lease, released ? status : 'lease_release_deferred',
+    lease && lease.stage || 'unknown', errorCode || 'none'
+  );
+  return released;
+}
+
 /** Timer entry point. */
 function checkNewMail_() {
-  if (!claimGmailTimerSlot_('worker', GMAIL_TIMER_WORKER_SLOT_MS_)) return;
+  var workerLease = claimGmailTimerWorkerLease_();
+  if (!workerLease) return;
+  var workerStatus = 'completed';
+  var workerErrorCode = 'none';
+  var legacyResult = null;
+  function startStage(stage) {
+    if (gmailTimerWorkerStartStage_(workerLease, stage)) return true;
+    workerStatus = 'budget_exhausted';
+    return false;
+  }
+  try {
+  if (!startStage('realtime')) return emptyMailCheckResult_();
   runRealtimeMailChecks_('timer', 5);
+  if (!startStage('telegram_maintenance')) return emptyMailCheckResult_();
   // Webhook failures and half-finished Telegram card moves are durable. The
   // minute trigger provides a bounded retry path without repeating Gmail work.
   try { retryFailedTelegramUpdates_(3); } catch (error) {
@@ -555,6 +685,7 @@ function checkNewMail_() {
   } catch (error) {
     console.error('Per-account Gmail metadata reconciliation failed: ' + error);
   }
+  if (!startStage('gmail_history')) return emptyMailCheckResult_();
   try {
     if (claimGmailTimerSlot_('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_)) {
       syncTelegramMailCardsFromAllGmailHistory_(CONFIG.GMAIL_HISTORY_SYNC_CARD_LIMIT);
@@ -568,6 +699,7 @@ function checkNewMail_() {
   try { syncTelegramMailCardsFromGmailFallbackIfDue_(CONFIG.TELEGRAM_MAIL_STATE_SYNC_BATCH); } catch (error) {
     console.error('Gmail to Telegram state synchronization failed: ' + error);
   }
+  if (!startStage('retention_scheduling')) return emptyMailCheckResult_();
   try { purgeOldTelegramMailCards_(5); } catch (error) {
     console.error('Telegram mail-card retention cleanup failed: ' + error);
   }
@@ -599,12 +731,21 @@ function checkNewMail_() {
   } catch (error) {
     console.error('Gmail OAuth revocation cleanup failed: ' + error);
   }
-  const legacyResult = (() => { return runMailCheck_('timer'); })();
+  if (!startStage('legacy_recovery')) return emptyMailCheckResult_();
+  legacyResult = (() => { return runMailCheck_('timer'); })();
+  if (!startStage('multi_account')) return legacyResult;
   try { legacyResult.multiAccount = runMultiAccountMailChecks_(3); } catch (error) {
     console.error('Multi-account Gmail notification scan failed: ' + error);
     legacyResult.multiAccount = { failed: 1, processed: 0 };
   }
   return legacyResult;
+  } catch (error) {
+    workerStatus = 'failed';
+    workerErrorCode = gmailRuntimeFailureCode_(error);
+    throw error;
+  } finally {
+    finishGmailTimerWorkerLease_(workerLease, workerStatus, workerErrorCode);
+  }
 }
 
 var GMAIL_NOTIFICATION_REALTIME_STATE_PREFIX_ = 'GMAIL_NOTIFICATION_REALTIME_V1_';
@@ -619,6 +760,10 @@ var GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v59';
 var GMAIL_NOTIFICATION_REALTIME_LEASE_MS_ = 3 * 60 * 1000;
 var GMAIL_TIMER_SLOT_PROPERTY_PREFIX_ = 'gmail_timer_slot_v1_';
 var GMAIL_TIMER_WORKER_SLOT_MS_ = 150 * 1000;
+// Apps Script documents a six-minute execution limit. Keep a one-minute
+// crash margin, then release early in finally after normal completion.
+var GMAIL_TIMER_WORKER_LEASE_MS_ = 7 * 60 * 1000;
+var GMAIL_TIMER_WORKER_TELEMETRY_KEY_ = 'GMAIL_TIMER_WORKER_TELEMETRY_V1';
 var GMAIL_HISTORY_SYNC_SLOT_MS_ = 15 * 60 * 1000;
 
 function emptyMailCheckResult_() {
