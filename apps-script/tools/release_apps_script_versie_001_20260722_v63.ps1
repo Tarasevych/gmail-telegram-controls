@@ -314,5 +314,3 @@ try {
   if ($held) { $mutex.ReleaseMutex() }
   $mutex.Dispose()
 }
-
-
