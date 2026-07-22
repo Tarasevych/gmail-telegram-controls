@@ -1911,9 +1911,12 @@ test('dynamic mail context is responsive accessible and keeps full account mappi
   assert.match(uiSource, /id="mailContextDetails" hidden/);
   assert.match(uiSource, /<summary id="mailContextSummary">Акаунти й адреси<\/summary>/);
   assert.match(uiSource, /id="mailContextAccounts" aria-label="Акаунти спільної пошти"/);
-  assert.match(uiSource, /\.mail-context-subtitle\s*\{[\s\S]*overflow-y:\s*auto;[\s\S]*overflow-wrap:\s*anywhere;/);
+  assert.match(uiSource, /\.mail-context-subtitle\s*\{[\s\S]*width:\s*100%;[\s\S]*overflow-y:\s*auto;[\s\S]*overflow-wrap:\s*anywhere;[\s\S]*white-space:\s*normal;[\s\S]*word-break:\s*break-word;/);
+  assert.match(uiSource, /\.mail-context-details\[hidden\]\s*\{[\s\S]*display:\s*none !important;/);
   assert.match(uiSource, /\.mail-context-account-map\s*\{[\s\S]*max-height:[\s\S]*overflow-y:\s*auto;/);
   assert.match(uiSource, /@media \(max-width: 900px\)[\s\S]*\.mail-context-account-map\s*\{[\s\S]*position:\s*fixed;[\s\S]*right:\s*8px;[\s\S]*left:\s*8px;[\s\S]*width:\s*auto;/);
+  assert.match(uiSource, /@media \(max-width: 900px\)[\s\S]*\.mail-context\.has-address-disclosure:not\(\.is-shared\) \.mail-context-subtitle\s*\{[\s\S]*text-overflow:\s*ellipsis;[\s\S]*white-space:\s*nowrap;/);
+  assert.match(uiSource, /@media \(max-width: 900px\)[\s\S]*\.mail-context\.has-address-disclosure:not\(\.is-shared\) \.mail-context-details\s*\{[\s\S]*display:\s*block;/);
   assert.match(uiSource, /\.mail-context-account-map strong\s*\{[\s\S]*color:\s*var\(--text\);/);
   assert.match(uiSource, /\.mail-context-details summary:focus-visible\s*\{[\s\S]*outline:/);
   assert.match(uiSource, /els\.mailContextSummary\.addEventListener\("keydown"[\s\S]*event\.key === "Enter"[\s\S]*event\.key === " "[\s\S]*event\.preventDefault\(\);[\s\S]*els\.mailContextDetails\.open = !els\.mailContextDetails\.open/);
@@ -1929,6 +1932,11 @@ test('dynamic mail context is responsive accessible and keeps full account mappi
     'shared labelling must require at least two included accounts');
   assert.match(contextSource, /els\.mailContextSubtitle\.title = model\.shared \? model\.ariaLabel : \(model\.email \|\| model\.subtitle\)/,
     'full addresses must remain available when the visible line wraps');
+  assert.match(contextSource, /var hasAddressDisclosure = model\.accounts\.length > 0;/);
+  assert.match(contextSource, /classList\.toggle\("has-address-disclosure", hasAddressDisclosure\)/);
+  assert.match(contextSource, /els\.mailContextDetails\.hidden = !hasAddressDisclosure;/);
+  assert.match(contextSource, /model\.shared[\s\S]*"Акаунти й адреси · " \+ model\.accounts\.length[\s\S]*"Адреса повністю"/);
+  assert.match(contextSource, /"Показати повну адресу Gmail"/);
   assert.match(contextSource, /document\.title = model\.title \+ " · Versie 1"/);
 });
 

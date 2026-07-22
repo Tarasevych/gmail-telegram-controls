@@ -74,3 +74,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-011/README.md](reports/VR-011/README.md)
 - **Висновок:** stable/HEAD є exact v63, staging `0`, worker no-overlap gate verified; scenario-specific P0 items лишаються partial там, де відсутні їхні власні докази.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-012 — Source correction вузького active-account header для GT-031
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** observed production-v63 clipping, render-layer root cause, stable-ID disclosure implementation, focused/full automated contracts, immutable-v63 boundary і required live acceptance.
+- **Звіт:** [reports/VR-012/README.md](reports/VR-012/README.md)
+- **Висновок:** source correction локально verified; production лишається v63, native staging/production visual acceptance ще unverified.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
