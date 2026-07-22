@@ -6421,8 +6421,10 @@
         if (op === "listThreads") {
           var requestedFolder = safeText(input.folderId, "INBOX");
           if (requestedFolder.toUpperCase() === "FOCUS") requestedFolder = "INBOX";
+          var unifiedList = Boolean(input.unified);
           return {
-            op: input.unified ? "unifiedList" : "list",
+            op: unifiedList ? "unifiedList" : "list",
+            connectionId: unifiedList ? "" : safeId(input.connectionId),
             payload: {
               folder: requestedFolder.toUpperCase() === "DRAFT" ? "Drafts" : requestedFolder,
               labelId: safeId(input.labelId),
@@ -8259,6 +8261,7 @@
         state.accountManagementBusy = true;
         renderAccountPanel();
         try {
+          await p0PersistUiStateNow();
           var selected = await rpc({ op: "switchAccount", payload: { connectionId: requested } });
           p0ResetAccountScopedView();
           state.attentionPreferencesRequestId += 1;
@@ -8284,6 +8287,9 @@
           resetGentleMilestones(requested);
           syncCoProcessingTicker();
           initializeFromBootstrap(bootstrap || selected || {});
+          await p0HydratePersistentState();
+          p0ApplyPersistedView();
+          var restoredTargetView = p0Runtime.restoredUi;
           try {
             var accountAttention = normalizeAttentionState(await rpc({
               op: "attentionState", connectionId: requested
@@ -8296,6 +8302,15 @@
           } catch (attentionError) {}
           setAccountPanelOpen(false, null, false);
           await loadThreads(true);
+          if (restoredTargetView && safeId(restoredTargetView.selectedThreadId) &&
+              safeId(restoredTargetView.selectedConnectionId) === safeId(state.account && state.account.id)) {
+            await openThread(
+              restoredTargetView.selectedThreadId,
+              true,
+              restoredTargetView.selectedConnectionId,
+              { recoverToListOnFailure: true }
+            );
+          }
           if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
           showSnackbar("Активний Gmail: " + safeText(state.account && state.account.email), { success: true });
           if (!state.attentionPreferences.onboardingCompletedAt) {
@@ -9005,6 +9020,30 @@
         return p0CurrentNamespace() + ":" + p0StableStringify(view || mailboxViewContext());
       }
 
+      function p0NamespaceAccountIds(namespaceValue) {
+        var namespace = safeText(namespaceValue);
+        if (namespace.indexOf("a:") === 0) {
+          var accountId = safeId(namespace.slice(2));
+          return accountId ? [accountId] : [];
+        }
+        if (namespace.indexOf("u:") !== 0) return [];
+        var accountIds = namespace.slice(2).split(",").map(safeId).filter(Boolean);
+        accountIds = Array.from(new Set(accountIds)).sort();
+        return accountIds.length > 1 ? accountIds : [];
+      }
+
+      function p0ListSnapshotMatchesNamespace(snapshot, namespaceValue) {
+        var allowed = new Set(p0NamespaceAccountIds(namespaceValue));
+        if (!allowed.size) return false;
+        var threads = snapshot && Array.isArray(snapshot.threads) ? snapshot.threads : [];
+        return threads.every(function (item) {
+          var source = item || {};
+          var account = source.account || {};
+          var accountId = safeId(source.accountId || source.connectionId || account.id);
+          return Boolean(accountId && allowed.has(accountId));
+        });
+      }
+
       function p0ThreadCacheKey(threadId, connectionId) {
         return "a:" + safeId(connectionId) + ":" + safeId(threadId);
       }
@@ -9029,8 +9068,8 @@
         p0Runtime.currentListKey = cacheKey;
       }
 
-      function p0RememberList(cacheKey) {
-        var namespace = p0CurrentNamespace();
+      function p0RememberList(cacheKey, namespaceValue) {
+        var namespace = safeText(namespaceValue) || p0CurrentNamespace();
         if (!cacheKey || !namespace) return;
         p0WriteRecord("list", cacheKey, namespace, p0ListSnapshot(), 2 * 60 * 1000);
       }
@@ -9116,6 +9155,16 @@
           var namespace = p0CurrentNamespace();
           if (namespace) p0WriteRecord("view", namespace, namespace, p0UiStateValue(), 24 * 60 * 60 * 1000);
         }, 180);
+      }
+
+      async function p0PersistUiStateNow() {
+        clearTimeout(p0Runtime.uiSaveTimer);
+        p0Runtime.uiSaveTimer = 0;
+        p0SaveReaderScroll();
+        p0SaveListScroll();
+        var namespace = p0CurrentNamespace();
+        if (!namespace) return false;
+        return p0WriteRecord("view", namespace, namespace, p0UiStateValue(), 24 * 60 * 60 * 1000);
       }
 
       async function p0HydratePersistentState() {
@@ -9523,9 +9572,11 @@
 
       function listRequest(pageToken, context) {
         var view = context || mailboxViewContext();
+        var unified = Boolean(state.unifiedMode);
         return {
           op: "listThreads",
-          unified: state.unifiedMode,
+          unified: unified,
+          connectionId: unified ? "" : safeId(state.account && state.account.id),
           folderId: view.folderId,
           labelId: view.labelId,
           query: view.query,
@@ -10132,12 +10183,14 @@
         var opts = options || {};
         var shouldReset = Boolean(reset);
         var view = mailboxViewContext();
+        var namespace = p0CurrentNamespace();
         var cacheKey = p0ListCacheKey(view);
         var intent = {
           version: ++state.requestVersion,
           reset: shouldReset,
           request: listRequest(shouldReset ? "" : state.nextPageToken, view),
           cacheKey: cacheKey,
+          namespace: namespace,
           background: Boolean(opts.background)
         };
 
@@ -10149,6 +10202,13 @@
           p0SaveListScroll();
           var cached = p0PeekRecord("list", cacheKey) || await p0ReadRecord("list", cacheKey);
           if (intent.version !== state.requestVersion) return;
+          if (cached && (cached.namespace !== intent.namespace ||
+              !p0ListSnapshotMatchesNamespace(cached.value, intent.namespace))) {
+            var poisonedListKey = p0RecordKey("list", cacheKey);
+            p0Runtime.memory.delete(poisonedListKey);
+            p0DbDelete(poisonedListKey);
+            cached = null;
+          }
           if (cached) {
             p0Runtime.metrics.listCacheHits += 1;
             p0ApplyListSnapshot(cached.value, cacheKey);
@@ -10180,6 +10240,11 @@
               }
               var items = data && (data.threads || data.items || data.messages) || [];
               var normalized = items.map(normalizeThread).filter(function (thread) { return thread.id; });
+              if (!p0ListSnapshotMatchesNamespace({ threads: normalized }, activeIntent.namespace)) {
+                var scopeError = new Error("Gmail повернув список іншого поштового акаунта.");
+                scopeError.code = "ACCOUNT_SCOPE_MISMATCH";
+                throw scopeError;
+              }
               var threadKey = function (thread) { return safeId(thread.accountId) + ":" + thread.id; };
               var known = new Set(activeIntent.reset ? [] : state.threads.map(threadKey));
               var nextThreads = sortThreadsNewest((activeIntent.reset ? [] : state.threads).concat(normalized.filter(function (thread) {
@@ -10195,7 +10260,7 @@
               };
               var changed = p0ListSignature(nextSnapshot) !== p0ListSignature();
               p0ApplyListSnapshot(nextSnapshot, activeIntent.cacheKey);
-              p0RememberList(activeIntent.cacheKey);
+              p0RememberList(activeIntent.cacheKey, activeIntent.namespace);
               if (changed) renderThreadList();
               else updateListHeader();
               p0SetSyncStatus("");

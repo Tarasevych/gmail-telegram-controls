@@ -206,7 +206,8 @@ test('mail list uses honest server-wide Gmail filters and has no fake oldest sor
     '      function translateRpcRequest(request) {',
     '      function rpc(request) {'
   );
-  assert.match(translationSource, /op:\s*input\.unified \? "unifiedList" : "list"[\s\S]*filter:\s*safeMailboxFilter\(input\.filter\)/);
+  assert.match(translationSource,
+    /op:\s*unifiedList \? "unifiedList" : "list"[\s\S]*connectionId:\s*unifiedList \? "" : safeId\(input\.connectionId\)[\s\S]*filter:\s*safeMailboxFilter\(input\.filter\)/);
 });
 
 test('Telegram deep links apply folder filters and open the real label panel only', () => {
@@ -331,7 +332,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
     },
     safeText: (value, fallback = '') => value == null || value === '' ? String(fallback || '') : String(value),
     safeId: value => String(value || ''),
-    normalizeThread: value => value,
+    normalizeThread: value => ({ ...value, accountId: 'gmail-unit-list' }),
     renderListLoading() {},
     renderListState(kind, message) { throw new Error(`${kind}: ${message}`); },
     renderThreadList() { renders.push(context.state.threads.map(thread => thread.id)); },
@@ -375,6 +376,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(requests.length, 1);
   assert.equal(requests[0].folderId, 'INBOX');
+  assert.equal(requests[0].connectionId, 'gmail-unit-list');
 
   context.state.currentFolderId = 'ARCHIVE';
   await context.loadThreads(true);
@@ -384,6 +386,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(requests.length, 2, 'the latest queued intent must run automatically');
   assert.equal(requests[1].folderId, 'ARCHIVE');
+  assert.equal(requests[1].connectionId, 'gmail-unit-list');
   assert.deepEqual(Array.from(context.state.threads), [], 'the stale response must not mutate the visible list');
 
   secondResponse.resolve({ threads: [{ id: 'fresh', timestamp: 2 }] });
@@ -2988,7 +2991,10 @@ test('unified inbox and every mailbox operation preserve the exact Gmail connect
     '      function translateRpcRequest(request) {',
     '      function rpc(request) {'
   );
-  assert.match(translationSource, /op: input\.unified \? "unifiedList" : "list"/);
+  assert.match(translationSource, /op: unifiedList \? "unifiedList" : "list"/);
+  assert.match(translationSource,
+    /connectionId: unifiedList \? "" : safeId\(input\.connectionId\)/,
+    'single-account lists must use the exact authorized Gmail connection while unified lists retain their bounded account set');
   for (const operation of ['thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'ackOperation']) {
     assert.match(translationSource, new RegExp(`op: "${operation}"[\\s\\S]*?connectionId: safeId\\(`));
   }
