@@ -2,7 +2,7 @@
 
 - ID: REQ-0029
 - Date: 2026-07-22
-- Status: recorded
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=no-change; plan=update; product=update; release=no-change
 - Permission basis: explicit
@@ -32,6 +32,13 @@
 - Targeted і повний local test suites, documentation validators, privacy scan та required GitHub checks успішні.
 - Зміни опубліковані normal PR; live acceptance і release лишаються окремим gate, доки власник прямо не дозволить наступний immutable.
 
+### Результат
+
+- Source fix опубліковано commit `356d1037e0f8ff9f14c14e16f2396f0237b86017` у draft PR [#20](https://github.com/Tarasevych/gmail-telegram-controls/pull/20); branch синхронна з приватним GitLab mirror.
+- Targeted bridge/route tests пройшли `238/238`; усі non-release tests пройшли `440/440`; bilingual, knowledge-hub і verification validators та changed-diff privacy scan пройшли; GitHub PR checks `6/6` green.
+- Full release suite fail-closed на двох очікуваних immutable hash guards: source fix не маскується під історичні v57/v58. Це release gate, а не functional regression.
+- Production exact v57, immutable v58, один staging deployment, Telegram menu, OAuth, Gmail data та account/zone state не змінені.
+
 <!-- lang:en -->
 ## English
 
@@ -56,3 +63,10 @@
 - A manual message-open failure retains the reader error and retry action.
 - Targeted and full local test suites, documentation validators, privacy scan, and required GitHub checks pass.
 - Changes are published through a normal PR; live acceptance and release remain a separate gate until the owner explicitly authorizes the next immutable.
+
+### Result
+
+- The source fix was published as commit `356d1037e0f8ff9f14c14e16f2396f0237b86017` in draft PR [#20](https://github.com/Tarasevych/gmail-telegram-controls/pull/20); the branch is synchronized with the private GitLab mirror.
+- Targeted bridge/route tests passed `238/238`; all non-release tests passed `440/440`; bilingual, knowledge-hub, and verification validators plus the changed-diff privacy scan passed; GitHub PR checks are `6/6` green.
+- The full release suite fails closed at two expected immutable hash guards: the source fix cannot masquerade as historical v57/v58. This is a release gate, not a functional regression.
+- Production exact v57, immutable v58, its single staging deployment, the Telegram menu, OAuth, Gmail data, and account/zone state are unchanged.

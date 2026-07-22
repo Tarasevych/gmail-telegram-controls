@@ -221,6 +221,7 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: виправити повторне автоматичне відкриття застарілого thread-маршруту Telegram Mini App із безпечним поверненням до вже завантаженого списку.
 - English: repair repeated automatic opening of a stale Telegram Mini App thread route with safe recovery to the already loaded list.
 - Record: [REQ-0029](requests/2026-07-22/REQ-0029-stale-thread-route-recovery.md)
-- Status: `recorded`
+- Status: `completed`
 - Next Versie authorization: `no`
 - Boundary: source/tests/paired documentation and normal PR only; no v59, immutable, deployment, menu switch, staging acceptance, production promotion, OAuth, Gmail mutation, account/zone mixing, or secret publication.
+- Evidence: source commit `356d103`; draft PR [#20](https://github.com/Tarasevych/gmail-telegram-controls/pull/20) mergeable with `6/6` green checks; targeted `238/238`; non-release `440/440`; docs/privacy gates passed; two historical immutable hash guards fail closed as designed.
