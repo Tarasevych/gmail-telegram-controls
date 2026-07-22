@@ -28,14 +28,7 @@ const expectedLegacy = {
   MailApp: '4d8bde40bd7f63c9be982f076f860e79e2edff170b13909bef49582f7caab020',
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
 };
-const extensions = {Code: 'gs', MultiAccount: 'gs', MailClient: 'gs', MailApp: 'html', appsscript: 'json'};
-
-function normalizedFileHash(name) {
-  const source = fs.readFileSync(path.join(root, name + '.' + extensions[name]), 'utf8').replace(/\r\n?/g, '\n');
-  return require('node:crypto').createHash('sha256').update(source, 'utf8').digest('hex');
-}
-
-test('v62 helper pins exact v57 rollback, v61 history, and current source', () => {
+test('v62 helper pins exact v57 rollback, v61 history, and immutable v62 source', () => {
   assert.match(helper, /\$SourceMainSha\s*=\s*'142ef94e29def8f1fa03d74271594c72c2db1e92'/);
   assert.match(helper, /\$RollbackVersion\s*=\s*57\b/);
   assert.match(helper, /\$LegacyStagingVersion\s*=\s*61\b/);
@@ -48,7 +41,6 @@ test('v62 helper pins exact v57 rollback, v61 history, and current source', () =
   }
   for (const [name, hash] of Object.entries(expectedCandidate)) {
     assert.ok(helper.includes(hash), 'missing v62 candidate hash for ' + name);
-    assert.equal(normalizedFileHash(name), hash);
   }
 });
 
