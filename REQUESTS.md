@@ -228,3 +228,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: source/tests/paired documentation and normal PR only; no v59, immutable, deployment, menu switch, staging acceptance, production promotion, OAuth, Gmail mutation, account/zone mixing, or secret publication.
 - Evidence: source commit `356d103`; draft PR [#20](https://github.com/Tarasevych/gmail-telegram-controls/pull/20) mergeable with `6/6` green checks; targeted `238/238`; non-release `440/440`; docs/privacy gates passed; two historical immutable hash guards fail closed as designed.
+
+## REQ-0032 | 2026-07-22
+
+- Українською: замінити статичний заголовок головної поштової сторінки на доступний динамічний блок фактичного активного акаунта або спільного поштового контексту.
+- English: replace the static main-mail-page heading with an accessible dynamic block for the actual active account or shared mail context.
+- Record: [REQ-0032](requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: reuse the existing stable connection state; source/tests/paired documentation and normal PR only; no access-rule, OAuth, Gmail-permission, shared-membership, immutable-release, staging, production-promotion, account/zone, or secret mutation.
