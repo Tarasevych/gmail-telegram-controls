@@ -139,3 +139,23 @@ The owner instructed continuation of the current `Versie 1` from the verified ex
 - The initial same-account probe and a probe from a controlled linked Gmail received Gmail labels `INBOX+SENT`. Both correctly produced no card; this proved that the former self-message acceptance formula was invalid and must not weaken duplicate suppression.
 - One content-free marker from an independent owner-controlled Workspace sender absent from primary `Send mail as` arrived as `INBOX+UNREAD` without `SENT`, automatically created exactly one Telegram card with the correct account marker, and remained one Telegram list item after two `/check` runs.
 - No CAPTCHA, OTP/2FA, passkey, new Google OAuth consent, account-zone ambiguity, or secret-property access occurred. Mail, addresses, identifiers, tokens, cookies, and `initData` are not published in repository evidence.
+
+## Follow-up verification — 2026-07-22
+
+### Українською
+
+- Початковий контрольний лист для root-2 був класифікований Google як Spam. Production коректно не створив Telegram-картку для Spam. Лише цей контрольований лист було позначено як Not spam; випадкові листи не змінювалися.
+- Після цього новий content-free owner self-test для root-2 потрапив у Inbox і автоматично створив рівно одну Telegram-картку з правильною позначкою Gmail-зони.
+- Окремий content-free owner self-test для root-3 автоматично створив рівно одну Telegram-картку з правильною позначкою Gmail-зони.
+- Для root-2 і root-3 виконано по два повторні owner-only /check. Кожна перевірка повідомила про відсутність нових листів, а accessibility-index залишив рівно одну картку для кожного контрольного маркера.
+- Раніше зафіксований статус secondary-root inbound fan-out unverified цим доказом замінено на verified.
+- OAuth, scopes, deployment, triggers і production code під час follow-up не змінювалися.
+
+### English
+
+- The initial root-2 probe was classified by Google as Spam. Production correctly created no Telegram card for Spam. Only that controlled probe was marked Not spam; unrelated mail was not changed.
+- A new content-free owner self-test then reached the root-2 Inbox and automatically produced exactly one Telegram card with the correct Gmail-zone marker.
+- A separate content-free owner self-test for root-3 automatically produced exactly one Telegram card with the correct Gmail-zone marker.
+- Two owner-only /check repetitions were completed for both root-2 and root-3. Every check reported no new mail, while the accessibility index remained at exactly one card per controlled marker.
+- The earlier secondary-root inbound fan-out unverified status is superseded by this verified evidence.
+- OAuth, scopes, deployment, triggers, and production code were unchanged during this follow-up.
