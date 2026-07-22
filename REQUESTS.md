@@ -8,6 +8,7 @@
 | ID | Дата | Статус | Коротка тема | Запис |
 |---|---|---|---|---|
 <!-- request-index -->
+| REQ-0031 | 2026-07-22 | recorded | Синхронізація актуального стану документації | [record](requests/2026-07-22/REQ-0031-current-state-documentation-synchronization.md) |
 | REQ-0030 | 2026-07-22 | recorded | Обмежене постійне release-повноваження Versie 1 | [record](requests/2026-07-22/REQ-0030-bounded-standing-versie-1-release-authority.md) |
 | REQ-0001 | 2026-07-19 | superseded | Початковий спільний журнал та gate Versie | [record](requests/2026-07-19/REQ-0001-instruction-ledger-and-version-gate.md) |
 | REQ-0002 | 2026-07-19 | completed | Відокремлений журнал і контекстна маршрутизація | [record](requests/2026-07-19/REQ-0002-separated-ledger-and-context-routing.md) |
