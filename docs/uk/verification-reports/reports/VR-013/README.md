@@ -23,3 +23,10 @@
 ## Висновок
 
 Source v64 helper локально verified. Overall status лишається PARTIAL до normal merge, read-only preflight, exact staging, owner acceptance і promotion evidence.
+## Виправлення контракту staging bridge
+
+- Статус: `VERIFIED`
+- Перший сукупний bridge-suite виявив, що історичний тест v63 помилково вимагав від змінюваного owner-menu updater назавжди лишатися на v63.
+- Першопричина: доказ незмінності bridge та поточний staging-вказівник були поєднані в одній асерції.
+- Виправлення: v63 надалі перевіряється як збережений immutable-доказ, а змінюваний updater тепер зобов'язаний не активувати повторно історичний launcher v63 після переходу на v64.
+- Доказ: перед публікацією мають пройти focused-контракт bridge v64 і повний сукупний Apps Script suite.
