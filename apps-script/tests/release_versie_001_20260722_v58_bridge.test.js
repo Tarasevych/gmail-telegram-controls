@@ -20,8 +20,9 @@ test('v58 staging bridge targets only the exact immutable staging deployment', (
   assert.doesNotMatch(bridge, /v57/);
 });
 
-test('owner menu updater separates v58 staging from unchanged production', () => {
-  assert.ok(menu.includes('STAGING_URL = "' + stagingLauncher + '"'));
+test('owner menu updater no longer targets historical v58 staging', () => {
+  assert.ok(stagingLauncher.includes('versie-001-staging-acceptance-20260722-v58.html'));
+  assert.doesNotMatch(menu, /versie-001-staging-acceptance-20260722-v58\.html/);
   assert.ok(menu.includes('PRODUCTION_URL = "' + productionLauncher + '"'));
   assert.doesNotMatch(menu, /versie-001-staging-acceptance-20260721-v57.html/);
 });

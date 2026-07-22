@@ -87,7 +87,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ### B1-20 — Owner-only Advanced Gmail read adapter
 
-- **Status:** PARTIAL — integrated into immutable v58, the protected flag is not enabled, and live evidence is blocked by GT-028.
+- **Status:** PARTIAL — integrated into immutable v58/v59, the protected flag is not enabled, and live evidence awaits v59 acceptance.
 - Keep an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
 - Resolve the current connection through the registry and fail closed unless its provider is `apps_script_owner`; every external OAuth connection keeps its own direct HTTP token path.
 - Keep mutations and unsupported reads on direct HTTP, and propagate Advanced Service failures without an automatic fallback.
@@ -107,7 +107,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-21 — Unified accessible Gmail label management
 
-- **Status:** PARTIAL — integrated into immutable v58; staging acceptance is blocked by GT-028.
+- **Status:** PARTIAL — integrated into immutable v58/v59; v59 staging acceptance is pending.
 - **Date:** 2026-07-22
 - **Scope:** one USER/SYSTEM label model for the sidebar and profile panel; create, rename, guarded delete, full-path nesting, accessibility, responsive layout, loading/error/retry, and account isolation.
 - **Implemented:** VERIFIED locally in [4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91).
@@ -117,10 +117,10 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-22 — Recovery from a stale automatic thread route
 
-- **Status:** PARTIAL — root cause VERIFIED; source candidate prepared; live release UNVERIFIED.
+- **Status:** PARTIAL — root cause and source fix VERIFIED; immutable v59 staged; live acceptance UNVERIFIED.
 - **Completed:** direct production v57 inspection proved that mailbox/bootstrap, avatar, Inbox, and delivery work; the failure is localized to replayed automatic thread routing and reader recovery.
 - **Source candidate:** the launcher consumes the route once; automatic initial/hash/resume failures return to the list; manual opens retain retry semantics. Targeted `238/238`, non-release `440/440`, and docs validators are green; two release hash guards correctly prevent changed source from masquerading as immutable v57/v58. Source request: `REQ-0029`.
-- **Boundary:** production exact v57, immutable v58, and its single staging deployment are unchanged; promotion, cleanup, and v59 are not authorized.
+- **Boundary:** production exact v57 is unchanged; immutable v59 and one owner-only staging deployment exist, the historical v58 staging was removed after exact replacement verification, and promotion is forbidden until acceptance passes.
 - **Next evidence:** targeted/full/docs tests, a normal PR, and required checks; after separate release authority, run a new immutable staging acceptance with two fresh launches before any promotion.
 - **Evidence:** [GT-028](ISSUES.md), [VR-006](verification-reports/reports/VR-006/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
