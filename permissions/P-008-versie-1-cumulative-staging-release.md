@@ -1,9 +1,11 @@
 # P-008: Cumulative staging і conditional production Versie 1 / Cumulative staging and conditional production for Versie 1
 
 Source request: `REQ-0028`
-Status: `active`
+Status: `consumed`
 Granted by: project owner on `2026-07-22`
 Scope: one cumulative Versie 1 release cycle
+
+Outcome: PR #16 and PR #11 were merged, cumulative immutable v58 and one owner-only staging deployment were created, staging acceptance did not pass, and production promotion was not exercised. This one-cycle authority cannot be reused; a later immutable or merge/promotion cycle requires a new explicit owner request. Evidence: `REQ-0028`, `REQ-0029`, GT-028, VR-006.
 
 ## Українською
 
