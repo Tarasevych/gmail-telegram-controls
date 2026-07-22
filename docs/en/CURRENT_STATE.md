@@ -2,16 +2,16 @@
 
 Updated: **2026-07-22**. Source request: `REQ-0031`.
 
-<!-- release-state: production=v57; candidate=v58; staging=1; status=BLOCKED; as-of=2026-07-22 -->
+<!-- release-state: production=v57; candidate=v59; staging=1; status=UNVERIFIED; as-of=2026-07-22 -->
 
 | Area | Factual state |
 |---|---|
 | Product line | **Versie 1** |
 | Production | Apps Script immutable **v57**, `VERIFIED` |
-| Candidate | Apps Script immutable **v58**, `BLOCKED` for promotion |
+| Candidate | Apps Script immutable **v59**, `UNVERIFIED` pending acceptance |
 | Active staging | **1** owner-only deployment |
 
-Production v57 has verified acceptance. Immutable v58 and one staging deployment are preserved as historical candidate state; they cannot be promoted without complete new acceptance. The current stale-thread-route fix is published in a separate candidate PR and is not production yet.
+Production v57 has verified acceptance. Immutable v59 and one owner-only staging deployment were created to verify stale-thread-route recovery; they cannot be promoted without complete new acceptance. Immutable v58 remains historical evidence and no longer has an active staging deployment.
 
 Machine-readable source: [`docs/release-state.json`](../release-state.json).
 
