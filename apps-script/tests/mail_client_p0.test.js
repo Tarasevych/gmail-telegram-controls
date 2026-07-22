@@ -65,6 +65,36 @@ test('namespace contract rejects cross-account and malformed shared records', ()
   assert.equal(context.p0NamespaceAllowed('u:alpha', ['alpha']), false);
 });
 
+test('account switch clears the prior account reader before the new bootstrap', () => {
+  const reset = functionSource('p0ResetAccountScopedView');
+  assert.match(reset, /p0Runtime\.readerGeneration \+= 1/,
+    'pending reader work must be invalidated before another account can render');
+  assert.match(reset, /state\.requestVersion \+= 1/,
+    'pending list work must be invalidated before another account can render');
+  assert.match(reset, /state\.selectedThreadId = ""/);
+  assert.match(reset, /state\.selectedConnectionId = ""/);
+  assert.match(reset, /state\.thread = null/);
+  assert.match(reset, /state\.threads = \[\]/);
+  assert.match(reset, /state\.account = null/,
+    'the old account identity must not remain active between switch and bootstrap');
+  assert.match(reset, /app\.classList\.remove\("reader-open"\)/);
+  assert.match(reset, /els\.readerContentHost\.hidden = true/);
+  assert.match(reset, /clear\(els\.readerContentHost\)/,
+    'old account message DOM must be removed rather than merely hidden by state');
+
+  const switcher = functionSource('switchMailboxAccount');
+  const switchRequest = switcher.indexOf('op: "switchAccount"');
+  const resetCall = switcher.indexOf('p0ResetAccountScopedView()');
+  const bootstrapRequest = switcher.indexOf('op: "bootstrap"');
+  assert.ok(switchRequest !== -1 && resetCall > switchRequest && bootstrapRequest > resetCall,
+    'account-scoped UI must be cleared after a confirmed switch and before bootstrap');
+  assert.match(switcher, /state\.compose \|\| state\.composeBusy \|\| state\.actionBusy \|\| state\.handoffBusy/,
+    'account switching must not expose an active draft or mutation in another account context');
+  assert.match(functionSource('renderAccountPanel'),
+    /card\.disabled = Boolean\(account\.current \|\| state\.accountManagementBusy\)/,
+    'parallel account switches must be disabled while one switch is in flight');
+});
+
 test('LRU eviction is deterministic by access time and byte budget', () => {
   const context = loadFunctions(['p0EvictionKeys']);
   const records = [
