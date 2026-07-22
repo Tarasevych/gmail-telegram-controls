@@ -8,11 +8,11 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v57; candidate=v62; staging=0; status=BLOCKED; as-of=2026-07-22 -->
+<!-- release-state: production=v63; candidate=v63; staging=0; status=VERIFIED; as-of=2026-07-22 -->
 
-Поточний public production: Apps Script immutable v57. Immutable candidate v62 збережено як `BLOCKED`; staging deployments: `0`.
-Current public production: Apps Script immutable v57. Immutable candidate v62 is preserved as `BLOCKED`; staging deployments: `0`.
-- Поточний production працює на перевіреному Apps Script immutable v57 після exact rollback. Immutable v59 збережено як історичний candidate: UI acceptance пройдено, але post-cleanup runtime gate виявив 214.96-секундне виконання та overlap execution windows; staging `0`, v60 не створено.
+Поточний public production: Apps Script immutable v63. HEAD exact v63; staging deployments: `0`; journal `cleaned`.
+Current public production: Apps Script immutable v63. HEAD is exact v63; staging deployments: `0`; journal is `cleaned`.
+- Поточний production працює на перевіреному Apps Script immutable v63. GT-030 no-overlap gate закрито сімома послідовними runtime executions; scenario-specific P0 evidence лишається PARTIAL там, де не виконано окремі acceptance scenarios.
 - Канонічний актуальний стан: [Українською](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Датовані release/postmortem статті є історичними доказами, а не current-state джерелом.
 - Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.
 - Номери Apps Script immutable є технічними deployment ID, а не назвами продуктових версій.
@@ -38,7 +38,7 @@ Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 ## Current project line
 
 - Active development version: **Versie 1 · 2026-07-19**.
-- Current production runs verified Apps Script immutable v57 after an exact rollback. Immutable v59 is preserved as a historical candidate: UI acceptance passed, but the post-cleanup runtime gate found a 214.96-second execution and overlapping execution windows; staging is `0`, and v60 was not created.
+- Current production runs verified Apps Script immutable v63. The GT-030 no-overlap gate is closed by seven successive runtime executions; scenario-specific P0 evidence remains PARTIAL where separate acceptance scenarios are still absent.
 - Canonical current state: [Українська](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Dated release and postmortem articles are historical evidence, not the current-state source.
 - Product builds now advance only sequentially: Versie 1, Versie 2, Versie 3, and so on.
 - Apps Script immutable numbers are technical deployment IDs, not product version names.

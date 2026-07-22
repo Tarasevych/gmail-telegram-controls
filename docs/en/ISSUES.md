@@ -129,34 +129,24 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Report:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
-## GT-030 — Post-cleanup worker-slot overrun after v59
+## GT-030 — Worker admission lease could expire before the Apps Script execution
 
-- **Status:** BLOCKED; exact rollback VERIFIED, root cause `UNVERIFIED`.
-- **Date:** 2026-07-22.
-- **Symptom:** after v59 cleanup, one `checkNewMail_` execution completed in `214.96 s` although the worker slot target is 150 seconds. The next execution started before the previous one completed; both completed successfully.
-- **Evidence boundary:** execution-window overlap is VERIFIED, but it does not prove simultaneous Gmail fan-out work inside both invocations. Do not claim a lock, quota, or Gmail API root cause without a separate trace.
-- **Protective action:** exact v59 -> v57 rollback; post-rollback preflight showed stable and HEAD v57, staging `0`, and journal `rolled_back`; a fresh v57 mailbox launch passed.
-- **Next step:** investigate content-free slot telemetry and execution phases on the current Versie 1 source line. Do not create v60 merely to repeat the same acceptance.
-- **v62 continuation:** cumulative client candidate v62 passed local tests, CI, owner-only staging, and two production UI launches. The Apps Script process endpoint returned 403 and `clasp logs` had no configured GCP project ID; the default project was not migrated. Because the worker code remained unchanged and the runtime gate could not be proven, exact v62 -> v57 rollback was completed; preflight and two fresh v57 launches passed. See [VR-010](verification-reports/reports/VR-010/README.md).
-- **Report:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
-- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
+- **Status:** VERIFIED — immutable v63 is production and seven successive one-minute worker executions completed without overlap.
+- **Root cause:** the former 150-second property was an admission TTL, not a full execution lock. A legal Apps Script execution could outlive it, allowing a later minute trigger to enter while the first worker was still alive.
+- **Fix:** v63 uses a tokenized seven-minute crash lease, retains 150 seconds as a soft stage deadline, permits only token-matched release in `finally`, and emits content-free telemetry.
+- **Evidence:** focused contracts `17/17`, cumulative suite `501/501`, two production launches, seven sequential completed runtime rows, and final stable/HEAD v63 preflight. See [VR-011](verification-reports/reports/VR-011/README.md).
+- **Boundary:** the separate 15-minute History substage has automated-contract evidence; a dedicated runtime substage trace remains UNVERIFIED.
 
-## GT-031 — Static active-mail heading
+## GT-031 — Active account identity can clip on a narrow header
 
-- **Status:** PARTIAL — root cause, source implementation, local automated checks, and responsive visual checks are VERIFIED; live/production acceptance is UNVERIFIED.
-- **Local verification:** VERIFIED — targeted contract `88/88`, full non-release suite `443/443`; desktop and mobile `390x760` were checked without horizontal overflow, and the shared mapping opens with Enter and remains within the viewport.
-- **Date:** 2026-07-22.
-- **Request:** [REQ-0032](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md).
-- **Root cause:** VERIFIED — `<title>`, the visible `<h1>`, initial `state.account`, and two normalization fallback paths contained a static name; the UI lacked a derived representation of the actual active/shared context.
-- **Source fix:** one view model reads current `state.accounts`, `state.account.id`, `unifiedConnectionIds`, and `unifiedMode`; identity is selected by opaque connection ID. A single account exposes the localized inflected owner name and full email, while two or more participants expose `Спільна пошта` and an accessible expandable name-to-address mapping.
-- **Fallback/accessibility:** email becomes the primary identifier when the name is missing; the avatar remains supplementary; loading/empty/error states, wrapping, bounded scrolling, native keyboard disclosure, a live region, and visible focus require no reload.
-- **Boundary:** OAuth, Gmail permissions, account membership, and mail-flow composition are unchanged. The source is not production v57; immutable v60 was not created because GT-030 remains open.
-- **Report:** [VR-008](verification-reports/reports/VR-008/README.md).
-- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+- **Status:** PARTIAL — dynamic active/shared identity is live in production v63 and native acceptance verified switching among three isolated roots without OAuth.
+- **Observed residual:** the controlled alternate-account header clipped the final part of a long email on a narrow view. The primary root correctly retained its letter fallback where no profile photo was available; another root displayed its actual photo.
+- **Required fix:** preserve the full address through wrapping, a compact disclosure or an accessible full-value tooltip without shrinking the tap target or using the photo as the sole identifier.
+- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md). Source request: `REQ-0033`.
 
 ## GT-032 — Typography differs from the Gmail reading context
 
-- **Status:** PARTIAL — live Gmail CSS, source fix, and integrated v62 staging presentation are VERIFIED; a same-scale production typography comparison remains UNVERIFIED, and v62 was rolled back because of GT-030.
+- **Status:** PARTIAL — live Gmail CSS, the source fix, and native v63 staging/production presentation are VERIFIED; a same-scale production typography comparison remains UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Date:** 2026-07-22. Source request: `REQ-0033`.
 - **Root cause:** the client mixed undersized 11–13 px interface text, heavy headings, and a 1.65 message line height without one typography scale.
 - **Source fix:** a local-first Gmail-compatible UI stack, a separate reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading and compose rhythm, responsive sizing, and no remote font dependency or layout-blocking font request.
@@ -165,7 +155,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-033 — Repeated loading and blocked internal navigation
 
-- **Status:** PARTIAL — root cause, source implementation, local performance contracts, and v62 list/account UI acceptance are VERIFIED; live `A -> B -> A` performance trace and production acceptance remain UNVERIFIED after rollback.
+- **Status:** PARTIAL — root cause, source implementation, local performance contracts, and v63 native list/account acceptance are VERIFIED; a measured production `A -> B -> A` trace remains UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Root cause:** list routes cleared all rows before every RPC; every thread open discarded the current detail; `threadLoading` dropped a second click; accepted responses rebuilt the whole list DOM.
 - **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace shows three `getThread` plus three `attentionState` RPCs for `A -> B -> A`.
 - **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, saved scroll/view state, and no document reload for ordinary navigation.
@@ -174,7 +164,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-034 — Missing bounded cache and background revalidation
 
-- **Status:** PARTIAL — bounded architecture and v62 live account/list isolation are VERIFIED; browser quota and eviction acceptance remain UNVERIFIED, and v62 is not production.
+- **Status:** PARTIAL — bounded architecture and v63 live account/list isolation are VERIFIED; browser quota and eviction acceptance remain UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Root cause:** the client had no memory cache, IndexedDB, Cache Storage, Service Worker, or persistent view state; all freshness checks blocked the visible UI.
 - **Source fix:** normalized account-scoped records, 60-entry memory LRU, 120-record/4 MiB persistent budget, seven-day hard expiry, per-record cap, stale-while-revalidate, 45-second visible-tab refresh, stable IDs, stale-response rejection and account purge.
 - **Boundary:** no token, session, credential or staging value is stored. Service Worker/Background Sync is not claimed; the Apps Script staging boundary must be tested before changing that status.
@@ -183,7 +173,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-035 — Draft text lacks an immediate persistent recovery checkpoint
 
-- **Status:** PARTIAL — existing Gmail autosave and the new local checkpoint are source-verified; offline/restart/cross-session acceptance remains UNVERIFIED.
+- **Status:** PARTIAL — existing Gmail autosave and the local checkpoint are present in production v63; offline/restart/cross-session acceptance remains UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Root cause:** Gmail autosave already used a stable operation ID and stale-response guards, but unsaved edits lived only in memory until the debounced server request completed.
 - **Source fix:** immediate bounded IndexedDB text checkpoint per connection, continued debounced Gmail Draft save, lifecycle flushes, attachment-byte exclusion, canonical acknowledgement cleanup, and explicit local-versus-Gmail conflict choice.
 - **Boundary:** another device can resume only a Gmail-confirmed draft. Browser-local recovery is never represented as server-confirmed.
@@ -192,9 +182,25 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-036 — A new production client can remain stale in an open Mini App
 
-- **Status:** PARTIAL — source mechanism and v62 deployment transitions are recorded; the targeted stale-client one-reload/no-loop acceptance remains UNVERIFIED, and production returned to v57.
+- **Status:** PARTIAL — the exact release-ID mechanism is present in production v63; targeted stale-open-client one-reload/no-loop acceptance remains UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Root cause:** ordinary mail state and client-code version had no separate lifecycle; an already open document had no production release signal.
 - **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard, and a manual reopen state after one failed activation attempt.
 - **Boundary:** the immutable Apps Script HTML remains the app shell. No unsupported Service Worker is simulated, and routine mail synchronization never reloads the document.
 - **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-037 — Promotion helper can report a false negative after a successful deployment update
+
+- **Status:** PARTIAL — the v63 deployment was reconciled safely and completed, but helper hardening is not yet implemented.
+- **Observed behavior:** `Promote` advanced stable v57 to v63, then its immediate read returned stale state and raised `Stable deployment did not advance to the candidate.`
+- **Root cause:** the helper has no bounded read-after-write reconciliation window. The propagation mechanism is inferred from the later authoritative readback rather than claimed as a platform guarantee.
+- **Safe handling:** no second promotion was attempted. A read-only preflight proved stable v63 before cleanup.
+- **Recommended fix:** add bounded retry with exact candidate/deployment matching and fail closed on contradictory state. Never rewrite immutable v63.
+- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md).
+## GT-038 — Telegram Web K/A shows a blank signed Mini App while native Desktop succeeds
+
+- **Status:** PARTIAL — native Telegram Desktop staging and production are VERIFIED; the web-only failure and its root cause remain UNVERIFIED.
+- **Observed behavior:** Telegram Web K and A opened the exact v63 signed bridge iframe but rendered a blank/broken embedded page.
+- **Boundary:** do not weaken signed bootstrap, session validation or account isolation to make the web client render.
+- **Next evidence:** capture content-free browser/runtime diagnostics for the same release and compare supported Telegram Web embedding constraints with native Desktop.
+- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md).

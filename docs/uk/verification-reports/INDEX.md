@@ -65,3 +65,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-010/README.md](reports/VR-010/README.md)
 - **Висновок:** client acceptance пройдено, але inherited GT-030 worker risk не закрито execution trace; production відновлено на exact v57, staging `0`, immutable v62 збережено.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-011 — Immutable v63 і runtime-закриття GT-030
+
+- **Статус:** VERIFIED
+- **Дата:** 2026-07-22
+- **Покриття:** причинне виправлення GT-030, cumulative immutable v63, source/CI gates, owner-only native staging, production activation, seven-run no-overlap trace, cleanup і exact residual boundaries.
+- **Звіт:** [reports/VR-011/README.md](reports/VR-011/README.md)
+- **Висновок:** stable/HEAD є exact v63, staging `0`, worker no-overlap gate verified; scenario-specific P0 items лишаються partial там, де відсутні їхні власні докази.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

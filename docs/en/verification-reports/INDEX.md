@@ -65,3 +65,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-010/README.md](reports/VR-010/README.md)
 - **Conclusion:** client acceptance passed, but the inherited GT-030 worker risk was not closed by an execution trace; production was restored to exact v57, staging is `0`, and immutable v62 is preserved.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-011 — Immutable v63 and GT-030 runtime closure
+
+- **Status:** VERIFIED
+- **Date:** 2026-07-22
+- **Coverage:** GT-030 causal correction, cumulative immutable v63, source/CI gates, owner-only native staging, production activation, seven-run no-overlap trace, cleanup and exact residual boundaries.
+- **Report:** [reports/VR-011/README.md](reports/VR-011/README.md)
+- **Conclusion:** stable/HEAD are exact v63, staging is `0`, and the worker no-overlap gate is verified; scenario-specific P0 items remain partial where their own evidence is absent.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

@@ -66,14 +66,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **GT-021:** the first Web App open can require a refresh after a prolonged skeleton.
 - **GT-022:** `clasp logs` requires the exact verified GCP project ID; do not guess identity.
 
-### B1-16 — Timer runtime budget and URLFetch quota isolation
+### B1-16 — Close the delivery-worker overlap gate
 
-- **Status:** completed and production verified on v57; immutable v56 is preserved as history, exact v55 rollback is preserved, staging is `0`, and the journal is `cleaned`.
-- **GT-023:** one minute trigger started a new worker before the previous 80–106-second invocation completed; the per-minute all-account Gmail History fan-out exhausted the daily `URLFETCH` quota.
-- **Change:** content-free timer slots in Script Properties, atomic only under a short ScriptLock; 150-second worker cadence, realtime remains first, and full History backfill runs no more than once per 15 minutes.
-- **Unchanged:** the trigger remains single and minute-based; Gmail records, OAuth tokens, Telegram zones, and messages are not mutated.
-- **Gates:** the complete suite passed `444/444`; hash-pinned v57 staging A/B, two production launches, cleanup, and post-cleanup `PreflightOnly` passed. The production trigger window showed completed full/slot-skip cadence with no failed worker.
-- **Source requests:** REQ-0018, REQ-0019, REQ-0021.
+- **Status:** VERIFIED
+- **Release:** immutable v63 is production and HEAD; staging is `0`.
+- **Completed:** deterministic reproduction, tokenized seven-minute crash lease, 150-second soft stage deadline, token-matched release, focused `17/17`, cumulative `501/501`, owner-only staging, two production launches and seven successive no-overlap runtime executions.
+- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md) and the [v63 release report](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md).
+- **Residual boundary:** History-substage runtime telemetry and external automatic INBOX after v63 remain separate evidence items, not blockers to the proven worker no-overlap gate.
 
 ### B1-17 — Google primary-source gate and publication surfaces
 
@@ -151,12 +150,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Evidence:** [GT-031](ISSUES.md), [VR-008](verification-reports/reports/VR-008/README.md). Source request: `REQ-0032`.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
 
-## B1-25 — P0 instant client, bounded cache and reliable drafts
+## B1-25 — P0 fast navigation, bounded cache, drafts, typography and client updates
 
-- **Status:** PARTIAL — architecture, baseline, source, automated gates, responsive checks, and owner-only v62 staging/UI acceptance are recorded; the runtime execution gate and full production acceptance remain blocked by GT-030.
-- **Date:** 2026-07-22. Source request: `REQ-0033`.
-- **Scope:** Gmail-compatible typography; app-shell internal navigation; account-isolated memory/IndexedDB LRU; stale-while-revalidate; keyed incremental list reconciliation; optimistic mutation rollback; local plus Gmail draft autosave; version-aware one-time client activation.
-- **Issues:** [GT-032](ISSUES.md), [GT-033](ISSUES.md), [GT-034](ISSUES.md), [GT-035](ISSUES.md), [GT-036](ISSUES.md).
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md) and [VR-010](verification-reports/reports/VR-010/README.md).
-- **Release boundary:** immutable v62 is preserved, staging is `0`, and production is exact v57 after rollback. Do not reuse v62 or create another immutable without a causal GT-030 fix and content-free execution evidence.
-- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+- **Status:** PARTIAL
+- **Production boundary:** the cumulative P0 source is now deployed as immutable v63; native staging/production mailbox and account-isolation acceptance passed.
+- **Verified:** dynamic active context, three isolated roots, account switching without OAuth, production app-shell load, worker no-overlap gate and exact release-state cleanup.
+- **Still required:** measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; same-scale production typography comparison; and stale-open-client exactly-one-reload/no-loop acceptance.
+- **Related issues:** GT-031 through GT-038.
+- **Rule:** continue within Versie 1. Do not create another immutable candidate until a code change requires it and the existing release operation is in a terminal state.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), and [VR-011](verification-reports/reports/VR-011/README.md).
