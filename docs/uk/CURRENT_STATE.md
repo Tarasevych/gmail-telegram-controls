@@ -2,7 +2,21 @@
 
 Оновлено: **2026-07-22**. Source requests: `REQ-0030`, `REQ-0031`.
 
-<!-- release-state: production=v57; candidate=v59; staging=0; status=UNVERIFIED; as-of=2026-07-22 -->
+<!-- release-state: production=v57; candidate=v62; staging=0; status=BLOCKED; as-of=2026-07-22 -->
+
+## Канонічний стан після контрольованої release-спроби v62
+
+- **Production:** Apps Script immutable v57, `VERIFIED` точним post-rollback preflight і двома свіжими mailbox launches без network error.
+- **Candidate:** immutable v62, `BLOCKED` для production. Його cumulative client fixes, локальні gates, CI, owner-only staging acceptance і два production UI readbacks пройшли, але обов'язковий post-release execution/overlap trace був недоступний.
+- **Staging:** `0`; staging deployment v62 видалено cleanup до runtime gate і не створено повторно.
+- **Release journal:** `rolled_back`; stable і HEAD є exact v57. Immutable v62 лишається історичним і не переписується.
+- **Причина:** GT-030 лишається відкритим. Worker-код v62 ідентичний candidate-line, де раніше зафіксовано execution тривалістю 214.96 секунди, а content-free execution trace не довів 150-second/no-overlap gate після v62. Це не доводить candidate-specific regression v62.
+- **Delivery control:** один дозволений owner self-copy не створив картку, як очікується через SENT exclusion; два `/check` не створили дубль. External automatic INBOX delivery після v62 лишається `UNVERIFIED`.
+- **Без auth churn:** OAuth consent, міграція GCP project, читання secret properties, Gmail mutation або зміна account zone не виконувалися.
+
+Докази: [release attempt і rollback v62](reports/VERSIE_001_V62_RELEASE_ATTEMPT_AND_ROLLBACK_2026-07-22.md), [VR-010](verification-reports/reports/VR-010/README.md), [acceptance чинного production v57](reports/VERSIE_001_V57_PRODUCTION_ACCEPTANCE_2026-07-22.md) і cumulative [Versie 1 release article](releases/VERSIE-001-2026-07-19.md).
+
+English mirror: [docs/en/CURRENT_STATE.md](../en/CURRENT_STATE.md).
 
 | Контур | Фактичний стан |
 |---|---|

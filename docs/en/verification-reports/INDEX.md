@@ -56,3 +56,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-008/README.md](reports/VR-008/README.md)
 - **Conclusion:** the source candidate removes the static identity model without changing the Gmail/OAuth contract; production verification is absent and v60 was not created.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-010 — v62 cumulative release attempt and exact rollback
+
+- **Status:** BLOCKED
+- **Date:** 2026-07-22
+- **Coverage:** merged P0 source, immutable v62, local/CI gates, staging and production UI readbacks, delivery dedupe boundary, unavailable Apps Script execution evidence, and exact rollback to v57.
+- **Report:** [reports/VR-010/README.md](reports/VR-010/README.md)
+- **Conclusion:** client acceptance passed, but the inherited GT-030 worker risk was not closed by an execution trace; production was restored to exact v57, staging is `0`, and immutable v62 is preserved.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

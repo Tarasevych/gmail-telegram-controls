@@ -35,7 +35,7 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-027 | PARTIAL; live UI verified on v59, production rolled back | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | v59 staging showed `+ Create`, an accessible management action for USER labels, bounded scrolling, and long nested names without overlap; mutating operations were not run. Production returned to v57 because of GT-030 |
 | GT-028 | PARTIAL; fix live-verified on v59, production rolled back | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | v59 staging and two production launches recovered a stale automatic route to the list without a network/Drive error; a Telegram-persisted route can still produce a content-free recovery notice. Production returned to v57 because of separate GT-030 |
 | GT-029 | Resolved and synchronized | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
-| GT-030 | BLOCKED; exact rollback to v57 completed | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | Exact v59 -> v57 rollback; stable and HEAD v57, staging 0, journal `rolled_back`, and a rollback mailbox launch passed. Root cause and a safe cumulative fix remain `UNVERIFIED`; v60 was not created |
+| GT-030 | BLOCKED; exact rollback to v57 completed after v59 and v62 attempts | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | v62 retained the same worker code and lacked the required execution trace, so exact v62 -> v57 rollback restored stable/HEAD v57, staging 0 and journal `rolled_back`; two fresh v57 mailbox launches passed. Root cause and a safe cumulative fix remain `UNVERIFIED` |
 | GT-031 | PARTIAL; source candidate | 1 | The main heading and profile fallbacks were hard-wired to one name and did not expose the actual active or shared mail context | REQ-0032 adds a view derived from current opaque connection IDs, full email, an accessible shared mapping, and synchronous render hooks; production remains v57 pending separate acceptance |
 
 ## Production evidence 2026-07-20
@@ -137,6 +137,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Evidence boundary:** execution-window overlap is VERIFIED, but it does not prove simultaneous Gmail fan-out work inside both invocations. Do not claim a lock, quota, or Gmail API root cause without a separate trace.
 - **Protective action:** exact v59 -> v57 rollback; post-rollback preflight showed stable and HEAD v57, staging `0`, and journal `rolled_back`; a fresh v57 mailbox launch passed.
 - **Next step:** investigate content-free slot telemetry and execution phases on the current Versie 1 source line. Do not create v60 merely to repeat the same acceptance.
+- **v62 continuation:** cumulative client candidate v62 passed local tests, CI, owner-only staging, and two production UI launches. The Apps Script process endpoint returned 403 and `clasp logs` had no configured GCP project ID; the default project was not migrated. Because the worker code remained unchanged and the runtime gate could not be proven, exact v62 -> v57 rollback was completed; preflight and two fresh v57 launches passed. See [VR-010](verification-reports/reports/VR-010/README.md).
 - **Report:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
@@ -155,7 +156,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-032 — Typography differs from the Gmail reading context
 
-- **Status:** PARTIAL — live Gmail CSS and the source fix are VERIFIED; candidate visual and production acceptance remain UNVERIFIED.
+- **Status:** PARTIAL — live Gmail CSS, source fix, and integrated v62 staging presentation are VERIFIED; a same-scale production typography comparison remains UNVERIFIED, and v62 was rolled back because of GT-030.
 - **Date:** 2026-07-22. Source request: `REQ-0033`.
 - **Root cause:** the client mixed undersized 11–13 px interface text, heavy headings, and a 1.65 message line height without one typography scale.
 - **Source fix:** a local-first Gmail-compatible UI stack, a separate reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading and compose rhythm, responsive sizing, and no remote font dependency or layout-blocking font request.
@@ -164,7 +165,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-033 — Repeated loading and blocked internal navigation
 
-- **Status:** PARTIAL — root cause and source implementation VERIFIED; post-change browser/performance and production acceptance UNVERIFIED.
+- **Status:** PARTIAL — root cause, source implementation, local performance contracts, and v62 list/account UI acceptance are VERIFIED; live `A -> B -> A` performance trace and production acceptance remain UNVERIFIED after rollback.
 - **Root cause:** list routes cleared all rows before every RPC; every thread open discarded the current detail; `threadLoading` dropped a second click; accepted responses rebuilt the whole list DOM.
 - **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace shows three `getThread` plus three `attentionState` RPCs for `A -> B -> A`.
 - **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, saved scroll/view state, and no document reload for ordinary navigation.
@@ -173,7 +174,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-034 — Missing bounded cache and background revalidation
 
-- **Status:** PARTIAL — bounded architecture is implemented in source; browser quota, eviction and live account-isolation acceptance remain UNVERIFIED.
+- **Status:** PARTIAL — bounded architecture and v62 live account/list isolation are VERIFIED; browser quota and eviction acceptance remain UNVERIFIED, and v62 is not production.
 - **Root cause:** the client had no memory cache, IndexedDB, Cache Storage, Service Worker, or persistent view state; all freshness checks blocked the visible UI.
 - **Source fix:** normalized account-scoped records, 60-entry memory LRU, 120-record/4 MiB persistent budget, seven-day hard expiry, per-record cap, stale-while-revalidate, 45-second visible-tab refresh, stable IDs, stale-response rejection and account purge.
 - **Boundary:** no token, session, credential or staging value is stored. Service Worker/Background Sync is not claimed; the Apps Script staging boundary must be tested before changing that status.
@@ -191,7 +192,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-036 — A new production client can remain stale in an open Mini App
 
-- **Status:** PARTIAL — source mechanism implemented; Apps Script staging and production one-reload acceptance remain UNVERIFIED.
+- **Status:** PARTIAL — source mechanism and v62 deployment transitions are recorded; the targeted stale-client one-reload/no-loop acceptance remains UNVERIFIED, and production returned to v57.
 - **Root cause:** ordinary mail state and client-code version had no separate lifecycle; an already open document had no production release signal.
 - **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard, and a manual reopen state after one failed activation attempt.
 - **Boundary:** the immutable Apps Script HTML remains the app shell. No unsupported Service Worker is simulated, and routine mail synchronization never reloads the document.

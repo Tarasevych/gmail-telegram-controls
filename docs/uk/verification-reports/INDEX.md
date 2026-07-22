@@ -56,3 +56,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-008/README.md](reports/VR-008/README.md)
 - **Висновок:** source candidate усуває статичну identity-модель без зміни Gmail/OAuth contract; production verification відсутній, v60 не створено.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-010 — Cumulative release attempt v62 і exact rollback
+
+- **Статус:** BLOCKED
+- **Дата:** 2026-07-22
+- **Покриття:** merged P0 source, immutable v62, локальні/CI gates, staging і production UI readbacks, delivery dedupe boundary, недоступний Apps Script execution evidence та exact rollback до v57.
+- **Звіт:** [reports/VR-010/README.md](reports/VR-010/README.md)
+- **Висновок:** client acceptance пройдено, але inherited GT-030 worker risk не закрито execution trace; production відновлено на exact v57, staging `0`, immutable v62 збережено.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
