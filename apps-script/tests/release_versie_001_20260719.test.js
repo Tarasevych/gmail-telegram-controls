@@ -9,6 +9,7 @@ const helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_ver
 const v56Helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v56.ps1'), 'utf8');
 const currentHelper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260721_v57.ps1'), 'utf8');
 const v58Helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260722_v58.ps1'), 'utf8');
+const v59Helper = fs.readFileSync(path.join(root, 'tools', 'release_apps_script_versie_001_20260722_v59.ps1'), 'utf8');
 const v56StagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v56.html'), 'utf8');
 const stagingBridge = fs.readFileSync(path.join(root, '..', 'versie-001-staging-acceptance-20260721-v57.html'), 'utf8');
 const menuUpdater = fs.readFileSync(path.join(root, '..', 'tools', 'update_bot_menu_versie_001.py'), 'utf8');
@@ -25,6 +26,13 @@ const expectedV58 = {
   MultiAccount: '8d07e8b9f0f524ed5cedccbb8bfecbb547c93a34eda8ef876e40776d6b470f10',
   MailClient: 'a04b56d4955ba72d46a7fedb7e48b837cd0737da87a6c720281472aa724c5a06',
   MailApp: '81562d1bed335aeb1954c09e8e57b96e315b2db3353c16fa1579645ec0d78c4d',
+  appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
+};
+const expectedV59 = {
+  Code: 'f1476e3e707348737022611c080176a6b8ec69ff088bd8e7c92657328278f5a1',
+  MultiAccount: '8d07e8b9f0f524ed5cedccbb8bfecbb547c93a34eda8ef876e40776d6b470f10',
+  MailClient: 'a04b56d4955ba72d46a7fedb7e48b837cd0737da87a6c720281472aa724c5a06',
+  MailApp: 'de9bc2b1d7893fd995a4043f945054c8d07a4999bc92074c171ab680a8cc57c7',
   appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
 };
 function hash(name, extension) {
@@ -102,7 +110,7 @@ test('Versie 1 v57 keeps v56 safety and adds connection-scoped metadata identity
   assert.match(code, /postedParams\.action \|\| ''\) === 'runtime_probe'/);
   assert.match(code, /function compactTelegramMailCardIndexLocked_\(props\)/);
   assert.match(code, /if \(!props\.getProperty\(propertyKey\)\)/);
-  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v58'/);
+  assert.match(code, /GMAIL_NOTIFICATION_RUNTIME_CANDIDATE_ = 'v59'/);
   assert.match(code, /mailboxMultiGmailAccessToken_\(mailboxCurrentSessionContext_\)/);
   assert.match(code, /claimGmailTimerSlot_\('worker', GMAIL_TIMER_WORKER_SLOT_MS_\)/);
   assert.match(code, /claimGmailTimerSlot_\('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_\)/);
@@ -130,11 +138,15 @@ test('Versie 1 v57 keeps v56 safety and adds connection-scoped metadata identity
   assert.doesNotMatch(code, /lastFailureMessage/);
 });
 
-test('Versie 1 candidate hashes match the current source bundle', () => {
-  assert.equal(hash('Code', 'gs'), expectedV58.Code);
-  assert.equal(hash('MultiAccount', 'gs'), expectedV58.MultiAccount);
-  assert.equal(hash('MailClient', 'gs'), expectedV58.MailClient);
-  assert.equal(hash('MailApp', 'html'), expectedV58.MailApp);
-  assert.equal(hash('appsscript', 'json'), expectedV58.appsscript);
+test('historical v58 helper retains the immutable v58 source pins', () => {
   for (const value of Object.values(expectedV58)) assert.match(v58Helper, new RegExp(value));
+});
+
+test('Versie 1 candidate hashes match the current v59 source bundle', () => {
+  assert.equal(hash('Code', 'gs'), expectedV59.Code);
+  assert.equal(hash('MultiAccount', 'gs'), expectedV59.MultiAccount);
+  assert.equal(hash('MailClient', 'gs'), expectedV59.MailClient);
+  assert.equal(hash('MailApp', 'html'), expectedV59.MailApp);
+  assert.equal(hash('appsscript', 'json'), expectedV59.appsscript);
+  for (const value of Object.values(expectedV59)) assert.match(v59Helper, new RegExp(value));
 });
