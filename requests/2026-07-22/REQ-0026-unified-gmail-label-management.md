@@ -88,3 +88,12 @@ The result may be marked `VERIFIED` only after relevant automated checks, build,
 - **Draft PR:** [#16](https://github.com/Tarasevych/gmail-telegram-controls/pull/16)
 - **Verified:** UI contract `84/84`; full suite `447/448`; bilingual, knowledge-hub, verification-report, whitespace, and secret-pattern gates passed; responsive visual acceptance passed at 390×760 and 1280×820.
 - **Release boundary:** BLOCKED — the only full-suite failure is the immutable v57 exact-hash gate. No new immutable candidate, deployment, or live label mutation was performed.
+### Фінальне доповнення доказів
+
+- VR-005 доповнено `CONFLICTING` розбіжністю офіційних меж labels (REST resource 10 000; Gmail Help 5 000) у [`dd2a4226d6c3cfb6456aa1829270cf6aee01e252`](https://github.com/Tarasevych/gmail-telegram-controls/commit/dd2a4226d6c3cfb6456aa1829270cf6aee01e252).
+- Product head для PR #16: `dd2a4226d6c3cfb6456aa1829270cf6aee01e252`. Release boundary залишається BLOCKED.
+
+### Final evidence addendum
+
+- VR-005 now records the `CONFLICTING` official label-limit sources (10,000 in the REST resource; 5,000 in Gmail Help) in [`dd2a4226d6c3cfb6456aa1829270cf6aee01e252`](https://github.com/Tarasevych/gmail-telegram-controls/commit/dd2a4226d6c3cfb6456aa1829270cf6aee01e252).
+- Product head for PR #16: `dd2a4226d6c3cfb6456aa1829270cf6aee01e252`. The release boundary remains BLOCKED.
