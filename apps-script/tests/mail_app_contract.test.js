@@ -221,6 +221,28 @@ test('Telegram deep links apply folder filters and open the real label panel onl
   assert.match(uiSource, /openThreadRoutePanel\(initialRoute\)/);
 });
 
+test('automatic stale thread routes recover to the loaded list while manual failures retain retry', () => {
+  const routeSource = sourceBetween(
+    '      function parseLocationRoute() {',
+    '      function safeColor(value, fallback) {'
+  );
+  const openThreadSource = sourceBetween(
+    '      async function openThread(threadId, force, connectionId) {',
+    '      function closeReader() {'
+  );
+  const bootSource = sourceBetween(
+    '      async function boot() {',
+    '      function previewOpenSession() {'
+  );
+  assert.match(uiSource, /function recoverFailedAutomaticThreadRoute\(\)[\s\S]*embeddedLaunchRoute = "";[\s\S]*history\.replaceState\(null, "", location\.pathname \+ location\.search\)[\s\S]*state\.selectedThreadId = "";[\s\S]*els\.readerEmpty\.hidden = false/);
+  assert.match(openThreadSource, /var openOptions = arguments\.length > 3[\s\S]*openOptions\.recoverToListOnFailure[\s\S]*recoverFailedAutomaticThreadRoute\(\)[\s\S]*else \{\s*renderReaderError/);
+  assert.match(openThreadSource, /return true;[\s\S]*return false;/);
+  assert.match(routeSource, /var routeOpened = await openThread\(route\.threadId, true, route\.connectionId, \{\s*recoverToListOnFailure: true\s*\}\);[\s\S]*if \(routeOpened\) openThreadRoutePanel\(route\)/);
+  assert.match(bootSource, /var initialThreadOpened = await openThread\(initialRoute\.threadId, true, initialRoute\.connectionId, \{\s*recoverToListOnFailure: true\s*\}\);[\s\S]*if \(initialThreadOpened\) openThreadRoutePanel\(initialRoute\)/);
+  assert.match(bootSource, /openThread\(resume\.threadId, true, state\.account\.id, \{\s*recoverToListOnFailure: true\s*\}\)/);
+  assert.match(uiSource, /retry\.addEventListener\("click", function \(\) \{\s*openThread\(state\.selectedThreadId, true, state\.selectedConnectionId\);/);
+});
+
 test('opening an unread thread marks it read without closing the active reader', () => {
   const openThreadSource = sourceBetween(
     '      async function openThread(threadId, force, connectionId) {',

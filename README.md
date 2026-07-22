@@ -8,7 +8,9 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-- Поточний public production залишається на раніше перевіреному Apps Script v37, доки Versie 1 не завершить acceptance.
+<!-- release-state: production=v57; candidate=v58; staging=1; status=BLOCKED; as-of=2026-07-22 -->
+- Поточний production працює на перевіреному Apps Script immutable v57. Immutable v58 і один owner-only staging deployment збережені без promotion через незавершений acceptance.
+- Канонічний актуальний стан: [Українською](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Датовані release/postmortem статті є історичними доказами, а не current-state джерелом.
 - Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.
 - Номери Apps Script immutable є технічними deployment ID, а не назвами продуктових версій.
 - Одночасно використовується одна активна гілка розробки; завершені release-гілки й теги є незмінними доказами.
@@ -33,7 +35,8 @@ Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 ## Current project line
 
 - Active development version: **Versie 1 · 2026-07-19**.
-- Current public production remains the previously verified Apps Script v37 until Versie 1 completes acceptance.
+- Current production runs verified Apps Script immutable v57. Immutable v58 and one owner-only staging deployment are preserved without promotion because acceptance is incomplete.
+- Canonical current state: [Українська](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Dated release and postmortem articles are historical evidence, not the current-state source.
 - Product builds now advance only sequentially: Versie 1, Versie 2, Versie 3, and so on.
 - Apps Script immutable numbers are technical deployment IDs, not product version names.
 - One active development branch is used at a time; completed release branches and tags are immutable evidence.

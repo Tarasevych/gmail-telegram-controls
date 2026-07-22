@@ -194,10 +194,13 @@
         });
         const routeValue = route.toString().slice(0, 512);
         try {
+          // Source request: REQ-0029. The deep link is a one-shot launch
+          // command. Preserve it in the POST field, but do not leave it in
+          // Telegram WebView history where a later menu launch can replay it.
           history.replaceState(
             null,
             '',
-            location.pathname + location.search + (routeValue ? '#' + routeValue : '')
+            location.pathname + location.search
           );
         } catch (error) {
           // History cleanup is defense-in-depth; launch must still continue in

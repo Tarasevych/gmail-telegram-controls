@@ -5,11 +5,11 @@
 - **Date:** 2026-07-22
 - **Verification framework:** REQ-0004
 - **Product:** Versie 1
-- **Request:** `REQ-0028` ([governance commit](https://github.com/Tarasevych/gmail-telegram-controls/commit/b56812c22ab78fbb2749c798ea9ad92e14e25fc2))
+- **Requests:** `REQ-0028` ([release governance](https://github.com/Tarasevych/gmail-telegram-controls/commit/b56812c22ab78fbb2749c798ea9ad92e14e25fc2)); `REQ-0029` ([factual correction](https://github.com/Tarasevych/gmail-telegram-controls/commit/1b2295d))
 - **Authority:** `P-008` ([authority commit](https://github.com/Tarasevych/gmail-telegram-controls/commit/1ec34cff91d8a4b6f188e0c8eb860816f6609bbb))
 - **Issues:** [GT-027, GT-028](../../../ISSUES.md)
 - **Roadmap:** B1-21, B1-22
-- **Overall status:** BLOCKED
+- **Overall status:** PARTIAL
 
 ## Boundary and method
 
@@ -25,12 +25,17 @@ This report contains sanitized content-free evidence only. Gmail addresses, depl
 | V58-A04 | Release | current | VERIFIED | exact v57 rollback | journal wording | sanitized | Read-only preflight: stable v57, immutable v58 ready, staging `1`, legacy staging `0`, journal `staging_verified` |
 | V58-A05 | Staging UI | current | PARTIAL | existing signed Telegram session | mailbox bootstrap failure | sanitized | Two fresh v58 launches showed the Apps Script shell and profile photo; the chat-native account list confirmed three roots, but the mailbox operation did not open |
 | V58-A06 | Controlled A/B | current | VERIFIED | production menu restoration | none | sanitized | Two fresh production v57 launches reproduced the same content-free mailbox-operation error as v58 |
-| V58-A07 | Failure stage | current | VERIFIED | correct owner Apps Script dashboard | a cached client shell remains possible | sanitized | The execution dashboard filtered by `Web app` contained no execution in any staging/production test window; a direct owner-browser staging probe also did not enter a handler |
-| V58-A08 | Root cause | current | UNVERIFIED | external transport/deployment access | the official status dashboard cannot exclude a partial incident | sanitized | Evidence localizes the failure to the pre-handler layer but does not distinguish Telegram WebView transport, Google multi-login/access routing, and a partial Apps Script incident |
+| V58-A07 | Failure stage | current | CONFLICTING | correct Mini App window targeting | earlier dashboard-only interpretation | sanitized | Absence of an execution row was initially read as a pre-handler failure; later direct production inspection showed successful mailbox list/bootstrap and a reader-level error |
+| V58-A08 | Root cause | current | VERIFIED | launcher history, `openThread` contract | candidate-specific runtime remains unverified | sanitized | The launcher retained the route in WebView history; failed automatic `openThread` rendered an error without clearing route/selection and replayed the stale thread on a fresh launch |
 | V58-A09 | Candidate regression | current | UNVERIFIED | A06, A07 | shared failure on v57 | sanitized | The same failure on stable and candidate does not establish a v58-specific regression |
 | V58-A10 | Promotion | current | BLOCKED | successful staging acceptance | none | sanitized | Acceptance did not pass; Promote and CleanupStaging were not run |
 | V58-A11 | Safety | current | VERIFIED | production v57 | none | sanitized | The Telegram menu was restored to production; v58 staging is preserved; OAuth, scopes, Gmail data, and random mail were unchanged |
 | V58-A12 | Label management | current | UNVERIFIED | GT-028 | local/visual tests only | public | GT-027 exists in immutable v58, but the live label UI was not accepted and production was not changed |
+| V58-A13 | Source remediation | current | PARTIAL | REQ-0029, required checks | no v59 release authority | public | The source candidate consumes the launcher hash once and adds list recovery only for automatic initial/hash/resume opens; manual retry is preserved; targeted `238/238`, non-release `440/440`, and docs validators passed; two immutable hash guards fail closed as expected |
+
+## Factual localization correction
+
+The earlier “failure before handler” conclusion was stronger than its evidence. After targeting the separate Mini App window, production v57 successfully loaded the avatar, Inbox, and a real message list; navigating to Inbox cleared the reader error. This verifies a client route/reader defect. The historical A/B is retained, but claim V58-A07 is now `CONFLICTING` and V58-A08 records the verified root cause. Source request: `REQ-0029`.
 
 ## Corrected registry collision
 
@@ -47,10 +52,10 @@ After two independent branches were merged, the owner Advanced Gmail adapter and
 
 ## Next evidence step
 
-1. Do not toggle releases while the shared pre-handler failure reproduces on v57 and v58.
-2. After endpoint transport recovers, run two fresh v57 launches; only after they pass, repeat a signed v58 staging launch.
-3. Promotion is allowed only after mailbox, avatar, three roots, and account-switch acceptance without OAuth.
-4. If v57 passes and v58 fails, do not mutate immutable v58; separately authorize the next cumulative candidate with exact rollback.
+1. Verify the REQ-0029 source candidate with targeted/full/docs suites and required GitHub checks.
+2. Do not mutate immutable v58; separately authorize the next cumulative immutable for any code-level release.
+3. New staging must pass two fresh launches without a stale reader, then mailbox, avatar, three roots, and account-switch acceptance without OAuth.
+4. Production promotion remains forbidden until complete VERIFIED acceptance and exact-v57 rollback readiness.
 
 ## Sources
 

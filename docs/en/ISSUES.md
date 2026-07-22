@@ -33,7 +33,7 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-025 | Integrated into immutable v58; live unverified | 1 | Parallel thread metadata always used the Apps Script owner token, including an external multi-account context | `mailboxMultiGmailAccessToken_` is selected for the active `connectionId`, while `ScriptApp.getOAuthToken()` remains limited to the legacy/owner lane; the cumulative v58 suite passed, but mailbox acceptance is blocked by GT-028 |
 | GT-026 | Integrated into immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads always consume Apps Script `URLFETCH` quota even though the official Advanced Gmail Service is enabled | The allowlisted owner-read adapter is included in cumulative v58, but the protected flag was not enabled; external OAuth connections retain their own token paths. Live quota reduction is unverified because of GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
 | GT-027 | Integrated into immutable v58; staging acceptance blocked | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | The shared USER/SYSTEM renderer, accessible create/rename/delete controls, full-path nesting, bounded scrolling, and account isolation passed cumulative tests; live label UI acceptance is blocked because mailbox bootstrap stopped at GT-028 |
-| GT-028 | Blocked; shared pre-handler incident | 1 | Two fresh v58 staging and two fresh v57 production launches showed the same mailbox-operation error before entering an Apps Script handler | The Web App execution filter showed no execution in the test windows; a candidate-specific regression is not supported. Production remains v57, the menu was restored to production, immutable/staging v58 is preserved, and promotion is forbidden pending a new controlled A/B. Source request: `REQ-0028` |
+| GT-028 | PARTIAL; root cause verified; source fix pending release | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | The REQ-0029 source candidate forwards the route once, clears launcher history, and enables list recovery only for automatic launch/resume. Production v57 and immutable/staging v58 are unchanged; live acceptance requires a separately authorized next immutable. |
 
 ## Production evidence 2026-07-20
 
@@ -112,13 +112,14 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
-## GT-028 — Shared pre-handler Mini App bootstrap blocker
+## GT-028 — Stale automatic thread route in the Telegram Mini App
 
-- **Status:** BLOCKED.
+- **Status:** PARTIAL — root cause VERIFIED; source fix prepared, live release UNVERIFIED.
 - **Date:** 2026-07-22.
-- **Factual A/B:** two fresh v58 staging launches and two fresh v57 production launches reproduced the same content-free mailbox-operation error.
-- **Localization:** Apps Script Executions filtered by `Web app` contained no execution for any test window; the failure occurs before a server handler. A direct owner-browser probe of the staging endpoint also ended in a Drive error without a handler execution.
-- **Conclusion:** a candidate-specific regression is UNVERIFIED; the exact transport/deployment-access cause is UNVERIFIED. Historical GT-024 is not reopened because it concerned a proven URLFetch quota incident after handler entry.
-- **Safe state:** stable production v57; immutable v58 and one staging deployment are preserved; the Telegram menu is restored to production; promotion and cleanup were not run.
-- **Report:** [VR-006](verification-reports/reports/VR-006/README.md).
+- **Factual correction:** a separately targeted production v57 window successfully loaded the avatar, Inbox, and a real message list; Telegram also contained a fresh delivered notification. The earlier “before server handler” localization was therefore not supported.
+- **Root cause:** VERIFIED — the GitHub Pages launcher forwarded the hash route in the POST but retained the same route in Telegram WebView history. `openThread()` caught an automatic deep-link failure, rendered a reader error, and did not clear selection/route, so a fresh menu launch replayed the stale thread.
+- **Source fix:** REQ-0029 makes the hash one-shot, while failed automatic initial/hash/resume opens clear the reader and expose the already loaded list. Manual message selection retains the error and `Retry`.
+- **Local evidence:** targeted bridge/route suite `238/238`; all non-release tests `440/440`; bilingual, knowledge-hub, and verification validators passed. The full release suite fails closed only at two expected immutable hash guards because changed source intentionally does not match historical v57/v58 pins.
+- **Release boundary:** production remains exact v57; immutable v58 and one staging deployment are preserved; v59/deployment/promotion are not authorized by this request.
+- **Report:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
