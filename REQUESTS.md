@@ -215,3 +215,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `recorded`
 - Next Versie authorization: `no`
 - Boundary: Versie 1 only; normal merge/push/checks/staging allowed; no force/rebase/history rewrite; no production promotion before all staging gates pass and exact-v57 rollback is ready.
+
+## REQ-0029 | 2026-07-22
+
+- Українською: виправити повторне автоматичне відкриття застарілого thread-маршруту Telegram Mini App із безпечним поверненням до вже завантаженого списку.
+- English: repair repeated automatic opening of a stale Telegram Mini App thread route with safe recovery to the already loaded list.
+- Record: [REQ-0029](requests/2026-07-22/REQ-0029-stale-thread-route-recovery.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: source/tests/paired documentation and normal PR only; no v59, immutable, deployment, menu switch, staging acceptance, production promotion, OAuth, Gmail mutation, account/zone mixing, or secret publication.
