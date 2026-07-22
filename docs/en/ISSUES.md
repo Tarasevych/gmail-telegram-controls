@@ -152,3 +152,48 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Boundary:** OAuth, Gmail permissions, account membership, and mail-flow composition are unchanged. The source is not production v57; immutable v60 was not created because GT-030 remains open.
 - **Report:** [VR-008](verification-reports/reports/VR-008/README.md).
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-032 — Typography differs from the Gmail reading context
+
+- **Status:** PARTIAL — live Gmail CSS and the source fix are VERIFIED; candidate visual and production acceptance remain UNVERIFIED.
+- **Date:** 2026-07-22. Source request: `REQ-0033`.
+- **Root cause:** the client mixed undersized 11–13 px interface text, heavy headings, and a 1.65 message line height without one typography scale.
+- **Source fix:** a local-first Gmail-compatible UI stack, a separate reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading and compose rhythm, responsive sizing, and no remote font dependency or layout-blocking font request.
+- **Evidence:** authenticated read-only Gmail inspection at the same browser scale returned the current UI stack and 14 px/20 px mail-list cells; no mail was opened or changed. See [VR-009](verification-reports/reports/VR-009/README.md).
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-033 — Repeated loading and blocked internal navigation
+
+- **Status:** PARTIAL — root cause and source implementation VERIFIED; post-change browser/performance and production acceptance UNVERIFIED.
+- **Root cause:** list routes cleared all rows before every RPC; every thread open discarded the current detail; `threadLoading` dropped a second click; accepted responses rebuilt the whole list DOM.
+- **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace shows three `getThread` plus three `attentionState` RPCs for `A -> B -> A`.
+- **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, saved scroll/view state, and no document reload for ordinary navigation.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-034 — Missing bounded cache and background revalidation
+
+- **Status:** PARTIAL — bounded architecture is implemented in source; browser quota, eviction and live account-isolation acceptance remain UNVERIFIED.
+- **Root cause:** the client had no memory cache, IndexedDB, Cache Storage, Service Worker, or persistent view state; all freshness checks blocked the visible UI.
+- **Source fix:** normalized account-scoped records, 60-entry memory LRU, 120-record/4 MiB persistent budget, seven-day hard expiry, per-record cap, stale-while-revalidate, 45-second visible-tab refresh, stable IDs, stale-response rejection and account purge.
+- **Boundary:** no token, session, credential or staging value is stored. Service Worker/Background Sync is not claimed; the Apps Script staging boundary must be tested before changing that status.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-035 — Draft text lacks an immediate persistent recovery checkpoint
+
+- **Status:** PARTIAL — existing Gmail autosave and the new local checkpoint are source-verified; offline/restart/cross-session acceptance remains UNVERIFIED.
+- **Root cause:** Gmail autosave already used a stable operation ID and stale-response guards, but unsaved edits lived only in memory until the debounced server request completed.
+- **Source fix:** immediate bounded IndexedDB text checkpoint per connection, continued debounced Gmail Draft save, lifecycle flushes, attachment-byte exclusion, canonical acknowledgement cleanup, and explicit local-versus-Gmail conflict choice.
+- **Boundary:** another device can resume only a Gmail-confirmed draft. Browser-local recovery is never represented as server-confirmed.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-036 — A new production client can remain stale in an open Mini App
+
+- **Status:** PARTIAL — source mechanism implemented; Apps Script staging and production one-reload acceptance remain UNVERIFIED.
+- **Root cause:** ordinary mail state and client-code version had no separate lifecycle; an already open document had no production release signal.
+- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard, and a manual reopen state after one failed activation attempt.
+- **Boundary:** the immutable Apps Script HTML remains the app shell. No unsupported Service Worker is simulated, and routine mail synchronization never reloads the document.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).

@@ -150,3 +150,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Next evidence:** targeted UI contract, non-release suite, paired documentation gates, responsive visual check, and a normal PR. Immutable/staging/production remain a separate bounded cycle after GT-030 is resolved.
 - **Evidence:** [GT-031](ISSUES.md), [VR-008](verification-reports/reports/VR-008/README.md). Source request: `REQ-0032`.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-25 — P0 instant client, bounded cache and reliable drafts
+
+- **Status:** PARTIAL — architecture, baseline and source implementation are recorded; automated/browser/staging/production acceptance is pending.
+- **Date:** 2026-07-22. Source request: `REQ-0033`.
+- **Scope:** Gmail-compatible typography; app-shell internal navigation; account-isolated memory/IndexedDB LRU; stale-while-revalidate; keyed incremental list reconciliation; optimistic mutation rollback; local plus Gmail draft autosave; version-aware one-time client activation.
+- **Issues:** [GT-032](ISSUES.md), [GT-033](ISSUES.md), [GT-034](ISSUES.md), [GT-035](ISSUES.md), [GT-036](ISSUES.md).
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md).
+- **Release boundary:** no immutable candidate or deployment is created until local source and CI gates pass. Promotion requires bounded staging acceptance and exact rollback remains v57.
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

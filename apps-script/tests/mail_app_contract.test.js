@@ -159,7 +159,7 @@ test('evidence-grounded handoff stays account-bound explicit and calendar-scope 
   assert.match(handoffSource, /function closeThreadHandoff\(restoreFocus, force\)[\s\S]*state\.handoffBusy && !force/,
     'user close, Cancel and Escape must not dismiss an in-flight mutation');
   assert.match(handoffSource, /state\.handoffBusy = true;[\s\S]*els\.closeHandoff\.disabled = true;[\s\S]*els\.cancelHandoff\.disabled = true;/);
-  assert.match(uiSource, /if \(!id \|\| state\.threadLoading \|\| state\.handoffBusy \|\|/,
+  assert.match(uiSource, /if \(!id \|\| state\.handoffBusy\) return false/,
     'an in-flight handoff must also freeze programmatic reader switching');
   assert.match(handoffSource, /completedKind = "task";[\s\S]*closeThreadHandoff\(false, true\)/);
   assert.match(handoffSource, /completedKind = "calendar";[\s\S]*closeThreadHandoff\(true, true\)/);
@@ -192,6 +192,9 @@ test('mail list uses honest server-wide Gmail filters and has no fake oldest sor
 
   const requestSource = sourceBetween(
     '      function safeMailboxFilter(value) {',
+    '      var P0_CACHE_SCHEMA = 1;'
+  ) + sourceBetween(
+    '      function mailboxViewContext() {',
     '      function formatTimestampLabel(value, fallback) {'
   );
   assert.match(requestSource, /filter:\s*safeMailboxFilter\(view\.filter\)/);
@@ -230,13 +233,18 @@ test('automatic stale thread routes recover to the loaded list while manual fail
     '      async function openThread(threadId, force, connectionId) {',
     '      function closeReader() {'
   );
+  const refreshThreadSource = sourceBetween(
+    '      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {',
+    '      function mailboxViewContext() {'
+  );
   const bootSource = sourceBetween(
     '      async function boot() {',
     '      function previewOpenSession() {'
   );
   assert.match(uiSource, /function recoverFailedAutomaticThreadRoute\(\)[\s\S]*embeddedLaunchRoute = "";[\s\S]*history\.replaceState\(null, "", location\.pathname \+ location\.search\)[\s\S]*state\.selectedThreadId = "";[\s\S]*els\.readerEmpty\.hidden = false/);
-  assert.match(openThreadSource, /var openOptions = arguments\.length > 3[\s\S]*openOptions\.recoverToListOnFailure[\s\S]*recoverFailedAutomaticThreadRoute\(\)[\s\S]*else \{\s*renderReaderError/);
-  assert.match(openThreadSource, /return true;[\s\S]*return false;/);
+  assert.match(openThreadSource, /var openOptions = arguments\.length > 3[\s\S]*p0RefreshThread\(id, requestedConnectionId, generation, Boolean\(cached\), openOptions\)/);
+  assert.match(refreshThreadSource, /options\.recoverToListOnFailure[\s\S]*recoverFailedAutomaticThreadRoute\(\)[\s\S]*else \{\s*renderReaderError/);
+  assert.match(openThreadSource + refreshThreadSource, /return true;[\s\S]*return false;/);
   assert.match(routeSource, /var routeOpened = await openThread\(route\.threadId, true, route\.connectionId, \{\s*recoverToListOnFailure: true\s*\}\);[\s\S]*if \(routeOpened\) openThreadRoutePanel\(route\)/);
   assert.match(bootSource, /var initialThreadOpened = await openThread\(initialRoute\.threadId, true, initialRoute\.connectionId, \{\s*recoverToListOnFailure: true\s*\}\);[\s\S]*if \(initialThreadOpened\) openThreadRoutePanel\(initialRoute\)/);
   assert.match(bootSource, /openThread\(resume\.threadId, true, state\.account\.id, \{\s*recoverToListOnFailure: true\s*\}\)/);
@@ -248,8 +256,13 @@ test('opening an unread thread marks it read without closing the active reader',
     '      async function openThread(threadId, force, connectionId) {',
     '      function closeReader() {'
   );
-  assert.match(openThreadSource, /if \(state\.thread\.unread\)/);
-  assert.match(openThreadSource, /await changeThreadAction\("markRead", id, \{[\s\S]*preserveOpen: true,[\s\S]*silentSuccess: true/);
+  const refreshThreadSource = sourceBetween(
+    '      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {',
+    '      function mailboxViewContext() {'
+  );
+  assert.match(refreshThreadSource, /if \(detail\.unread\)/);
+  assert.match(refreshThreadSource, /changeThreadAction\("markRead", id, \{[\s\S]*preserveOpen: true, silentSuccess: true/);
+  assert.match(openThreadSource, /p0RefreshThread\(id, requestedConnectionId/);
   const actionSource = sourceBetween(
     '      async function changeThreadAction(action, explicitThreadId, options) {',
     '      function actionSuccessMessage(action) {'
@@ -280,7 +293,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
     '      function renderListLoading() {'
   );
   const loadSource = sourceBetween(
-    '      async function loadThreads(reset) {',
+    '      async function loadThreads(reset, options) {',
     '      function normalizePerson(value) {'
   );
   const deferred = () => {
@@ -296,6 +309,10 @@ test('a slow list request is superseded and the latest queued view is rendered',
   let context;
   context = vm.createContext({
     state: {
+      account: { id: 'gmail-unit-list' },
+      accounts: [{ id: 'gmail-unit-list' }],
+      unifiedMode: false,
+      accountSettings: { unifiedConnectionIds: [] },
       currentFolderId: 'INBOX',
       currentLabelId: '',
       query: '',
@@ -318,6 +335,35 @@ test('a slow list request is superseded and the latest queued view is rendered',
     renderListLoading() {},
     renderListState(kind, message) { throw new Error(`${kind}: ${message}`); },
     renderThreadList() { renders.push(context.state.threads.map(thread => thread.id)); },
+    updateListHeader() {},
+    p0Runtime: { currentListKey: '', metrics: { listCacheHits: 0, staleResponses: 0 } },
+    p0ListCacheKey: view => JSON.stringify(view),
+    p0SaveListScroll() {},
+    p0PeekRecord: () => null,
+    p0ReadRecord: async () => null,
+    p0ApplyListSnapshot(snapshot, key) {
+      context.state.threads = snapshot.threads;
+      context.state.nextPageToken = snapshot.nextPageToken;
+      context.state.totalEstimate = snapshot.totalEstimate;
+      context.p0Runtime.currentListKey = key;
+    },
+    window: {
+      indexedDB: null,
+      setTimeout,
+      requestAnimationFrame: callback => callback(),
+    },
+    clearTimeout,
+    p0ListSignature(snapshot) {
+      const value = snapshot || {
+        threads: context.state.threads,
+        nextPageToken: context.state.nextPageToken,
+        totalEstimate: context.state.totalEstimate,
+      };
+      return JSON.stringify(value);
+    },
+    p0RememberList() {},
+    p0SetSyncStatus() {},
+    p0ScheduleUiStateSave() {},
     rpc(request) {
       requests.push(request);
       return requests.length === 1 ? firstResponse.promise : secondResponse.promise;
@@ -326,6 +372,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
   vm.runInContext(`${requestSource}\n${sortSource}\n${loadSource}`, context);
 
   const firstLoad = context.loadThreads(true);
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(requests.length, 1);
   assert.equal(requests[0].folderId, 'INBOX');
 
@@ -1700,6 +1747,8 @@ test('mobile reader close releases attachment blobs and both caches have hard bo
     window: { matchMedia: () => ({ matches: true }) },
     closeActionMenus() {},
     closeSnoozePanel() {},
+    p0SaveReaderScroll() {},
+    p0ScheduleUiStateSave() {},
     renderThreadList() {},
     releaseAttachmentResources() {
       releaseCount += 1;
@@ -2192,7 +2241,12 @@ test('compose uses a safe rich-text editor and persists both HTML and plain-text
   assert.match(editorSource, /font-family[\s\S]*font-size[\s\S]*background-color[\s\S]*text-align[\s\S]*margin-left/);
   assert.match(editorSource, /var sanitized = sanitizeComposeHtml\(bodyHtml\)/);
   assert.doesNotMatch(editorSource, /execCommand|window\.prompt|\.innerHTML\s*=/);
-  assert.doesNotMatch(uiSource, /\b(?:localStorage|sessionStorage)\b/i);
+  assert.doesNotMatch(uiSource, /\blocalStorage\b/i);
+  assert.match(uiSource, /sessionStorage\.getItem\("p0-release-reload"\)/);
+  assert.doesNotMatch(sourceBetween(
+    '      function p0ComposeRecoveryValue(compose) {',
+    '      function p0PersistComposeRecovery() {'
+  ), /accessToken|refreshToken|sessionToken|dataBase64|attachmentId/);
 
   const editorEventsSource = sourceBetween(
     '      function bindEvents() {',
@@ -2557,6 +2611,7 @@ test('pending draft save retries the identical operation and baselines only afte
     composeRegularAttachmentSnapshot: values => (values || []).map((value, index) => String(index)),
     mergeCanonicalRegularAttachments: canonical => canonical || [],
     mergeCanonicalInlineAttachments: canonical => canonical || [],
+    p0ClearComposeRecoveryKey() {},
     renderCompose() {},
     acknowledgeComposeOperation() {},
     showSnackbar() {},
@@ -2572,6 +2627,7 @@ test('pending draft save retries the identical operation and baselines only afte
     finishCloseCompose() {},
     haptic() {},
     loadThreads() {},
+    p0ClearComposeRecoveryKey() {},
   });
   vm.runInContext(operationSource, context);
 
@@ -2779,6 +2835,7 @@ test('pending send locks onto one send operation and never repeats the draft sav
     finishCloseCompose: () => { closed = true; },
     haptic() {},
     loadThreads() {},
+    p0ClearComposeRecoveryKey() {},
   });
   vm.runInContext(operationSource, context);
 
@@ -2821,6 +2878,7 @@ test('a clean existing draft with attachments is still confirmed by save before 
   };
   const context = vm.createContext({
     state,
+    p0ClearComposeRecoveryKey() {},
     els: { composeTo: { focus() {} }, composeBody: { focus() {} } },
     composePendingKind: () => String(state.compose && state.compose.pendingKind || ''),
     composeAttachmentJobs: () => [],
@@ -2939,9 +2997,13 @@ test('unified inbox and every mailbox operation preserve the exact Gmail connect
     '      async function openThread(threadId, force, connectionId) {',
     '      function closeReader() {'
   );
+  const refreshReaderSource = sourceBetween(
+    '      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {',
+    '      function mailboxViewContext() {'
+  );
   assert.match(readerSource, /state\.selectedConnectionId = requestedConnectionId/);
-  assert.match(readerSource, /rpc\(\{ op: "getThread", threadId: id, connectionId: requestedConnectionId \}\)/);
-  assert.match(readerSource, /connectionId: requestedConnectionId/);
+  assert.match(refreshReaderSource, /rpc\(\{ op: "getThread", threadId: id, connectionId: connectionId \}\)/);
+  assert.match(readerSource, /p0RefreshThread\(id, requestedConnectionId/);
 
   const actionSource = sourceBetween(
     '      async function changeThreadAction(action, explicitThreadId, options) {',

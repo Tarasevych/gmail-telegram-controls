@@ -142,11 +142,6 @@ test('historical v58 helper retains the immutable v58 source pins', () => {
   for (const value of Object.values(expectedV58)) assert.match(v58Helper, new RegExp(value));
 });
 
-test('Versie 1 candidate hashes match the current v59 source bundle', () => {
-  assert.equal(hash('Code', 'gs'), expectedV59.Code);
-  assert.equal(hash('MultiAccount', 'gs'), expectedV59.MultiAccount);
-  assert.equal(hash('MailClient', 'gs'), expectedV59.MailClient);
-  assert.equal(hash('MailApp', 'html'), expectedV59.MailApp);
-  assert.equal(hash('appsscript', 'json'), expectedV59.appsscript);
+test('Versie 1 v59 helper retains its frozen historical source hashes', () => {
   for (const value of Object.values(expectedV59)) assert.match(v59Helper, new RegExp(value));
 });

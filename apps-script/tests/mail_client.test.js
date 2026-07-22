@@ -5470,10 +5470,17 @@ test('MailApp authenticates with Telegram initData without URL/localStorage secr
     /setXFrameOptionsMode\s*\(\s*HtmlService\.XFrameOptionsMode\.ALLOWALL\s*\)/,
     'MailApp must retain the default anti-framing policy'
   );
+  assert.doesNotMatch(uiSource, /\blocalStorage\b/i,
+    'mailbox state and credentials must not use localStorage');
+  assert.match(
+    uiSource,
+    /sessionStorage\.(?:getItem|setItem)\(\s*["']p0-release-reload["']/,
+    'sessionStorage is limited to the content-free one-reload release guard'
+  );
   assert.doesNotMatch(
     uiSource,
-    /\b(?:localStorage|sessionStorage)\b/i,
-    'mailbox bearer and refresh credentials must stay in memory'
+    /sessionStorage\.(?:setItem|getItem)\([^\n]{0,240}(?:token|sessionToken|refreshToken|accessToken|bodyHtml|bodyText|message|thread)/i,
+    'mailbox credentials and mail content must never enter sessionStorage'
   );
   assert.doesNotMatch(
     uiSource + '\n' + codeSource,
