@@ -45,3 +45,24 @@
 ## Release boundary
 
 Production-accepted Apps Script version: immutable v57. Наступний immutable або `Versie 2` потребує нового точного owner-наказу. Fresh OAuth не запускався; CAPTCHA, OTP/2FA, passkey та інші manual gates не виникали.
+
+## Follow-up evidence: secondary Gmail roots — 2026-07-22
+
+| Вимога | Перевірений доказ | Статус |
+|---|---|---|
+| Root-2 inbound fan-out | Новий content-free owner self-test потрапив у Inbox і автоматично створив одну картку | verified |
+| Root-2 account identity | Картка містила правильну позначку другої Gmail-зони | verified |
+| Root-2 dedupe | Два повторні /check повідомили про відсутність нових листів; accessibility-count залишився 1 | verified |
+| Root-3 inbound fan-out | Окремий content-free owner self-test автоматично створив одну картку | verified |
+| Root-3 account identity | Картка містила правильну позначку третьої Gmail-зони | verified |
+| Root-3 dedupe | Два повторні /check повідомили про відсутність нових листів; accessibility-count залишився 1 | verified |
+| Spam exclusion | Контрольний root-2 лист у Spam не створив картку | verified |
+| Безпечна межа | OAuth, scopes, deployment, triggers і product code не змінювалися | verified |
+
+### Корекція спостереження
+
+Проміжний видимий viewport Telegram не показував root-3 картку й не був достатнім доказом відсутності delivery. Після відновлення правильного scroll position картку знайдено, а accessibility-index атомарно підтвердив рівно один marker match. Надалі відсутність картки не визначається лише за viewport.
+
+### Tooling incident
+
+Read-only Chrome inspection двічі завершився timeout, а Windows browser fallback був fail-closed, бо не міг надійно визначити URL. Production state не змінювався. Незалежний доказ отримано через уже авторизований Gmail connector і Telegram accessibility tree; повторний OAuth не запускався.
