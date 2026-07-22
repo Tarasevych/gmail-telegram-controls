@@ -7316,7 +7316,7 @@
               "aria-label": (account.email || account.name) + ", підключено" + (account.current ? ", поточний" : "")
             }
           });
-          card.disabled = Boolean(account.current);
+          card.disabled = Boolean(account.current || state.accountManagementBusy);
           card.addEventListener("click", function () { switchMailboxAccount(account.id); });
           card.append(makeAvatar(account));
           var copy = make("div", { className: "account-card-copy" });
@@ -7332,11 +7332,13 @@
             className: "account-choice", type: "button", text: "Спільна стрічка",
             attrs: { "aria-pressed": unified ? "true" : "false" }
           });
+          unifiedButton.disabled = state.accountManagementBusy;
           unifiedButton.addEventListener("click", function () { toggleAccountPreference(account.id, "unified", !unified); });
           var notifyButton = make("button", {
             className: "account-choice", type: "button", text: "Сповіщення",
             attrs: { "aria-pressed": notified ? "true" : "false" }
           });
+          notifyButton.disabled = state.accountManagementBusy;
           notifyButton.addEventListener("click", function () { toggleAccountPreference(account.id, "notifications", !notified); });
           choices.append(unifiedButton, notifyButton);
           if (account.canDisconnect) {
@@ -8212,18 +8214,56 @@
         }
       }
 
+      function p0ResetAccountScopedView() {
+        p0SaveReaderScroll();
+        clearTimeout(p0Runtime.uiSaveTimer);
+        p0Runtime.uiSaveTimer = 0;
+        p0Runtime.readerGeneration += 1;
+        p0Runtime.currentThreadKey = "";
+        p0Runtime.currentListKey = "";
+        p0Runtime.restoredUi = null;
+        state.requestVersion += 1;
+        state.pendingListIntent = null;
+        state.selectedThreadId = "";
+        state.selectedConnectionId = "";
+        state.thread = null;
+        state.threadLoading = false;
+        state.threads = [];
+        state.nextPageToken = "";
+        state.totalEstimate = null;
+        state.unifiedMode = false;
+        state.account = null;
+        state.sendAs = [];
+        state.capabilities = {};
+        state.folders = [];
+        state.labels = [];
+        releaseAttachmentResources();
+        app.classList.remove("reader-open");
+        closeActionMenus();
+        els.readerContentHost.hidden = true;
+        clear(els.readerContentHost);
+        els.readerEmpty.hidden = false;
+        renderNavigation();
+        renderMailContext({ status: "loading" });
+        renderListLoading();
+      }
+
       async function switchMailboxAccount(connectionId) {
         var requested = safeId(connectionId);
         if (!requested || (state.account && state.account.id === requested)) return;
+        if (state.compose || state.composeBusy || state.actionBusy || state.handoffBusy) {
+          showSnackbar("Завершіть поточну дію або чернетку перед перемиканням Gmail-акаунта.");
+          return;
+        }
+        if (state.accountManagementBusy) return;
+        state.accountManagementBusy = true;
+        renderAccountPanel();
         try {
           var selected = await rpc({ op: "switchAccount", payload: { connectionId: requested } });
+          p0ResetAccountScopedView();
           state.attentionPreferencesRequestId += 1;
           state.attentionPreferencesBusy = false;
           var bootstrap = await rpc({ op: "bootstrap" });
-          state.selectedThreadId = "";
-          state.selectedConnectionId = "";
-          state.unifiedMode = false;
-          state.thread = null;
           state.gmailMetadataRequestId += 1;
           state.gmailMetadataLoading = false;
           state.gmailMetadata = null;
@@ -8263,6 +8303,9 @@
           }
         } catch (error) {
           showSnackbar(safeText(error && error.message, "Не вдалося перемкнути Gmail-акаунт."), { error: true });
+        } finally {
+          state.accountManagementBusy = false;
+          renderAccountPanel();
         }
       }
 
