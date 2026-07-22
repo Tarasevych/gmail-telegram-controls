@@ -78,8 +78,8 @@ test('immutable v56 staging launcher remains exact historical evidence', () => {
   assert.match(v56StagingBridge, /staging v56/);
 });
 
-test('v57 staging launcher is isolated from the production Web App menu', () => {
-  assert.match(menuUpdater, /versie-001-staging-acceptance-20260721-v57\.html/);
+test('historical v57 staging launcher stays immutable after the active menu advances', () => {
+  assert.doesNotMatch(menuUpdater, /versie-001-staging-acceptance-20260721-v57\.html/);
   assert.match(stagingBridge, /AKfycbxrSlQT6NKQooVkyKZE4LaDVO7lHUUChE2ih2Q7oprHHoUHY0YKLEkhT8Ojcon2qr7h/);
   assert.match(stagingBridge, /form\.method\s*=\s*'post'/);
   assert.match(stagingBridge, /addField\('init_data',\s*tg\.initData\)/);
