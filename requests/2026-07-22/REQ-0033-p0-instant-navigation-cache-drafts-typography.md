@@ -2,7 +2,7 @@
 
 - ID: REQ-0033
 - Date: 2026-07-22
-- Status: blocked
+- Status: recorded
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
@@ -88,3 +88,29 @@
 - Exact v62 -> v57 rollback completed. Post-rollback preflight reported stable/HEAD v57, immutable v62 ready, staging `0`, and journal `rolled_back`; two fresh production v57 launches passed without network error.
 - PR #31 published paired VR-010, release evidence, and canonical state; merge commit `67a8ba7073e3bcf42a4cb73fb9f59aa0d4a4ee01`. GitHub and private GitLab `main` are identical.
 - Status remains `blocked` because GT-030 has no causal fix/content-free execution trace and the complete REQ-0033 Definition of Done is not production-proven.
+
+## Continuation evidence — immutable v63 — 2026-07-22
+
+### Українською
+
+- PR #32 злив causal GT-030 worker-lease fix; PR #33 додав exact immutable v63 helper; PR #34 додав signed staging bridge. GitHub і private GitLab `main` досягли `ce46143b7270ca7776a91b01783490e1d08aa1ca`.
+- Focused worker contracts пройшли `17/17`; source suite `497/497`; release-helper cumulative suite `499/499`; final signed-bridge cumulative suite `501/501`. Required GitHub checks пройшли.
+- Owner-only native Telegram Desktop staging підтвердив mailbox, dynamic account context, avatar behavior, рівно три isolated Gmail roots і controlled switching із поверненням без OAuth.
+- Після promotion два свіжі native production launches завантажили mailbox v63. Сім послідовних one-minute `checkNewMail_` executions завершилися до наступного старту без overlap.
+- Final preflight підтвердив stable/HEAD exact v63, staging `0`, journal `cleaned`; exact v57 лишається rollback target. Immutable v56, v59, v62 і v63 не переписувалися.
+- PR #35 опублікував canonical paired UK/EN current state, GT-030–GT-038, release report і VR-011; merge commit `3abbf31619aa3380a83638adcda2efad8b3043f6`. [VR-011 українською](https://github.com/Tarasevych/gmail-telegram-controls/blob/main/docs/uk/verification-reports/reports/VR-011/README.md) · [детальний звіт](https://github.com/Tarasevych/gmail-telegram-controls/blob/main/docs/uk/reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md).
+- GT-030 тепер `VERIFIED`. GT-031–GT-036 лишаються `PARTIAL`; GT-037 фіксує promotion read-after-write false negative, GT-038 — Telegram Web K/A blank embed при успішному native Desktop.
+- External automatic INBOX після v63, dedicated History runtime substage, measured cold/warm і `A -> B -> A`, cache quota/LRU, offline/cross-session draft та one-reload/no-loop acceptance лишаються недоведеними.
+- Отже запит повернуто зі статусу `blocked` до активного `recorded`, а не позначено `completed`. Next Versie authorization лишається `no`.
+
+### English
+
+- PR #32 merged the causal GT-030 worker-lease fix; PR #33 added the exact immutable v63 helper; PR #34 added the signed staging bridge. GitHub and private GitLab `main` reached `ce46143b7270ca7776a91b01783490e1d08aa1ca`.
+- Focused worker contracts passed `17/17`; the source suite passed `497/497`; the release-helper cumulative suite passed `499/499`; the final signed-bridge cumulative suite passed `501/501`. Required GitHub checks passed.
+- Owner-only native Telegram Desktop staging verified the mailbox, dynamic account context, avatar behavior, exactly three isolated Gmail roots, and controlled switching away and back without OAuth.
+- After promotion, two fresh native production launches loaded the v63 mailbox. Seven successive one-minute `checkNewMail_` executions completed before the next start without overlap.
+- Final preflight confirmed exact stable/HEAD v63, staging `0`, and journal `cleaned`; exact v57 remains the rollback target. Immutable v56, v59, v62, and v63 were not rewritten.
+- PR #35 published canonical paired UK/EN current state, GT-030 through GT-038, the release report, and VR-011; merge commit `3abbf31619aa3380a83638adcda2efad8b3043f6`. [VR-011 in English](https://github.com/Tarasevych/gmail-telegram-controls/blob/main/docs/en/verification-reports/reports/VR-011/README.md) · [detailed report](https://github.com/Tarasevych/gmail-telegram-controls/blob/main/docs/en/reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md).
+- GT-030 is now `VERIFIED`. GT-031 through GT-036 remain `PARTIAL`; GT-037 tracks the promotion read-after-write false negative, and GT-038 tracks the blank Telegram Web K/A embed while native Desktop succeeds.
+- External automatic INBOX after v63, a dedicated History runtime substage, measured cold/warm and `A -> B -> A`, cache quota/LRU, offline/cross-session draft, and one-reload/no-loop acceptance remain unproven.
+- The request therefore returns from `blocked` to active `recorded`, rather than being marked `completed`. Next Versie authorization remains `no`.
