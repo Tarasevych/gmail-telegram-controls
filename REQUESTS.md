@@ -206,3 +206,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: normal feature-branch conflict recovery, tests, paired documentation, GitHub PR evidence, and private GitLab parity only; no flag activation, immutable, staging, production promotion, OAuth, Gmail mutation, trigger, menu, account, or zone change.
 - Evidence: conflict recovery verified at `a6648ccb25b0f0d8cfc2384625ab5fc8f66ad91a`; PR #11 is open, draft, clean, unmerged, undeployed; adapter tests `8/8`; full suite `451/452` with only the expected immutable-v57 hash guard; all six GitHub checks passed; GitHub/GitLab parity confirmed.
+
+## REQ-0028 | 2026-07-22
+
+- Українською: дозволено normal merge PR #16, cumulative immutable staging candidate Versie 1, інтеграцію PR #11 і production promotion лише після повного VERIFIED staging acceptance.
+- English: normal merge of PR #16, a cumulative immutable Versie 1 staging candidate, PR #11 integration, and production promotion only after fully VERIFIED staging acceptance are authorized.
+- Record: [REQ-0028](requests/2026-07-22/REQ-0028-authorize-cumulative-staging-integration.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: Versie 1 only; normal merge/push/checks/staging allowed; no force/rebase/history rewrite; no production promotion before all staging gates pass and exact-v57 rollback is ready.
