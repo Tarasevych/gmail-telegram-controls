@@ -23,6 +23,8 @@
 
 Коли нові виправлення загрожують уже перевіреним суміжним модулям, застосовуйте [протокол стабілізації та root-cause analysis](instructions/STABILIZATION_ROOT_CAUSE.md): заморозити production-verified blocks, не створювати порожніх checkpoint commits, ізолювати diagnostics і змінювати код лише після доказової першопричини. Source request: `REQ-0020`.
 
+Для routine merge, cumulative immutable staging і conditional production promotion у межах Versie 1 застосовуйте [обмежену release-автоматизацію](instructions/BOUNDED_RELEASE_AUTOMATION.md) під active `P-009`: один source SHA створює не більше одного immutable candidate, одночасно дозволений лише один staging, а promotion можливе тільки для exact active-cycle candidate після повного `VERIFIED` acceptance. Source request: `REQ-0030`.
+
 Перед будь-якою Gmail/Apps Script інтеграцією, зміною authorization або quota remediation застосовуйте [протокол первинних джерел і publication surfaces](instructions/GMAIL_PRIMARY_SOURCES_AND_PUBLICATION.md). Він вимагає перевірки офіційного Advanced Gmail Service, але забороняє автоматичну міграцію multi-account OAuth без доказу сумісності. Source request: `REQ-0021`.
 
 ## Заборона несанкціонованої наступної Versie
@@ -55,6 +57,8 @@ For routine continuation, use the [knowledge-hub maintenance order](instructions
 For long-running autonomous work, checkpoints, heartbeat, progress logging, and interruption recovery, follow the [autonomous recovery protocol](instructions/AUTONOMOUS_RECOVERY.md). Source request: `REQ-0011`.
 
 When new fixes threaten already verified adjacent modules, apply the [stabilization and root-cause protocol](instructions/STABILIZATION_ROOT_CAUSE.md): freeze production-verified blocks, do not create empty checkpoint commits, isolate diagnostics, and change code only after an evidence-backed root cause. Source request: `REQ-0020`.
+
+For routine merge, cumulative immutable staging, and conditional production promotion within Versie 1, apply [bounded release automation](instructions/BOUNDED_RELEASE_AUTOMATION.md) under active `P-009`: one source SHA creates no more than one immutable candidate, only one staging may be active, and promotion is allowed only for the exact active-cycle candidate after complete `VERIFIED` acceptance. Source request: `REQ-0030`.
 
 Before any Gmail/Apps Script integration, authorization change, or quota remediation, apply the [primary-source and publication-surface protocol](instructions/GMAIL_PRIMARY_SOURCES_AND_PUBLICATION.md). It requires consulting the official Advanced Gmail Service while prohibiting automatic multi-account OAuth migration without compatibility evidence. Source request: `REQ-0021`.
 
