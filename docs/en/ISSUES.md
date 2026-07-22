@@ -96,3 +96,16 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - The initial root-2 probe landing in Spam was an external Gmail classification, not a delivery defect: production deliberately excludes Spam.
 - The visible Telegram viewport is not sufficient evidence that a card is absent. Final counts use the accessibility index and a unique sanitized marker.
 - GT-018, GT-019, GT-023, and GT-024 have no open secondary-root acceptance blocker for production v57.
+
+## GT-026 — Unified Gmail label management
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Request:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
+- **Root cause:** VERIFIED — the profile list reserved label width for several permanently visible actions, the sidebar had no create/manage controls, and the two surfaces depended on different state slices. Acceptance also exposed click bubbling into the global close handler and implicit CSS grid rows shrinking to 44 px.
+- **Fix:** VERIFIED locally in [commit 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): shared state/render path, a `+` beside the heading, one accessible pencil action for every USER label, progressive disclosure, bounded scrolling, nested full-path normalization, SYSTEM-label protection, permission/retry states, and synchronous refresh of both surfaces.
+- **Verification:** VERIFIED — final UI contract `84/84`; full suite `447/448`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
+- **Release boundary:** BLOCKED — the only full-suite failure is the intentional exact-hash gate for immutable v57. REQ-0026 does not authorize a new immutable candidate or production promotion.
+- **Production:** UNVERIFIED — the changes are not deployed.
+- **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)

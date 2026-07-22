@@ -4098,8 +4098,41 @@ function mailboxProcessMetadataReconciliations_(limitValue) {
   return result;
 }
 
+function mailboxNormalizeManagedLabelName_(value, required) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) {
+    if (required) throw mailboxError_('INVALID_LABEL', 'Вкажіть назву нової мітки Gmail.');
+    return '';
+  }
+  if (raw.length > 225 || /[\u0000-\u001F\u007F]/.test(raw)) {
+    throw mailboxError_('INVALID_LABEL', 'Назва мітки містить недозволені символи або перевищує 225 знаків.');
+  }
+  const parts = raw.split('/').map(part => part.trim());
+  if (parts.some(part => !part)) {
+    throw mailboxError_('INVALID_LABEL', 'Частини вкладеного шляху мітки не можуть бути порожніми.');
+  }
+  const normalized = parts.join('/');
+  if (normalized.length > 225) throw mailboxError_('INVALID_LABEL', 'Назва мітки перевищує 225 знаків.');
+  return normalized;
+}
+
+function mailboxManagedLabelRequest_(path, options) {
+  try {
+    return gmailApiRequest_(path, options);
+  } catch (error) {
+    if (error && error.gmailHttpStatus === 403) {
+      throw mailboxError_('LABEL_PERMISSION_REQUIRED', 'Цьому Gmail-підключенню бракує дозволу на керування мітками.');
+    }
+    if (error && error.gmailHttpStatus === 400) {
+      throw mailboxError_('INVALID_LABEL', 'Gmail відхилив назву або параметри мітки. Перевірте повний шлях і зарезервовані назви.');
+    }
+    throw error;
+  }
+}
+
 function mailboxNormalizeManagedLabelBody_(payload, creating) {
-  const name = mailboxSafeText_(payload && payload.name, 225).trim();
+  const hasName = payload && Object.prototype.hasOwnProperty.call(payload, 'name');
+  const name = mailboxNormalizeManagedLabelName_(hasName ? payload.name : '', creating);
   if (creating && !name) throw mailboxError_('INVALID_LABEL', 'Вкажіть назву нової мітки Gmail.');
   const body = {};
   if (name) body.name = name;
@@ -4132,7 +4165,7 @@ function mailboxManageUserLabel_(payload, session) {
   const action = mailboxEnum_(payload.action, ['create', 'update', 'delete'], '');
   if (!action) throw mailboxError_('INVALID_LABEL', 'Некоректна дія з міткою Gmail.');
   if (action === 'create') {
-    const created = gmailApiRequest_('/labels', {
+    const created = mailboxManagedLabelRequest_('/labels', {
       method: 'post', body: mailboxNormalizeManagedLabelBody_(payload, true),
     });
     return { action, label: mailboxLabelDto_(created), metadata: mailboxGmailMetadata_({}, session) };
@@ -4153,10 +4186,10 @@ function mailboxManageUserLabel_(payload, session) {
     if (payload.confirmDelete !== 'DELETE_LABEL') {
       throw mailboxError_('CONFIRM_REQUIRED', 'Підтвердіть видалення мітки та її зняття з усіх листів.');
     }
-    gmailApiRequest_('/labels/' + encodeURIComponent(labelId), { method: 'delete' });
+    mailboxManagedLabelRequest_('/labels/' + encodeURIComponent(labelId), { method: 'delete' });
     return { action, deletedLabelId: labelId, metadata: mailboxGmailMetadata_({}, session) };
   }
-  const updated = gmailApiRequest_('/labels/' + encodeURIComponent(labelId), {
+  const updated = mailboxManagedLabelRequest_('/labels/' + encodeURIComponent(labelId), {
     method: 'patch', body: mailboxNormalizeManagedLabelBody_(payload, false),
   });
   return { action, label: mailboxLabelDto_(updated), metadata: mailboxGmailMetadata_({}, session) };

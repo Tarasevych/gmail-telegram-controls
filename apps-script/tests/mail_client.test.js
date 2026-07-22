@@ -7234,6 +7234,18 @@ test('Gmail metadata is connection-scoped and user labels use optimistic guarded
 
   const created = resultData(rpc(harness, token, 'labelAdmin', { action: 'create', name: 'Нова мітка' }));
   assert.equal(created.label.name, 'Нова мітка');
+  const nested = resultData(rpc(harness, token, 'labelAdmin', {
+    action: 'create', name: 'Проєкти / 2026 / Дослідження',
+  }));
+  assert.equal(nested.label.name, 'Проєкти/2026/Дослідження');
+  assert.ok(calls.some(call => call.requestPath === '/labels' && call.method === 'post' &&
+    call.body.name === 'Проєкти/2026/Дослідження'));
+  assert.equal(resultFailed(rpc(harness, token, 'labelAdmin', {
+    action: 'create', name: 'Проєкти//Порожній рівень',
+  })).code, 'INVALID_LABEL');
+  assert.equal(resultFailed(rpc(harness, token, 'labelAdmin', {
+    action: 'create', name: `Небезпечна\u0000мітка`,
+  })).code, 'INVALID_LABEL');
   const updated = resultData(rpc(harness, token, 'labelAdmin', {
     action: 'update', labelId: label.id, expectedVersion: label.version, name: 'Оновлений проєкт',
   }));
@@ -7253,6 +7265,20 @@ test('Gmail metadata is connection-scoped and user labels use optimistic guarded
     action: 'update', labelId: 'INBOX', expectedVersion: metadata.labels.find(item => item.id === 'INBOX').version,
     name: 'Не можна',
   })).code, 'INVALID_LABEL');
+});
+
+test('Gmail label administration reports a dedicated permission state without exposing provider details', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  harness.setGmail(() => {
+    const error = new Error('provider detail must not cross the boundary');
+    error.gmailHttpStatus = 403;
+    throw error;
+  });
+  const failure = resultFailed(rpc(harness, token, 'labelAdmin', { action: 'create', name: 'Контрольована мітка' }));
+  assert.equal(failure.code, 'LABEL_PERMISSION_REQUIRED');
+  assert.match(failure.message, /бракує дозволу/);
+  assert.doesNotMatch(failure.message, /provider detail/);
 });
 
 test('per-account metadata reconciliation is read-only isolated leased and invalidates only changed send-as cache', () => {
