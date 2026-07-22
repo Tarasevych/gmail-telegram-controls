@@ -6,6 +6,7 @@ This directory is the short entry point into the project. The latest release art
 
 ## Persistent files
 
+- [Current runtime/release state](CURRENT_STATE.md): the single mutable source for current production, candidate, and staging status.
 - [Versioning](VERSIONING.md): sequential Versie numbers, immutable releases, branches, and tags.
 - [Project and expectations](PROJECT.md): mission, boundaries, quality criteria, and data protection.
 - [Roadmap](ROADMAP.md): completed, in progress, blocked, and next.

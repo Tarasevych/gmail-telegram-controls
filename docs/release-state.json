@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-07-22",
+  "versie": "Versie 1",
+  "production": {
+    "appsScriptImmutable": 57,
+    "status": "VERIFIED"
+  },
+  "candidate": {
+    "appsScriptImmutable": 58,
+    "status": "BLOCKED",
+    "activeStagingDeployments": 1
+  },
+  "releaseArticle": {
+    "uk": "docs/uk/releases/VERSIE-001-2026-07-19.md",
+    "en": "docs/en/releases/VERSIE-001-2026-07-19.md"
+  },
+  "productionEvidence": {
+    "uk": "docs/uk/reports/VERSIE_001_V57_PRODUCTION_ACCEPTANCE_2026-07-22.md",
+    "en": "docs/en/reports/VERSIE_001_V57_PRODUCTION_ACCEPTANCE_2026-07-22.md"
+  }
+}

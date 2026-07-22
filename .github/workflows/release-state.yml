@@ -1,0 +1,23 @@
+name: Release state
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate canonical current release state
+        run: python3 tools/check_release_state.py
+
+      - name: Run release-state regression tests
+        run: python3 -m unittest tools/tests/test_check_release_state.py
