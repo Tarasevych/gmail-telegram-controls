@@ -187,3 +187,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Next Versie authorization: `no`
 - Boundary: documentation/recovery evidence only; no source-candidate merge, immutable, release-helper, feature-flag, deployment, trigger, OAuth, Gmail, Telegram-menu, or account/zone mutation.
 - Evidence: paired report PR #12 and factual correction PR #13 merged normally; final `main=e838180cde18e8d7f5441bec54b30a170bd2e005`; all main workflows and final read-only preflight passed; GitHub/GitLab parity and `complete_with_blockers` checkpoint confirmed.
+
+## REQ-0026 | 2026-07-22
+
+- Українською: дослідити, задокументувати й виправити спільне адаптивне керування Gmail-мітками у профільній панелі та лівій навігації чинної `Versie 1`.
+- English: research, document, and fix shared responsive Gmail label management in the profile panel and left navigation of the current `Versie 1`.
+- Record: [REQ-0026](requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: source/tests/paired documentation and controlled verification only; no repeated OAuth, arbitrary mailbox mutation, account/zone mixing, new Versie, immutable release, production promotion, CAPTCHA, OTP/2FA, passkey, or secret publication.
