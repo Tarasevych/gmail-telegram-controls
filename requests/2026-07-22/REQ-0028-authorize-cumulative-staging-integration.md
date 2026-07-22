@@ -2,7 +2,7 @@
 
 - ID: REQ-0028
 - Date: 2026-07-22
-- Status: recorded
+- Status: blocked
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=update; plan=update; product=update; release=update
 - Permission basis: explicit
@@ -33,6 +33,13 @@
 - Staging acceptance перевіряє Telegram bootstrap, avatar, account roots/switching, mailbox, Gmail label create/rename/delete/system protection, adapter flag boundary, duplicate suppression і відсутність account/zone mixing.
 - Production promotion виконується лише після повного VERIFIED staging acceptance; інакше staging та evidence зберігаються без promotion.
 
+### Результат
+
+- PR #16 і PR #11 merged normal; cumulative immutable v58 та один owner-only staging deployment створені й збережені.
+- Local release/full gates і GitHub checks пройшли, але staging acceptance не пройшов через GT-028; production promotion і cleanup не виконані.
+- Follow-up REQ-0029 встановив stale automatic thread-route root cause і опублікував source recovery у draft PR #20; code-level release потребує окремого наступного immutable-дозволу.
+- Одноразове повноваження P-008 позначено `consumed` commit `be41ce6`; production лишається exact v57, immutable v58 не переписано.
+
 <!-- lang:en -->
 ## English
 
@@ -58,3 +65,10 @@
 - The next immutable candidate is created and deployed only to staging with exact-v57 rollback readiness.
 - Staging acceptance covers Telegram bootstrap, avatar, account roots/switching, mailbox, Gmail label create/rename/delete/system protection, adapter flag boundary, duplicate suppression, and absence of account/zone mixing.
 - Production promotion occurs only after fully VERIFIED staging acceptance; otherwise staging and evidence are preserved without promotion.
+
+### Result
+
+- PR #16 and PR #11 were merged normally; cumulative immutable v58 and one owner-only staging deployment were created and preserved.
+- Local release/full gates and GitHub checks passed, but staging acceptance did not pass because of GT-028; production promotion and cleanup were not run.
+- Follow-up REQ-0029 established the stale automatic thread-route root cause and published source recovery in draft PR #20; a code-level release requires separate next-immutable authority.
+- Single-cycle authority P-008 is marked `consumed` in commit `be41ce6`; production remains exact v57 and immutable v58 was not rewritten.

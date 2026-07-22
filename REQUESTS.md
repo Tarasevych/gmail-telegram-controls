@@ -212,9 +212,10 @@ The table above is the canonical machine-checked index. Every record is internal
 - Українською: дозволено normal merge PR #16, cumulative immutable staging candidate Versie 1, інтеграцію PR #11 і production promotion лише після повного VERIFIED staging acceptance.
 - English: normal merge of PR #16, a cumulative immutable Versie 1 staging candidate, PR #11 integration, and production promotion only after fully VERIFIED staging acceptance are authorized.
 - Record: [REQ-0028](requests/2026-07-22/REQ-0028-authorize-cumulative-staging-integration.md)
-- Status: `recorded`
+- Status: `blocked`
 - Next Versie authorization: `no`
 - Boundary: Versie 1 only; normal merge/push/checks/staging allowed; no force/rebase/history rewrite; no production promotion before all staging gates pass and exact-v57 rollback is ready.
+- Evidence: PR #16/#11 merged; immutable v58 and one staging preserved; GT-028 blocked acceptance; no promotion/cleanup; P-008 consumed at `be41ce6`; REQ-0029 source recovery is draft PR #20 and needs separate next-immutable authority.
 
 ## REQ-0029 | 2026-07-22
 
