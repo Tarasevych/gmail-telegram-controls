@@ -139,10 +139,13 @@
 
 ## GT-031 — Ідентичність активного акаунта може обрізатися у вузькому header
 
-- **Статус:** PARTIAL — dynamic active/shared identity працює у production v63, а native acceptance підтвердив перемикання між трьома isolated roots без OAuth.
+- **Статус:** PARTIAL — production-v63 defect спостережено, а source correction локально VERIFIED; native staging і production visual acceptance лишаються UNVERIFIED.
 - **Залишкове спостереження:** header контрольованого альтернативного акаунта обрізав завершення довгого email у вузькому view. Primary root коректно зберіг letter fallback за відсутності profile photo; інший root показав фактичне фото.
-- **Потрібне виправлення:** зберегти повну адресу через wrapping, compact disclosure або accessible full-value tooltip без зменшення tap target і без використання фото як єдиного identifier.
-- **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md). Source request: `REQ-0033`.
+- **Першопричина:** desktop wrapping існував, але fixed narrow topbar зводив subtitle до cropped line без tappable single-account full-address disclosure. Desktop `title` hint і announcement text не були достатнім recovery path для touch device.
+- **Source fix:** зберегти wrapping на ширших views; на вузьких views показати компактне native `<details>` disclosure на основі тієї самої stable-ID context model і чинної full account map. Hidden-state precedence, visible focus, keyboard behavior і shared mode збережені.
+- **Тести:** focused mail-app contract `88/88`; full Apps Script suite `501/501`. v63 helper test тепер зберігає frozen hashes замість порівняння future source з immutable v63.
+- **Release boundary:** production лишається exact immutable v63. Immutable v63 не редагувався; correction потребує окремо gated cumulative v64 candidate після source merge.
+- **Доказ:** [VR-012](verification-reports/reports/VR-012/README.md). Source request: `REQ-0033`.
 
 ## GT-032 — Типографіка відрізняється від читального контексту Gmail
 

@@ -155,7 +155,8 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Status:** PARTIAL
 - **Production boundary:** the cumulative P0 source is now deployed as immutable v63; native staging/production mailbox and account-isolation acceptance passed.
 - **Verified:** dynamic active context, three isolated roots, account switching without OAuth, production app-shell load, worker no-overlap gate and exact release-state cleanup.
+- **Current source step:** GT-031 now has a tested narrow-screen full-address disclosure (`88/88` focused, `501/501` full); staging and production visual acceptance are still required.
 - **Still required:** measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; same-scale production typography comparison; and stale-open-client exactly-one-reload/no-loop acceptance.
 - **Related issues:** GT-031 through GT-038.
 - **Rule:** continue within Versie 1. Do not create another immutable candidate until a code change requires it and the existing release operation is in a terminal state.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), and [VR-011](verification-reports/reports/VR-011/README.md).
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), [VR-011](verification-reports/reports/VR-011/README.md), and [VR-012](verification-reports/reports/VR-012/README.md).

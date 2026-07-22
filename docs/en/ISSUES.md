@@ -139,10 +139,13 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-031 — Active account identity can clip on a narrow header
 
-- **Status:** PARTIAL — dynamic active/shared identity is live in production v63 and native acceptance verified switching among three isolated roots without OAuth.
+- **Status:** PARTIAL — the production-v63 defect is observed and the source correction is locally VERIFIED; native staging and production visual acceptance remain UNVERIFIED.
 - **Observed residual:** the controlled alternate-account header clipped the final part of a long email on a narrow view. The primary root correctly retained its letter fallback where no profile photo was available; another root displayed its actual photo.
-- **Required fix:** preserve the full address through wrapping, a compact disclosure or an accessible full-value tooltip without shrinking the tap target or using the photo as the sole identifier.
-- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md). Source request: `REQ-0033`.
+- **Root cause:** desktop wrapping existed, but the fixed narrow topbar reduced the subtitle to a cropped line and exposed no tappable single-account full-address disclosure. A desktop `title` hint and announcement text were not a sufficient touch-device recovery path.
+- **Source fix:** retain wrapping on wider views; on narrow views show a compact native `<details>` disclosure backed by the same stable-ID context model and the existing full account map. Hidden-state precedence, focus visibility, keyboard behavior and shared mode remain intact.
+- **Tests:** focused mail-app contract `88/88`; full Apps Script suite `501/501`. The v63 helper test now preserves frozen hashes instead of comparing future source with immutable v63.
+- **Release boundary:** production remains exact immutable v63. Immutable v63 was not edited; the correction requires a separately gated cumulative v64 candidate after source merge.
+- **Evidence:** [VR-012](verification-reports/reports/VR-012/README.md). Source request: `REQ-0033`.
 
 ## GT-032 — Typography differs from the Gmail reading context
 

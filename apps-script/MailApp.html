@@ -196,6 +196,7 @@
     }
 
     .mail-context-subtitle {
+      width: 100%;
       min-width: 0;
       max-height: 2.5em;
       margin: 0;
@@ -205,6 +206,8 @@
       font-size: 11px;
       line-height: 1.25;
       overflow-wrap: anywhere;
+      white-space: normal;
+      word-break: break-word;
       scrollbar-width: thin;
     }
 
@@ -217,6 +220,10 @@
     }
 
     .mail-context-details[hidden] {
+      display: none !important;
+    }
+
+    .mail-context:not(.is-shared) .mail-context-details {
       display: none;
     }
 
@@ -4005,9 +4012,34 @@
         font-size: 17px;
       }
 
+      .mail-context {
+        gap: 0;
+        align-content: center;
+      }
+
+      .mail-context-announcement {
+        gap: 0;
+      }
+
       .mail-context-subtitle,
       .mail-context-details {
         font-size: 10.5px;
+      }
+
+      .mail-context.has-address-disclosure:not(.is-shared) .mail-context-subtitle {
+        max-height: 1.25em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .mail-context.has-address-disclosure:not(.is-shared) .mail-context-details {
+        display: block;
+      }
+
+      .mail-context.has-address-disclosure:not(.is-shared) .mail-context-details summary {
+        min-height: 20px;
+        padding: 1px 4px;
       }
 
       .mail-context-account-map {
@@ -7188,11 +7220,20 @@
         els.mailContextAnnouncement.setAttribute("aria-label", model.ariaLabel);
         els.mailContext.classList.toggle("is-shared", model.shared);
         clear(els.mailContextAccounts);
-        els.mailContextDetails.hidden = !model.shared;
+        var hasAddressDisclosure = model.accounts.length > 0;
+        els.mailContext.classList.toggle("has-address-disclosure", hasAddressDisclosure);
+        els.mailContextDetails.hidden = !hasAddressDisclosure;
         if (!model.shared) {
           els.mailContextDetails.removeAttribute("open");
-        } else {
-          els.mailContextSummary.textContent = "Акаунти й адреси · " + model.accounts.length;
+        }
+        if (hasAddressDisclosure) {
+          els.mailContextSummary.textContent = model.shared
+            ? "Акаунти й адреси · " + model.accounts.length
+            : "Адреса повністю";
+          els.mailContextSummary.setAttribute(
+            "aria-label",
+            model.shared ? "Показати акаунти й повні адреси" : "Показати повну адресу Gmail"
+          );
           model.accounts.forEach(function (account) {
             var name = safeText(account.name);
             var email = safeText(account.email);

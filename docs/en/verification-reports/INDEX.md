@@ -74,3 +74,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-011/README.md](reports/VR-011/README.md)
 - **Conclusion:** stable/HEAD are exact v63, staging is `0`, and the worker no-overlap gate is verified; scenario-specific P0 items remain partial where their own evidence is absent.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-012 — GT-031 narrow active-account header source correction
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** observed production-v63 clipping, render-layer root cause, stable-ID disclosure implementation, focused/full automated contracts, immutable-v63 boundary and required live acceptance.
+- **Report:** [reports/VR-012/README.md](reports/VR-012/README.md)
+- **Conclusion:** the source correction is locally verified; production remains v63 and native staging/production visual acceptance is still unverified.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
