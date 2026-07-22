@@ -95,3 +95,16 @@
 - Початкове потрапляння контрольного root-2 листа у Spam є зовнішньою Gmail-класифікацією, а не дефектом delivery: production навмисно виключає Spam.
 - Видимий viewport Telegram не є достатнім доказом відсутності картки. Остаточний count перевіряється accessibility-index за унікальним sanitized marker.
 - GT-018, GT-019, GT-023 і GT-024 не мають відкритого secondary-root acceptance blocker для production v57.
+
+## GT-026 — Узгоджене керування Gmail-мітками
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Запит:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
+- **Першопричина:** VERIFIED — профільний список резервував ширину для кількох постійно видимих дій, sidebar не мав create/manage controls, а два представлення залежали від різних зрізів стану. Під час acceptance також виявлено спливання click до глобального close-handler і стискання implicit CSS-grid rows до 44 px.
+- **Виправлення:** VERIFIED локально у [коміті 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): спільний state/render path, `+` біля заголовка, одна доступна pencil-action для кожної USER-мітки, progressive disclosure, bounded scroll, нормалізація вкладеного повного шляху, захист SYSTEM-міток, permission/retry states і синхронне оновлення обох поверхонь.
+- **Перевірка:** VERIFIED — фінальний UI contract `84/84`; повний suite `447/448`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
+- **Release boundary:** BLOCKED — єдина помилка повного suite є навмисним exact-hash gate immutable v57. Новий immutable candidate або production promotion не дозволені REQ-0026.
+- **Production:** UNVERIFIED — зміни не розгорнуті.
+- **Звіт:** [VR-005](verification-reports/reports/VR-005/README.md)
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)

@@ -1957,7 +1957,11 @@ test('decorative controls do not claim unsupported actions', () => {
     '          <span id="labelsHeading">Мітки</span>',
     '        <nav id="labelNav"'
   );
-  assert.doesNotMatch(labelsHeading, /<svg|<button/);
+  assert.doesNotMatch(labelsHeading, /<svg/);
+  assert.equal((labelsHeading.match(/<button/g) || []).length, 1,
+    'the label heading may expose only the requested create action');
+  assert.match(labelsHeading,
+    /id="labelCreateButton"[^>]*aria-label="Створити користувацьку мітку Gmail"[^>]*aria-controls="gmailMetadataPanel"/);
 });
 
 test('bot-managed Snooze is visible, time-bounded, and sends an integer epoch payload', () => {
@@ -2946,6 +2950,57 @@ test('Gmail metadata panel refreshes the active account and manages only guarded
     'opening the account panel must refresh the exact active Gmail connection without a noisy toast');
   assert.match(uiSource, /window\.setInterval\(refreshOpenAccountMetadataIfStale, 60 \* 1000\)/);
   assert.doesNotMatch(metadataSource, /window\.confirm|window\.prompt|\bconfirm\(|\bprompt\(/);
+});
+
+test('Gmail label management is shared responsive accessible and synchronized across both surfaces', () => {
+  assert.match(uiSource, /id="labelCreateButton"[^>]*aria-label="Створити користувацьку мітку Gmail"/);
+  assert.match(uiSource, /id="labelNav"[^>]*aria-label="Користувацькі мітки Gmail"/);
+  assert.match(uiSource, /function makeGmailLabelManageButton\(label\)/);
+  assert.match(uiSource, /"aria-label": "Керувати міткою " \+ label\.name/);
+  assert.match(uiSource, /"aria-controls": "gmailMetadataPanel"/);
+  assert.match(uiSource, /function openGmailLabelManager\(options\)/);
+  assert.match(uiSource, /els\.labelCreateButton\.addEventListener\("click", function \(event\) \{\s*event\.stopPropagation\(\);\s*openGmailLabelManager/,
+    'the create-label click must not bubble into the global account-panel close handler');
+  assert.match(uiSource, /scrollIntoView\(\{ block: "start", behavior: "auto" \}\)/);
+  assert.match(uiSource, /function buildGmailLabelManager\(metadata\)/);
+  assert.match(uiSource, /gmail-label-list[\s\S]*role: "list"/);
+  assert.match(uiSource, /gmail-label-item[\s\S]*role: "listitem"/);
+  assert.match(uiSource, /type: "submit"[\s\S]*addEventListener\("submit"/,
+    'create and rename must work with keyboard submission');
+  assert.match(uiSource, /data-label-focus/);
+  assert.match(uiSource, /role: errorValue \? "alert" : "status"/);
+  assert.match(uiSource, /Спробувати ще раз/);
+  assert.match(uiSource, /function renderGmailLabelSurfaces\(\)[\s\S]*renderNavigation\(\)[\s\S]*renderGmailMetadata\(\)/);
+  assert.match(uiSource, /applyGmailMetadataSnapshot[\s\S]*renderGmailLabelSurfaces\(\)/);
+  assert.match(uiSource, /safeId\(state\.account && state\.account\.id\) !== connectionId/,
+    'a late label mutation must not update a different Gmail account');
+});
+
+test('Gmail label layout bounds long and numerous labels without covering management controls', () => {
+  assert.match(uiSource, /\.nav-label-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) 38px/);
+  assert.match(uiSource, /\.nav-label-row \.nav-label\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow-wrap:\s*anywhere/);
+  assert.match(uiSource, /\.gmail-label-item\s*\{[\s\S]*grid-template-columns:\s*12px minmax\(0, 1fr\) 40px/);
+  assert.match(uiSource, /\.gmail-label-list\s*\{[\s\S]*max-height:[\s\S]*overflow-y:\s*auto/);
+  assert.match(uiSource, /\.gmail-label-list\s*\{[\s\S]*grid-auto-rows:\s*max-content[\s\S]*align-content:\s*start/,
+    'bounded label lists must preserve wrapped row heights instead of shrinking tracks into overlapping content');
+  assert.match(uiSource, /\.gmail-label-item\s*\{[\s\S]*overflow:\s*hidden/,
+    'each label row must contain wrapped content without painting into adjacent rows');
+  assert.match(uiSource, /\.label-nav-list\s*\{[\s\S]*max-height:[\s\S]*overflow-y:\s*auto/);
+  assert.match(uiSource, /@media \(max-width: 520px\)[\s\S]*gmail-label-editor/);
+  assert.match(uiSource, /Array\.from\(\{ length: 48 \}/,
+    'local preview must provide a content-free many-label stress fixture');
+  assert.match(uiSource, /Надзвичайно довга назва мітки/);
+});
+
+test('nested Gmail labels use a normalized full name and never invent a parent API', () => {
+  const labelSource = sourceBetween(
+    '      function normalizeGmailLabelPath(value) {',
+    '      function normalizeGmailMetadata(value) {'
+  );
+  assert.match(labelSource, /raw\.split\("\/"\)/);
+  assert.match(labelSource, /parts\.join\("\/"\)/);
+  assert.match(uiSource, /Gmail API не має окремого поля батьківської мітки/);
+  assert.doesNotMatch(uiSource, /parentLabelId|moveToCategory|labelParentApi/);
 });
 
 test('ADHD focus is visible, manually assignable, and rule-driven per Gmail account', () => {

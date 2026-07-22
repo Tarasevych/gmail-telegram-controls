@@ -95,3 +95,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - [x] Close the secondary-root portion of B1-16 and B1-19 production evidence.
 - [ ] New Google OAuth consent remains a separate manual gate and is not initiated without demonstrated technical need.
 - [ ] The next Versie is not authorized; all further fixes remain within Versie 1.
+
+## B1-20 — Unified accessible Gmail label management
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Scope:** one USER/SYSTEM label model for the sidebar and profile panel; create, rename, guarded delete, full-path nesting, accessibility, responsive layout, loading/error/retry, and account isolation.
+- **Implemented:** VERIFIED locally in [4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91).
+- **Evidence:** [GT-026](ISSUES.md), [VR-005](verification-reports/reports/VR-005/README.md).
+- **Remaining:** BLOCKED pending separate owner authorization for a new immutable candidate; staging acceptance, controlled promote/rollback gating, and production verification are then required.
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)

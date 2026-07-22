@@ -20,3 +20,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 ## VR-004 (2026-07-21)
 
 [VR-004](reports/VR-004/README.md) is the stabilization/root-cause audit after the v56 rollback and v57 staging. It separates production-accepted v55 from the candidate line, records the shared URLFetch quota blocker, and defines a fail-closed A/B plan. Appendices contain the [complete audit of 26 CI failures](reports/VR-004/CI_FAILURE_AUDIT.md), [v55/v57 runtime evidence](reports/VR-004/RUNTIME_QUOTA_EVIDENCE.md), the [Stage 1 continuation audit](reports/VR-004/STAGE_1_CONTINUATION_AUDIT.md), and the [Advanced Gmail compatibility analysis](reports/VR-004/ADVANCED_GMAIL_COMPATIBILITY.md). The current VR-003 machine index is unchanged without a separate validator-contract change.
+
+## VR-005 — Gmail label management
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** official Gmail API constraints, mutation-free production baseline, root cause, implementation, automated and responsive visual checks, and release boundary.
+- **Report:** [reports/VR-005/README.md](reports/VR-005/README.md)
+- **Note:** the shared machine index remains at VR-003; VR-005 does not change the machine-report contract.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

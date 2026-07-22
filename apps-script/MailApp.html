@@ -409,6 +409,33 @@
       letter-spacing: .01em;
     }
 
+    .nav-heading-action,
+    .label-manage-button {
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 38px;
+      min-width: 38px;
+      height: 38px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--primary);
+      font: inherit;
+    }
+
+    .nav-heading-action {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .nav-heading-action:hover,
+    .label-manage-button:hover,
+    .label-manage-button[aria-expanded="true"] {
+      border-color: var(--border);
+      background: var(--hover);
+    }
+
     .nav-item {
       display: grid;
       grid-template-columns: 22px minmax(0, 1fr) auto;
@@ -444,6 +471,39 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .label-nav-list {
+      max-height: min(42vh, 360px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+
+    .nav-label-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px;
+      align-items: start;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .nav-label-row .nav-item { min-width: 0; }
+
+    .nav-label-row .nav-label {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+    }
+
+    .nav-label-empty {
+      margin: 6px 12px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .nav-count {
@@ -2180,6 +2240,51 @@
 
     .gmail-metadata-card h4 { margin: 0; font-size: 13px; }
 
+    .gmail-label-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .gmail-label-card-header h4 { min-width: 0; }
+
+    .gmail-label-create,
+    .gmail-label-editor {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+
+    .gmail-label-create input,
+    .gmail-label-editor input {
+      min-width: 0;
+      min-height: 40px;
+      border: 1px solid #cfd8e6;
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 10px;
+      color: var(--text);
+    }
+
+    .gmail-label-list {
+      display: grid;
+      grid-auto-rows: max-content;
+      align-content: start;
+      gap: 4px;
+      max-height: min(44vh, 430px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 2px;
+      scrollbar-width: thin;
+    }
+
     .gmail-metadata-row input {
       min-width: 0;
       flex: 1 1 145px;
@@ -2193,16 +2298,83 @@
 
     .gmail-label-item {
       display: grid;
-      grid-template-columns: 12px minmax(0, 1fr) auto;
-      align-items: center;
+      grid-template-columns: 12px minmax(0, 1fr) 40px;
+      align-items: start;
       gap: 8px;
-      min-height: 36px;
+      min-height: 44px;
+      padding: 5px 2px;
+      overflow: hidden;
     }
 
-    .gmail-label-item strong,
-    .gmail-label-item span { min-width: 0; overflow-wrap: anywhere; }
+    .gmail-label-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      padding-top: 7px;
+    }
+
+    .gmail-label-copy strong,
+    .gmail-label-copy span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    .gmail-label-item > .label-swatch { margin-top: 13px; }
+
+    .gmail-label-editor {
+      grid-column: 1 / -1;
+      margin: 2px 0 6px 20px;
+    }
+
+    .gmail-label-editor .gmail-label-actions,
+    .gmail-label-create .gmail-label-actions {
+      justify-content: flex-end;
+      align-self: start;
+    }
+
+    .gmail-label-path-help,
+    .gmail-label-delete-warning {
+      grid-column: 1 / -1;
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .gmail-label-delete-warning { color: var(--danger); }
+
+    .label-manager-status {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .label-manager-status.is-error {
+      border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+      color: var(--danger);
+    }
 
     .gmail-metadata-muted { color: var(--muted); font-size: 11px; line-height: 1.4; }
+
+    @media (max-width: 520px) {
+      .gmail-label-create,
+      .gmail-label-editor { grid-template-columns: minmax(0, 1fr); }
+
+      .gmail-label-create .gmail-label-actions,
+      .gmail-label-editor .gmail-label-actions {
+        justify-content: flex-start;
+      }
+
+      .gmail-label-actions .workspace-button { min-height: 40px; }
+    }
 
     .workspace-access h3,
     .workspace-zone h4 { margin: 0; font-size: 14px; }
@@ -4288,8 +4460,9 @@
       <section class="nav-section" aria-labelledby="labelsHeading">
         <div class="nav-heading">
           <span id="labelsHeading">Мітки</span>
+          <button class="nav-heading-action" id="labelCreateButton" type="button" aria-label="Створити користувацьку мітку Gmail" aria-controls="gmailMetadataPanel" title="Створити мітку">＋</button>
         </div>
-        <nav id="labelNav" aria-label="Мітки Gmail"></nav>
+        <nav id="labelNav" class="label-nav-list" aria-label="Користувацькі мітки Gmail"></nav>
       </section>
     </aside>
     <button class="drawer-scrim" id="drawerScrim" type="button" aria-label="Закрити меню папок"></button>
@@ -4916,6 +5089,9 @@
         gmailMetadataBusy: false,
         gmailMetadataDeleteConfirmId: "",
         gmailMetadataEditId: "",
+        gmailMetadataCreateOpen: false,
+        gmailMetadataFocusTarget: "",
+        gmailMetadataError: null,
         focusConfig: null,
         focusConfigAccountId: "",
         focusConfigLoading: false,
@@ -5094,7 +5270,7 @@
           "desktopSearchBox", "desktopSearch", "desktopSearchClear", "refreshButton",
           "composeButton", "accountAvatar", "mobileSearchPanel", "mobileSearchBox",
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
-          "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelNav", "drawerScrim", "listPane", "listTitle",
+          "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelCreateButton", "labelNav", "drawerScrim", "listPane", "listTitle",
           "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
           "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "signOutMailboxSession", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
           "onboardingLayer", "onboardingDialog", "onboardingProgress", "onboardingTitle", "onboardingDescription", "onboardingStepOne", "onboardingStepTwo", "onboardingStepThree", "onboardingDigestWindow", "onboardingDigestSelect", "onboardingQuietHours", "onboardingSummary", "skipOnboarding", "onboardingBack", "onboardingNext",
@@ -6519,6 +6695,20 @@
         };
       }
 
+      function normalizeGmailLabelPath(value) {
+        var raw = safeText(value).trim();
+        if (!raw || raw.length > 225 || /[\u0000-\u001F\u007F]/.test(raw)) return "";
+        var parts = raw.split("/").map(function (part) { return part.trim(); });
+        if (parts.some(function (part) { return !part; })) return "";
+        var normalized = parts.join("/");
+        return normalized.length <= 225 ? normalized : "";
+      }
+
+      function gmailLabelDisplayName(value) {
+        var normalized = normalizeGmailLabelPath(value);
+        return normalized ? normalized.split("/").join(" › ") : safeText(value, "Мітка");
+      }
+
       function normalizeGmailMetadata(value) {
         var source = value || {};
         var account = source.account || {};
@@ -6890,8 +7080,8 @@
           return { id: label.id, name: label.name, color: label.color, count: priorCounts[label.id] };
         });
         if (metadata.sendAs.supported) state.sendAs = metadata.sendAs.value;
-        renderNavigation();
-        renderGmailMetadata();
+        state.gmailMetadataError = null;
+        renderGmailLabelSurfaces();
         return metadata;
       }
 
@@ -6910,83 +7100,239 @@
         return "Доступно";
       }
 
+      function renderGmailLabelSurfaces() {
+        renderNavigation();
+        renderGmailMetadata();
+      }
+
+      function focusGmailLabelControl() {
+        var target = safeText(state.gmailMetadataFocusTarget);
+        if (!target || !els.gmailMetadataPanel) return;
+        state.gmailMetadataFocusTarget = "";
+        window.requestAnimationFrame(function () {
+          var nodes = Array.prototype.slice.call(els.gmailMetadataPanel.querySelectorAll("[data-label-focus]"));
+          var control = nodes.find(function (node) { return node.getAttribute("data-label-focus") === target; });
+          if (control && typeof control.focus === "function") control.focus();
+        });
+      }
+
+      function openGmailLabelManager(options) {
+        var settings = options || {};
+        var mode = safeText(settings.mode);
+        state.gmailMetadataCreateOpen = mode === "create";
+        state.gmailMetadataEditId = mode === "edit" ? safeId(settings.labelId) : "";
+        state.gmailMetadataDeleteConfirmId = "";
+        state.gmailMetadataFocusTarget = mode === "create" ? "create" : (state.gmailMetadataEditId ? "edit:" + state.gmailMetadataEditId : "");
+        closeDrawer();
+        setAccountPanelOpen(true, settings.trigger || null, false);
+        renderGmailLabelSurfaces();
+        window.setTimeout(function () {
+          if (els.gmailMetadataPanel && typeof els.gmailMetadataPanel.scrollIntoView === "function") {
+            els.gmailMetadataPanel.scrollIntoView({ block: "start", behavior: "auto" });
+          }
+          var metadata = state.gmailMetadata;
+          var activeId = safeId(state.account && state.account.id);
+          if (!metadata || metadata.account.id !== activeId) loadGmailMetadata({ silent: true });
+          else focusGmailLabelControl();
+        }, 0);
+      }
+
+      function makeGmailLabelManageButton(label) {
+        var expanded = state.gmailMetadataEditId === label.id;
+        var button = make("button", {
+          className: "label-manage-button",
+          type: "button",
+          attrs: {
+            "aria-label": "Керувати міткою " + label.name,
+            "aria-controls": "gmailMetadataPanel",
+            "aria-expanded": expanded ? "true" : "false",
+            title: "Керувати міткою " + label.name
+          }
+        }, svgIcon("edit", 16));
+        button.disabled = state.gmailMetadataBusy;
+        button.addEventListener("click", function (event) {
+          event.stopPropagation();
+          openGmailLabelManager({ mode: "edit", labelId: label.id, trigger: event.currentTarget });
+        });
+        return button;
+      }
+
+      function makeGmailLabelStatus(message, errorValue) {
+        var status = make("div", {
+          className: "label-manager-status" + (errorValue ? " is-error" : ""),
+          attrs: { role: errorValue ? "alert" : "status" }
+        });
+        status.append(make("span", { text: message }));
+        if (errorValue) {
+          var retry = make("button", { className: "workspace-button", type: "button", text: "Спробувати ще раз" });
+          retry.addEventListener("click", function () { loadGmailMetadata(); });
+          status.append(retry);
+        }
+        return status;
+      }
+
+      function buildGmailLabelManager(metadata) {
+        var labelsCard = make("section", {
+          className: "gmail-metadata-card gmail-label-manager",
+          attrs: { "aria-labelledby": "gmailUserLabelsTitle" }
+        });
+        var cardHeader = make("div", { className: "gmail-label-card-header" });
+        cardHeader.append(make("h4", { text: "Користувацькі мітки", attrs: { id: "gmailUserLabelsTitle" } }));
+        var createToggle = make("button", {
+          className: "workspace-button",
+          type: "button",
+          text: state.gmailMetadataCreateOpen ? "Закрити" : "＋ Створити",
+          attrs: {
+            "aria-expanded": state.gmailMetadataCreateOpen ? "true" : "false",
+            "aria-controls": "gmailLabelCreateForm"
+          }
+        });
+        createToggle.disabled = state.gmailMetadataBusy;
+        createToggle.addEventListener("click", function () {
+          state.gmailMetadataCreateOpen = !state.gmailMetadataCreateOpen;
+          state.gmailMetadataEditId = "";
+          state.gmailMetadataDeleteConfirmId = "";
+          state.gmailMetadataFocusTarget = state.gmailMetadataCreateOpen ? "create" : "";
+          renderGmailMetadata();
+        });
+        cardHeader.append(createToggle);
+        labelsCard.append(cardHeader);
+        labelsCard.append(make("p", {
+          className: "gmail-label-path-help",
+          text: "Вкладеність задається повним шляхом назви, наприклад «Проєкти/2026». Gmail API не має окремого поля батьківської мітки.",
+          attrs: { id: "gmailLabelPathHelp" }
+        }));
+
+        if (state.gmailMetadataCreateOpen) {
+          var createForm = make("form", {
+            className: "gmail-label-create",
+            attrs: { id: "gmailLabelCreateForm", novalidate: "", "aria-describedby": "gmailLabelPathHelp" }
+          });
+          var createInput = make("input", {
+            attrs: {
+              type: "text", maxlength: "225", autocomplete: "off", placeholder: "Нова мітка або Батьківська/Дочірня",
+              "aria-label": "Назва нової мітки Gmail", "data-label-focus": "create"
+            }
+          });
+          var createActions = make("div", { className: "gmail-label-actions" });
+          var createButton = make("button", { className: "workspace-button", type: "submit", text: "Створити" });
+          var cancelCreate = make("button", { className: "workspace-button", type: "button", text: "Скасувати" });
+          createButton.disabled = state.gmailMetadataBusy;
+          cancelCreate.addEventListener("click", function () {
+            state.gmailMetadataCreateOpen = false;
+            renderGmailMetadata();
+            createToggle.focus();
+          });
+          createForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            var name = normalizeGmailLabelPath(createInput.value);
+            if (!name) {
+              showSnackbar("Вкажіть коректну назву. Частини вкладеного шляху не можуть бути порожніми.", { error: true });
+              createInput.focus();
+              return;
+            }
+            manageGmailLabel({ action: "create", name: name });
+          });
+          createActions.append(createButton, cancelCreate);
+          createForm.append(createInput, createActions);
+          labelsCard.append(createForm);
+        }
+
+        var userLabels = metadata.labels.filter(function (label) { return label.type === "user"; });
+        var labelList = make("div", { className: "gmail-label-list", attrs: { role: "list", "aria-label": "Користувацькі мітки Gmail" } });
+        userLabels.forEach(function (label) {
+          var editing = state.gmailMetadataEditId === label.id;
+          var row = make("div", { className: "gmail-label-item" + (editing ? " is-editing" : ""), attrs: { role: "listitem" } });
+          var swatch = make("span", { className: "label-swatch", attrs: { "aria-hidden": "true" } });
+          swatch.style.setProperty("--label-color", label.color);
+          var copy = make("div", { className: "gmail-label-copy", attrs: { title: label.name } });
+          copy.append(make("strong", { text: gmailLabelDisplayName(label.name) }));
+          if (label.name.indexOf("/") !== -1) copy.append(make("span", { className: "gmail-metadata-muted", text: "Повний шлях: " + label.name }));
+          row.append(swatch, copy, makeGmailLabelManageButton(label));
+
+          if (editing) {
+            var editForm = make("form", { className: "gmail-label-editor", attrs: { novalidate: "", "aria-describedby": "gmailLabelPathHelp" } });
+            var editInput = make("input", {
+              attrs: {
+                type: "text", maxlength: "225", autocomplete: "off", value: label.name,
+                "aria-label": "Нова назва мітки " + label.name, "data-label-focus": "edit:" + label.id
+              }
+            });
+            editInput.value = label.name;
+            var editActions = make("div", { className: "gmail-label-actions" });
+            var saveEdit = make("button", { className: "workspace-button", type: "submit", text: "Зберегти" });
+            var confirming = state.gmailMetadataDeleteConfirmId === label.id;
+            var remove = make("button", {
+              className: "workspace-button" + (confirming ? " danger" : ""),
+              type: "button",
+              text: confirming ? "Так, видалити" : "Видалити",
+              attrs: { "aria-label": (confirming ? "Підтвердити видалення мітки " : "Видалити мітку ") + label.name }
+            });
+            var cancelEdit = make("button", { className: "workspace-button", type: "button", text: "Скасувати" });
+            saveEdit.disabled = state.gmailMetadataBusy || !label.canEdit;
+            remove.disabled = state.gmailMetadataBusy || !label.canEdit;
+            editForm.addEventListener("submit", function (event) {
+              event.preventDefault();
+              var name = normalizeGmailLabelPath(editInput.value);
+              if (!name) {
+                showSnackbar("Назва або вкладений шлях мітки некоректні.", { error: true });
+                editInput.focus();
+                return;
+              }
+              manageGmailLabel({ action: "update", labelId: label.id, expectedVersion: label.version, name: name });
+            });
+            remove.addEventListener("click", function () {
+              if (!confirming) {
+                state.gmailMetadataDeleteConfirmId = label.id;
+                state.gmailMetadataFocusTarget = "edit:" + label.id;
+                renderGmailMetadata();
+                return;
+              }
+              manageGmailLabel({ action: "delete", labelId: label.id, expectedVersion: label.version, confirmDelete: "DELETE_LABEL" });
+            });
+            cancelEdit.addEventListener("click", function () {
+              state.gmailMetadataEditId = "";
+              state.gmailMetadataDeleteConfirmId = "";
+              renderGmailMetadata();
+            });
+            editActions.append(saveEdit, remove, cancelEdit);
+            editForm.append(editInput, editActions);
+            if (confirming) editForm.append(make("p", {
+              className: "gmail-label-delete-warning",
+              text: "Видалення зніме цю мітку з усіх листів. Самі листи не видаляються."
+            }));
+            row.append(editForm);
+          }
+          labelList.append(row);
+        });
+        if (userLabels.length) labelsCard.append(labelList);
+        else labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Користувацьких міток ще немає. Створіть першу кнопкою вище." }));
+        var systemCount = metadata.labels.filter(function (label) { return label.type === "system"; }).length;
+        labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Системні папки й мітки Gmail: " + systemCount + ". Вони відображаються окремо й не перейменовуються та не видаляються." }));
+        return labelsCard;
+      }
+
       function renderGmailMetadata() {
         if (!els.gmailMetadataContent) return;
         clear(els.gmailMetadataContent);
         els.refreshGmailMetadata.disabled = state.gmailMetadataLoading || state.gmailMetadataBusy;
         if (state.gmailMetadataLoading) {
-          els.gmailMetadataContent.append(make("p", { className: "account-panel-note", text: "Отримую актуальні мітки й налаштування з Gmail…" }));
+          els.gmailMetadataContent.append(makeGmailLabelStatus("Отримую актуальні мітки й налаштування з Gmail…", false));
           return;
         }
         var metadata = state.gmailMetadata;
         var activeId = safeId(state.account && state.account.id);
         if (!metadata || metadata.account.id !== activeId) {
-          els.gmailMetadataContent.append(make("p", { className: "account-panel-note", text: "Натисніть «Оновити», щоб синхронізувати активну скриньку з Gmail." }));
+          if (state.gmailMetadataError) {
+            els.gmailMetadataContent.append(makeGmailLabelStatus(state.gmailMetadataError.message, true));
+          } else {
+            els.gmailMetadataContent.append(make("p", { className: "account-panel-note", text: "Натисніть «Оновити», щоб синхронізувати активну скриньку з Gmail." }));
+          }
           return;
         }
-
-        var labelsCard = make("section", { className: "gmail-metadata-card" });
-        labelsCard.append(make("h4", { text: "Користувацькі мітки" }));
-        var createRow = make("div", { className: "gmail-metadata-row" });
-        var createInput = make("input", { attrs: { type: "text", maxlength: "225", placeholder: "Нова мітка", "aria-label": "Назва нової мітки Gmail" } });
-        var createButton = make("button", { className: "workspace-button", type: "button", text: "Створити" });
-        createButton.disabled = state.gmailMetadataBusy;
-        createButton.addEventListener("click", function () {
-          var name = safeText(createInput.value).trim();
-          if (!name) { showSnackbar("Вкажіть назву нової мітки.", { error: true }); return; }
-          manageGmailLabel({ action: "create", name: name });
-        });
-        createRow.append(createInput, createButton);
-        labelsCard.append(createRow);
-        var userLabels = metadata.labels.filter(function (label) { return label.type === "user"; });
-        userLabels.forEach(function (label) {
-          var row = make("div", { className: "gmail-label-item" });
-          var swatch = make("span", { className: "label-swatch", attrs: { "aria-hidden": "true" } });
-          swatch.style.setProperty("--label-color", label.color);
-          if (state.gmailMetadataEditId === label.id) {
-            var editInput = make("input", { attrs: { type: "text", maxlength: "225", value: label.name, "aria-label": "Нова назва мітки " + label.name } });
-            editInput.value = label.name;
-            var editActions = make("div", { className: "gmail-label-actions" });
-            var saveEdit = make("button", { className: "workspace-button", type: "button", text: "Зберегти" });
-            saveEdit.disabled = state.gmailMetadataBusy;
-            saveEdit.addEventListener("click", function () {
-              var name = safeText(editInput.value).trim();
-              if (!name) { showSnackbar("Назва мітки не може бути порожньою.", { error: true }); return; }
-              manageGmailLabel({ action: "update", labelId: label.id, expectedVersion: label.version, name: name });
-            });
-            var cancelEdit = make("button", { className: "workspace-button", type: "button", text: "Скасувати" });
-            cancelEdit.addEventListener("click", function () { state.gmailMetadataEditId = ""; renderGmailMetadata(); });
-            editActions.append(saveEdit, cancelEdit);
-            row.append(swatch, editInput, editActions);
-          } else {
-            var copy = make("strong", { text: label.name });
-            var actions = make("div", { className: "gmail-label-actions" });
-            if (label.canEdit) {
-              var rename = make("button", { className: "workspace-button", type: "button", text: "Перейменувати" });
-              rename.disabled = state.gmailMetadataBusy;
-              rename.addEventListener("click", function () { state.gmailMetadataEditId = label.id; renderGmailMetadata(); });
-              var confirming = state.gmailMetadataDeleteConfirmId === label.id;
-              var remove = make("button", { className: "workspace-button" + (confirming ? " danger" : ""), type: "button", text: confirming ? "Підтвердити" : "Видалити" });
-              remove.disabled = state.gmailMetadataBusy;
-              remove.addEventListener("click", function () {
-                if (!confirming) { state.gmailMetadataDeleteConfirmId = label.id; renderGmailMetadata(); return; }
-                manageGmailLabel({ action: "delete", labelId: label.id, expectedVersion: label.version, confirmDelete: "DELETE_LABEL" });
-              });
-              actions.append(rename, remove);
-              if (confirming) {
-                var cancelDelete = make("button", { className: "workspace-button", type: "button", text: "Скасувати" });
-                cancelDelete.addEventListener("click", function () { state.gmailMetadataDeleteConfirmId = ""; renderGmailMetadata(); });
-                actions.append(cancelDelete);
-              }
-            }
-            row.append(swatch, copy, actions);
-          }
-          labelsCard.append(row);
-        });
-        if (!userLabels.length) labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Користувацьких міток ще немає." }));
-        var systemCount = metadata.labels.filter(function (label) { return label.type === "system"; }).length;
-        labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Системні папки й мітки Gmail: " + systemCount + ". Вони синхронізуються, але не перейменовуються й не видаляються." }));
-        els.gmailMetadataContent.append(labelsCard);
+        if (state.gmailMetadataError) els.gmailMetadataContent.append(makeGmailLabelStatus(state.gmailMetadataError.message, true));
+        els.gmailMetadataContent.append(buildGmailLabelManager(metadata));
+        focusGmailLabelControl();
 
         var sendAsCard = make("section", { className: "gmail-metadata-card" });
         sendAsCard.append(make("h4", { text: "Адреси відправника" }));
@@ -7024,6 +7370,7 @@
         var connectionId = safeId(state.account && state.account.id);
         var requestId = ++state.gmailMetadataRequestId;
         state.gmailMetadataLoading = true;
+        state.gmailMetadataError = null;
         renderGmailMetadata();
         try {
           var metadata = await rpc({ op: "metadata", connectionId: connectionId, payload: {} });
@@ -7032,13 +7379,15 @@
           applyGmailMetadataSnapshot(metadata);
           if (!silent) showSnackbar("Мітки й налаштування синхронізовано з Gmail.", { success: true });
         } catch (error) {
-          if (requestId === state.gmailMetadataRequestId && !silent) {
-            showSnackbar(safeText(error && error.message, "Не вдалося синхронізувати Gmail."), { error: true });
+          if (requestId === state.gmailMetadataRequestId) {
+            var message = safeText(error && error.message, "Не вдалося синхронізувати Gmail.");
+            state.gmailMetadataError = { code: safeText(error && error.code), message: message };
+            if (!silent) showSnackbar(message, { error: true });
           }
         } finally {
           if (requestId === state.gmailMetadataRequestId) {
             state.gmailMetadataLoading = false;
-            renderGmailMetadata();
+            renderGmailLabelSurfaces();
           }
         }
       }
@@ -7055,13 +7404,16 @@
 
       async function manageGmailLabel(request) {
         if (state.gmailMetadataBusy) return;
+        var connectionId = safeId(state.account && state.account.id);
         state.gmailMetadataBusy = true;
-        renderGmailMetadata();
+        state.gmailMetadataError = null;
+        renderGmailLabelSurfaces();
         try {
-          var connectionId = safeId(state.account && state.account.id);
           var result = await rpc({ op: "labelAdmin", connectionId: connectionId, payload: request });
+          if (safeId(state.account && state.account.id) !== connectionId) return;
           state.gmailMetadataDeleteConfirmId = "";
           state.gmailMetadataEditId = "";
+          state.gmailMetadataCreateOpen = false;
           state.focusConfig = null;
           state.focusConfigAccountId = "";
           state.focusRuleDeleteConfirmId = "";
@@ -7072,11 +7424,12 @@
           else state.gmailMetadata = null;
           showSnackbar(request.action === "create" ? "Мітку створено." : (request.action === "delete" ? "Мітку видалено." : "Мітку оновлено."), { success: true });
         } catch (error) {
-          if (safeText(error && error.code).toUpperCase() === "METADATA_CONFLICT") state.gmailMetadata = null;
-          showSnackbar(safeText(error && error.message, "Не вдалося змінити мітку Gmail."), { error: true });
+          var message = safeText(error && error.message, "Не вдалося змінити мітку Gmail.");
+          state.gmailMetadataError = { code: safeText(error && error.code), message: message };
+          showSnackbar(message, { error: true });
         } finally {
           state.gmailMetadataBusy = false;
-          renderGmailMetadata();
+          renderGmailLabelSurfaces();
         }
       }
 
@@ -7492,6 +7845,9 @@
           state.gmailMetadata = null;
           state.gmailMetadataDeleteConfirmId = "";
           state.gmailMetadataEditId = "";
+          state.gmailMetadataCreateOpen = false;
+          state.gmailMetadataFocusTarget = "";
+          state.gmailMetadataError = null;
           state.focusConfig = null;
           state.focusConfigAccountId = "";
           state.focusRuleDeleteConfirmId = "";
@@ -7661,6 +8017,8 @@
           state.disconnectConfirmId = "";
           state.gmailMetadataDeleteConfirmId = "";
           state.gmailMetadataEditId = "";
+          state.gmailMetadataCreateOpen = false;
+          state.gmailMetadataFocusTarget = "";
           var returnTo = state.accountPanelTrigger;
           state.accountPanelTrigger = null;
           if (restoreFocus && returnTo && returnTo.isConnected && typeof returnTo.focus === "function") returnTo.focus();
@@ -7703,12 +8061,16 @@
         categories.forEach(function (folder) { appendFolderButton(els.categoryNav, folder); });
 
         clear(els.labelNav);
+        if (!state.labels.length) {
+          els.labelNav.append(make("p", { className: "nav-label-empty", text: "Користувацьких міток ще немає." }));
+        }
         state.labels.forEach(function (label) {
           var active = state.currentLabelId === label.id;
+          var row = make("div", { className: "nav-label-row" });
           var button = make("button", {
             className: "nav-item",
             type: "button",
-            attrs: { "aria-current": active ? "page" : null }
+            attrs: { "aria-current": active ? "page" : null, title: label.name }
           });
           var swatch = make("span", { className: "label-swatch", attrs: { "aria-hidden": "true" } });
           swatch.style.setProperty("--label-color", label.color);
@@ -7716,7 +8078,8 @@
           button.append(make("span", { className: "nav-label", text: label.name }));
           button.append(make("span", { className: "nav-count", text: formatCount(label.count) }));
           button.addEventListener("click", function () { selectLabel(label.id); });
-          els.labelNav.append(button);
+          row.append(button, makeGmailLabelManageButton(label));
+          els.labelNav.append(row);
         });
       }
 
@@ -15738,6 +16101,10 @@
         els.connectGoogleAccount.addEventListener("click", connectGoogleMailbox);
         els.signOutMailboxSession.addEventListener("click", signOutMailboxSession);
         els.refreshGmailMetadata.addEventListener("click", loadGmailMetadata);
+        els.labelCreateButton.addEventListener("click", function (event) {
+          event.stopPropagation();
+          openGmailLabelManager({ mode: "create", trigger: event.currentTarget });
+        });
         els.refreshFocusSettings.addEventListener("click", loadFocusSettings);
         els.openOnboardingSettings.addEventListener("click", function (event) {
           setOnboardingOpen(true, { step: 1, invoker: event.currentTarget });
@@ -16482,6 +16849,7 @@
 
       function previewGmailMetadataSnapshot() {
         var existing = state.gmailMetadata;
+        var stressLabels = state.preview && new URLSearchParams(location.search).get("labels") === "stress";
         var labels = existing && existing.labels && existing.labels.length
           ? existing.labels.map(function (label) {
               return {
@@ -16492,7 +16860,21 @@
                 color: { backgroundColor: label.color, textColor: label.textColor || "#ffffff" }
               };
             })
-          : [
+          : stressLabels
+            ? [{ id: "INBOX", name: "INBOX", type: "system", internal: false, canApply: true, canEdit: false, version: "S".repeat(43) }]
+              .concat(Array.from({ length: 48 }, function (_, index) {
+                var ordinal = index + 1;
+                var name = index === 0
+                  ? "Надзвичайно довга назва мітки для перевірки перенесення без перекриття кнопкою керування"
+                  : (index === 1 ? "Проєкти/2026/Дуже довгий вкладений напрям дослідження" : "Тестова мітка " + ordinal);
+                return {
+                  id: "Label_stress_" + ordinal, name: name, type: "user", internal: false,
+                  canApply: true, canEdit: true, version: "L".repeat(43),
+                  messageListVisibility: "show", labelListVisibility: "labelShow",
+                  color: { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length], textColor: "#ffffff" }
+                };
+              }))
+            : [
               { id: "INBOX", name: "INBOX", type: "system", internal: false, canApply: true, canEdit: false, version: "S".repeat(43) },
               { id: "Label_work", name: "Робота", type: "user", internal: false, canApply: true, canEdit: true, version: "W".repeat(43), color: { backgroundColor: "#8b5cf6", textColor: "#ffffff" } },
               { id: "Label_projects", name: "Проєкти", type: "user", internal: false, canApply: true, canEdit: true, version: "P".repeat(43), color: { backgroundColor: "#5b8def", textColor: "#ffffff" } }
