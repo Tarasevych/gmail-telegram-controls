@@ -2,7 +2,7 @@
 
 - ID: REQ-0033
 - Date: 2026-07-22
-- Status: recorded
+- Status: blocked
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
@@ -66,3 +66,25 @@
 - Green local source/tests/docs/privacy gates and a normal PR precede one new cumulative immutable candidate. Staging acceptance is mandatory; production promotion is allowed only after complete `VERIFIED` acceptance and exact rollback readiness.
 - After promotion or rollback, canonical release state, paired UK/EN evidence, request status, checkpoint, and cleanup are updated atomically.
 - Stop gates: CAPTCHA, OTP/2FA, passkey/biometric/hardware key, new user-specific Google consent, unresolved account/zone identity, or a materially unsafe irreversible choice.
+
+## Closure evidence — 2026-07-22
+
+### Українською
+
+- Product-код злитий normal merge через PR #29 і PR #30; cumulative target commit: `42dfbd76d1e904fe065094010f61418da8896978`.
+- Локальні product/release tests пройшли `494/494`, bridge tests `3/3`; required GitHub checks пройшли.
+- Immutable v62 пройшов owner-only staging acceptance: mailbox, profile image, три Gmail roots, shared view, account switching і exact account-list isolation без OAuth або Gmail mutation.
+- Два production v62 UI launches пройшли, але Apps Script execution/no-overlap gate лишився недоведеним: process API повернув 403, `clasp logs` не мав configured GCP project ID, а default project не мігрувався.
+- Exact rollback v62 -> v57 завершено. Post-rollback preflight: stable/HEAD v57, immutable v62 ready, staging `0`, journal `rolled_back`; два свіжі production v57 launches пройшли без network error.
+- PR #31 опублікував парні VR-010, release report і canonical state; merge commit `67a8ba7073e3bcf42a4cb73fb9f59aa0d4a4ee01`. GitHub і private GitLab `main` ідентичні.
+- Статус лишається `blocked`, бо GT-030 не має causal fix/content-free execution trace, а повний Definition of Done REQ-0033 не доведено в production.
+
+### English
+
+- Product code merged normally through PR #29 and PR #30; cumulative target commit: `42dfbd76d1e904fe065094010f61418da8896978`.
+- Local product/release tests passed `494/494`, bridge tests passed `3/3`, and required GitHub checks passed.
+- Immutable v62 passed owner-only staging acceptance for mailbox, profile image, three Gmail roots, shared view, account switching, and exact account-list isolation without OAuth or Gmail mutation.
+- Two production v62 UI launches passed, but the Apps Script execution/no-overlap gate remained unproven: the process API returned 403, `clasp logs` had no configured GCP project ID, and the default project was not migrated.
+- Exact v62 -> v57 rollback completed. Post-rollback preflight reported stable/HEAD v57, immutable v62 ready, staging `0`, and journal `rolled_back`; two fresh production v57 launches passed without network error.
+- PR #31 published paired VR-010, release evidence, and canonical state; merge commit `67a8ba7073e3bcf42a4cb73fb9f59aa0d4a4ee01`. GitHub and private GitLab `main` are identical.
+- Status remains `blocked` because GT-030 has no causal fix/content-free execution trace and the complete REQ-0033 Definition of Done is not production-proven.
