@@ -11947,12 +11947,129 @@ function processDueBotManagedSnoozes_(limit) {
   return { attempted, completed, failed };
 }
 
+const GMAIL_OWNER_ADVANCED_READ_FLAG_ = 'GMAIL_OWNER_ADVANCED_READ_V1';
+
+function gmailOwnerAdvancedReadEnabled_() {
+  try {
+    const value = PropertiesService.getScriptProperties().getProperty(GMAIL_OWNER_ADVANCED_READ_FLAG_);
+    return String(value || '').trim().toLowerCase() === 'enabled';
+  } catch (error) {
+    return false;
+  }
+}
+
+function gmailOwnerAdvancedContextEligible_() {
+  const session = typeof mailboxCurrentSessionContext_ === 'undefined'
+    ? null
+    : mailboxCurrentSessionContext_;
+  if (!session) return true;
+  try {
+    const access = mailboxMultiResolveAccess_(session, session.connectionId, 'viewer');
+    return !!(access && access.connection && access.connection.provider === 'apps_script_owner');
+  } catch (error) {
+    return false;
+  }
+}
+
+function gmailAdvancedReadDecode_(value) {
+  return decodeURIComponent(String(value || '').replace(/\+/g, ' '));
+}
+
+function gmailAdvancedReadQuery_(queryText, allowedKeys, repeatedKeys) {
+  const params = {};
+  const allowed = new Set(allowedKeys || []);
+  const repeated = new Set(repeatedKeys || []);
+  const parts = String(queryText || '').split('&');
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    if (!part) continue;
+    const equalsIndex = part.indexOf('=');
+    const rawKey = equalsIndex === -1 ? part : part.slice(0, equalsIndex);
+    const rawValue = equalsIndex === -1 ? '' : part.slice(equalsIndex + 1);
+    let key;
+    let value;
+    try {
+      key = gmailAdvancedReadDecode_(rawKey);
+      value = gmailAdvancedReadDecode_(rawValue);
+    } catch (error) {
+      return null;
+    }
+    if (!allowed.has(key)) return null;
+    if (key === 'maxResults') {
+      if (!/^\d{1,3}$/.test(value) || Number(value) < 1 || Number(value) > 500) return null;
+      value = Number(value);
+    } else if (key === 'includeSpamTrash') {
+      if (value !== 'true' && value !== 'false') return null;
+      value = value === 'true';
+    }
+    if (repeated.has(key)) {
+      if (!params[key]) params[key] = [];
+      params[key].push(value);
+    } else {
+      if (Object.prototype.hasOwnProperty.call(params, key)) return null;
+      params[key] = value;
+    }
+  }
+  return params;
+}
+
+function gmailOwnerAdvancedReadInvocation_(path) {
+  const requestPath = String(path || '');
+  const queryIndex = requestPath.indexOf('?');
+  const pathname = queryIndex === -1 ? requestPath : requestPath.slice(0, queryIndex);
+  const queryText = queryIndex === -1 ? '' : requestPath.slice(queryIndex + 1);
+  let params;
+  if (pathname === '/messages') {
+    params = gmailAdvancedReadQuery_(
+      queryText,
+      ['fields', 'includeSpamTrash', 'labelIds', 'maxResults', 'pageToken', 'q'],
+      ['labelIds']
+    );
+    if (!params) return null;
+    return function() { return Gmail.Users.Messages.list('me', params); };
+  }
+  if (pathname.indexOf('/messages/') === 0) {
+    let messageId;
+    try { messageId = gmailAdvancedReadDecode_(pathname.slice('/messages/'.length)); } catch (error) { return null; }
+    if (!/^[A-Za-z0-9_-]{1,256}$/.test(messageId)) return null;
+    params = gmailAdvancedReadQuery_(
+      queryText,
+      ['fields', 'format', 'metadataHeaders'],
+      ['metadataHeaders']
+    );
+    if (!params) return null;
+    return function() { return Gmail.Users.Messages.get('me', messageId, params); };
+  }
+  if (pathname === '/history') {
+    params = gmailAdvancedReadQuery_(
+      queryText,
+      ['fields', 'historyTypes', 'labelId', 'maxResults', 'pageToken', 'startHistoryId'],
+      ['historyTypes']
+    );
+    if (!params || !params.startHistoryId) return null;
+    return function() { return Gmail.Users.History.list('me', params); };
+  }
+  return null;
+}
+
+function gmailOwnerAdvancedReadRequest_(path, options) {
+  const opts = options || {};
+  if (String(opts.method || 'get').toLowerCase() !== 'get') return { handled: false };
+  if (!gmailOwnerAdvancedContextEligible_()) return { handled: false };
+  if (!gmailOwnerAdvancedReadEnabled_()) return { handled: false };
+  const invocation = gmailOwnerAdvancedReadInvocation_(path);
+  if (!invocation) return { handled: false };
+  return { handled: true, value: invocation() };
+}
+
 function gmailApi_(path) {
   return gmailApiRequest_(path, { method: 'get' });
 }
 
 function gmailApiRequest_(path, options) {
   const opts = options || {};
+  const advancedRead = gmailOwnerAdvancedReadRequest_(path, opts);
+  if (advancedRead.handled) return advancedRead.value;
   const oauthToken = mailboxCurrentSessionContext_
     ? mailboxMultiGmailAccessToken_(mailboxCurrentSessionContext_)
     : ScriptApp.getOAuthToken();

@@ -85,6 +85,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release rule:** do not rewrite immutable v56/v57; do not create Versie 2 or the next immutable without a new exact owner instruction.
 - **Source requests:** REQ-0019, REQ-0021.
 
+### B1-20 — Owner-only Advanced Gmail read adapter
+
+- Keep an allowlisted `messages.list`, `messages.get`, and `history.list` adapter behind protected property `GMAIL_OWNER_ADVANCED_READ_V1=enabled`.
+- Resolve the current connection through the registry and fail closed unless its provider is `apps_script_owner`; every external OAuth connection keeps its own direct HTTP token path.
+- Keep mutations and unsupported reads on direct HTTP, and propagate Advanced Service failures without an automatic fallback.
+- **Evidence boundary:** pre-sync deterministic adapter tests passed 8/8. Current `main` evidence is preserved, while the candidate still intentionally differs from immutable v57, so the exact release-hash gate remains expected until a separately authorized next immutable. The flag remains unset, production remains exact v57, staging is `0`, and live quota reduction is `unverified`.
+- **Source requests:** `REQ-0024`, `REQ-0027`.
+
 ## Roadmap update — 2026-07-22
 
 - [x] Verify automatic delivery for the primary Gmail root.
