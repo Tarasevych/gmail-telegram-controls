@@ -2,7 +2,7 @@
 
 - ID: REQ-0019
 - Date: 2026-07-21
-- Status: blocked
+- Status: completed
 - Next Versie authorization: no
 - Routes: requests=record; instructions=reference; permissions=reference; plan=update; product=update; release=update
 - Permission basis: explicit
@@ -32,7 +32,7 @@
 - Owner-only staging candidate проходить signed Telegram Desktop bootstrap, avatar, три account roots і перемикання на контрольований другий акаунт та назад без нового OAuth.
 - Після promotion два свіжі production-запуски проходять acceptance; HEAD застосовується до trigger лише через штатний cleanup.
 - Щонайменше чотири trigger opportunities підтверджують відсутність overlapping workers, 150-секундний worker slot і 15-хвилинний History slot.
-- Один контрольований owner self-message створює рівно одну Telegram card і не дублюється після двох `/check`.
+- Один контрольований inbound marker із owner-джерела, яке не входить до primary Gmail `Send mail as` aliases, створює рівно одну Telegram card і не дублюється після двох `/check`. Self/alias probes з `INBOX+SENT` мають бути пропущені чинним dedupe-інваріантом.
 
 ### Межі
 
@@ -68,7 +68,7 @@ The owner instructed continuation of the current `Versie 1` from the verified ex
 - The owner-only staging candidate passes signed Telegram Desktop bootstrap, avatar, three account roots, and switching to the controlled second account and back without new OAuth.
 - After promotion, two fresh production launches pass acceptance; HEAD reaches the trigger only through the standard cleanup path.
 - At least four trigger opportunities confirm no overlapping workers, the 150-second worker slot, and the 15-minute History slot.
-- One controlled owner self-message creates exactly one Telegram card and does not duplicate after two `/check` runs.
+- One controlled inbound marker from an owner source that is not one of the primary Gmail `Send mail as` aliases creates exactly one Telegram card and does not duplicate after two `/check` runs. Self/alias probes carrying `INBOX+SENT` must be skipped by the existing dedupe invariant.
 
 ### Boundaries
 
@@ -115,3 +115,27 @@ The owner instructed continuation of the current `Versie 1` from the verified ex
 - The A/B gate cannot be proven before the external quota resets. Another promotion, trigger mutation, or v57 creation without code-level evidence would violate the approved fail-closed strategy.
 - The safe state is preserved: stable and HEAD v55, immutable staging v56, journal `rolled_back`, Telegram menu on production, and PR #5 open without merge.
 - Resume condition: Apps Script Executions no longer show the daily `urlfetch` failure, then two fresh production v55 launches must pass before the staging v56 A/B.
+
+<!-- lang:uk -->
+## Фінальний доказ 2026-07-22
+
+- External `URLFETCH` blocker зник; два свіжі production v55 launches завантажили mailbox без network error.
+- Owner-only staging v57 пройшов signed Telegram Desktop bootstrap, avatar, три Gmail roots, one-click switch на контрольований другий connection і повернення без OAuth.
+- Hash-pinned helper штатно просунув immutable v57 у production. Два свіжі production v57 launches пройшли acceptance; cleanup видалив staging і застосував HEAD до minute trigger. Exact rollback на v55 та immutable v56 збережені.
+- Після cleanup `PreflightOnly` підтвердив stable v57, staging `0`, legacy staging `0` і journal `cleaned`; локальний product suite пройшов `444/444`.
+- Runtime window містив послідовні completed minute-trigger rows без failure. Повні worker проходи чергувалися з короткими slot-skip проходами; source і regression tests зберігають 150-секундний worker slot та 15-хвилинний History slot без network I/O під lock.
+- Первинний same-account probe і probe з контрольованого linked Gmail отримали Gmail labels `INBOX+SENT`. Обидва правильно не створили картку; це довело, що попередня формула self-message acceptance була непридатною і не повинна послаблювати duplicate suppression.
+- Один content-free marker із незалежного owner-controlled Workspace sender, відсутнього у primary `Send mail as`, надійшов як `INBOX+UNREAD` без `SENT`, автоматично створив рівно одну Telegram card із правильним account marker і після двох `/check` лишився одним Telegram list item.
+- CAPTCHA, OTP/2FA, passkey, нова Google OAuth-згода, account-zone ambiguity або secret-property access не виникали. Листи, addresses, identifiers, tokens, cookies та `initData` у repository evidence не публікуються.
+
+<!-- lang:en -->
+## Final evidence 2026-07-22
+
+- The external `URLFETCH` blocker cleared; two fresh production v55 launches loaded the mailbox without a network error.
+- Owner-only v57 staging passed signed Telegram Desktop bootstrap, avatar, three Gmail roots, one-click switching to the controlled second connection and back without OAuth.
+- The hash-pinned helper promoted immutable v57 through the standard production path. Two fresh production v57 launches passed acceptance; cleanup removed staging and applied HEAD to the minute trigger. Exact v55 rollback and immutable v56 remain preserved.
+- Post-cleanup `PreflightOnly` confirmed stable v57, staging `0`, legacy staging `0`, and journal `cleaned`; the local product suite passed `444/444`.
+- The runtime window contained consecutive completed minute-trigger rows with no failure. Full worker passes alternated with short slot-skip passes; source and regression tests preserve the 150-second worker slot and 15-minute History slot with no network I/O under lock.
+- The initial same-account probe and a probe from a controlled linked Gmail received Gmail labels `INBOX+SENT`. Both correctly produced no card; this proved that the former self-message acceptance formula was invalid and must not weaken duplicate suppression.
+- One content-free marker from an independent owner-controlled Workspace sender absent from primary `Send mail as` arrived as `INBOX+UNREAD` without `SENT`, automatically created exactly one Telegram card with the correct account marker, and remained one Telegram list item after two `/check` runs.
+- No CAPTCHA, OTP/2FA, passkey, new Google OAuth consent, account-zone ambiguity, or secret-property access occurred. Mail, addresses, identifiers, tokens, cookies, and `initData` are not published in repository evidence.
