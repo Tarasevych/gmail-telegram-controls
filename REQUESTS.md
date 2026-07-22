@@ -196,3 +196,12 @@ The table above is the canonical machine-checked index. Every record is internal
 - Status: `recorded`
 - Next Versie authorization: `no`
 - Boundary: source/tests/paired documentation and controlled verification only; no repeated OAuth, arbitrary mailbox mutation, account/zone mixing, new Versie, immutable release, production promotion, CAPTCHA, OTP/2FA, passkey, or secret publication.
+
+## REQ-0027 | 2026-07-22
+
+- Українською: продовжити незалежну роботу `Versie 1`, узгодивши owner-only Advanced Gmail read adapter PR #11 з актуальним `main` без втрати новішої release-доказовості.
+- English: continue independent `Versie 1` work by reconciling owner-only Advanced Gmail read adapter PR #11 with current `main` without losing newer release evidence.
+- Record: [REQ-0027](requests/2026-07-22/REQ-0027-owner-adapter-conflict-recovery.md)
+- Status: `recorded`
+- Next Versie authorization: `no`
+- Boundary: normal feature-branch conflict recovery, tests, paired documentation, GitHub PR evidence, and private GitLab parity only; no flag activation, immutable, staging, production promotion, OAuth, Gmail mutation, trigger, menu, account, or zone change.
