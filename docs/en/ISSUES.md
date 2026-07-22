@@ -36,6 +36,7 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-028 | PARTIAL; fix live-verified on v59, production rolled back | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | v59 staging and two production launches recovered a stale automatic route to the list without a network/Drive error; a Telegram-persisted route can still produce a content-free recovery notice. Production returned to v57 because of separate GT-030 |
 | GT-029 | Resolved and synchronized | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
 | GT-030 | BLOCKED; exact rollback to v57 completed | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | Exact v59 -> v57 rollback; stable and HEAD v57, staging 0, journal `rolled_back`, and a rollback mailbox launch passed. Root cause and a safe cumulative fix remain `UNVERIFIED`; v60 was not created |
+| GT-031 | PARTIAL; source candidate | 1 | The main heading and profile fallbacks were hard-wired to one name and did not expose the actual active or shared mail context | REQ-0032 adds a view derived from current opaque connection IDs, full email, an accessible shared mapping, and synchronous render hooks; production remains v57 pending separate acceptance |
 
 ## Production evidence 2026-07-20
 
@@ -138,3 +139,16 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Next step:** investigate content-free slot telemetry and execution phases on the current Versie 1 source line. Do not create v60 merely to repeat the same acceptance.
 - **Report:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
+
+## GT-031 — Static active-mail heading
+
+- **Status:** PARTIAL — root cause, source implementation, local automated checks, and responsive visual checks are VERIFIED; live/production acceptance is UNVERIFIED.
+- **Local verification:** VERIFIED — targeted contract `88/88`, full non-release suite `443/443`; desktop and mobile `390x760` were checked without horizontal overflow, and the shared mapping opens with Enter and remains within the viewport.
+- **Date:** 2026-07-22.
+- **Request:** [REQ-0032](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md).
+- **Root cause:** VERIFIED — `<title>`, the visible `<h1>`, initial `state.account`, and two normalization fallback paths contained a static name; the UI lacked a derived representation of the actual active/shared context.
+- **Source fix:** one view model reads current `state.accounts`, `state.account.id`, `unifiedConnectionIds`, and `unifiedMode`; identity is selected by opaque connection ID. A single account exposes the localized inflected owner name and full email, while two or more participants expose `Спільна пошта` and an accessible expandable name-to-address mapping.
+- **Fallback/accessibility:** email becomes the primary identifier when the name is missing; the avatar remains supplementary; loading/empty/error states, wrapping, bounded scrolling, native keyboard disclosure, a live region, and visible focus require no reload.
+- **Boundary:** OAuth, Gmail permissions, account membership, and mail-flow composition are unchanged. The source is not production v57; immutable v60 was not created because GT-030 remains open.
+- **Report:** [VR-008](verification-reports/reports/VR-008/README.md).
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).

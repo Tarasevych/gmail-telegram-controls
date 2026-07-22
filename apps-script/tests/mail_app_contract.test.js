@@ -1798,6 +1798,104 @@ test('reply attachments are an explicit opt-in and remain individually removable
   assert.match(uiSource, /removedForwardedAttachment[\s\S]*state\.compose\.forwardSource = null/);
 });
 
+test('dynamic mail context derives identity and shared membership from stable connection IDs', () => {
+  const contextSource = sourceBetween(
+    '      function ukrainianGenitiveFirstName(value) {',
+    '      function initializeFromBootstrap(data) {'
+  );
+  const context = vm.createContext({
+    safeId: value => /^[A-Za-z0-9_-]{1,128}$/.test(String(value || '')) ? String(value) : '',
+    safeText: (value, fallback = '') => value == null || value === '' ? String(fallback || '') : String(value),
+  });
+  vm.runInContext(contextSource, context);
+
+  const accounts = [
+    { id: 'gmail-a', name: 'Ольга Коваль', email: 'owner.one@example.invalid', connected: true },
+    { id: 'gmail-b', name: 'Ольга Коваль', email: 'owner.two@example.invalid', connected: true },
+  ];
+  const selected = context.buildMailContextModel(accounts, 'gmail-b', [], false, '');
+  assert.equal(selected.title, 'Пошта Ольги');
+  assert.equal(selected.email, 'owner.two@example.invalid');
+  assert.equal(selected.activeConnectionId, 'gmail-b');
+
+  const pavlo = context.buildMailContextModel(
+    [{ id: 'gmail-p', name: 'Павло Тарасевич', email: 'owner@example.invalid' }],
+    'gmail-p', [], false, ''
+  );
+  assert.equal(pavlo.title, 'Пошта Павла');
+  assert.equal(pavlo.subtitle, 'owner@example.invalid');
+
+  const shared = context.buildMailContextModel(accounts, 'gmail-b', ['gmail-a', 'gmail-b'], true, '');
+  assert.equal(shared.shared, true);
+  assert.equal(shared.title, 'Спільна пошта');
+  assert.equal(shared.accounts.length, 2);
+  assert.match(shared.ariaLabel, /owner\.one@example\.invalid/);
+  assert.match(shared.ariaLabel, /owner\.two@example\.invalid/);
+
+  const reduced = context.buildMailContextModel(accounts, 'gmail-b', ['gmail-b'], true, '');
+  assert.equal(reduced.shared, false, 'one included connection must not be labelled as shared');
+  assert.equal(reduced.title, 'Пошта Ольги');
+
+  const emailOnly = context.buildMailContextModel(
+    [{ id: 'gmail-no-profile', name: '', email: 'full.address+context@example.invalid' }],
+    'gmail-no-profile', [], false, ''
+  );
+  assert.equal(emailOnly.title, 'full.address+context@example.invalid');
+  assert.equal(emailOnly.subtitle, 'Активний Gmail-акаунт');
+
+  const longEmail = `${'very.long.account.'.repeat(8)}marker@example.invalid`;
+  const longContext = context.buildMailContextModel(
+    [{ id: 'gmail-long', name: 'Надзвичайно Довге Ім’я Власника', email: longEmail }],
+    'gmail-long', [], false, ''
+  );
+  assert.equal(longContext.email, longEmail);
+  assert.match(longContext.ariaLabel, /marker@example\.invalid/);
+  assert.equal(context.buildMailContextModel([], '', [], false, 'loading').status, 'loading');
+  assert.equal(context.buildMailContextModel([], '', [], false, 'error').status, 'error');
+});
+
+test('dynamic mail context is responsive accessible and keeps full account mappings available', () => {
+  assert.match(uiSource, /id="mailContextAnnouncement" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(uiSource, /id="mailContextDetails" hidden/);
+  assert.match(uiSource, /<summary id="mailContextSummary">Акаунти й адреси<\/summary>/);
+  assert.match(uiSource, /id="mailContextAccounts" aria-label="Акаунти спільної пошти"/);
+  assert.match(uiSource, /\.mail-context-subtitle\s*\{[\s\S]*overflow-y:\s*auto;[\s\S]*overflow-wrap:\s*anywhere;/);
+  assert.match(uiSource, /\.mail-context-account-map\s*\{[\s\S]*max-height:[\s\S]*overflow-y:\s*auto;/);
+  assert.match(uiSource, /@media \(max-width: 900px\)[\s\S]*\.mail-context-account-map\s*\{[\s\S]*position:\s*fixed;[\s\S]*right:\s*8px;[\s\S]*left:\s*8px;[\s\S]*width:\s*auto;/);
+  assert.match(uiSource, /\.mail-context-account-map strong\s*\{[\s\S]*color:\s*var\(--text\);/);
+  assert.match(uiSource, /\.mail-context-details summary:focus-visible\s*\{[\s\S]*outline:/);
+  assert.match(uiSource, /els\.mailContextSummary\.addEventListener\("keydown"[\s\S]*event\.key === "Enter"[\s\S]*event\.key === " "[\s\S]*event\.preventDefault\(\);[\s\S]*els\.mailContextDetails\.open = !els\.mailContextDetails\.open/);
+  assert.doesNotMatch(uiSource, /<h1>Пошта Павла<\/h1>|<title>Пошта Павла/);
+
+  const contextSource = sourceBetween(
+    '      function ukrainianGenitiveFirstName(value) {',
+    '      function initializeFromBootstrap(data) {'
+  );
+  assert.match(contextSource, /byId\.get\(activeId\)/,
+    'the active identity must resolve by the stable connection ID');
+  assert.match(contextSource, /participants\.length > 1/,
+    'shared labelling must require at least two included accounts');
+  assert.match(contextSource, /els\.mailContextSubtitle\.title = model\.shared \? model\.ariaLabel : \(model\.email \|\| model\.subtitle\)/,
+    'full addresses must remain available when the visible line wraps');
+  assert.match(contextSource, /document\.title = model\.title \+ " · Versie 1"/);
+});
+
+test('mail context rerenders through existing bootstrap switch and shared-preference paths without reload', () => {
+  const accountSource = sourceBetween(
+    '      function normalizeAccounts(values, primaryValue) {',
+    '      function renderNavigation() {'
+  );
+  const switchSource = sourceBetween(
+    '      async function switchMailboxAccount(connectionId) {',
+    '      function safeGoogleAuthorizationUrl(value) {'
+  );
+  assert.match(accountSource, /function renderAccountPanel\(\) \{[\s\S]*renderMailContext\(\);/);
+  assert.match(accountSource, /state\.unifiedMode = !state\.unifiedMode;[\s\S]*renderAccountPanel\(\);[\s\S]*loadThreads\(true\);/);
+  assert.match(switchSource, /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);/);
+  assert.match(switchSource, /state\.accountSettings\.unifiedConnectionIds =[\s\S]*renderAccountPanel\(\);/);
+  assert.doesNotMatch(switchSource, /location\.reload|location\.replace/);
+});
+
 test('the profile avatar exposes real server-backed Gmail connection and switching controls', () => {
   assert.match(uiSource, /<button class="account-avatar" id="accountAvatar"[^>]*aria-controls="accountPanel"[^>]*aria-haspopup="dialog"/);
   assert.match(uiSource, /id="mobileAccountButton"[^>]*aria-controls="accountPanel"/);

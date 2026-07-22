@@ -36,6 +36,7 @@
 | GT-028 | PARTIAL; fix live-перевірено у v59, production відкочено | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
 | GT-029 | Вирішена та синхронізована | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
 | GT-030 | BLOCKED; exact rollback до v57 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v57 exact rollback; stable і HEAD v57, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
+| GT-031 | PARTIAL; source candidate | 1 | Головний заголовок і fallback-профіль були жорстко прив’язані до одного імені та не показували фактичний активний або спільний поштовий контекст | REQ-0032 додає похідний від чинних opaque connection IDs блок, повний email, доступне shared mapping і синхронні render-hooks; production лишається v57 до окремого acceptance |
 
 ## Production-доказ 2026-07-20
 
@@ -138,3 +139,16 @@
 - **Наступний крок:** дослідити content-free slot telemetry і execution phases на чинній Versie 1 source line. Не створювати v60 лише для повтору того самого acceptance.
 - **Звіт:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
+
+## GT-031 — Статичний заголовок активної пошти
+
+- **Статус:** PARTIAL — root cause, source implementation, локальні автоматичні й responsive visual checks VERIFIED; live/production acceptance UNVERIFIED.
+- **Локальна перевірка:** VERIFIED — цільовий контракт `88/88`, повний non-release suite `443/443`; desktop і mobile `390x760` перевірені без горизонтального переповнення, а shared mapping відкривається клавішею Enter і залишається в межах viewport.
+- **Дата:** 2026-07-22.
+- **Запит:** [REQ-0032](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md).
+- **Першопричина:** VERIFIED — `<title>`, видимий `<h1>`, початковий `state.account` і дві fallback-гілки нормалізації містили статичне ім’я; UI не мав окремого похідного представлення фактичного active/shared context.
+- **Source fix:** один view-model читає чинні `state.accounts`, `state.account.id`, `unifiedConnectionIds` і `unifiedMode`; ідентичність вибирається за opaque connection ID. Для одного акаунта показуються відмінене українське ім’я та повний email, а для двох і більше учасників — `Спільна пошта` й доступне розкривне зіставлення імен та адрес.
+- **Fallback/accessibility:** email стає primary identifier без імені; avatar лишається додатковим; loading/empty/error states, wrapping, bounded scroll, native keyboard disclosure, live-region і visible focus не потребують reload.
+- **Межа:** OAuth, Gmail permissions, account membership і mail-flow composition не змінюються. Source не є production v57; immutable v60 не створено через відкритий GT-030.
+- **Звіт:** [VR-008](verification-reports/reports/VR-008/README.md).
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).

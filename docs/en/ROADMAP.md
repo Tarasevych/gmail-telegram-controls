@@ -139,3 +139,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Next evidence:** targeted/full/docs tests, a normal PR, and required checks; after separate release authority, run a new immutable staging acceptance with two fresh launches before any promotion.
 - **Evidence:** [GT-028](ISSUES.md), [VR-006](verification-reports/reports/VR-006/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
+
+## B1-24 — Dynamic active-mail context
+
+- **Status:** PARTIAL — source implementation is added within Versie 1; production acceptance is absent.
+- **Date:** 2026-07-22.
+- **Scope:** replace the static owner heading with a block derived from an opaque connection ID for one account or the actual shared view, without a second state model.
+- **Implementation:** full name/email, Ukrainian genitive with a safe fallback, `Спільна пошта` only for two or more included accounts, accessible name-to-email disclosure, loading/empty/error states, and responsive wrapping.
+- **Invariants:** do not change OAuth, Gmail permissions, shared membership, or mail flow; do not identify an account by name or avatar; update through current bootstrap/switch/preferences render paths without reload.
+- **Next evidence:** targeted UI contract, non-release suite, paired documentation gates, responsive visual check, and a normal PR. Immutable/staging/production remain a separate bounded cycle after GT-030 is resolved.
+- **Evidence:** [GT-031](ISSUES.md), [VR-008](verification-reports/reports/VR-008/README.md). Source request: `REQ-0032`.
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
