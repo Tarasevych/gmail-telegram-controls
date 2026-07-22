@@ -47,3 +47,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-006/README.md](reports/VR-006/README.md)
 - **Висновок:** candidate-specific regression не доведена; shared pre-handler transport/deployment-access cause лишається UNVERIFIED, тому promotion заблокований.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-008 — Динамічний активний поштовий контекст
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** чинне multi-account state source, статичні fallback root causes, похідний active/shared view-model, доступність, responsive contract і release boundary.
+- **Звіт:** [reports/VR-008/README.md](reports/VR-008/README.md)
+- **Висновок:** source candidate усуває статичну identity-модель без зміни Gmail/OAuth contract; production verification відсутній, v60 не створено.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

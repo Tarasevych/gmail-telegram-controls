@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="light dark">
-  <title>Пошта Павла · Versie 1</title>
+  <title>Пошта · Versie 1</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -32,7 +32,7 @@
       --shadow-soft: 0 8px 24px rgba(23, 32, 51, .12);
       --radius-control: 8px;
       --radius-sheet: 12px;
-      --topbar-h: 62px;
+      --topbar-h: 74px;
       --rail-w: 220px;
       --list-w: clamp(360px, 30vw, 400px);
       --ease: 190ms cubic-bezier(.2, .75, .25, 1);
@@ -170,16 +170,116 @@
       z-index: 8;
     }
 
-    .brandbar h1 {
+    .mail-context {
+      position: relative;
+      display: grid;
+      flex: 1 1 auto;
+      gap: 2px;
+      min-width: 0;
+      max-height: calc(var(--topbar-h) - 8px);
+    }
+
+    .mail-context-announcement {
+      display: grid;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .brandbar .mail-context-title {
       min-width: 0;
       margin: 0;
-      overflow: hidden;
       font-size: 20px;
       font-weight: 700;
       line-height: 1.2;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
       letter-spacing: -.02em;
+    }
+
+    .mail-context-subtitle {
+      min-width: 0;
+      max-height: 2.5em;
+      margin: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      scrollbar-width: thin;
+    }
+
+    .mail-context-details {
+      position: relative;
+      width: max-content;
+      max-width: 100%;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .mail-context-details[hidden] {
+      display: none;
+    }
+
+    .mail-context-details summary {
+      width: max-content;
+      max-width: 100%;
+      min-height: 24px;
+      padding: 3px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      overflow-wrap: anywhere;
+    }
+
+    .mail-context-details summary:hover {
+      background: var(--hover);
+    }
+
+    .mail-context-details summary:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      outline-offset: 2px;
+    }
+
+    .mail-context-account-map {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 30;
+      display: grid;
+      gap: 6px;
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(320px, 60vh);
+      margin: 0;
+      padding: 10px;
+      overflow-y: auto;
+      list-style: none;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--bg);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .mail-context-account-map li {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      padding: 6px;
+      border-radius: 6px;
+      background: var(--rail);
+    }
+
+    .mail-context-account-map strong,
+    .mail-context-account-map span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .mail-context-account-map strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .mail-context-account-map span {
+      color: var(--muted);
     }
 
     .menu-button,
@@ -3886,7 +3986,7 @@
 
     @media (max-width: 900px) {
       :root {
-        --topbar-h: 56px;
+        --topbar-h: 72px;
       }
 
       .app-shell {
@@ -3900,9 +4000,23 @@
         padding: 0 8px 0 max(8px, env(safe-area-inset-left));
       }
 
-      .brandbar h1 {
+      .brandbar .mail-context-title {
         flex: 1 1 auto;
         font-size: 17px;
+      }
+
+      .mail-context-subtitle,
+      .mail-context-details {
+        font-size: 10.5px;
+      }
+
+      .mail-context-account-map {
+        position: fixed;
+        top: calc(var(--topbar-h) + 4px);
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: min(320px, calc(100dvh - var(--topbar-h) - 16px));
       }
 
       .menu-button,
@@ -4398,7 +4512,16 @@
       <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Відкрити папки" aria-expanded="false">
         <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
       </button>
-      <h1>Пошта Павла</h1>
+      <div class="mail-context" id="mailContext">
+        <div class="mail-context-announcement" id="mailContextAnnouncement" role="status" aria-live="polite" aria-atomic="true">
+          <h1 class="mail-context-title" id="mailContextTitle">Завантаження пошти</h1>
+          <p class="mail-context-subtitle" id="mailContextSubtitle">Визначаємо активний Gmail-акаунт</p>
+        </div>
+        <details class="mail-context-details" id="mailContextDetails" hidden>
+          <summary id="mailContextSummary">Акаунти й адреси</summary>
+          <ul class="mail-context-account-map" id="mailContextAccounts" aria-label="Акаунти спільної пошти"></ul>
+        </details>
+      </div>
       <div class="mobile-actions">
         <button class="icon-button" id="mobileSearchButton" type="button" aria-label="Пошук" aria-controls="mobileSearchPanel" aria-expanded="false">
           <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
@@ -5072,7 +5195,7 @@
         refreshToken: null,
         renewPromise: null,
         sessionClosing: false,
-        account: { name: "Павло Тарасевич", email: "", initial: "П" },
+        account: { id: "", name: "", email: "", initial: "" },
         accounts: [],
         accountSettings: { unifiedConnectionIds: [], notificationConnectionIds: [], notificationMode: "all" },
         workspaceAccess: null,
@@ -5266,7 +5389,8 @@
 
       function cacheElements() {
         [
-          "menuButton", "mobileSearchButton", "mobileRefreshButton", "mobileComposeButton", "mobileAccountButton",
+          "menuButton", "mailContext", "mailContextAnnouncement", "mailContextTitle", "mailContextSubtitle", "mailContextDetails", "mailContextSummary", "mailContextAccounts",
+          "mobileSearchButton", "mobileRefreshButton", "mobileComposeButton", "mobileAccountButton",
           "desktopSearchBox", "desktopSearch", "desktopSearchClear", "refreshButton",
           "composeButton", "accountAvatar", "mobileSearchPanel", "mobileSearchBox",
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
@@ -6763,7 +6887,7 @@
           var id = safeId(item.id || email.toLowerCase());
           if (!email || !id || seen.has(id) || item.connected === false) return null;
           seen.add(id);
-          var name = safeText(item.name, index === 0 ? "Павло Тарасевич" : email);
+          var name = safeText(item.name || item.displayName);
           var fallbackCurrent = !hasExplicitCurrent && !fallbackCurrentUsed && email.toLowerCase() === primaryEmail;
           if (fallbackCurrent) fallbackCurrentUsed = true;
           return {
@@ -6826,14 +6950,151 @@
         return safeText(selected && selected.email, defaultSendAsEmail(aliases, fallbackEmail));
       }
 
+      function ukrainianGenitiveFirstName(value) {
+        var name = safeText(value).trim().split(/\s+/)[0];
+        if (!name || !/^[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+$/u.test(name)) return "";
+        var lower = name.toLocaleLowerCase("uk-UA");
+        if (/(пошта|скринька|акаунт|gmail)/i.test(lower)) return "";
+        var exceptions = { "любов": "любові" };
+        var inflected = exceptions[lower] || "";
+        if (!inflected) {
+          if (/ія$/i.test(lower)) inflected = lower.slice(0, -2) + "ії";
+          else if (/я$/i.test(lower)) inflected = lower.slice(0, -1) + "і";
+          else if (/а$/i.test(lower)) inflected = lower.slice(0, -1) + "и";
+          else if (/о$/i.test(lower)) inflected = lower.slice(0, -1) + "а";
+          else if (/й$/i.test(lower)) inflected = lower.slice(0, -1) + "я";
+          else if (/ь$/i.test(lower)) inflected = lower.slice(0, -1) + "я";
+          else if (/[бвгґджзклмнпрстфхцчшщ]$/i.test(lower)) inflected = lower + "а";
+        }
+        if (!inflected) return "";
+        if (name === name.toLocaleUpperCase("uk-UA")) return inflected.toLocaleUpperCase("uk-UA");
+        if (name.charAt(0) === name.charAt(0).toLocaleUpperCase("uk-UA")) {
+          return inflected.charAt(0).toLocaleUpperCase("uk-UA") + inflected.slice(1);
+        }
+        return inflected;
+      }
+
+      function buildMailContextModel(accountsValue, activeConnectionIdValue, unifiedConnectionIdsValue, unifiedModeValue, statusValue) {
+        var status = safeText(statusValue);
+        if (status === "loading") {
+          return {
+            status: "loading", shared: false, title: "Завантаження пошти",
+            subtitle: "Визначаємо активний Gmail-акаунт", ariaLabel: "Завантаження пошти", accounts: []
+          };
+        }
+        if (status === "error") {
+          return {
+            status: "error", shared: false, title: "Не вдалося визначити пошту",
+            subtitle: "Повторіть завантаження профілю", ariaLabel: "Помилка отримання профілю Gmail", accounts: []
+          };
+        }
+        var accounts = (Array.isArray(accountsValue) ? accountsValue : []).map(function (value) {
+          var item = value || {};
+          return {
+            id: safeId(item.id),
+            name: safeText(item.name || item.displayName),
+            email: safeText(item.email || item.emailAddress),
+            connected: item.connected !== false
+          };
+        }).filter(function (item) { return item.id && item.connected; });
+        var byId = new Map(accounts.map(function (item) { return [item.id, item]; }));
+        var activeId = safeId(activeConnectionIdValue);
+        var active = byId.get(activeId) || null;
+        var seen = new Set();
+        var participants = (Array.isArray(unifiedConnectionIdsValue) ? unifiedConnectionIdsValue : [])
+          .map(safeId)
+          .filter(function (id) {
+            if (!id || seen.has(id) || !byId.has(id)) return false;
+            seen.add(id);
+            return true;
+          })
+          .map(function (id) { return byId.get(id); });
+        var shared = Boolean(unifiedModeValue && participants.length > 1);
+        if (shared) {
+          var names = participants.map(function (item) { return item.name || item.email || "Gmail"; });
+          var mapping = participants.map(function (item) {
+            return (item.name || "Без імені") + " — " + (item.email || "адреса недоступна");
+          });
+          return {
+            status: "ready", shared: true, title: "Спільна пошта",
+            subtitle: names.join(" · "), ariaLabel: "Спільна пошта. " + mapping.join(". "),
+            accounts: participants
+          };
+        }
+        var selected = active || participants[0] || accounts[0] || null;
+        if (!selected) {
+          return {
+            status: "empty", shared: false, title: "Пошта",
+            subtitle: "Gmail-акаунт не підключено", ariaLabel: "Gmail-акаунт не підключено", accounts: []
+          };
+        }
+        var genitive = ukrainianGenitiveFirstName(selected.name);
+        var title = selected.name
+          ? (genitive ? "Пошта " + genitive : "Пошта · " + selected.name)
+          : (selected.email || "Пошта");
+        var subtitle = selected.name
+          ? (selected.email || "Адреса Gmail недоступна")
+          : (selected.email ? "Активний Gmail-акаунт" : "Не вдалося отримати профіль");
+        return {
+          status: "ready", shared: false, title: title, subtitle: subtitle,
+          ariaLabel: selected.name && selected.email ? title + ". " + selected.email : (selected.email || selected.name || title),
+          email: selected.email, activeConnectionId: selected.id, accounts: [selected]
+        };
+      }
+
+      function currentMailContextModel(status) {
+        var accounts = Array.isArray(state.accounts) ? state.accounts.slice() : [];
+        var activeId = safeId(state.account && state.account.id);
+        if (activeId && !accounts.some(function (item) { return safeId(item && item.id) === activeId; })) {
+          accounts.push(state.account);
+        }
+        return buildMailContextModel(
+          accounts,
+          activeId,
+          state.accountSettings && state.accountSettings.unifiedConnectionIds,
+          state.unifiedMode,
+          status
+        );
+      }
+
+      function renderMailContext(options) {
+        var config = options || {};
+        var model = currentMailContextModel(config.status);
+        if (!els.mailContextTitle) return model;
+        els.mailContextTitle.textContent = model.title;
+        els.mailContextSubtitle.textContent = model.subtitle;
+        els.mailContextSubtitle.title = model.shared ? model.ariaLabel : (model.email || model.subtitle);
+        els.mailContextAnnouncement.setAttribute("aria-label", model.ariaLabel);
+        els.mailContext.classList.toggle("is-shared", model.shared);
+        clear(els.mailContextAccounts);
+        els.mailContextDetails.hidden = !model.shared;
+        if (!model.shared) {
+          els.mailContextDetails.removeAttribute("open");
+        } else {
+          els.mailContextSummary.textContent = "Акаунти й адреси · " + model.accounts.length;
+          model.accounts.forEach(function (account) {
+            var name = safeText(account.name);
+            var email = safeText(account.email);
+            var item = make("li", {
+              attrs: { "aria-label": (name || "Без імені") + ", " + (email || "адреса недоступна") }
+            });
+            item.append(make("strong", { text: name || email || "Gmail" }));
+            if (name || !email) item.append(make("span", { text: email || "Адреса недоступна" }));
+            els.mailContextAccounts.append(item);
+          });
+        }
+        document.title = model.title + " · Versie 1";
+        return model;
+      }
+
       function initializeFromBootstrap(data) {
         var bootstrap = data || {};
         var account = bootstrap.account || {};
         var fallbackAccount = {
           id: safeId(account.id || (bootstrap.session && bootstrap.session.connectionId)),
-          name: safeText(account.name, "Павло Тарасевич"),
+          name: safeText(account.name || account.displayName),
           email: safeText(account.email || account.emailAddress),
-          initial: avatarInitial(account.name || "Павло", account.email || account.emailAddress),
+          initial: avatarInitial(account.name || account.displayName, account.email || account.emailAddress),
           avatarUrl: safeUrl(account.avatarUrl, false),
           connected: true,
           current: true
@@ -6891,6 +7152,7 @@
         clear(els.accountList);
         var unifiedCount = state.accountSettings.unifiedConnectionIds.length;
         if (!unifiedCount) state.unifiedMode = false;
+        renderMailContext();
         if (unifiedCount) {
           var unifiedView = make("button", {
             className: "account-card",
@@ -8444,7 +8706,7 @@
         };
         var visibleListTitle = state.query
           ? "Результати пошуку"
-          : (state.unifiedMode ? "Спільна стрічка" : selectedNavigationName());
+          : (currentMailContextModel().shared ? "Спільна стрічка" : selectedNavigationName());
         var filterName = filterNames[safeMailboxFilter(state.filter)];
         if (filterName) visibleListTitle += " · " + filterName;
         els.listTitle.textContent = visibleListTitle;
@@ -16170,6 +16432,12 @@
         els.skipOnboarding.addEventListener("click", function () {
           completeOnboarding({ openFocus: false });
         });
+        els.mailContextSummary.addEventListener("keydown", function (event) {
+          var activate = event.key === "Enter" || event.key === " " || event.key === "Spacebar";
+          if (!activate || event.repeat) return;
+          event.preventDefault();
+          els.mailContextDetails.open = !els.mailContextDetails.open;
+        });
         els.continueGoogleOAuth.addEventListener("click", function (event) {
           var expiresAt = Number(els.continueGoogleOAuth.dataset.expiresAt || 0);
           if (!expiresAt || expiresAt <= Date.now()) {
@@ -16539,6 +16807,7 @@
 
       async function boot() {
         setBootLoading();
+        renderMailContext({ status: "loading" });
         applyTheme();
         try {
           if (tg) {
@@ -16624,6 +16893,7 @@
             });
           }
         } catch (error) {
+          renderMailContext({ status: "error" });
           var capacity = safeText(error && error.code).toUpperCase() === "SESSION_CAPACITY";
           showBootError(safeText(error.message, "Спробуйте відкрити Mini App ще раз."), {
             sessionCapacity: capacity,

@@ -15,7 +15,7 @@ No mailbox action opens a confirmation modal. A successful action returns a shor
 
 Primary navigation labels:
 
-- Пошта Павла
+- Dynamic mail context: for one active connection show the localized owner heading and full email; for two or more included connections show `Спільна пошта` with an accessible name-to-email mapping. Resolve both modes from opaque connection IDs, never from a name or avatar.
 - Вхідні
 - Надіслані
 - Чернетки

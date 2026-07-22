@@ -47,3 +47,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-006/README.md](reports/VR-006/README.md)
 - **Conclusion:** no candidate-specific regression is proven; the shared pre-handler transport/deployment-access cause remains UNVERIFIED, so promotion is blocked.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-008 — Dynamic active-mail context
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** current multi-account state source, static fallback root causes, a derived active/shared view model, accessibility, responsive contract, and the release boundary.
+- **Report:** [reports/VR-008/README.md](reports/VR-008/README.md)
+- **Conclusion:** the source candidate removes the static identity model without changing the Gmail/OAuth contract; production verification is absent and v60 was not created.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
