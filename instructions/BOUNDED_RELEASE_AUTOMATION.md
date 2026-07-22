@@ -21,7 +21,7 @@ Authority: active `P-009` on `Повноваження`.
 7. Виконати preflight, створити один immutable candidate та один owner-only staging deployment.
 8. Провести всі чинні acceptance gates. Transient external failure дозволяє один повтор того самого staging лише після доказаного відновлення; повторний failure закриває cycle як blocked.
 9. Перед promotion повторно прочитати locked tuple. Promotion відхиляється, якщо candidate не є exact active-cycle candidate або будь-який gate не `VERIFIED`.
-10. Після promotion підтвердити production readback двома свіжими запусками, виконати post-release observation/duplicate gate, cleanup exact staging і закрити evidence. За candidate-specific failure виконати exact rollback та вимагати нового causal fix для нового cycle.
+10. Після promotion підтвердити production readback двома свіжими запусками, виконати post-release observation/duplicate gate та cleanup exact staging. Після promotion або rollback атомарно оновити `docs/release-state.json`, парні `docs/uk|en/CURRENT_STATE.md`, root README, актуальні roadmap/issues та cumulative release header; запустити release-state і bilingual checks. Лише після цього закрити evidence і cycle. За candidate-specific failure виконати exact rollback та вимагати нового causal fix для нового cycle.
 
 ### Незмінні інваріанти
 
@@ -51,7 +51,7 @@ Automate routine merge, cumulative immutable staging, and conditional production
 7. Run preflight, then create one immutable candidate and one owner-only staging deployment.
 8. Run every current acceptance gate. A transient external failure permits one retry of the same staging only after proven recovery; a repeated failure closes the cycle as blocked.
 9. Re-read the locked tuple before promotion. Reject promotion unless the candidate is the exact active-cycle candidate and every gate is `VERIFIED`.
-10. After promotion, confirm production readback with two fresh launches, run post-release observation and duplicate gates, clean up the exact staging, and close evidence. On a candidate-specific failure, perform an exact rollback and require a new causal fix for a new cycle.
+10. After promotion, confirm production readback with two fresh launches, run post-release observation and duplicate gates, and clean up the exact staging. After promotion or rollback, atomically update `docs/release-state.json`, paired `docs/uk|en/CURRENT_STATE.md`, the root README, current roadmap/issues, and the cumulative release header; run release-state and bilingual checks. Only then close the evidence and cycle. On a candidate-specific failure, perform an exact rollback and require a new causal fix for a new cycle.
 
 ### Fixed invariants
 
