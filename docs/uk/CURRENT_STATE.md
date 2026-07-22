@@ -1,41 +1,44 @@
-# Актуальний стан Gmail Telegram Controls
+# Поточний стан
 
-Оновлено: **2026-07-22**. Source requests: `REQ-0030`, `REQ-0031`.
+[English](../en/CURRENT_STATE.md)
 
-<!-- release-state: production=v57; candidate=v62; staging=0; status=BLOCKED; as-of=2026-07-22 -->
+<!-- release-state: production=v63; candidate=v63; staging=0; status=VERIFIED; as-of=2026-07-22 -->
 
-## Канонічний стан після контрольованої release-спроби v62
+## Канонічний стан випуску
 
-- **Production:** Apps Script immutable v57, `VERIFIED` точним post-rollback preflight і двома свіжими mailbox launches без network error.
-- **Candidate:** immutable v62, `BLOCKED` для production. Його cumulative client fixes, локальні gates, CI, owner-only staging acceptance і два production UI readbacks пройшли, але обов'язковий post-release execution/overlap trace був недоступний.
-- **Staging:** `0`; staging deployment v62 видалено cleanup до runtime gate і не створено повторно.
-- **Release journal:** `rolled_back`; stable і HEAD є exact v57. Immutable v62 лишається історичним і не переписується.
-- **Причина:** GT-030 лишається відкритим. Worker-код v62 ідентичний candidate-line, де раніше зафіксовано execution тривалістю 214.96 секунди, а content-free execution trace не довів 150-second/no-overlap gate після v62. Це не доводить candidate-specific regression v62.
-- **Delivery control:** один дозволений owner self-copy не створив картку, як очікується через SENT exclusion; два `/check` не створили дубль. External automatic INBOX delivery після v62 лишається `UNVERIFIED`.
-- **Без auth churn:** OAuth consent, міграція GCP project, читання secret properties, Gmail mutation або зміна account zone не виконувалися.
+- **Versie:** Versie 1.
+- **Production:** Apps Script immutable v63, `VERIFIED`.
+- **HEAD:** точний cumulative v63.
+- **Активні staging deployments:** `0`.
+- **Release journal:** `cleaned`.
+- **Канонічне джерело:** GitHub і приватне GitLab-дзеркало досягли `ce46143b7270ca7776a91b01783490e1d08aa1ca`.
+- **Rollback:** exact v57 лишається доступним; historical immutable v56, v59 і v62 збережені та не переписані.
+- **Telegram menu:** production `📬 Пошта · Versie 1`.
 
-Докази: [release attempt і rollback v62](reports/VERSIE_001_V62_RELEASE_ATTEMPT_AND_ROLLBACK_2026-07-22.md), [VR-010](verification-reports/reports/VR-010/README.md), [acceptance чинного production v57](reports/VERSIE_001_V57_PRODUCTION_ACCEPTANCE_2026-07-22.md) і cumulative [Versie 1 release article](releases/VERSIE-001-2026-07-19.md).
+## Перевірений acceptance v63
 
-English mirror: [docs/en/CURRENT_STATE.md](../en/CURRENT_STATE.md).
+- Focused worker contracts пройшли `17/17`; source suite пройшов `497/497`.
+- Release-helper contracts пройшли `2/2`, після чого full suite пройшов `499/499`.
+- Signed bridge contracts пройшли `4/4`, після чого cumulative suite пройшов `501/501`.
+- Owner-only staging завантажився в native Telegram Desktop, показав dynamic account context, avatar behavior і рівно три isolated Gmail roots; перемикання на контрольований наявний root і назад пройшло без OAuth.
+- Два свіжі native Telegram Desktop production launches завантажили mailbox v63.
+- Сім послідовних виконань `checkNewMail_` завершилися з інтервалом в одну хвилину без overlap; спостережені тривалості були від `1.82 с` до `23.542 с`.
+- Фінальний preflight підтвердив stable/HEAD v63, immutable-ready hashes, staging `0` і journal `cleaned`.
 
-| Контур | Фактичний стан |
-|---|---|
-| Продуктова лінія | **Versie 1** |
-| Production | Apps Script immutable **v57**, `VERIFIED` після exact rollback |
-| Candidate | Apps Script immutable **v59**, історичний candidate, production acceptance `UNVERIFIED` |
-| Active staging | **0** |
+## Відкриті межі доказів
 
-Immutable v59 пройшов owner-only UI acceptance: mailbox, Google avatar, три ізольовані Gmail roots, one-click switch на контрольований другий акаунт і назад без OAuth, live label UI та recovery застарілого automatic route. Після promotion два production-запуски завантажили mailbox, а cleanup підтвердив stable v59 і staging `0`.
+- `GT-031` лишається `PARTIAL`: dynamic identity працює, але вузький header альтернативного акаунта обрізав частину email.
+- `GT-032`–`GT-036` cumulative увійшли до production v63, але їхній scenario-specific P0 acceptance лишається `PARTIAL`.
+- 15-хвилинний History slot покритий automated contract; окремий runtime substage trace лишається `UNVERIFIED`.
+- Content-free worker telemetry payload не був доступний у Cloud logs під час observation window.
+- External automatic INBOX delivery після v63 має статус `UNVERIFIED`; для цього випуску не надсилали й не змінювали додаткових реальних листів.
+- `GT-037` відстежує read-after-write false negative promotion helper. Deployment state безпечно reconciled; bounded helper hardening лишається `RECOMMENDED`.
+- `GT-038` відстежує blank Telegram Web K/A embed, тоді як той самий signed release пройшов у native Telegram Desktop. Web-only root cause має статус `UNVERIFIED`.
 
-Post-cleanup runtime gate не пройдено: один `checkNewMail_` тривав `214.96 с` проти цільового 150-секундного worker slot, а execution windows перекрилися. Обидва executions завершилися успішно, тому simultaneous Gmail work і root cause лишаються `UNVERIFIED`; однак release gate вимагав відсутності overlap. Виконано exact rollback v59 -> v57. Після rollback `PreflightOnly` підтвердив stable і HEAD v57, staging `0`, journal `rolled_back`; свіжий production v57 launch завантажив mailbox. Immutable v59 збережено, v60 не створено.
+## Докази й навігація
 
-Machine-readable source: [`docs/release-state.json`](../release-state.json).
-
-Деталі й походження:
-
-- [Кумулятивна стаття Versie 1](releases/VERSIE-001-2026-07-19.md)
-- [Production acceptance v57](reports/VERSIE_001_V57_PRODUCTION_ACCEPTANCE_2026-07-22.md)
-- [VR-007: v59 release attempt і rollback](verification-reports/reports/VR-007/README.md)
-- [English mirror](../en/CURRENT_STATE.md)
-
-Датовані release, postmortem і verification-report сторінки зберігають стан на момент доказу. Для поточного runtime/release рішення завжди використовувати цей файл і manifest, а не старий датований status.
+- [Детальний звіт про випуск v63 і закриття GT-030](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md)
+- [Атомарна verification VR-011](verification-reports/reports/VR-011/README.md)
+- [Історичний запис VR-010 про rollback v62](verification-reports/reports/VR-010/README.md)
+- [Cumulative історія випуску Versie 1](releases/VERSIE-001-2026-07-19.md)
+- [Machine-readable release state](../release-state.json)

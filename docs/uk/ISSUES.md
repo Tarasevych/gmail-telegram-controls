@@ -129,34 +129,24 @@
 - **Звіт:** [VR-006](verification-reports/reports/VR-006/README.md). Source request: `REQ-0029`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
 
-## GT-030 — Post-cleanup worker-slot overrun після v59
+## GT-030 — Worker admission lease міг завершитися раніше за Apps Script execution
 
-- **Статус:** BLOCKED; exact rollback VERIFIED, root cause `UNVERIFIED`.
-- **Дата:** 2026-07-22.
-- **Симптом:** після v59 cleanup один `checkNewMail_` завершився за `214.96 с`, хоча worker slot має бути 150 секунд. Наступний execution почався до завершення попереднього; обидва завершилися успішно.
-- **Межа доказу:** execution-window overlap є VERIFIED, але не доводить одночасну Gmail fan-out роботу всередині обох invocations. Не стверджувати lock, quota або Gmail API root cause без окремого trace.
-- **Захисна дія:** exact rollback v59 -> v57; post-rollback preflight: stable і HEAD v57, staging `0`, journal `rolled_back`; fresh v57 mailbox launch пройшов.
-- **Наступний крок:** дослідити content-free slot telemetry і execution phases на чинній Versie 1 source line. Не створювати v60 лише для повтору того самого acceptance.
-- **Продовження v62:** cumulative client candidate v62 пройшов локальні тести, CI, owner-only staging і два production UI launches. Apps Script process endpoint повернув 403, а `clasp logs` не мав налаштованого GCP project ID; default project не мігрувався. Оскільки worker-код не змінився, а runtime gate не вдалося довести, виконано exact rollback v62 -> v57; preflight і два свіжі v57 launches пройшли. Див. [VR-010](verification-reports/reports/VR-010/README.md).
-- **Звіт:** [VR-007](verification-reports/reports/VR-007/README.md). Source request: `REQ-0030`.
-- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
+- **Статус:** VERIFIED — immutable v63 є production, а сім послідовних one-minute worker executions завершилися без overlap.
+- **Першопричина:** попередня 150-секундна property була admission TTL, а не повним execution lock. Legal Apps Script execution міг тривати довше, дозволяючи наступному minute trigger увійти, поки перший worker ще працював.
+- **Виправлення:** v63 використовує tokenized seven-minute crash lease, лишає 150 секунд soft stage deadline, дозволяє лише token-matched release у `finally` та створює content-free telemetry.
+- **Доказ:** focused contracts `17/17`, cumulative suite `501/501`, два production launches, сім послідовних завершених runtime rows і final stable/HEAD v63 preflight. Див. [VR-011](verification-reports/reports/VR-011/README.md).
+- **Межа:** окремий 15-хвилинний History substage має automated-contract evidence; dedicated runtime substage trace лишається UNVERIFIED.
 
-## GT-031 — Статичний заголовок активної пошти
+## GT-031 — Ідентичність активного акаунта може обрізатися у вузькому header
 
-- **Статус:** PARTIAL — root cause, source implementation, локальні автоматичні й responsive visual checks VERIFIED; live/production acceptance UNVERIFIED.
-- **Локальна перевірка:** VERIFIED — цільовий контракт `88/88`, повний non-release suite `443/443`; desktop і mobile `390x760` перевірені без горизонтального переповнення, а shared mapping відкривається клавішею Enter і залишається в межах viewport.
-- **Дата:** 2026-07-22.
-- **Запит:** [REQ-0032](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md).
-- **Першопричина:** VERIFIED — `<title>`, видимий `<h1>`, початковий `state.account` і дві fallback-гілки нормалізації містили статичне ім’я; UI не мав окремого похідного представлення фактичного active/shared context.
-- **Source fix:** один view-model читає чинні `state.accounts`, `state.account.id`, `unifiedConnectionIds` і `unifiedMode`; ідентичність вибирається за opaque connection ID. Для одного акаунта показуються відмінене українське ім’я та повний email, а для двох і більше учасників — `Спільна пошта` й доступне розкривне зіставлення імен та адрес.
-- **Fallback/accessibility:** email стає primary identifier без імені; avatar лишається додатковим; loading/empty/error states, wrapping, bounded scroll, native keyboard disclosure, live-region і visible focus не потребують reload.
-- **Межа:** OAuth, Gmail permissions, account membership і mail-flow composition не змінюються. Source не є production v57; immutable v60 не створено через відкритий GT-030.
-- **Звіт:** [VR-008](verification-reports/reports/VR-008/README.md).
-- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+- **Статус:** PARTIAL — dynamic active/shared identity працює у production v63, а native acceptance підтвердив перемикання між трьома isolated roots без OAuth.
+- **Залишкове спостереження:** header контрольованого альтернативного акаунта обрізав завершення довгого email у вузькому view. Primary root коректно зберіг letter fallback за відсутності profile photo; інший root показав фактичне фото.
+- **Потрібне виправлення:** зберегти повну адресу через wrapping, compact disclosure або accessible full-value tooltip без зменшення tap target і без використання фото як єдиного identifier.
+- **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md). Source request: `REQ-0033`.
 
 ## GT-032 — Типографіка відрізняється від читального контексту Gmail
 
-- **Статус:** PARTIAL — live Gmail CSS, source fix і integrated v62 staging presentation VERIFIED; same-scale production typography comparison лишається UNVERIFIED, а v62 відкочено через GT-030.
+- **Статус:** PARTIAL — live Gmail CSS, source fix і native v63 staging/production presentation VERIFIED; same-scale production typography comparison лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Дата:** 2026-07-22. Source request: `REQ-0033`.
 - **Першопричина:** клієнт змішував замалий 11–13 px interface text, важкі заголовки та message line-height 1.65 без єдиної типографічної шкали.
 - **Source fix:** local-first Gmail-compatible UI stack, окремий reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading і compose rhythm, responsive sizing та відсутність remote font dependency або layout-blocking font request.
@@ -165,7 +155,7 @@
 
 ## GT-033 — Повторне завантаження та блокування внутрішньої навігації
 
-- **Статус:** PARTIAL — root cause, source implementation, local performance contracts і v62 list/account UI acceptance VERIFIED; live `A -> B -> A` performance trace та production acceptance лишаються UNVERIFIED після rollback.
+- **Статус:** PARTIAL — root cause, source implementation, local performance contracts і v63 native list/account acceptance VERIFIED; measured production `A -> B -> A` trace лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Першопричина:** list routes очищували всі rows перед кожним RPC; кожне відкриття листа відкидало detail; `threadLoading` втрачав другий клік; прийняті responses перебудовували весь list DOM.
 - **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace показує три `getThread` плюс три `attentionState` RPC для `A -> B -> A`.
 - **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, збережені scroll/view state і відсутність document reload для звичайної навігації.
@@ -174,7 +164,7 @@
 
 ## GT-034 — Відсутній bounded cache і background revalidation
 
-- **Статус:** PARTIAL — bounded architecture і v62 live account/list isolation VERIFIED; browser quota та eviction acceptance лишаються UNVERIFIED, v62 не є production.
+- **Статус:** PARTIAL — bounded architecture і v63 live account/list isolation VERIFIED; browser quota та eviction acceptance лишаються UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Першопричина:** клієнт не мав memory cache, IndexedDB, Cache Storage, Service Worker або persistent view state; усі freshness checks блокували видимий UI.
 - **Source fix:** normalized account-scoped records, memory LRU на 60 entries, persistent budget 120 records/4 MiB, seven-day hard expiry, per-record cap, stale-while-revalidate, 45-second visible-tab refresh, stable IDs, stale-response rejection та account purge.
 - **Межа:** token, session, credential або staging value не зберігаються. Service Worker/Background Sync не заявляються; Apps Script staging boundary треба протестувати до зміни статусу.
@@ -183,7 +173,7 @@
 
 ## GT-035 — Текст чернетки не мав негайного persistent recovery checkpoint
 
-- **Статус:** PARTIAL — чинний Gmail autosave і новий local checkpoint source-verified; offline/restart/cross-session acceptance лишається UNVERIFIED.
+- **Статус:** PARTIAL — чинний Gmail autosave і local checkpoint наявні у production v63; offline/restart/cross-session acceptance лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Першопричина:** Gmail autosave вже використовував stable operation ID і stale-response guards, але незбережені зміни лишалися лише в пам’яті до завершення debounced server request.
 - **Source fix:** негайний bounded IndexedDB text checkpoint для кожного connection, чинне debounced Gmail Draft save, lifecycle flushes, виключення attachment bytes, cleanup після canonical acknowledgement та явний local-versus-Gmail conflict choice.
 - **Межа:** інший пристрій може продовжити лише Gmail-confirmed draft. Browser-local recovery ніколи не позначається server-confirmed.
@@ -192,9 +182,25 @@
 
 ## GT-036 — Новий production client може лишитися stale у відкритому Mini App
 
-- **Статус:** PARTIAL — source mechanism і deployment transitions v62 зафіксовано; targeted stale-client one-reload/no-loop acceptance лишається UNVERIFIED, production повернуто на v57.
+- **Статус:** PARTIAL — exact release-ID mechanism наявний у production v63; targeted stale-open-client one-reload/no-loop acceptance лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Першопричина:** звичайний mail state і client-code version не мали окремого lifecycle; вже відкритий document не отримував production release signal.
 - **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard та manual reopen state після однієї невдалої activation attempt.
 - **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не імітується, а routine mail synchronization ніколи не reload-ить document.
 - **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-037 — Promotion helper може повідомити false negative після успішного deployment update
+
+- **Статус:** PARTIAL — deployment v63 безпечно reconciled і завершено, але helper hardening ще не реалізовано.
+- **Спостережена поведінка:** `Promote` просунув stable v57 до v63, після чого immediate read повернув stale state і створив помилку `Stable deployment did not advance to the candidate.`
+- **Першопричина:** helper не має bounded read-after-write reconciliation window. Propagation mechanism виведено з пізнішого authoritative readback, а не заявлено як platform guarantee.
+- **Безпечна обробка:** другий promotion не запускався. Read-only preflight довів stable v63 до cleanup.
+- **Рекомендоване виправлення:** додати bounded retry з exact candidate/deployment matching і fail closed за contradictory state. Immutable v63 не переписувати.
+- **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md).
+## GT-038 — Telegram Web K/A показує blank signed Mini App, тоді як native Desktop працює
+
+- **Статус:** PARTIAL — native Telegram Desktop staging і production VERIFIED; web-only failure та його root cause лишаються UNVERIFIED.
+- **Спостережена поведінка:** Telegram Web K і A відкрили exact v63 signed bridge iframe, але показали blank/broken embedded page.
+- **Межа:** не послаблювати signed bootstrap, session validation або account isolation заради web rendering.
+- **Наступний доказ:** зібрати content-free browser/runtime diagnostics того самого release і порівняти supported Telegram Web embedding constraints із native Desktop.
+- **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md).
