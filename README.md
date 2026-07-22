@@ -8,7 +8,10 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v57; candidate=v59; staging=0; status=UNVERIFIED; as-of=2026-07-22 -->
+<!-- release-state: production=v57; candidate=v62; staging=0; status=BLOCKED; as-of=2026-07-22 -->
+
+Поточний public production: Apps Script immutable v57. Immutable candidate v62 збережено як `BLOCKED`; staging deployments: `0`.
+Current public production: Apps Script immutable v57. Immutable candidate v62 is preserved as `BLOCKED`; staging deployments: `0`.
 - Поточний production працює на перевіреному Apps Script immutable v57 після exact rollback. Immutable v59 збережено як історичний candidate: UI acceptance пройдено, але post-cleanup runtime gate виявив 214.96-секундне виконання та overlap execution windows; staging `0`, v60 не створено.
 - Канонічний актуальний стан: [Українською](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Датовані release/postmortem статті є історичними доказами, а не current-state джерелом.
 - Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.

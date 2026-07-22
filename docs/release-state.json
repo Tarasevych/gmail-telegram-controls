@@ -7,8 +7,8 @@
     "status": "VERIFIED"
   },
   "candidate": {
-    "appsScriptImmutable": 59,
-    "status": "UNVERIFIED",
+    "appsScriptImmutable": 62,
+    "status": "BLOCKED",
     "activeStagingDeployments": 0
   },
   "releaseArticle": {

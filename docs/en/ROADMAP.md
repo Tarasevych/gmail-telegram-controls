@@ -153,10 +153,10 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-25 — P0 instant client, bounded cache and reliable drafts
 
-- **Status:** PARTIAL — architecture, baseline and source implementation are recorded; automated/browser/staging/production acceptance is pending.
+- **Status:** PARTIAL — architecture, baseline, source, automated gates, responsive checks, and owner-only v62 staging/UI acceptance are recorded; the runtime execution gate and full production acceptance remain blocked by GT-030.
 - **Date:** 2026-07-22. Source request: `REQ-0033`.
 - **Scope:** Gmail-compatible typography; app-shell internal navigation; account-isolated memory/IndexedDB LRU; stale-while-revalidate; keyed incremental list reconciliation; optimistic mutation rollback; local plus Gmail draft autosave; version-aware one-time client activation.
 - **Issues:** [GT-032](ISSUES.md), [GT-033](ISSUES.md), [GT-034](ISSUES.md), [GT-035](ISSUES.md), [GT-036](ISSUES.md).
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md).
-- **Release boundary:** no immutable candidate or deployment is created until local source and CI gates pass. Promotion requires bounded staging acceptance and exact rollback remains v57.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md) and [VR-010](verification-reports/reports/VR-010/README.md).
+- **Release boundary:** immutable v62 is preserved, staging is `0`, and production is exact v57 after rollback. Do not reuse v62 or create another immutable without a causal GT-030 fix and content-free execution evidence.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
