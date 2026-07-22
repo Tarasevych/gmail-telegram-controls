@@ -86,3 +86,12 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ## Independent verification
 
 [VR-001](verification-reports/reports/VR-001/README.md) preserves every contradicted, partial, unverified, and blocked `KH-*` claim. They do not become `GT-*` automatically; `GT-010` was added separately because the current code has a statically confirmed gap. Source request: `REQ-0004`.
+
+## 2026-07-22 addendum: all Gmail roots accepted
+
+- The earlier note that inbound fan-out for secondary roots was unverified is superseded by new production evidence.
+- Root-2: a clean Inbox arrival produced exactly one card with the correct account marker; two repeated /check operations produced no duplicate.
+- Root-3: a clean Inbox arrival produced exactly one card with the correct account marker; two repeated /check operations produced no duplicate.
+- The initial root-2 probe landing in Spam was an external Gmail classification, not a delivery defect: production deliberately excludes Spam.
+- The visible Telegram viewport is not sufficient evidence that a card is absent. Final counts use the accessibility index and a unique sanitized marker.
+- GT-018, GT-019, GT-023, and GT-024 have no open secondary-root acceptance blocker for production v57.

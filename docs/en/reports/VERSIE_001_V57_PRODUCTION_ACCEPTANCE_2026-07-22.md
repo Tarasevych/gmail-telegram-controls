@@ -45,3 +45,24 @@ Earlier release evidence treated an `SENT+INBOX` self-message as a valid one-car
 ## Release boundary
 
 Production-accepted Apps Script version: immutable v57. The next immutable or `Versie 2` requires a new exact owner instruction. Fresh OAuth was not started; no CAPTCHA, OTP/2FA, passkey, or other manual gate occurred.
+
+## Follow-up evidence: secondary Gmail roots — 2026-07-22
+
+| Requirement | Verified evidence | Status |
+|---|---|---|
+| Root-2 inbound fan-out | A new content-free owner self-test reached Inbox and automatically produced one card | verified |
+| Root-2 account identity | The card carried the correct second Gmail-zone marker | verified |
+| Root-2 deduplication | Two repeated /check operations reported no new mail; accessibility count remained 1 | verified |
+| Root-3 inbound fan-out | A separate content-free owner self-test automatically produced one card | verified |
+| Root-3 account identity | The card carried the correct third Gmail-zone marker | verified |
+| Root-3 deduplication | Two repeated /check operations reported no new mail; accessibility count remained 1 | verified |
+| Spam exclusion | A controlled root-2 message in Spam produced no card | verified |
+| Safety boundary | OAuth, scopes, deployment, triggers, and product code were unchanged | verified |
+
+### Observation correction
+
+An intermediate visible Telegram viewport did not show the root-3 card and was not sufficient evidence that delivery was absent. After restoring the correct scroll position, the card was found and the accessibility index atomically confirmed exactly one marker match. Future absence claims must not rely on viewport evidence alone.
+
+### Tooling incident
+
+Read-only Chrome inspection timed out twice, and the Windows browser fallback failed closed because it could not determine the current URL reliably. Production state was unchanged. Independent evidence came from the already-authorized Gmail connector and Telegram accessibility tree; OAuth was not repeated.

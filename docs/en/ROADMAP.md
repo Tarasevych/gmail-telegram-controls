@@ -84,3 +84,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Delivery gate:** an independent owner-controlled external `INBOX` automatically created one Telegram card with the correct account marker; two `/check` runs created no duplicate. Self/alias `INBOX+SENT` probes were correctly skipped.
 - **Release rule:** do not rewrite immutable v56/v57; do not create Versie 2 or the next immutable without a new exact owner instruction.
 - **Source requests:** REQ-0019, REQ-0021.
+
+## Roadmap update — 2026-07-22
+
+- [x] Verify automatic delivery for the primary Gmail root.
+- [x] Verify automatic delivery for root-2 with the correct account marker.
+- [x] Verify automatic delivery for root-3 with the correct account marker.
+- [x] Verify deduplication for each secondary root with two repeated /check operations.
+- [x] Separate Gmail Spam classification from a product delivery failure.
+- [x] Close the secondary-root portion of B1-16 and B1-19 production evidence.
+- [ ] New Google OAuth consent remains a separate manual gate and is not initiated without demonstrated technical need.
+- [ ] The next Versie is not authorized; all further fixes remain within Versie 1.
