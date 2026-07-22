@@ -57,12 +57,29 @@ test('P0 cache is bounded, versioned and account-scoped', () => {
 });
 
 test('namespace contract rejects cross-account and malformed shared records', () => {
-  const context = loadFunctions(['p0NamespaceAllowed']);
+  const context = loadFunctions([
+    'p0NamespaceAllowed',
+    'p0NamespaceAccountIds',
+    'p0ListSnapshotMatchesNamespace',
+  ]);
   assert.equal(context.p0NamespaceAllowed('a:alpha', ['alpha', 'beta']), true);
   assert.equal(context.p0NamespaceAllowed('a:gamma', ['alpha', 'beta']), false);
   assert.equal(context.p0NamespaceAllowed('u:alpha,beta', ['alpha', 'beta']), true);
   assert.equal(context.p0NamespaceAllowed('u:alpha,gamma', ['alpha', 'beta']), false);
   assert.equal(context.p0NamespaceAllowed('u:alpha', ['alpha']), false);
+  assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
+    { accountId: 'alpha' },
+  ] }, 'a:alpha'), true);
+  assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
+    { accountId: 'beta' },
+  ] }, 'a:alpha'), false);
+  assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
+    { account: { id: 'alpha' } },
+    { connectionId: 'beta' },
+  ] }, 'u:alpha,beta'), true);
+  assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
+    { accountId: 'gamma' },
+  ] }, 'u:alpha,beta'), false);
 });
 
 test('account switch clears the prior account reader before the new bootstrap', () => {
@@ -83,6 +100,8 @@ test('account switch clears the prior account reader before the new bootstrap', 
     'old account message DOM must be removed rather than merely hidden by state');
 
   const switcher = functionSource('switchMailboxAccount');
+  assert.match(switcher, /await p0PersistUiStateNow\(\)/,
+    'the outgoing account view must be checkpointed before the server selection changes');
   const switchRequest = switcher.indexOf('op: "switchAccount"');
   const resetCall = switcher.indexOf('p0ResetAccountScopedView()');
   const bootstrapRequest = switcher.indexOf('op: "bootstrap"');
@@ -90,9 +109,37 @@ test('account switch clears the prior account reader before the new bootstrap', 
     'account-scoped UI must be cleared after a confirmed switch and before bootstrap');
   assert.match(switcher, /state\.compose \|\| state\.composeBusy \|\| state\.actionBusy \|\| state\.handoffBusy/,
     'account switching must not expose an active draft or mutation in another account context');
+  assert.match(switcher,
+    /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);[\s\S]{0,160}await p0HydratePersistentState\(\);[\s\S]{0,80}p0ApplyPersistedView\(\)/,
+    'the incoming account must hydrate only its own persisted view');
+  assert.match(switcher,
+    /restoredTargetView\.selectedConnectionId[\s\S]{0,240}openThread\(/,
+    'returning A to B to A must restore only the reader bound to the target account');
   assert.match(functionSource('renderAccountPanel'),
     /card\.disabled = Boolean\(account\.current \|\| state\.accountManagementBusy\)/,
     'parallel account switches must be disabled while one switch is in flight');
+});
+
+test('single-account lists pin the exact connection and reject poisoned cache or responses', () => {
+  const request = functionSource('listRequest');
+  const translate = functionSource('translateRpcRequest');
+  const load = functionSource('loadThreads');
+  assert.match(request,
+    /connectionId: unified \? "" : safeId\(state\.account && state\.account\.id\)/,
+    'the list intent must capture the exact active Gmail connection');
+  assert.match(translate,
+    /connectionId: unifiedList \? "" : safeId\(input\.connectionId\)/,
+    'the exact connection must reach the existing server-side per-request authorization boundary');
+  assert.match(load, /namespace: namespace/,
+    'each queued intent must retain the namespace that existed when it was created');
+  assert.match(load,
+    /p0ListSnapshotMatchesNamespace\(cached\.value, intent\.namespace\)/,
+    'a persisted list may render only after every card matches its cache namespace');
+  assert.match(load,
+    /p0ListSnapshotMatchesNamespace\(\{ threads: normalized \}, activeIntent\.namespace\)/,
+    'a server response from another account must fail closed before rendering or caching');
+  assert.match(load, /p0DbDelete\(poisonedListKey\)/,
+    'a poisoned historical cache entry must be removed instead of repeatedly redisplayed');
 });
 
 test('LRU eviction is deterministic by access time and byte budget', () => {
