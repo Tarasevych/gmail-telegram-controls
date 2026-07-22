@@ -1,6 +1,6 @@
 # Known problem register
 
-Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Staging verified`, `Deployed to production`, `Production verified`.
+Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Staging verified`, `Deployed to production`, `Production verified`.
 
 | ID | Status | Since Versie | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
@@ -30,8 +30,10 @@ Updated: **2026-07-21**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-022 | Platform constraint | 1 | `clasp logs` is unavailable because production uses an Apps Script-managed default GCP project without a standard project ID | Do not migrate only for logs: that would permanently revoke current authorizations. Use the Apps Script Executions UI or a separate content-free telemetry reader |
 | GT-023 | Resolved and production verified on v57 | 1 | The single minute `checkNewMail_` ran longer than a minute, so full worker passes overlapped and exhausted the daily `URLFETCH` quota | Immutable v57 uses an atomic 150-second timer slot, keeps realtime first, and limits full Gmail History backfill with a 15-minute slot. `444/444` tests passed; production showed completed full/skip cadence with no failed worker in the acceptance window |
 | GT-024 | Resolved and production verified on v57 | 1 | The same mailbox network error reproduced on production v55 and owner-only staging v57 during the quota incident | After quota recovery, two v55 launches and the v57 staging A/B passed; v57 was promoted, accepted twice in production, and staging was cleaned. A valid external `INBOX` automatically created one card with no duplicate after two `/check` runs |
-| GT-025 | Fixed in source candidate; live unverified | 1 | Parallel thread metadata always used the Apps Script owner token, including an external multi-account context | Select `mailboxMultiGmailAccessToken_` for the active `connectionId`, retaining `ScriptApp.getOAuthToken()` only for the legacy/owner lane; a regression test forbids the hardcoded owner token |
-| GT-026 | Isolated source candidate; release hash gate blocked | 1 | Allowlisted owner Gmail reads always consume Apps Script `URLFETCH` quota even though the official Advanced Gmail Service is enabled | A protected feature flag can route only owner `messages.list`, `messages.get`, and `history.list` calls through Advanced Gmail; its tests pass 8/8, but the full suite correctly fails the immutable v57 hash gate at 451/452. Do not merge, enable, or deploy without a separately authorized next immutable. Source request: `REQ-0024` |
+| GT-025 | Integrated into immutable v58; live unverified | 1 | Parallel thread metadata always used the Apps Script owner token, including an external multi-account context | `mailboxMultiGmailAccessToken_` is selected for the active `connectionId`, while `ScriptApp.getOAuthToken()` remains limited to the legacy/owner lane; the cumulative v58 suite passed, but mailbox acceptance is blocked by GT-028 |
+| GT-026 | Integrated into immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads always consume Apps Script `URLFETCH` quota even though the official Advanced Gmail Service is enabled | The allowlisted owner-read adapter is included in cumulative v58, but the protected flag was not enabled; external OAuth connections retain their own token paths. Live quota reduction is unverified because of GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
+| GT-027 | Integrated into immutable v58; staging acceptance blocked | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | The shared USER/SYSTEM renderer, accessible create/rename/delete controls, full-path nesting, bounded scrolling, and account isolation passed cumulative tests; live label UI acceptance is blocked because mailbox bootstrap stopped at GT-028 |
+| GT-028 | Blocked; shared pre-handler incident | 1 | Two fresh v58 staging and two fresh v57 production launches showed the same mailbox-operation error before entering an Apps Script handler | The Web App execution filter showed no execution in the test windows; a candidate-specific regression is not supported. Production remains v57, the menu was restored to production, immutable/staging v58 is preserved, and promotion is forbidden pending a new controlled A/B. Source request: `REQ-0028` |
 
 ## Production evidence 2026-07-20
 
@@ -97,15 +99,26 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - The visible Telegram viewport is not sufficient evidence that a card is absent. Final counts use the accessibility index and a unique sanitized marker.
 - GT-018, GT-019, GT-023, and GT-024 have no open secondary-root acceptance blocker for production v57.
 
-## GT-026 — Unified Gmail label management
+## GT-027 — Unified Gmail label management
 
-- **Status:** PARTIAL
+- **Status:** PARTIAL — integrated into immutable v58; staging acceptance is blocked by GT-028.
 - **Date:** 2026-07-22
 - **Request:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Root cause:** VERIFIED — the profile list reserved label width for several permanently visible actions, the sidebar had no create/manage controls, and the two surfaces depended on different state slices. Acceptance also exposed click bubbling into the global close handler and implicit CSS grid rows shrinking to 44 px.
 - **Fix:** VERIFIED locally in [commit 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): shared state/render path, a `+` beside the heading, one accessible pencil action for every USER label, progressive disclosure, bounded scrolling, nested full-path normalization, SYSTEM-label protection, permission/retry states, and synchronous refresh of both surfaces.
-- **Verification:** VERIFIED — final UI contract `84/84`; full suite `447/448`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
-- **Release boundary:** BLOCKED — the only full-suite failure is the intentional exact-hash gate for immutable v57. REQ-0026 does not authorize a new immutable candidate or production promotion.
+- **Verification:** VERIFIED locally — final UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
+- **Release boundary:** PARTIAL — cumulative immutable v58 and one owner-only staging deployment were created under REQ-0028; production promotion is BLOCKED by GT-028.
 - **Production:** UNVERIFIED — the changes are not deployed.
 - **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
+
+## GT-028 — Shared pre-handler Mini App bootstrap blocker
+
+- **Status:** BLOCKED.
+- **Date:** 2026-07-22.
+- **Factual A/B:** two fresh v58 staging launches and two fresh v57 production launches reproduced the same content-free mailbox-operation error.
+- **Localization:** Apps Script Executions filtered by `Web app` contained no execution for any test window; the failure occurs before a server handler. A direct owner-browser probe of the staging endpoint also ended in a Drive error without a handler execution.
+- **Conclusion:** a candidate-specific regression is UNVERIFIED; the exact transport/deployment-access cause is UNVERIFIED. Historical GT-024 is not reopened because it concerned a proven URLFetch quota incident after handler entry.
+- **Safe state:** stable production v57; immutable v58 and one staging deployment are preserved; the Telegram menu is restored to production; promotion and cleanup were not run.
+- **Report:** [VR-006](verification-reports/reports/VR-006/README.md).
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)

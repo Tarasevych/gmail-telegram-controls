@@ -6,8 +6,8 @@
 - **Методика verification:** REQ-0004
 - **Продукт:** Versie 1
 - **Запит:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
-- **Проблема:** [GT-026](../../../ISSUES.md)
-- **Roadmap:** B1-20
+- **Проблема:** [GT-027](../../../ISSUES.md)
+- **Roadmap:** B1-21
 - **Кодовий доказ:** [4ac0b90fbdbe7c9032789da1734bb986795fab91](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91)
 - **Загальний статус:** PARTIAL
 
@@ -55,4 +55,8 @@
 - Новий immutable candidate, staging deployment, production promotion та live label mutations не виконувалися: REQ-0026 має `Next Versie authorization: no`.
 - Залишковий блокер один: окремий явний owner authorization на наступний cumulative immutable candidate і контрольований staging/rollback gate.
 - Документовані межі кількості labels CONFLICTING (10 000 у REST resource проти 5 000 у Gmail Help), тому локальний capacity limit не запроваджено.
-- До production proof статус GT-026 залишається PARTIAL, а production claim — UNVERIFIED.
+- До production proof статус GT-027 залишається PARTIAL, а production claim — UNVERIFIED.
+
+## Додатковий release-доказ — immutable v58
+
+Owner authorization `REQ-0028` зняв лише попередній блокер дозволу на release. Label management інтегровано в cumulative immutable v58, а cumulative suite пройшов `460/460`. Live staging acceptance лишається BLOCKED незалежним shared pre-handler incident GT-028; label mutations не виконувалися, production лишається UNVERIFIED. Див. [VR-006](../VR-006/README.md).

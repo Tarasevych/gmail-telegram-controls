@@ -6,8 +6,8 @@
 - **Verification framework:** REQ-0004
 - **Product:** Versie 1
 - **Request:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
-- **Issue:** [GT-026](../../../ISSUES.md)
-- **Roadmap:** B1-20
+- **Issue:** [GT-027](../../../ISSUES.md)
+- **Roadmap:** B1-21
 - **Code evidence:** [4ac0b90fbdbe7c9032789da1734bb986795fab91](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91)
 - **Overall status:** PARTIAL
 
@@ -55,4 +55,8 @@
 - No new immutable candidate, staging deployment, production promotion, or live label mutation was performed: REQ-0026 has `Next Versie authorization: no`.
 - One blocker remains: separate explicit owner authorization for the next cumulative immutable candidate and a controlled staging/rollback gate.
 - Documented label-count limits are CONFLICTING (10,000 in the REST resource versus 5,000 in Gmail Help), so no local capacity limit was introduced.
-- Until production proof exists, GT-026 remains PARTIAL and the production claim remains UNVERIFIED.
+- Until production proof exists, GT-027 remains PARTIAL and the production claim remains UNVERIFIED.
+
+## Follow-up release evidence — immutable v58
+
+Owner authorization `REQ-0028` superseded only the earlier release-authorization blocker. Label management was integrated into cumulative immutable v58, and the cumulative suite passed `460/460`. Live staging acceptance remains BLOCKED by the independent shared pre-handler incident GT-028; no label mutation was attempted and production remains UNVERIFIED. See [VR-006](../VR-006/README.md).

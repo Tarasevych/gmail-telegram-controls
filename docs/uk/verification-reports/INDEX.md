@@ -29,3 +29,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-005/README.md](reports/VR-005/README.md)
 - **Примітка:** shared machine index залишається на VR-003; VR-005 не змінює machine-report contract.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-006 — Cumulative v58 staging A/B
+
+- **Статус:** BLOCKED
+- **Дата:** 2026-07-22
+- **Покриття:** PR #16/#11 integration, immutable v58, local/CI gates, owner-only staging, controlled v57/v58 A/B, Apps Script execution localization і safe-state boundary.
+- **Звіт:** [reports/VR-006/README.md](reports/VR-006/README.md)
+- **Висновок:** candidate-specific regression не доведена; shared pre-handler transport/deployment-access cause лишається UNVERIFIED, тому promotion заблокований.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
