@@ -68,3 +68,23 @@ Research, document, and fix Gmail label management in the current Versie 1 witho
 ### Completion criteria
 
 The result may be marked `VERIFIED` only after relevant automated checks, build, documentation validators, and visual verification of both surfaces at multiple widths. A new immutable release and production promotion remain separate release gates.
+
+## Докази реалізації — 2026-07-22
+
+- **Статус:** PARTIAL
+- **Product branch:** `fix/versie-001-unified-gmail-label-management`
+- **Code commit:** [`4ac0b90fbdbe7c9032789da1734bb986795fab91`](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91)
+- **Documentation commit:** [`69de50d7734328bc7c1a300f179feeddf757cfe2`](https://github.com/Tarasevych/gmail-telegram-controls/commit/69de50d7734328bc7c1a300f179feeddf757cfe2)
+- **Draft PR:** [#16](https://github.com/Tarasevych/gmail-telegram-controls/pull/16)
+- **Перевірено:** UI contract `84/84`; full suite `447/448`; bilingual, knowledge-hub, verification-report, whitespace та secret-pattern gates пройшли; responsive visual acceptance пройдено на 390×760 і 1280×820.
+- **Release boundary:** BLOCKED — єдина full-suite помилка є exact-hash gate immutable v57. Новий immutable candidate, deployment або live label mutation не виконувалися.
+
+## Implementation evidence — 2026-07-22
+
+- **Status:** PARTIAL
+- **Product branch:** `fix/versie-001-unified-gmail-label-management`
+- **Code commit:** [`4ac0b90fbdbe7c9032789da1734bb986795fab91`](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91)
+- **Documentation commit:** [`69de50d7734328bc7c1a300f179feeddf757cfe2`](https://github.com/Tarasevych/gmail-telegram-controls/commit/69de50d7734328bc7c1a300f179feeddf757cfe2)
+- **Draft PR:** [#16](https://github.com/Tarasevych/gmail-telegram-controls/pull/16)
+- **Verified:** UI contract `84/84`; full suite `447/448`; bilingual, knowledge-hub, verification-report, whitespace, and secret-pattern gates passed; responsive visual acceptance passed at 390×760 and 1280×820.
+- **Release boundary:** BLOCKED — the only full-suite failure is the immutable v57 exact-hash gate. No new immutable candidate, deployment, or live label mutation was performed.
