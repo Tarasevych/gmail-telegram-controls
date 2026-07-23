@@ -90,3 +90,29 @@
 - A fresh production v65 launch returned the same generic error before the mailbox. Apps Script `doPost`, `mailboxRedeemLaunch`, and `mailboxRpc` executions completed, while the content-free timer trace failed in `legacy_recovery` with `errorCode=urlfetch_quota`.
 - A candidate-specific v70 regression is not established. Production promotion was not performed; the menu was restored to production; exact staging was removed by the journal-bound helper; active staging is `0`; immutable v70 remains historical; the journal is terminal `abandoned`.
 - One-second p95, offline private Inbox, exact Windows SecureStorage recovery, hard reload, ten launches, and bidirectional account switching remain `UNVERIFIED`/`BLOCKED`. The next bounded A/B is allowed only after daily quota recovery and with a causal new candidate; v70 must not be promoted again.
+
+<!-- lang:uk -->
+### Source evidence fail-fast URL Fetch circuit 2026-07-23
+
+- Новий authenticated execution readback підтвердив окремий defect: після першого signal добової URL Fetch quota timer worker продовжував quota-dependent retention, reminder, OAuth refresh і legacy recovery paths.
+- Фактичні наступні registry IDs: `GT-054`, `B1-34`, `VR-024`.
+- Source commit: `19279c1b1e8c5d90da33b162c5aadd5ffde83b2e`; GitHub PR `#83`; normal merge у `main`: `bc505e2b382892e194ae1106fdc840ffc06c0bd1`.
+- GitHub і GitLab `main` синхронізовано на тому самому merge commit.
+- Реалізовано content-free Script Properties circuit із 15-хвилинним probe window. Перший quota exception зупиняє поточний pipeline, звільняє tokenized lease з telemetry `quota_blocked`, а наступні minute invocations не виконують transport work до bounded probe.
+- Gmail, Telegram і Google refresh transports передають quota signal до domain wrapping; circuit record містить лише schema version та expiry.
+- Перевірено: runtime-budget `9/9`, повний Apps Script suite `593/593`, bilingual `81` pairs, knowledge hub `17` pairs / `295` source IDs / `245` canonical items, verification/release-state/diff gates пройшли, added-line sensitive-pattern matches `0`, усі PR checks успішні.
+- Official Apps Script quota semantics перевірено: limits per-user, reset через 24 години після першого request, exhaustion кидає exception; exact reset timestamp не надається.
+- Boundary: це source-only correction. Production v65, staging `0`, immutable v70, menu, Gmail, OAuth, Telegram, deployment і release journal не змінювалися. Live quota recovery, staging/native acceptance і production promotion лишаються `UNVERIFIED`.
+
+<!-- lang:en -->
+### Fail-fast URL Fetch circuit source evidence 2026-07-23
+
+- A new authenticated execution readback confirmed a separate defect: after the first daily URL Fetch quota signal, the timer worker continued quota-dependent retention, reminder, OAuth-refresh, and legacy-recovery paths.
+- Actual next registry IDs: `GT-054`, `B1-34`, `VR-024`.
+- Source commit: `19279c1b1e8c5d90da33b162c5aadd5ffde83b2e`; GitHub PR `#83`; normal merge into `main`: `bc505e2b382892e194ae1106fdc840ffc06c0bd1`.
+- GitHub and GitLab `main` are synchronized at the same merge commit.
+- Implemented a content-free Script Properties circuit with a 15-minute probe window. The first quota exception stops the current pipeline, releases the tokenized lease with `quota_blocked` telemetry, and subsequent minute invocations perform no transport work until the bounded probe.
+- Gmail, Telegram, and Google refresh transports propagate the quota signal before domain wrapping; the circuit record contains only schema version and expiry.
+- Verified: runtime budget `9/9`, complete Apps Script suite `593/593`, bilingual `81` pairs, knowledge hub `17` pairs / `295` source IDs / `245` canonical items, verification/release-state/diff gates passed, added-line sensitive-pattern matches `0`, and all PR checks passed.
+- Official Apps Script quota semantics were verified: limits are per user, reset 24 hours after the first request, and exhaustion throws an exception; no exact reset timestamp is exposed.
+- Boundary: this is a source-only correction. Production v65, staging `0`, immutable v70, menu, Gmail, OAuth, Telegram, deployment, and release journal were not changed. Live quota recovery, staging/native acceptance, and production promotion remain `UNVERIFIED`.
