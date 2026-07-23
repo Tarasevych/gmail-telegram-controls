@@ -153,9 +153,9 @@ Source request: `REQ-0004`.
 
 - **Статус:** PARTIAL
 - **Дата:** 2026-07-23
-- **Покриття:** V3 `B-01`, ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, local regression/full-suite evidence і release boundary.
+- **Покриття:** V3 `B-01`, ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, повна role/zone/invite/revocation access matrix і release boundary.
 - **Звіт:** [reports/VR-018/README.md](reports/VR-018/README.md)
-- **Висновок:** source correction і локальні тести `532/532` VERIFIED; native Telegram download, staging acceptance та deployment лишаються `UNVERIFIED`. Production/HEAD v65 і immutable v68 не змінено.
+- **Висновок:** source correction, попередній локальний suite `532/532` і focused access matrix `7/7` VERIFIED; access gap не вимагав зміни `MultiAccount.gs`. Native Telegram download, staging acceptance та deployment лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
 
 ## VR-019 — Error/RCA registry та agent failure prevention

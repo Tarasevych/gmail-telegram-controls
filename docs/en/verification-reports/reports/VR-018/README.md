@@ -23,6 +23,22 @@ The Telegram callback contained an attachment ordinal from one MIME read. On the
 - Historical `mail.att:` and `a2.` callbacks continue through the legacy ordinal path so existing cards do not break.
 - The immutable v68 helper and its hashes were not changed. Its regression test verifies historical pinned hashes instead of requiring mutable HEAD to remain identical to v68 forever.
 
+## Access matrix
+
+Reinspection of `mailboxMultiResolveAccess_` found no new source defect. The existing fail-closed code first resolves the exact opaque connection ID, excludes a revoked connection, then requires active membership in that connection's exact zone before comparing the actual `viewer`, `responder`, `manager`, `admin`, and `owner` roles.
+
+The new focused behavioral test closes the previous evidence gap:
+
+- all `25` actual-role × minimum-role combinations;
+- owner access and allowed shared-role behavior;
+- zone mismatch, cross-user denial, and exact selection between two connections with the same visible identity;
+- a pending invite without membership, plus expired, revoked, and replayed/accepted invites;
+- acceptance of every supported invite role and reactivation of a revoked member only with the invited role;
+- the actor/invite delegation matrix for the actual roles;
+- revoked membership, a hidden revoked connection, and the explicit `reauth_required` boundary.
+
+`MultiAccount.gs` is unchanged. The actual schema has no separate `hidden` status: a revoked connection is hidden by exclusion from visible accounts.
+
 ## Atomic claims
 
 | ID | Claim | Status | Evidence |
@@ -36,7 +52,13 @@ The Telegram callback contained an attachment ordinal from one MIME read. On the
 | VR-018-07 | The added source contains no credential material. | VERIFIED | added-line secret-pattern matches `0` |
 | VR-018-08 | The native Telegram owner receives the correct file after attachment reordering. | UNVERIFIED | staging/native download was not run |
 | VR-018-09 | The correction is active in production. | UNVERIFIED | production/HEAD remains v65; no promotion ran |
+| VR-018-10 | All five roles allow only their actual minimum-role thresholds. | VERIFIED | focused access matrix `7/7`, role assertions `25/25` |
+| VR-018-11 | Zone mismatch, cross-user access, and revoked membership receive no connection access. | VERIFIED | direct behavioral regression |
+| VR-018-12 | Pending, expired, revoked, and replayed invites grant no unauthorized access. | VERIFIED | invite lifecycle regression |
+| VR-018-13 | Exact connection selection does not depend on a display name or email address. | VERIFIED | duplicate-visible-identity selection regression |
+| VR-018-14 | Closing the access evidence gap required no product-code correction. | VERIFIED | `MultiAccount.gs` unchanged |
+| VR-018-15 | The native/runtime access matrix passed acceptance in the deployed Telegram flow. | UNVERIFIED | no live Gmail/OAuth/Telegram or release action ran |
 
 ## Release decision
 
-The source correction is ready for a normal PR and required CI. No new immutable candidate was created: current owner authorization does not permit a hidden release contour, and native download acceptance is still absent. Until that acceptance exists, `GT-048` and `B1-28` remain `PARTIAL`.
+The source correction and focused access evidence are ready for a normal PR and required CI. No new immutable candidate was created: current owner authorization does not permit a hidden release contour, and native download plus deployed access acceptance are still absent. Until that acceptance exists, `GT-048` and `B1-28` remain `PARTIAL`.

@@ -368,7 +368,8 @@
 - **Root cause:** Telegram-картка кодувала позицію вкладення в MIME-списку. Під час повторного читання Gmail зміна порядку, однакові назви або інший склад MIME-частин могли спрямувати callback на інше вкладення.
 - **Source fix:** нові картки використовують короткий opaque identity token, похідний від стабільних MIME/Gmail атрибутів. Сервер повторно читає лист, вимагає рівно один точний збіг і fail closed для відсутнього або неоднозначного результату. Raw Gmail attachment ID у callback не передається.
 - **Сумісність:** історичні `mail.att:` і `a2.` callback залишаються доступними лише через legacy ordinal path; усі нові картки використовують exact identity.
-- **Локальний доказ:** reorder, duplicate names, Unicode inline data, zero-byte attachment, ambiguous-match rejection і legacy parsing перевірено; повний Apps Script suite `532/532`, added-lines secret scan `0`.
+- **Evidence gap:** exact connection context раніше не мав прямої поведінкової матриці для всіх п’яти ролей, поштових зон, invite lifecycle, revoked membership/connection і exact selection. Це був дефіцит тестового доказу, а не підтверджений source defect.
+- **Локальний доказ:** reorder, duplicate names, Unicode inline data, zero-byte attachment, ambiguous-match rejection і legacy parsing перевірено; focused access-matrix test `7/7` окремо перевіряє `25` role thresholds, owner/shared access, zone mismatch, cross-user denial, pending/expired/revoked/replayed invites, revoked/hidden connections, reauth boundary та exact connection selection. `MultiAccount.gs` не змінено.
 - **Release boundary:** source commit `f2c00d3`; production/HEAD Apps Script лишається v65, staging `0`, immutable v68 не переписано. Native Telegram download і staging acceptance `UNVERIFIED`.
 - **Доказ:** [VR-018](verification-reports/reports/VR-018/README.md)
 

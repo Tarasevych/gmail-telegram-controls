@@ -218,8 +218,8 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 - **Status:** PARTIAL.
 - **Source request:** `REQ-0035`; V3 task `B-01`.
-- **Locally VERIFIED:** new Telegram cards use an opaque exact-identity callback; the repeated read requires exactly one match; ambiguity fails closed; historical callbacks retain legacy compatibility.
-- **Gates:** targeted attachment tests `154/154`, final cumulative suite `532/532`, clean `git diff --check`, and `0` added-line secret-pattern matches.
+- **Locally VERIFIED:** new Telegram cards use an opaque exact-identity callback; the repeated read requires exactly one match; ambiguity fails closed; historical callbacks retain legacy compatibility. A separate focused test proves the complete role-threshold matrix, zone/cross-user isolation, invite lifecycle, revoked visibility, reauth boundary, and exact connection selection without changing product source.
+- **Gates:** previous targeted attachment tests `154/154` and cumulative suite `532/532`; new focused access-matrix test `7/7`.
 - **Still required:** a normal PR and required CI, owner-only native Telegram download acceptance, and only then a separately authorized cumulative immutable release contour.
 - **Release boundary:** production/HEAD v65, staging `0`, immutable v68 historical; this source correction is not deployed and does not change Versie 1.
 - **Evidence:** [GT-048](ISSUES.md), [VR-018](verification-reports/reports/VR-018/README.md).
