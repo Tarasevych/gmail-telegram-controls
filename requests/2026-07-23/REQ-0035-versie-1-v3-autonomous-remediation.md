@@ -452,3 +452,14 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - The same merge SHA was fast-forwarded to private GitLab `main`.
 - Live Gmail, Telegram, OAuth, staging, and production were unchanged. Production remains v65 and staging remains `0`.
 - Native owner acceptance for `/mail folder:spam`, the next-page callback, and empty/error states remains `UNVERIFIED`; the overall status is `PARTIAL`.
+## D-02 Box OAuth evidence / Доказ D-02 Box OAuth
+
+- **Status / Статус:** `VERIFIED` for the source-and-documentation contour; authenticated runtime remains `UNVERIFIED` / `VERIFIED` для контуру source і документації; authenticated runtime залишається `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `460b5a1fa5b42ef0378c1e868ff569b91db5479a`.
+- **Normal merge / Звичайне злиття:** PR `#90`, merge `7d99cd1ad3db9f8129b2849d2fb13f358b09b895`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `7d99cd1ad3db9f8129b2849d2fb13f358b09b895`.
+- **Implemented / Реалізовано:** explicit Box `root_readonly` scope; strict provider callback `errorDescription`; reconnect by stable Box account ID with legacy protected token-record lookup; no email-only identity fallback.
+- **Tests / Тести:** focused `3/3`; full Apps Script suite `615/615`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, release-state, and diff gates passed.
+- **Records / Записи:** `GT-059`, `B1-39`, `RCA-012`, `VR-030`.
+- **Boundary / Межа:** no live Box/Google OAuth, Gmail or Telegram mutation, staging, production promotion, token read, or secret-property read / без live Box/Google OAuth, змін Gmail чи Telegram, staging, production promotion, читання токенів або secret properties.
+- **Primary references / Первинні джерела:** [Box authorize endpoint](https://developer.box.com/reference/get-authorize), [Box scopes](https://developer.box.com/guides/api-calls/permissions-and-errors/scopes).
