@@ -130,3 +130,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-017/README.md](reports/VR-017/README.md)
 - **Висновок:** final suite `531/531`; multi-account switch/shared context частково прийнято нативно, але one-second/offline/drafts gate не пройдено. v68 не promoted; production v65, staging `0`, immutable v68 retained, journal `abandoned`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-018 — Exact identity для Telegram-вкладень
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `B-01`, ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, local regression/full-suite evidence і release boundary.
+- **Звіт:** [reports/VR-018/README.md](reports/VR-018/README.md)
+- **Висновок:** source correction і локальні тести `532/532` VERIFIED; native Telegram download, staging acceptance та deployment лишаються `UNVERIFIED`. Production/HEAD v65 і immutable v68 не змінено.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
