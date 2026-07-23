@@ -396,3 +396,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - The same merge SHA was fast-forwarded to private GitLab `main`.
 - Live Gmail/OAuth/Telegram, permissions, production v65, staging `0`, menu, and immutable history were unchanged.
 - Deployed/native access acceptance remains `UNVERIFIED`; `B1-28/GT-048/VR-018` correctly remain `PARTIAL`.
+
+## 2026-07-23 — D-01 Google Drive OAuth contract evidence / Доказ контракту Google Drive OAuth
+
+### Українською
+
+- V3 contour `D-01` реалізовано як source-only `B1-37`, `GT-057`, `VR-028`; першопричину зафіксовано в `RCA-011`.
+- Підтверджена першопричина: Drive callback споживав одноразовий OAuth state, але не перевіряв, що state належить provider `drive`, до token exchange; error envelope також не мав повного fail-closed контролю description.
+- Виправлено exact provider binding після одноразового consume і до token exchange; додано bounded/sanitized validation provider error envelope без публікації state, code, token або account identifiers.
+- Synthetic contract suite перевіряє owner/session binding, exact callback/redirect, hash-only TTL/limit, expiry/replay, strict error envelope, wrong-provider denial без token exchange, token-free DTO, refresh/generation fail-closed і exact selected-account disconnect.
+- Focused Drive OAuth contracts: `8/8`; повний Apps Script suite: `610/610`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff і sensitive-pattern gates пройшли.
+- Source commit: `31bef9b126f898310214d82becedc47db8d8d544`; GitHub PR [#88](https://github.com/Tarasevych/gmail-telegram-controls/pull/88) пройшов `8/8` checks і був злитий normal merge як `10b1d99665a296ee4d6f69997b039d0dae9f59f3`.
+- Той самий merge SHA fast-forward опубліковано в приватний GitLab `main`.
+- Живий OAuth, Google consent, Gmail/Drive mutation, staging і production promotion не виконувалися. Production лишається v65, staging `0`.
+- Native callback acceptance лишається `UNVERIFIED`; загальний статус контуру `PARTIAL`.
+
+### English
+
+- V3 contour `D-01` was implemented as source-only `B1-37`, `GT-057`, and `VR-028`; the root cause is recorded in `RCA-011`.
+- Confirmed root cause: the Drive callback consumed a one-use OAuth state but did not verify that the state belonged to provider `drive` before token exchange; its error envelope also lacked complete fail-closed description validation.
+- Exact provider binding now occurs after one-use consumption and before token exchange; bounded and sanitized provider error-envelope validation was added without publishing state, code, token, or account identifiers.
+- The synthetic contract suite covers owner/session binding, exact callback/redirect, hash-only TTL/limit, expiry/replay, strict error envelopes, wrong-provider denial without token exchange, token-free DTOs, fail-closed refresh/generation behavior, and exact selected-account disconnect.
+- Focused Drive OAuth contracts: `8/8`; complete Apps Script suite: `610/610`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and sensitive-pattern gates passed.
+- Source commit: `31bef9b126f898310214d82becedc47db8d8d544`; GitHub PR [#88](https://github.com/Tarasevych/gmail-telegram-controls/pull/88) passed `8/8` checks and was normal-merged as `10b1d99665a296ee4d6f69997b039d0dae9f59f3`.
+- The same merge SHA was fast-forwarded to private GitLab `main`.
+- No live OAuth, Google consent, Gmail/Drive mutation, staging deployment, or production promotion occurred. Production remains v65 and staging remains `0`.
+- Native callback acceptance remains `UNVERIFIED`; the overall contour status is `PARTIAL`.
