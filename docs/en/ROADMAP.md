@@ -248,3 +248,15 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release boundary:** source commit `d4beb1e`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box state changed.
 - **Evidence:** [GT-052](ISSUES.md), [VR-022](verification-reports/reports/VR-022/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-33 — Persistent app session after reload without repeated OAuth
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0036`; P0 session continuity.
+- **Locally VERIFIED:** boot-first app-refresh recovery through Telegram `SecureStorage`; memory-only bearer; single-flight client recovery; bounded idempotent server rotation for racing tabs; content-free failure classification; terminal-only secure cleanup; explicit revocation boundary.
+- **Gates:** focused auth/session contracts pass, the complete Apps Script suite passes `561/561`, the diff check is clean, and added lines contain `0` credential signatures.
+- **Still required:** native Telegram Desktop/mobile hard reload and WebView reopen, two concurrent launch attempts, absence of a repeated connection screen, staging acceptance, and separately authorized production promotion.
+- **Platform boundary:** automatic `restoreItem` is not used because Telegram may request user confirmation; browsers without Telegram `SecureStorage` fall back to the existing fail-closed launch flow.
+- **Release boundary:** source commit `975785a`; no immutable, staging, production, OAuth, Gmail, or Telegram state changed.
+- **Evidence:** [GT-053](ISSUES.md), [VR-023](verification-reports/reports/VR-023/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

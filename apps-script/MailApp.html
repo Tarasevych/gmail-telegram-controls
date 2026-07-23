@@ -5305,6 +5305,7 @@
 
       var tg = window.Telegram && window.Telegram.WebApp;
       var MAILBOX_BRIDGE_URL = "https://tarasevych.github.io/gmail-telegram-controls/?action=mailbox";
+      var TELEGRAM_SECURE_SESSION_KEY = "gmail_telegram_app_refresh_v1";
       // Attachment bytes are large enough to terminate a mobile Telegram
       // WebView if every visited thread remains cached. Keep only a small LRU
       // window and bound transient object URLs independently.
@@ -5320,6 +5321,7 @@
       var state = {
         session: null,
         refreshToken: null,
+        secureSessionPromise: null,
         cacheScope: "",
         renewPromise: null,
         sessionClosing: false,
@@ -6044,19 +6046,22 @@
 
       function isMailboxSessionFailure(error) {
         var code = safeText(error && error.code).toUpperCase();
-        if (code === "SESSION_EXPIRED" || code === "UNAUTHORIZED") return true;
+        if (code === "SESSION_EXPIRED" || code === "APP_SESSION_EXPIRED" ||
+            code === "UNAUTHORIZED" || code === "TELEGRAM_AUTH_REQUIRED" ||
+            code === "UNTRUSTED_NONCE_REPLAY") return true;
         var message = safeText(error && error.message);
         return /(?:session|сеанс|сесі).*(?:expired|заверш|недійс|недоступ)|(?:expired|заверш).*(?:session|сеанс|сесі)/i.test(message);
       }
 
       function isMailboxSessionExpired(error) {
         var code = safeText(error && error.code).toUpperCase();
-        if (code) return code === "SESSION_EXPIRED";
+        if (code) return code === "SESSION_EXPIRED" || code === "APP_SESSION_EXPIRED";
         return /(?:session|сеанс|сесі).*(?:expired|заверш)|(?:expired|заверш).*(?:session|сеанс|сесі)/i.test(safeText(error && error.message));
       }
 
       function handleMailboxSessionFailure(error) {
         if (!isMailboxSessionFailure(error)) return false;
+        recordMailboxSessionDiagnostic(error);
         state.session = null;
         state.routeReady = false;
         state.requestVersion += 1;
@@ -6069,6 +6074,171 @@
           );
         }
         return true;
+      }
+
+      function mailboxSessionReasonCode(error) {
+        var code = safeText(error && error.code).toUpperCase();
+        if (code === "UNTRUSTED_NONCE_REPLAY") return code;
+        if (code === "TELEGRAM_AUTH_REQUIRED") return code;
+        if (code === "REAUTH_REQUIRED" || code === "GMAIL_REAUTH_REQUIRED") {
+          return "GMAIL_REAUTH_REQUIRED";
+        }
+        if (code === "FORBIDDEN" || code === "ACCOUNT_LINK_MISMATCH") {
+          return "ACCOUNT_LINK_MISMATCH";
+        }
+        if (code === "SESSION_EXPIRED" || code === "APP_SESSION_EXPIRED" ||
+            code === "UNAUTHORIZED") return "APP_SESSION_EXPIRED";
+        if (code === "BUSY" || code === "TRANSIENT_NETWORK_FAILURE" ||
+            (typeof navigator !== "undefined" && navigator.onLine === false)) {
+          return "TRANSIENT_NETWORK_FAILURE";
+        }
+        return "APP_SESSION_ERROR";
+      }
+
+      function recordMailboxSessionDiagnostic(error) {
+        var code = mailboxSessionReasonCode(error);
+        var trace = window.__gtSessionDiagnostics || (window.__gtSessionDiagnostics = {
+          counts: {},
+          lastCode: ""
+        });
+        trace.lastCode = code;
+        trace.counts[code] = Number(trace.counts[code] || 0) + 1;
+        return code;
+      }
+
+      function telegramSecureStorageAvailable() {
+        return Boolean(
+          tg && tg.SecureStorage &&
+          typeof tg.SecureStorage.getItem === "function" &&
+          typeof tg.SecureStorage.setItem === "function" &&
+          typeof tg.SecureStorage.removeItem === "function"
+        );
+      }
+
+      function telegramSecureSessionGet() {
+        if (!telegramSecureStorageAvailable()) {
+          return Promise.resolve({ available: false, token: "", canRestore: false });
+        }
+        return new Promise(function (resolve) {
+          var settled = false;
+          var timer = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            resolve({ available: true, token: "", canRestore: false, timedOut: true });
+          }, 750);
+          try {
+            tg.SecureStorage.getItem(TELEGRAM_SECURE_SESSION_KEY, function (error, value, canRestore) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              var token = safeText(value);
+              if (!/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(token)) token = "";
+              resolve({
+                available: true,
+                token: error ? "" : token,
+                canRestore: !error && !token && canRestore === true
+              });
+            });
+          } catch (error) {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            resolve({ available: true, token: "", canRestore: false });
+          }
+        });
+      }
+
+      function telegramSecureSessionSet(refreshToken) {
+        var token = safeText(refreshToken);
+        if (!telegramSecureStorageAvailable() ||
+            !/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(token)) {
+          return Promise.resolve(false);
+        }
+        return new Promise(function (resolve) {
+          var settled = false;
+          var timer = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            resolve(false);
+          }, 750);
+          try {
+            tg.SecureStorage.setItem(TELEGRAM_SECURE_SESSION_KEY, token, function (error, stored) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              resolve(!error && stored !== false);
+            });
+          } catch (error) {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            resolve(false);
+          }
+        });
+      }
+
+      function telegramSecureSessionRemove() {
+        if (!telegramSecureStorageAvailable()) return Promise.resolve(false);
+        return new Promise(function (resolve) {
+          var settled = false;
+          var timer = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            resolve(false);
+          }, 750);
+          try {
+            tg.SecureStorage.removeItem(TELEGRAM_SECURE_SESSION_KEY, function (error, removed) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              resolve(!error && removed !== false);
+            });
+          } catch (error) {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            resolve(false);
+          }
+        });
+      }
+
+      function isTerminalRefreshCredentialFailure(error) {
+        var code = safeText(error && error.code).toUpperCase();
+        return code === "SESSION_EXPIRED" || code === "APP_SESSION_EXPIRED" ||
+          code === "UNAUTHORIZED" || code === "FORBIDDEN";
+      }
+
+      function recoverMailboxSessionFromSecureStorage() {
+        if (state.secureSessionPromise) return state.secureSessionPromise;
+        var recovery = telegramSecureSessionGet().then(function (stored) {
+          if (!stored || !stored.token) return null;
+          return callRenewSession(stored.token).then(normalizeResponse).then(function (opened) {
+            var sessionToken = safeText(opened && (opened.sessionToken || opened.session || opened.token));
+            var refreshToken = safeText(opened && (opened.refreshToken || opened.sessionRefreshToken));
+            if (!sessionToken || !refreshToken) {
+              var invalid = new Error("Сервер не повернув повну поновлену сесію.");
+              invalid.code = "APP_SESSION_EXPIRED";
+              throw invalid;
+            }
+            telegramSecureSessionSet(refreshToken);
+            return opened;
+          }).catch(function (error) {
+            recordMailboxSessionDiagnostic(error);
+            if (isTerminalRefreshCredentialFailure(error)) {
+              telegramSecureSessionRemove();
+              return null;
+            }
+            throw error;
+          });
+        });
+        state.secureSessionPromise = recovery.then(function (opened) {
+          state.secureSessionPromise = null;
+          return opened;
+        }, function (error) {
+          state.secureSessionPromise = null;
+          throw error;
+        });
+        return state.secureSessionPromise;
       }
 
       function callOpenSession(initData) {
@@ -6193,6 +6363,7 @@
           var refreshAtClose = state.refreshToken;
           var result = normalizeResponse(await callCloseMailboxSession(sessionAtClose, refreshAtClose));
           if (!result || result.signedOut !== true) throw new Error("Сервер не підтвердив завершення сеансу.");
+          await telegramSecureSessionRemove();
           state.session = null;
           state.refreshToken = null;
           state.renewPromise = null;
@@ -6248,6 +6419,7 @@
           state.session = sessionToken;
           state.refreshToken = nextRefreshToken;
           state.sessionFailureShown = false;
+          telegramSecureSessionSet(nextRefreshToken);
           return data;
         });
         state.renewPromise = renewal.then(function (data) {
@@ -6752,7 +6924,11 @@
             ? Promise.resolve()
             : renewMailboxSession();
           return renewal.catch(function (renewError) {
-            handleMailboxSessionFailure(error);
+            if (isTerminalRefreshCredentialFailure(renewError)) {
+              state.refreshToken = null;
+              telegramSecureSessionRemove();
+            }
+            handleMailboxSessionFailure(renewError);
             throw renewError;
           }).then(function () {
             return executeMailboxRpc(payload, state.session).catch(function (retryError) {
@@ -18960,18 +19136,31 @@
             tg.expand();
             if (typeof tg.disableVerticalSwipes === "function") tg.disableVerticalSwipes();
           }
-          if (embeddedLaunchError) {
+          var opened = null;
+          var secureRecoveryError = null;
+          if (state.session) {
+            opened = { sessionToken: state.session };
+          } else {
+            try {
+              opened = await recoverMailboxSessionFromSecureStorage();
+            } catch (error) {
+              secureRecoveryError = error;
+            }
+          }
+          if (!opened && embeddedLaunchError) {
+            if (secureRecoveryError &&
+                mailboxSessionReasonCode(secureRecoveryError) === "TRANSIENT_NETWORK_FAILURE") {
+              throw secureRecoveryError;
+            }
             var launchFailure = new Error(embeddedLaunchError);
             launchFailure.code = embeddedLaunchErrorCode;
             launchFailure.recoveryToken = embeddedCapacityRecoveryToken;
             throw launchFailure;
           }
-          var opened;
-          if (state.session) {
-            opened = { sessionToken: state.session };
-          } else if (embeddedLaunchNonce) {
+          if (!opened && embeddedLaunchNonce) {
             opened = normalizeResponse(await callRedeemLaunch(embeddedLaunchNonce));
-          } else {
+            embeddedLaunchNonce = "";
+          } else if (!opened) {
             opened = normalizeResponse(await callOpenSession(tg ? tg.initData : ""));
           }
           state.session = typeof opened === "string"
@@ -18981,6 +19170,10 @@
             ? safeText(opened && (opened.refreshToken || opened.sessionRefreshToken))
             : state.refreshToken;
           if (!state.session) throw new Error("Сервер не створив захищену сесію.");
+          if (state.refreshToken) telegramSecureSessionSet(state.refreshToken);
+          embeddedLaunchError = "";
+          embeddedLaunchErrorCode = "";
+          embeddedCapacityRecoveryToken = "";
           var bootstrap = opened && typeof opened === "object" && (opened.bootstrap || opened.mailbox);
           if (!bootstrap || (!bootstrap.folders && !bootstrap.labels && !bootstrap.customLabels && !bootstrap.account)) {
             bootstrap = await rpc({ op: "bootstrap" });

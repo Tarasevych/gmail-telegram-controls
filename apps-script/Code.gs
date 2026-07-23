@@ -3727,7 +3727,10 @@ function claimMailboxLaunchInitData_(rawInitData) {
       .filter(item => item && /^[A-Za-z0-9_-]{43}$/.test(String(item.id || '')) &&
         now - Number(item.at || 0) < 10 * 60 * 1000);
     if (claims.some(item => constantTimeEqual_(String(item.id), claimId))) {
-      throw new Error('Цю Telegram-команду вже використано. Закрийте вікно та відкрийте пошту ще раз.');
+      throw mailboxError_(
+        'UNTRUSTED_NONCE_REPLAY',
+        'Цю Telegram-команду вже використано. Закрийте вікно та відкрийте пошту ще раз.'
+      );
     }
     if (claims.length >= 100) {
       throw new Error('Забагато активних запусків пошти. Спробуйте пізніше.');

@@ -456,7 +456,7 @@ test('sessions reject missing signatures and stale tokens while isolating every 
   assert.ok(token);
 });
 
-test('mailbox launch initData is claimed once and the 60-second nonce redeems once', () => {
+test('mailbox launch initData is claimed once and a new browser cannot replay its nonce', () => {
   const harness = makeContext();
   const { context } = harness;
   const initData = telegramInitData();
@@ -465,7 +465,10 @@ test('mailbox launch initData is claimed once and the 60-second nonce redeems on
   assert.ok(firstOpen.sessionToken);
   assert.match(firstOpen.refreshToken, /^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/);
   const replay = context.mailboxOpenSession(initData);
-  resultFailed(replay, 'the same signed Telegram launch must not mint another session');
+  assert.equal(
+    resultFailed(replay, 'the same signed Telegram launch must not mint another session').code,
+    'UNTRUSTED_NONCE_REPLAY'
+  );
   assert.match(replay.error.message, /вже використано/i);
 
   const token = firstOpen.sessionToken;
@@ -508,7 +511,7 @@ test('canonical Telegram hash claims block reordered and equivalently encoded re
     const signed = telegramInitData();
     resultData(harness.context.mailboxOpenSession(signed));
     const replay = harness.context.mailboxOpenSession(variants(signed)[replayIndex]);
-    assert.equal(resultFailed(replay).code, 'UNAUTHORIZED');
+    assert.equal(resultFailed(replay).code, 'UNTRUSTED_NONCE_REPLAY');
     assert.match(replay.error.message, /вже використано/i);
     assert.equal(JSON.parse(harness.propertyValues.MAILBOX_REFRESH_FAMILIES_V1).length, 1);
   }
@@ -668,19 +671,20 @@ test('refresh renewal rejects tampering, expiry, and an unissued token without a
   );
 });
 
-test('refresh family consumes one jti exactly once and revokes its preceding bearer', () => {
+test('refresh family returns one idempotent rotation to parallel reloads and revokes its preceding bearer', () => {
   const harness = makeContext();
   const { context, cacheValues } = harness;
   const opened = resultData(context.mailboxOpenSession(telegramInitData()));
 
-  const attempts = [
-    context.mailboxRenewSession(opened.refreshToken),
-    context.mailboxRenewSession(opened.refreshToken),
-  ];
-  assert.equal(attempts.filter(result => result && result.ok === true).length, 1);
-  assert.equal(attempts.filter(result => result && result.ok === false).length, 1);
-  const renewed = resultData(attempts.find(result => result.ok === true));
-  assert.equal(resultFailed(attempts.find(result => result.ok === false)).code, 'SESSION_EXPIRED');
+  const attempts = Array.from({ length: 10 }, () =>
+    resultData(context.mailboxRenewSession(opened.refreshToken))
+  );
+  const renewed = attempts[0];
+  attempts.forEach(result => assert.deepEqual(
+    JSON.parse(JSON.stringify(result)),
+    JSON.parse(JSON.stringify(renewed)),
+    'parallel reloads with the same authenticated refresh credential receive one rotation'
+  ));
 
   assert.equal(
     cacheValues.has(context.mailboxSessionKey_(opened.sessionToken)),
@@ -693,10 +697,15 @@ test('refresh family consumes one jti exactly once and revokes its preceding bea
     'the preceding bearer must fail through the public RPC boundary'
   );
   assert.equal(context.mailboxRequireSession_(renewed.sessionToken).familyId.length, 43);
+
+  const originalClaims = JSON.parse(
+    Buffer.from(opened.refreshToken.split('.')[1], 'base64url').toString('utf8')
+  );
+  cacheValues.delete(context.mailboxSessionRenewalReplayKey_(originalClaims));
   assert.equal(
     resultFailed(context.mailboxRenewSession(opened.refreshToken)).code,
     'SESSION_EXPIRED',
-    'the presented refresh token must remain revoked after rotation'
+    'the consumed credential remains revoked after its bounded idempotency window'
   );
 });
 
@@ -5442,6 +5451,10 @@ test('MailApp authenticates with Telegram initData without URL/localStorage secr
   assert.match(uiSource, /\.initData\b/, 'MailApp must send Telegram.WebApp.initData to the backend');
   assert.match(uiSource, /mailboxOpenSession/, 'MailApp must open an authenticated mailbox session');
   assert.match(uiSource, /mailboxRenewSession/, 'MailApp must renew an authenticated mailbox session in memory');
+  assert.match(uiSource, /Telegram\.WebApp/);
+  assert.match(uiSource, /SecureStorage/, 'Telegram SecureStorage must preserve only the app refresh credential');
+  assert.match(uiSource, /recoverMailboxSessionFromSecureStorage/,
+    'reload must attempt secure session recovery before consuming a new launch');
   assert.match(uiSource, /mailboxRpc/, 'MailApp must use the allowlisted mailbox RPC');
   assert.match(uiSource, /embeddedLaunchNonce/, 'MailApp must accept a one-use server launch nonce');
   assert.match(uiSource, /mailboxRedeemLaunch/, 'MailApp must redeem the nonce before receiving its in-memory session');

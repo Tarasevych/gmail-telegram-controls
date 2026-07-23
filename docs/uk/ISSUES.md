@@ -410,3 +410,15 @@
 - **Залишкова межа:** native Telegram Desktop/mobile/WebView acceptance для PDF, media, Unicode ZIP, malformed real-world archives і fallback/download лишається `UNVERIFIED`; source не заявляє extraction або універсальний preview.
 - **Release boundary:** source commit `d4beb1e`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
 - **Доказ:** [VR-022](verification-reports/reports/VR-022/README.md)
+
+## GT-053 — Hard reload втрачав app session і повторно використовував уже спожитий launch proof
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0036`
+- **Product task:** `B1-33` / P0 session continuity
+- **Root cause:** bearer session і rotating app-refresh family уже існували на сервері, але клієнт зберігав обидва credentials лише в RAM. Після F5/hard reload новий document не мав refresh credential і повторював одноразовий Telegram `initData` claim або вже видалений launch nonce. Сервер правильно відхиляв replay, але UI помилково перетворював безпечну відмову на повторний екран підключення.
+- **Source fix:** лише app refresh credential зберігається через Telegram `SecureStorage`; session bearer залишається memory-only. Boot спочатку виконує single-flight secure recovery, сервер обертає refresh family, а bounded `60 s` idempotency cache повертає той самий підтверджений rotation result конкурентним вкладкам. Explicit revoke або невідповідність чинній family блокує replay. Terminal refresh failure очищає secure item; transient network failure не маскується як auth loss.
+- **Локальний доказ:** focused `mail_client`, `mail_actions`, `mail_app_contract` і `mail_launch_p0` suites пройшли; повний Apps Script suite пройшов `561/561`; `git diff --check` чистий; у нових рядках `0` credential signatures. Behavioral test підтверджує десять ідентичних renewal requests із одним результатом та відмову старому token після завершення replay window.
+- **Залишкова межа:** реальний Telegram Desktop/mobile `SecureStorage`, F5/WebView reopen, паралельні native launches, staging і production acceptance лишаються `UNVERIFIED`. Source не заявляє persistent session у браузері без Telegram `SecureStorage` і не зберігає Gmail OAuth tokens, Telegram `initData`, mail content або session bearer у JS web storage.
+- **Release boundary:** source commit `975785a`; immutable, staging, production, OAuth, Gmail або Telegram mutation не виконувалися.
+- **Доказ:** [VR-023](verification-reports/reports/VR-023/README.md)

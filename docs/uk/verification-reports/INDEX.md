@@ -175,3 +175,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-022/README.md](reports/VR-022/README.md)
 - **Висновок:** source hardening і повний suite `560/560` VERIFIED; native preview/fallback acceptance, staging і deployment лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-023 — Persistent app session після reload
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** `REQ-0036`, втрата memory-only refresh state, replay уже спожитого launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, локальні regression/full-suite evidence та release boundary.
+- **Звіт:** [reports/VR-023/README.md](reports/VR-023/README.md)
+- **Висновок:** source fix і повний suite `561/561` VERIFIED; native Telegram hard-reload, multi-tab, staging та production acceptance лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
