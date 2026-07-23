@@ -57,6 +57,8 @@ test('v65 helper is fail closed and preserves at-most-once release mutations', (
   assert.match(helper, /function Wait-DeploymentVersion[\s\S]*\$maxAttempts = 5[\s\S]*Start-Sleep -Seconds 1/);
   assert.match(helper, /Wait-DeploymentVersion \$stableUri \$CandidateVersion @\(\$RollbackVersion\)/);
   assert.match(helper, /Wait-DeploymentVersion \$stableUri \$RollbackVersion @\(\$CandidateVersion\)/);
+  assert.match(helper, /for \(\$attempt = 0; \$attempt -lt 5 -and \$staging\.Count -ne 1; \$attempt\+\+\)/);
+  assert.match(helper, /if \(\$attempt -gt 0\) \{ Start-Sleep -Seconds 1 \}/);
   const promote = helper.slice(helper.indexOf('  if ($Promote) {'), helper.indexOf('  if ($CleanupStaging) {'));
   assert.equal((promote.match(/Invoke-GoogleJson PUT \$stableUri/g) || []).length, 1);
   assert.match(helper, /sourceMainSha=\$SourceMainSha/);

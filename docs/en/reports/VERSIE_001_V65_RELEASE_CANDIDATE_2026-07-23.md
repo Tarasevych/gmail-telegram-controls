@@ -32,3 +32,11 @@ This is helper source only. Production remains immutable v64 with staging `0`; i
 ## Next gate
 
 After focused/full tests, documentation and required PR checks pass, merge normally and run read-only `PreflightOnly`. Run exactly one `StageOnly` only if stable/HEAD v64, rollback hashes, future-version guard, staging count and journal boundary all pass.
+
+## Follow-up: deployment visibility delay
+
+- **Status:** `PARTIAL`
+- The first `StageOnly` created immutable v65 and exactly one staging deployment, but the immediate Apps Script Deployments API read did not yet expose the newly created deployment.
+- Production and HEAD remained on exact v64; the journal stopped at `staging_create_reserved`, so another create was prohibited.
+- The helper now performs bounded polling: at most five read-back attempts with a one-second delay. It does not repeat `deployments.create` and accepts only exactly one deployment with the exact version and description.
+- Staging acceptance and production promotion remain unverified until their separate gate.
