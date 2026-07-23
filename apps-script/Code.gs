@@ -796,7 +796,7 @@ function gmailNotificationLabelsEligible_(labelIds, notificationMode) {
   (Array.isArray(labelIds) ? labelIds : []).forEach(function (label) {
     labels[String(label)] = true;
   });
-  return Boolean(labels.INBOX) && !labels.SPAM && !labels.TRASH && !labels.SENT &&
+  return Boolean(labels.INBOX) && !labels.SPAM && !labels.TRASH &&
     (String(notificationMode || 'all') !== 'important' || Boolean(labels.IMPORTANT));
 }
 

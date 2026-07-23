@@ -6399,7 +6399,7 @@ test('realtime lane delivers mail newer than the frozen backlog upper bound exac
   } finally { Object.assign(context, originals); }
 });
 
-test('realtime notifications durably ignore a Sent copy even when Gmail also labels it Inbox', () => {
+test('realtime notifications deliver a Sent and Inbox copy exactly once by Gmail message id', () => {
   const now = Date.now();
   const memory = memoryProperties({
     BOT_TOKEN: 'test-token', CHAT_ID: '123',
@@ -6423,16 +6423,19 @@ test('realtime notifications durably ignore a Sent copy even when Gmail also lab
     };
     context.notifyMessage_ = () => { notified += 1; return { message_id: notified }; };
 
-    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX', 'SENT'], 'all'), false);
+    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX', 'SENT'], 'all'), true);
     assert.equal(context.gmailNotificationLabelsEligible_(['INBOX'], 'all'), true);
-    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
+    assert.equal(context.gmailNotificationLabelsEligible_(['SENT'], 'all'), false);
+    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX', 'SENT'], 'important'), false);
+    assert.equal(context.gmailNotificationLabelsEligible_(['INBOX', 'SENT', 'IMPORTANT'], 'important'), true);
+    assert.equal(context.runRealtimeMailCheck_('timer').delivered, 1);
     const firstState = JSON.parse(memory.store.GMAIL_NOTIFICATION_REALTIME_V1_123_legacy);
-    assert.equal(firstState.lastScanLabelSkipped, 1);
-    assert.equal(firstState.lastScanEligible, 0);
+    assert.equal(firstState.lastScanLabelSkipped, 0);
+    assert.equal(firstState.lastScanEligible, 1);
     assert.deepEqual(JSON.parse(memory.store.SEEN_MESSAGE_IDS), ['sent_inbox_copy_12345']);
     assert.equal(context.runRealtimeMailCheck_('timer').delivered, 0);
-    assert.equal(fetched, 1, 'the durable seen boundary must avoid refetching the Sent copy');
-    assert.equal(notified, 0);
+    assert.equal(fetched, 1, 'the durable seen boundary must avoid refetching the delivered copy');
+    assert.equal(notified, 1);
   } finally { Object.assign(context, originals); }
 });
 
