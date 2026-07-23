@@ -431,3 +431,9 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Terminal release state:** v70 was not promoted. The owner menu is production, the exact staging deployment was removed by the journal-bound helper, active staging is `0`, the v70 journal is `abandoned`, and immutable v70 remains historical.
 - **Remaining boundary:** native Windows SecureStorage status, hard reload, ten launches, mobile/WebView reopen, concurrent launch, one-second p95, and bidirectional account switching remain `UNVERIFIED`/`BLOCKED`. Browser-level POST resubmission occurs before inner MailApp JavaScript executes, so the patch does not claim to remove it.
 - **Evidence:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)
+
+## 2026-07-23: GT-051 thread-detail continuation
+
+Status: PARTIAL
+
+The shared transfer manager now also owns the thread/message-detail fetch lane. Cache hits remain immediately usable while revalidation is queued in the background. Apps Script RPC reports indeterminate phase progress only, exposes no false cancel action, reuses one task for retry, and retains the existing generation guard against stale responses. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. Draft persistence, URL import, server-resumable restart, real RPC abort, and native slow-network/minimize acceptance remain open under GT-051.

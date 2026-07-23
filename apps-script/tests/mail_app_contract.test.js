@@ -3031,8 +3031,13 @@ test('unified inbox and every mailbox operation preserve the exact Gmail connect
     '      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {',
     '      function mailboxViewContext() {'
   );
+  const threadTransferSource = sourceBetween(
+    '      function runManagedThreadDetailFetch(id, connectionId, generation, hadCache, openOptions) {',
+    '      async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {'
+  );
   assert.match(readerSource, /state\.selectedConnectionId = requestedConnectionId/);
-  assert.match(refreshReaderSource, /rpc\(\{ op: "getThread", threadId: id, connectionId: connectionId \}\)/);
+  assert.match(refreshReaderSource, /runManagedThreadDetailFetch\(/);
+  assert.match(threadTransferSource, /rpc\(\{ op: "getThread", threadId: id, connectionId: connectionId \}\)/);
   assert.match(readerSource, /p0RefreshThread\(id, requestedConnectionId/);
 
   const actionSource = sourceBetween(

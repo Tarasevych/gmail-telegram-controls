@@ -10192,14 +10192,77 @@
         window.setTimeout(p0CheckClientRelease, 15000);
       }
 
+      function runManagedThreadDetailFetch(id, connectionId, generation, hadCache, openOptions) {
+        var options = openOptions || {};
+        var key = safeText(connectionId) + ":" + safeText(id);
+        p0Runtime.threadDetailTransfers = p0Runtime.threadDetailTransfers || new Map();
+        var inFlight = options.transferTask ? null : p0Runtime.threadDetailTransfers.get(key);
+        var task = options.transferTask || (inFlight && inFlight.task) || createManagedTransfer({
+          kind: "thread-detail",
+          label: hadCache ? "Оновлюю розмову" : "Відкриваю розмову",
+          canCancel: false,
+          canPause: false,
+          canRetry: true,
+          byteProgress: false
+        });
+
+        task.retry = function () {
+          if (generation !== p0Runtime.readerGeneration ||
+              state.selectedThreadId !== id || state.selectedConnectionId !== connectionId) {
+            task.canRetry = false;
+            task.transferState = "cancelled";
+            task.finishedAt = Date.now();
+            renderTransferManager();
+            scheduleTransferPrune();
+            return Promise.resolve(false);
+          }
+          return p0RefreshThread(
+            id,
+            connectionId,
+            generation,
+            hadCache,
+            Object.assign({}, options, { transferTask: task })
+          );
+        };
+
+        if (inFlight && inFlight.promise) return inFlight;
+
+        var promise = enqueueManagedTransfer(task, function (_managedTask, controls) {
+          controls.setPhase("transferring");
+          return Promise.all([
+            rpc({ op: "getThread", threadId: id, connectionId: connectionId }),
+            rpc({ op: "attentionState", threadId: id, connectionId: connectionId }).catch(function () { return null; })
+          ]).then(function (responses) {
+            controls.setPhase("processing");
+            return responses;
+          });
+        });
+        var transfer = { task: task, promise: promise };
+        p0Runtime.threadDetailTransfers.set(key, transfer);
+        promise.then(function () {
+          if (p0Runtime.threadDetailTransfers.get(key) === transfer) {
+            p0Runtime.threadDetailTransfers.delete(key);
+          }
+        }, function () {
+          if (p0Runtime.threadDetailTransfers.get(key) === transfer) {
+            p0Runtime.threadDetailTransfers.delete(key);
+          }
+        });
+        return transfer;
+      }
+
       async function p0RefreshThread(id, connectionId, generation, hadCache, openOptions) {
         var options = openOptions || {};
         state.threadLoading = true;
         try {
-          var responses = await Promise.all([
-            rpc({ op: "getThread", threadId: id, connectionId: connectionId }),
-            rpc({ op: "attentionState", threadId: id, connectionId: connectionId }).catch(function () { return null; })
-          ]);
+          var transfer = runManagedThreadDetailFetch(
+            id,
+            connectionId,
+            generation,
+            hadCache,
+            options
+          );
+          var responses = await transfer.promise;
           if (generation !== p0Runtime.readerGeneration ||
               state.selectedThreadId !== id || state.selectedConnectionId !== connectionId) {
             p0Runtime.metrics.staleResponses += 1;

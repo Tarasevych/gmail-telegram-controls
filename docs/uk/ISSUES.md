@@ -431,3 +431,9 @@
 - **Terminal release state:** v70 не promoted. Owner menu production, exact staging deployment видалено journal-bound helper, active staging `0`, journal v70 `abandoned`, immutable v70 збережено історично.
 - **Залишкова межа:** native Windows SecureStorage status, hard reload, десять запусків, mobile/WebView reopen, concurrent launch, one-second p95 і bidirectional account switching залишаються `UNVERIFIED`/`BLOCKED`. Browser-level POST resubmission виникає до виконання внутрішнього MailApp JavaScript, тому patch не оголошує його усуненим.
 - **Доказ:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)
+
+## 2026-07-23: продовження GT-051 для деталей ланцюжка
+
+Status: PARTIAL
+
+Спільний менеджер передач тепер також керує смугою отримання деталей ланцюжка/листа. За cache hit придатний стан показується негайно, а revalidation ставиться у фонову чергу. Apps Script RPC показує лише чесні невизначені фази, не пропонує несправжнє скасування, повторно використовує одне завдання та зберігає чинний generation guard проти застарілих відповідей. Focused contract-тести пройшли 104/104, а повний Apps Script suite — 577/577. Збереження чернеток, URL import, server-resumable restart, справжній RPC abort і native acceptance для повільної мережі/згортання залишаються відкритими в GT-051.
