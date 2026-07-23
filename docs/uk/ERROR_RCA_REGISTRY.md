@@ -34,6 +34,8 @@
 
 | RCA-018 | Secondary compose/account text лишився замалим, а вузькі account labels обрізалися | Перше typography-виправлення охопило primary list/reader scale, але legacy selectors лишили 10 px compose metadata, 11 px settings/account controls і nowrap account identity rows | Secondary text піднято до floor 12 px, reading scale 14 px збережено, account identity labels отримали безпечне перенесення без remote font | На кожній release-critical surface перевіряти computed styles; тестувати late cascade, narrow viewport, multilingual glyphs і overflow, а не лише root variables | `PARTIAL` | [VR-037](verification-reports/reports/VR-037/README.md) |
 
+| RCA-019 | Автоматичний аналіз завжди був помітним, помилково класифікував signatures/короткі відповіді та міг лишати непідтверджені claims | Disclosure, substantive-content filtering, claim grounding і persisted user decisions були окремими contracts | Додано account-scoped visibility аналізу, default collapse, явний trivial outcome, exact evidence gates, прийняття пропозиції та explicit triage undo | Відокремлювати generated suggestions від persisted decisions; вимагати source fragments для кожного actionable claim; тестувати multilingual trivial/short content і per-account preferences | `PARTIAL` | [VR-038](verification-reports/reports/VR-038/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

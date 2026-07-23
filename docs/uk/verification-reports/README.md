@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-037](reports/VR-037/README.md) фіксує F-03: computed typography на desktop/mobile, залишкові undersized secondary selectors і wrap-safe account identity labels. Same-scale acceptance у current production лишається окремим gate.
+[VR-038](reports/VR-038/README.md) фіксує F-04: default-collapsed і optional automated analysis, substantive-content filtering, evidence-gated claims, явне прийняття пропозиції та account-scoped undo. Native populated-reader і production acceptance лишаються окремими gates.

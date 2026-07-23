@@ -7609,6 +7609,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   assert.equal(initial.preferences.sessionPreset, 'five_minutes');
   assert.equal(initial.preferences.reminderMode, 'soft');
   assert.equal(initial.preferences.densityMode, 'auto');
+  assert.equal(initial.preferences.analysisMode, 'collapsed');
   assert.deepEqual(Array.from(initial.preferences.digestWindows), [540, 1080]);
   assert.equal(initial.preferences.timezone, 'UTC');
   assert.equal(initial.preferences.onboardingCompletedAt, 0);
@@ -7619,9 +7620,11 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
     'soft,digest,urgent_only');
   assert.equal(initial.preferences.densityModes.map(item => item.key).join(','),
     'auto,minimal,standard,analytical');
+  assert.equal(initial.preferences.analysisModes.map(item => item.key).join(','),
+    'collapsed,expanded,hidden');
 
   const low = resultData(rpc(harness, token, 'attentionPreferences', {
-    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', digestWindows: [1080],
+    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', analysisMode: 'hidden', digestWindows: [1080],
     timezone: 'Europe/Brussels', completeOnboarding: true, expectedRevision: 0,
   }));
   assert.equal(low.revision, 1);
@@ -7629,6 +7632,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   assert.equal(low.preferences.maxThreads, 1);
   assert.equal(low.preferences.reminderMode, 'digest');
   assert.equal(low.preferences.densityMode, 'minimal');
+  assert.equal(low.preferences.analysisMode, 'hidden');
   assert.deepEqual(Array.from(low.preferences.digestWindows), [1080]);
   assert.equal(low.preferences.timezone, 'Europe/Brussels');
   assert.ok(low.preferences.onboardingCompletedAt > 0,
@@ -7636,7 +7640,7 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   const completedAt = low.preferences.onboardingCompletedAt;
 
   const repeated = resultData(rpc(harness, token, 'attentionPreferences', {
-    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', digestWindows: [1080],
+    sessionPreset: 'low', reminderMode: 'digest', densityMode: 'minimal', analysisMode: 'hidden', digestWindows: [1080],
     timezone: 'Europe/Brussels', completeOnboarding: true, expectedRevision: 1,
   }));
   assert.equal(repeated.revision, 1, 'an exact preference retry must be idempotent');
@@ -7650,6 +7654,9 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   })).code, 'INVALID_ATTENTION');
   assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
     densityMode: 'overwhelming', expectedRevision: 1,
+  })).code, 'INVALID_ATTENTION');
+  assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
+    analysisMode: 'always', expectedRevision: 1,
   })).code, 'INVALID_ATTENTION');
   assert.equal(resultFailed(rpc(harness, token, 'attentionPreferences', {
     digestWindows: '09:00', expectedRevision: 1,
@@ -7682,6 +7689,49 @@ test('energy and reminder preferences are bounded idempotent and isolated per Gm
   assert.equal(keys.length, 1, 'reading default preferences must not create a second durable record');
   assert.doesNotMatch(harness.propertyValues[keys[0]], /subject|sender|message body/i,
     'preference storage must never retain email content');
+});
+
+test('local analysis suppresses trivial signatures and grounds actionable claims', () => {
+  const harness = makeContext();
+  const callsBefore = harness.languageCalls.length;
+  [
+    'Sent from my iPhone',
+    'Надіслано з мого iPhone',
+    'Verzonden vanaf mijn iPhone',
+    'Get Outlook for Android',
+    '',
+  ].forEach(body => {
+    const result = harness.context.analyzeMessage_('Attachment', body);
+    assert.equal(result.substantive, false);
+    assert.equal(result.essence, 'Немає змістовного підсумку.');
+    assert.equal(result.action, '');
+    assert.deepEqual(Array.from(result.deadlines), []);
+    assert.deepEqual(Array.from(result.amounts), []);
+  });
+  assert.equal(harness.languageCalls.length, callsBefore,
+    'trivial or attachment-only mail must not invoke machine translation');
+
+  const shortMeaningful = harness.context.analyzeMessage_('', 'Так, погоджуюсь.');
+  assert.equal(shortMeaningful.substantive, true,
+    'a short substantive reply must not be discarded by a length-only threshold');
+
+  const ungrounded = harness.context.mailboxNormalizeThreadAnalysis_({
+    substantive: true,
+    essence: 'Потрібно терміново сплатити рахунок.',
+    action: 'Сплатити €99 завтра.',
+    importance: { icon: '🔴', level: 'висока', reason: 'є строк і потрібна дія' },
+    deadlines: ['завтра'],
+    amounts: ['€99'],
+  }, 'Neutral subject', 'Це нейтральне інформаційне повідомлення.', [{
+    id: 'message_grounding_1',
+    timestamp: 1000,
+    body: 'Це нейтральне інформаційне повідомлення.',
+  }]);
+  assert.equal(ungrounded.action, '');
+  assert.deepEqual(Array.from(ungrounded.deadlines), []);
+  assert.deepEqual(Array.from(ungrounded.amounts), []);
+  assert.equal(ungrounded.importance.level, 'звичайна');
+  assert.equal(ungrounded.risk, 'Явного ризику ігнорування не виявлено.');
 });
 
 test('private co-processing sessions are explicit content-free idempotent and account-scoped', () => {

@@ -405,3 +405,14 @@ Status: BLOCKED
 - **Локально перевірено:** focused `6/6`, Mail App group `98/98`, повний Apps Script suite `635/635`.
 - **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native popup/deep-link і Telegram WebView acceptance лишаються `UNVERIFIED`.
 - **Пов’язано:** `GT-064`, `RCA-017`, `VR-036`, `REQ-0035`.
+
+## B1-45 — F-04 Достовірний автоматичний аналіз і один реальний наступний крок
+
+- **Статус:** `PARTIAL`
+- **Результат:** secondary automated analysis згорнутий за замовчуванням і може бути розгорнутий або прихований для exact Gmail connection; trivial/signature-only content дає «Немає змістовного підсумку»; actionable claims потребують exact server-bound evidence; автоматичний next action є пропозицією до явного прийняття.
+- **Контроль:** persisted `Дія / Чекаю / Інфо / Пізніше` лишається account-scoped і тепер має явне доступне скасування без зміни Gmail message state.
+- **Privacy:** чинна local heuristic та Apps Script translation boundary збережені. Gmail Gemini не вважається доступним через Gmail REST API, зовнішній AI transfer не додається.
+- **Локальний evidence:** focused server/UI contracts і повний Apps Script suite є обов’язковими publication gates.
+- **Release boundary:** лише source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth і Telegram runtime не змінюються.
+- **Ще потрібно:** native acceptance populated reader і current-production verification після зняття shared quota blocker.
+- **Пов’язано:** `GT-065`, `RCA-019`, `VR-038`, `REQ-0035`.

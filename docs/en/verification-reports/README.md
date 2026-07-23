@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-037](reports/VR-037/README.md) records F-03: computed typography on desktop/mobile, the remaining undersized secondary selectors, and wrap-safe account identity labels. Current-production same-scale acceptance remains a separate gate.
+[VR-038](reports/VR-038/README.md) records F-04: default-collapsed and optional automated analysis, substantive-content filtering, evidence-gated claims, explicit proposal acceptance, and account-scoped undo. Native populated-reader and production acceptance remain separate gates.

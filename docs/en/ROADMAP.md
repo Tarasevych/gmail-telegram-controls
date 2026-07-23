@@ -405,3 +405,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Locally verified:** focused `6/6`, Mail App group `98/98`, complete Apps Script suite `635/635`.
 - **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native popup/deep-link and Telegram WebView acceptance remain `UNVERIFIED`.
 - **Related:** `GT-064`, `RCA-017`, `VR-036`, `REQ-0035`.
+
+## B1-45 — F-04 Trustworthy automated analysis and one real next action
+
+- **Status:** `PARTIAL`
+- **Result:** secondary automated analysis is collapsed by default and can be expanded or hidden per exact Gmail connection; trivial/signature-only content yields no substantive summary; actionable claims require exact server-bound evidence; an automated next action is a proposal until explicitly accepted.
+- **Control:** persisted `Action / Waiting / Info / Later` remains account-scoped and now has an explicit accessible undo without changing Gmail message state.
+- **Privacy:** the current local heuristic and Apps Script translation boundary are retained. Gmail Gemini is not assumed to exist in the Gmail REST API and no external AI transfer is added.
+- **Locally evidenced:** focused server/UI contracts and the full Apps Script suite are required publication gates.
+- **Release boundary:** source/docs contour only; production v65, staging `0`, immutable history, Gmail, OAuth, and Telegram runtime remain unchanged.
+- **Still required:** native populated-reader acceptance and current-production verification after the shared quota blocker clears.
+- **Related:** `GT-065`, `RCA-019`, `VR-038`, `REQ-0035`.
