@@ -196,13 +196,16 @@ test('draft recovery stores text locally without tokens or attachment bytes', ()
 test('release decision performs at most one automatic reload per target', () => {
   const context = loadFunctions(['p0ReleaseAction', 'p0ExtractReleaseVersion']);
   const productionVersion = releaseState.production.appsScriptImmutable;
+  const previousImmutableVersion = Number(source.match(/var P0_PREVIOUS_IMMUTABLE_VERSION = (\d+);/)[1]);
   const sourceVersion = Number(source.match(/var P0_CLIENT_RELEASE_VERSION = (\d+);/)[1]);
   const sourceReleaseId = source.match(/var P0_CLIENT_RELEASE_ID = "([^"]+)";/)[1];
 
   assert.equal(context.p0ExtractReleaseVersion(releaseState), productionVersion,
     'the client must read the canonical release-state manifest field');
-  assert.ok(sourceVersion === productionVersion || sourceVersion === productionVersion + 1,
-    'source must identify either current production or exactly one cumulative candidate');
+  assert.ok(previousImmutableVersion >= productionVersion,
+    'the cumulative source base cannot precede current production');
+  assert.equal(sourceVersion, previousImmutableVersion + 1,
+    'source must identify exactly the next immutable after the preserved candidate history');
   assert.equal(sourceReleaseId, 'Versie-1-v' + sourceVersion + '-p0');
   assert.equal(context.p0ReleaseAction(sourceVersion, productionVersion, 0), 'none');
   assert.equal(context.p0ReleaseAction(productionVersion, productionVersion + 1, 0), 'reload');
@@ -241,7 +244,7 @@ test('fresh cached thread navigation skips an immediate duplicate RPC', () => {
     'preview must publish content-free counters for measured browser acceptance');
   assert.match(source, /lastThreadUsableMs/,
     'preview diagnostics must report internal reader usability time without identifiers');
-  assert.match(functionSource('boot'),
+  assert.match(functionSource('runBootPipeline'),
     /initializeFromBootstrap\(bootstrap \|\| \{\}\);[\s\S]{0,120}await p0HydratePersistentState\(\);[\s\S]*await loadThreads\(true\)/,
     'initial bootstrap must establish the account allowlist before cached state and list reads');
   assert.match(functionSource('openCompose'),

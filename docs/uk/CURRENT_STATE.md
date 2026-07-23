@@ -41,3 +41,11 @@
 - [Історичний звіт про v63 і закриття GT-030](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md)
 - [Cumulative історія випуску Versie 1](releases/VERSIE-001-2026-07-19.md)
 - [Machine-readable release state](../release-state.json)
+
+## P0 ONE-SECOND boundary — 2026-07-23
+
+- Production і HEAD лишаються immutable v65; staging `0`.
+- Immutable v66 збережений історично, але не promoted через невдалий bidirectional account-switch gate.
+- Активний source delta має marker v67; deployment ще не створений.
+- Duplicate launch root cause і local source correction мають статус VERIFIED; native latency/offline acceptance — PARTIAL/UNVERIFIED.
+- Канонічний доказ: [VR-016](verification-reports/reports/VR-016/README.md).

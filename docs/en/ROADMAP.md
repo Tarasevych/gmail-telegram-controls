@@ -159,3 +159,15 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Related issues:** GT-032 through GT-036, GT-038 and GT-039 remain open/partial; GT-031 and GT-037 are verified.
 - **Rule:** continue within Versie 1. Create another immutable only for a separately tested cumulative code change after a clean preflight boundary.
 - **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-013](verification-reports/reports/VR-013/README.md), [VR-014](verification-reports/reports/VR-014/README.md), and [VR-015](verification-reports/reports/VR-015/README.md).
+
+## B1-26 — P0 ONE-SECOND launch
+
+- **Status:** PARTIAL
+- **Recovery boundary:** v66 ended fail-closed; stable/HEAD v65, staging `0`, production menu restored.
+- **Source candidate:** cumulative v67 removes duplicate launch presentation, single-flights bridge/boot and warms IndexedDB without reading private records before bootstrap.
+- **Local gates:** launch `5/5`, P0 cache/navigation `14/14`, MailApp contract `88/88`.
+- **Blocked evidence:** production p95 `≤1000 ms`, ten native launches, offline private Inbox, arrival prefetch and bidirectional account switching.
+- **Release gate:** one hash-pinned v67 staging only after full suite/CI; promotion only when every native acceptance criterion is VERIFIED.
+- **Evidence:** [VR-016](verification-reports/reports/VR-016/README.md), issues [GT-040–GT-047](ISSUES.md), source request `REQ-0034`.
+
+- **Final local gate 2026-07-23:** cumulative `518/518`; bilingual `71` pairs; knowledge hub `17` pairs/`295` source IDs; verification checker passed.
