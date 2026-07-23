@@ -257,3 +257,17 @@ test('incoming RPC progress remains indeterminate because google.script.run expo
   assert.match(incomingSource, /byteProgress: false/);
   assert.doesNotMatch(incomingSource, /setInterval[\s\S]*percent/);
 });
+
+test('runner can explicitly end in a truthful blocked state', async () => {
+  const context = managerContext();
+  const task = context.createManagedTransfer({ label: 'restart recovery', canRetry: true });
+  await assert.rejects(
+    context.enqueueManagedTransfer(task, () => {
+      const error = new Error('local bytes are unavailable after restart');
+      error.transferOutcome = 'blocked';
+      throw error;
+    })
+  );
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(context.transferCanonicalState(task), 'blocked');
+});

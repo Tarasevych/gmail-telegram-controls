@@ -36,11 +36,11 @@ The client had no shared transfer truth. Local device files used compose-only `F
 | VR-021-05 | Actual byte callbacks produce bytes, percentage, speed, and ETA. | VERIFIED | behavioral contract |
 | VR-021-06 | Queued cancel prevents execution; running cancel invokes the registered abort callback; retry keeps the stable transfer ID. | VERIFIED | behavioral contracts |
 | VR-021-07 | Related transfer/MailApp contracts pass `99/99`; the complete Apps Script suite passes `551/551`. | VERIFIED | local Node test traces |
-| VR-021-08 | Thread detail, draft persistence, URL import, RPC abort, restart recovery, and native slow-network behavior use the complete manager. | UNVERIFIED | not fully integrated or natively accepted |
+| VR-021-08 | Thread detail, draft persistence, URL import, and scoped draft restart reconciliation use the complete manager; real RPC abort, byte-resumable upload, and native slow-network behavior remain open. | PARTIAL | local behavioral contracts; native acceptance absent |
 
 ## Platform and release boundary
 
-The manager does not claim JavaScript continuation after Telegram unloads the WebView. Restart recovery can be `VERIFIED` only for a server-side resumable session. Apps Script RPC remains indeterminate because it exposes no trustworthy transport byte stream or abort handle. A separately authorized cumulative candidate and native slow/stalled-network acceptance are required before production claims.
+The manager does not claim JavaScript continuation after Telegram unloads the WebView. It can reconcile the outcome of a server-journaled draft operation after restart, but it cannot resume browser bytes. Gmail documents a true resumable upload protocol, while `google.script.run` exposes asynchronous success/failure callbacks without a trustworthy transport byte stream or abort handle; Apps Script execution and URL Fetch limits still apply. Therefore `resumableUpload` remains `false`. A separately authorized cumulative candidate and native slow/stalled-network acceptance are required before production claims. Primary sources: [Gmail upload guide](https://developers.google.com/workspace/gmail/api/guides/uploads), [google.script.run](https://developers.google.com/apps-script/guides/html/reference/run), [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas).
 
 ## 2026-07-23: thread-detail continuation evidence
 
@@ -59,3 +59,9 @@ REQ-0035 extends the shared transfer-state implementation to the existing Gmail 
 Status: PARTIAL
 
 REQ-0035 extends shared transfer-state coverage to the complete public-HTTPS source submit. Runtime tests verify one RPC and one attachment for parallel submits, generic content-free task identity, honest indeterminate progress, and account/session fail-closed retry. The existing server SSRF and content-bound contracts remain covered by the full suite. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584. No live external URL, Gmail mutation, OAuth action, staging deployment, or production promotion was used.
+
+## 2026-07-23: restart-reconciliation continuation evidence
+
+Status: PARTIAL
+
+REQ-0035 now covers the maximum safe restart behavior available without a new upload infrastructure. Before dispatch, IndexedDB receives only an account-scoped operation ID, local fingerprint, counters, and timestamps; no MIME, attachment bytes, provider URL, token, or resumable session URI is added to the descriptor. `draftOperationStatus` is responder-scoped and returns only `missing`, `not_dispatched`, `failed`, `pending`, or a canonical committed draft. A reserved operation is terminalized only before the dispatch boundary; uncertain/committed operations are reconciled through Gmail reads and never repeat the mutation. The client bounds automatic checks to three and blocks lost local bytes until reselection. Six new behavioral contracts and the full suite `590/590` pass. This source-only increment used no live Gmail mutation, external URL, OAuth action, staging deployment, or production promotion.

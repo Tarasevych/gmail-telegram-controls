@@ -401,7 +401,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Root cause:** local device files had a compose-only `FileReader` job map and byte progress, while incoming attachment and provider previews used independent blocking copy, spinners, and snackbars. Local reads were started without a shared concurrency gate, and Apps Script RPC lanes cannot expose trustworthy transport-byte callbacks or real abort.
 - **Source fix:** one underlying transfer store now carries compose and global task domains through a canonical lifecycle, a bounded scheduler of three runners, capability-aware cancel/retry/pause/resume controls, honest aggregate status, and a movable accessible global chip. Actual `FileReader` callbacks drive bytes, percent, smoothed speed, and ETA; Apps Script RPC remains explicitly indeterminate. Compose local reads, incoming attachment fetch, and Drive/Box/public provider preview use this shared foundation.
 - **Local evidence:** transfer-manager and MailApp contracts `99/99`, complete Apps Script suite `551/551`, clean `git diff --check`, and `0` secret-signature matches in changed files.
-- **Remaining boundary:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort, and native slow-network/minimize acceptance are `UNVERIFIED` or not yet integrated. No synthetic percentage or closed-WebView continuation is claimed.
+- **Remaining boundary:** true byte-resumable upload, real RPC abort, and native slow-network/minimize/restart acceptance are `UNVERIFIED`. Thread detail, draft persistence, URL import, and scoped draft-outcome reconciliation are integrated. No synthetic percentage or closed-WebView execution is claimed.
 - **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box mutation was performed.
 - **Evidence:** [VR-021](verification-reports/reports/VR-021/README.md)
 
@@ -449,3 +449,9 @@ Gmail draft persistence now uses the bounded shared transfer manager while retai
 Status: PARTIAL
 
 Public HTTPS attachment import now runs as one bounded shared transfer task for the complete submit operation. Parallel submits share one metadata RPC and add one attachment; the task label and ID never contain the URL. Apps Script RPC reports indeterminate progress, exposes no unsupported cancel action, and retries only while the same compose session and Gmail connection remain active. Existing server-side public-HTTPS normalization, DNS/IP, redirect, MIME, and byte bounds are unchanged. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584. Server-resumable restart, real transport abort, and native slow-network/minimize acceptance remain open under GT-051.
+
+## 2026-07-23: GT-051 restart-reconciliation continuation
+
+Status: PARTIAL
+
+The client now persists only an account-scoped, content-free draft operation descriptor before Gmail dispatch. After a WebView restart it queries `draftOperationStatus` with the same operation ID: a committed operation is recovered through canonical Gmail readback; a never-dispatched reservation is terminalized without a Gmail mutation; pending reconciliation is automatically bounded to three checks and then becomes manual retry. MIME bytes, source URLs, OAuth material, and resumable session URIs are never persisted or resent by this contract. Lost local attachment bytes produce a truthful `blocked` state and require reselection. Six restart-specific contracts and the complete `590/590` Apps Script suite pass locally. True Gmail byte-resumable upload remains `UNVERIFIED`; `resumableUpload` and `backgroundUpload` stay `false`.

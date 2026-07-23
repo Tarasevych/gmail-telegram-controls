@@ -401,7 +401,7 @@
 - **Root cause:** локальні device files мали compose-only map `FileReader` jobs і byte progress, а incoming attachment та provider previews використовували окремі blocking copy, spinner і snackbar. Local reads запускалися без спільного concurrency gate, а Apps Script RPC lanes не надають trustworthy transport-byte callbacks або real abort.
 - **Source fix:** один underlying transfer store тепер веде compose і global task domains через canonical lifecycle, bounded scheduler із трьох runners, capability-aware cancel/retry/pause/resume controls, honest aggregate status і movable accessible global chip. Actual `FileReader` callbacks визначають bytes, percent, smoothed speed та ETA; Apps Script RPC лишається явно indeterminate. Compose local reads, incoming attachment fetch і Drive/Box/public provider preview використовують спільний foundation.
 - **Локальний доказ:** transfer-manager і MailApp contracts `99/99`, повний Apps Script suite `551/551`, чистий `git diff --check` і `0` secret-signature matches у змінених файлах.
-- **Залишкова межа:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort і native slow-network/minimize acceptance `UNVERIFIED` або ще не інтегровані. Synthetic percentage чи closed-WebView continuation не заявляються.
+- **Залишкова межа:** справжній byte-resumable upload, реальний RPC abort і native acceptance для повільної мережі/згортання/restart лишаються `UNVERIFIED`. Деталі ланцюжка, збереження чернеток, URL import і scoped reconciliation результату чернетки інтегровані. Synthetic percentage чи execution після закриття WebView не заявляються.
 - **Release boundary:** source commit `58933f0`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
 - **Доказ:** [VR-021](verification-reports/reports/VR-021/README.md)
 
@@ -449,3 +449,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Імпорт public HTTPS-вкладення тепер виконується як одне обмежене спільне transfer-task для повної submit-операції. Паралельні submit використовують один metadata RPC і додають одне вкладення; task label та ID ніколи не містять URL. Apps Script RPC показує невизначений прогрес, не пропонує непідтримуваний cancel і повторюється лише доки активні ті самі compose session та Gmail connection. Чинні server-side перевірки normalization, DNS/IP, redirect, MIME і byte bounds для public HTTPS не змінено. Focused contract-тести пройшли 111/111, а повний Apps Script suite — 584/584. Server-resumable restart, справжній транспортний abort і native acceptance для повільної мережі/згортання залишаються відкритими в GT-051.
+
+## 2026-07-23: продовження GT-051 для restart reconciliation
+
+Status: PARTIAL
+
+Клієнт тепер до Gmail dispatch зберігає лише account-scoped content-free descriptor draft operation. Після restart WebView він запитує `draftOperationStatus` із тим самим operation ID: committed-операція відновлюється через canonical Gmail readback; reservation, яка не перетнула dispatch boundary, переводиться в terminal state без Gmail mutation; pending reconciliation автоматично обмежено трьома перевірками, після чого доступний лише ручний retry. MIME bytes, source URL, OAuth-матеріал і resumable session URI цей контракт не зберігає та не надсилає повторно. Втрачені локальні bytes вкладень дають чесний стан `blocked` і вимагають повторного вибору. Шість restart-specific контрактів і повний Apps Script suite `590/590` пройшли локально. Справжній Gmail byte-resumable upload лишається `UNVERIFIED`; `resumableUpload` і `backgroundUpload` залишаються `false`.

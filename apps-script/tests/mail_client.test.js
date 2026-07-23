@@ -9285,3 +9285,77 @@ test('failed Gmail token refresh releases its lease and preserves protected toke
   assert.equal(harness.propertyValues[fixture.key], original);
   assert.equal(Object.prototype.hasOwnProperty.call(harness.propertyValues, leaseKey), false);
 });
+
+test('draft restart status distinguishes a missing operation and terminalizes a never-dispatched reservation', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const missing = resultData(rpc(harness, token, 'draftOperationStatus', {
+    clientOperationId: 'restart-status-missing-0001',
+  }));
+  assert.equal(missing.status, 'missing');
+
+  const operationId = 'restart-status-reserved-0001';
+  const reserved = harness.context.mailboxReserveDraftOperation_(
+    'draft_create',
+    operationId,
+    harness.context.mailboxDigestText_('restart-status-reserved'),
+    {}
+  );
+  const status = resultData(rpc(harness, token, 'draftOperationStatus', {
+    clientOperationId: operationId,
+  }));
+  assert.equal(status.status, 'not_dispatched');
+  const stored = JSON.parse(harness.propertyValues[reserved._key]);
+  assert.equal(stored.state, 'failed');
+  assert.equal(harness.gmailCalls.length, 0);
+});
+
+test('draft restart status performs read-only canonical reconciliation for a committed operation', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const operationId = 'restart-status-committed-0001';
+  const draftId = 'draft_restart_status_1';
+  const reserved = harness.context.mailboxReserveDraftOperation_(
+    'draft_create',
+    operationId,
+    harness.context.mailboxDigestText_('restart-status-committed'),
+    {}
+  );
+  harness.context.mailboxCommitDraftOperation_(reserved, {
+    draftId,
+    messageId: 'message_restart_status_1',
+    threadId: 'thread_restart_status_1',
+  });
+  harness.setGmail((requestPath, options) => {
+    assert.equal(requestPath, `/drafts/${draftId}?format=full`);
+    assert.equal(String(options.method).toLowerCase(), 'get');
+    return {
+      id: draftId,
+      message: {
+        id: 'message_restart_status_1',
+        threadId: 'thread_restart_status_1',
+        internalDate: '1710000000000',
+        labelIds: ['DRAFT'],
+        payload: {
+          mimeType: 'text/plain',
+          headers: [
+            { name: 'Message-ID', value: reserved.messageIdHeader },
+            { name: 'To', value: 'recipient@example.com' },
+            { name: 'Subject', value: 'Restart recovery' },
+          ],
+          body: {
+            data: Buffer.from('Recovered body', 'utf8').toString('base64url'),
+            size: Buffer.byteLength('Recovered body'),
+          },
+        },
+      },
+    };
+  });
+
+  const status = resultData(rpc(harness, token, 'draftOperationStatus', {
+    clientOperationId: operationId,
+  }));
+  assert.equal(status.status, 'committed');
+  assert.equal(status.draftId, draftId);
+  assert.equal(status.draft.id, draftId);
+});
