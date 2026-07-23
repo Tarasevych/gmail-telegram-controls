@@ -22,6 +22,7 @@
 | P-005 | Контекстна маршрутизація запитів / Contextual request routing | `permissions/P-005-contextual-request-routing.md` |
 | P-006 | Автономне продовження і recovery / Autonomous continuation and recovery | `permissions/P-006-autonomous-continuation-recovery.md` |
 | P-007 | Приватне GitLab-дзеркало / Private GitLab mirror | `permissions/P-007-private-gitlab-mirror.md` |
+| P-009 | Cumulative staging і conditional production Versie 1 / Cumulative staging and conditional production for Versie 1 | permissions/P-009-bounded-standing-versie-1-release-automation.md` |
 | P-008 | Cumulative staging і conditional production Versie 1 / Cumulative staging and conditional production for Versie 1 | `permissions/P-008-versie-1-cumulative-staging-release.md` |
 
 ---
