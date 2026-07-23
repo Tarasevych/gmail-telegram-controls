@@ -237,3 +237,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box state changed.
 - **Evidence:** [GT-051](ISSUES.md), [VR-021](verification-reports/reports/VR-021/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-32 — Fail-closed attachment preview matrix
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0035`; V3 task `B-02`.
+- **Locally VERIFIED:** SVG uses escaped text rather than an active image surface; the PDF iframe is sandboxed; ZIP metadata preview has byte, entry, size, and ratio limits, blocks traversal, encryption, Unix symlinks, multi-disk, ZIP64, and inconsistent central directories, and never extracts the archive.
+- **Gates:** focused preview/MailApp contracts `97/97`, complete Apps Script suite `560/560`, and a clean diff check.
+- **Still required:** native Telegram Desktop/mobile/WebView acceptance for supported preview types, real Unicode and malformed ZIP fixtures, fallback/download, and unsupported-format UX.
+- **Release boundary:** source commit `d4beb1e`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box state changed.
+- **Evidence:** [GT-052](ISSUES.md), [VR-022](verification-reports/reports/VR-022/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

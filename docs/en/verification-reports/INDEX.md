@@ -166,3 +166,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-021/README.md](reports/VR-021/README.md)
 - **Conclusion:** the shared source foundation and complete `551/551` suite are VERIFIED; remaining lanes, native slow-network acceptance, resumable restart, staging, and deployment remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-022 — Fail-closed attachment preview matrix
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `B-02`, the active SVG surface, PDF sandboxing, untrusted ZIP metadata, bounded reads, traversal/encryption/symlink/bomb guards, behavioral/full-suite evidence, and the release boundary.
+- **Report:** [reports/VR-022/README.md](reports/VR-022/README.md)
+- **Conclusion:** source hardening and the complete `560/560` suite are VERIFIED; native preview/fallback acceptance, staging, and deployment remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

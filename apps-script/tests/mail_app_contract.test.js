@@ -1040,6 +1040,7 @@ test('attachment gallery keeps duplicate names distinct and previews safely insi
   );
   assert.match(previewSource, /browserSupportsPdfBlobPreview/);
   assert.match(previewSource, /#page=1&view=FitH&toolbar=0&navpanes=0/);
+  assert.match(previewSource, /referrerpolicy:\s*"no-referrer"[\s\S]*sandbox:\s*""/);
   assert.match(previewSource, /Цей браузер не підтримує вбудований перегляд PDF/);
   assert.match(previewSource, /type\.preview === "text"[\s\S]*renderTextAttachmentPreview/);
   assert.match(previewSource, /type\.preview === "archive"[\s\S]*renderZipAttachmentPreview/);
@@ -1048,11 +1049,11 @@ test('attachment gallery keeps duplicate names distinct and previews safely insi
   assert.doesNotMatch(previewSource, /window\.open|tg\.openLink/);
 
   const zipSource = sourceBetween(
-    '      function zipArchiveEntries(buffer) {',
+    '      var ZIP_PREVIEW_LIMITS = {',
     '      function renderTextAttachmentPreview(data) {'
   );
   const zipContext = vm.createContext({
-    Uint8Array, DataView, ArrayBuffer, TextDecoder, Math, Boolean, String,
+    Uint8Array, DataView, ArrayBuffer, TextDecoder, Math, Boolean, Number, String, Promise,
     safeText: (value, fallback = '') => value == null || value === '' ? String(fallback || '') : String(value),
   });
   vm.runInContext(zipSource, zipContext);

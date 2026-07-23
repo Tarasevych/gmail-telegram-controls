@@ -398,3 +398,15 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Remaining boundary:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort, and native slow-network/minimize acceptance are `UNVERIFIED` or not yet integrated. No synthetic percentage or closed-WebView continuation is claimed.
 - **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box mutation was performed.
 - **Evidence:** [VR-021](verification-reports/reports/VR-021/README.md)
+
+## GT-052 — Attachment preview lacked fail-closed boundaries for active SVG and untrusted ZIP metadata
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-32` / V3 `B-02`
+- **Root cause:** SVG was classified as an ordinary image, the PDF iframe had no explicit sandbox, and the ZIP metadata parser only truncated long lists. It did not block traversal or absolute paths, encryption, Unix symlinks, multi-disk archives, ZIP64 sentinels, excessive sizes, aggregate expansion, dangerous compression ratios, or inconsistent central directories.
+- **Source fix:** SVG now opens only as escaped text, and the PDF iframe has a maximum-restriction sandbox. ZIP preview reads no more than `8 MiB`, never extracts content, validates the central directory fail closed, and blocks dangerous paths, flags, link types, sizes, ratios, entry counts, and unsupported archive structures. A rejected preview retains the explicit download fallback.
+- **Local evidence:** focused preview/MailApp contracts `97/97`, complete Apps Script suite `560/560`, and a clean `git diff --check`.
+- **Remaining boundary:** native Telegram Desktop/mobile/WebView acceptance for PDF, media, Unicode ZIP, malformed real-world archives, and fallback/download remains `UNVERIFIED`; the source claims neither extraction nor universal preview.
+- **Release boundary:** source commit `d4beb1e`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box mutation was performed.
+- **Evidence:** [VR-022](verification-reports/reports/VR-022/README.md)
