@@ -398,3 +398,15 @@
 - **Залишкова межа:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort і native slow-network/minimize acceptance `UNVERIFIED` або ще не інтегровані. Synthetic percentage чи closed-WebView continuation не заявляються.
 - **Release boundary:** source commit `58933f0`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
 - **Доказ:** [VR-021](verification-reports/reports/VR-021/README.md)
+
+## GT-052 — Attachment preview не мав fail-closed меж для активного SVG і недовірених ZIP metadata
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-32` / V3 `B-02`
+- **Root cause:** SVG класифікувався як звичайне зображення, PDF iframe не мав explicit sandbox, а ZIP metadata parser лише обрізав довгі списки. Він не блокував traversal/absolute paths, encryption, Unix symlinks, multi-disk archives, ZIP64 sentinels, надмірні розміри, aggregate expansion, небезпечне compression ratio або inconsistent central directory.
+- **Source fix:** SVG тепер відкривається лише як escaped text; PDF iframe має maximum-restriction sandbox. ZIP preview читає не більше `8 MiB`, не розпаковує вміст, fail-closed перевіряє central directory і блокує небезпечні path, flags, link types, sizes, ratio, entry count та unsupported archive structures. Відхилений preview не прибирає явний download fallback.
+- **Локальний доказ:** focused preview/MailApp contracts `97/97`, повний Apps Script suite `560/560` і чистий `git diff --check`.
+- **Залишкова межа:** native Telegram Desktop/mobile/WebView acceptance для PDF, media, Unicode ZIP, malformed real-world archives і fallback/download лишається `UNVERIFIED`; source не заявляє extraction або універсальний preview.
+- **Release boundary:** source commit `d4beb1e`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
+- **Доказ:** [VR-022](verification-reports/reports/VR-022/README.md)

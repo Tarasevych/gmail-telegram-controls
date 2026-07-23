@@ -166,3 +166,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-021/README.md](reports/VR-021/README.md)
 - **Висновок:** shared source foundation і повний suite `551/551` VERIFIED; remaining lanes, native slow-network acceptance, resumable restart, staging і deployment лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-022 — Fail-closed матриця preview вкладень
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `B-02`, active SVG surface, PDF sandbox, недовірені ZIP metadata, bounded reads, traversal/encryption/symlink/bomb guards, behavioral/full-suite evidence і release boundary.
+- **Звіт:** [reports/VR-022/README.md](reports/VR-022/README.md)
+- **Висновок:** source hardening і повний suite `560/560` VERIFIED; native preview/fallback acceptance, staging і deployment лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
