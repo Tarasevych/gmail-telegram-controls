@@ -498,3 +498,15 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Records / Записи:** existing `GT-027`, existing `B1-21`, historical `VR-005`, new `VR-033`; no new GT/B1 was invented.
 - **Boundary / Межа:** no product-code change and no real Gmail label create/rename/delete, OAuth, Telegram mutation, staging, production promotion, token read, or secret-property read / без зміни product code і без реальних Gmail label create/rename/delete, OAuth, змін Telegram, staging, production promotion, читання токенів або secret properties.
 - **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable history is unchanged; native read-only acceptance waits for a clean quota window / production лишається v65, staging `0`, immutable history незмінна; native read-only acceptance очікує clean quota window.
+
+## E-05 mail-list semantics evidence / Доказ E-05 семантики списку листів
+
+- **Status / Статус:** source/tests/docs are `VERIFIED`; overall E-05 remains `PARTIAL` because native Telegram Desktop/WebView mouse, touch, keyboard, and 500-row acceptance is `UNVERIFIED` / source/tests/docs `VERIFIED`; загальний E-05 залишається `PARTIAL`, бо native Telegram Desktop/WebView acceptance для mouse, touch, keyboard і 500 rows — `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `64bd00d1307ed1c22d33a0904ac8cc5228f26c56`.
+- **Normal merge / Звичайне злиття:** PR [#94](https://github.com/Tarasevych/gmail-telegram-controls/pull/94), merge `d03f02c388c91c3af556673cf769b17f9c88cc9d`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `d03f02c388c91c3af556673cf769b17f9c88cc9d`.
+- **Implemented / Реалізовано:** semantic unread accessible name; checkbox/`Space` selection without open or `markRead`; `Enter`/single-click open; 650 ms promise-aware duplicate activation guard; exact `accountId:threadId` selection keys; mailbox-view namespace isolation; compact sequential bulk actions with exact per-thread `connectionId`, a limit of 50, and keyed focus restoration.
+- **Tests / Тести:** focused `4/4`, including a 500-row reorder fixture; full Apps Script suite `623/623`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, and diff gates passed.
+- **Records / Записи:** `GT-062`, `B1-42`, `RCA-015`, `VR-034`.
+- **Boundary / Межа:** synthetic IDs only; no real Gmail read/mark/archive, Telegram mutation, OAuth, staging, production promotion, release-helper mutation, token read, or secret-property read / лише synthetic IDs; без реальних Gmail read/mark/archive, змін Telegram, OAuth, staging, production promotion, release-helper mutation, читання токенів або secret properties.
+- **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable v70 remains historical and unchanged / production лишається v65, staging `0`, immutable v70 лишається історичною та незмінною.
