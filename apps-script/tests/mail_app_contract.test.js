@@ -473,9 +473,15 @@ test('thread rows use list semantics and support deterministic keyboard navigati
   );
   let focused = -1;
   let clicked = -1;
+  let selected = -1;
   const rows = [0, 1, 2].map(index => ({
     focus() { focused = index; },
     click() { clicked = index; },
+    querySelector(selector) {
+      return selector === '.thread-select-checkbox'
+        ? { click() { selected = index; } }
+        : null;
+    },
   }));
   const context = vm.createContext({
     els: { threadList: { querySelectorAll() { return rows; } } },
@@ -506,6 +512,14 @@ test('thread rows use list semantics and support deterministic keyboard navigati
     preventDefault() {},
   }, rows[1]);
   assert.equal(clicked, 1);
+
+  context.handleThreadRowKeydown({
+    key: ' ',
+    target: rows[2],
+    preventDefault() {},
+  }, rows[2]);
+  assert.equal(selected, 2);
+  assert.equal(clicked, 1, 'Space selects without opening the thread');
 
   focused = -1;
   context.handleThreadRowKeydown({

@@ -376,3 +376,12 @@ Status: BLOCKED
 - **Локально перевірено:** focused contract `5/5`; повний Apps Script suite `617/617`.
 - **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
 - **Пов’язано:** `GT-061`, `RCA-014`, `VR-032`, `REQ-0035`.
+
+## B1-42 — E-05 Семантика списку листів і мультивибір
+
+- **Статус:** `PARTIAL`
+- **Результат:** непрочитаний стан має текстову accessible-семантику; checkbox/`Space` вибирають без відкриття; `Enter` і single click відкривають через один duplicate-guarded pipeline.
+- **Ізоляція:** selection namespace включає чинний Gmail account/shared context, folder/label, query і filter; bulk mutation передає exact `connectionId` кожного листа та виконується послідовно з лімітом 50.
+- **Локально перевірено:** focused contract `4/4`; повний Apps Script suite `623/623`.
+- **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
+- **Пов’язано:** `GT-062`, `RCA-015`, `VR-034`, `REQ-0035`.

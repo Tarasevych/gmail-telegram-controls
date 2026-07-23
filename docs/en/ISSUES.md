@@ -557,3 +557,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Local evidence:** focused contract `5/5`; full Apps Script suite `617/617`.
 - **Boundary:** native Telegram Desktop/WebView acceptance for Back/Forward and `A → B → A` remains `UNVERIFIED`; production v65, staging `0`, and immutable release history are unchanged.
 - **Evidence:** [VR-032](verification-reports/reports/VR-032/README.md).
+
+## GT-062 — The mail list lacked safe multi-selection and deterministic activation
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Product task:** `B1-42` / V3 `E-05`
+- **Root cause:** the list contract supported only one `selectedThreadId`; `Enter` and `Space` both called `row.click()`, every click directly started route/open, and there was no account/filter-scoped selection model or bulk toolbar.
+- **Correction:** checkbox-based selection keyed by stable `accountId:threadId`, a namespace derived from the current mailbox view, `Enter=open`, `Space=select`, 650 ms single-flight activation, compact bounded sequential bulk actions, and focus-anchor restoration after keyed reconciliation.
+- **Local evidence:** focused E-05 contract `4/4`; full Apps Script suite `623/623`.
+- **Boundary:** native mouse/touch/keyboard acceptance for 0/1/50/500 rows and deployed multi-account bulk actions remains `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
+- **Evidence:** [VR-034](verification-reports/reports/VR-034/README.md).

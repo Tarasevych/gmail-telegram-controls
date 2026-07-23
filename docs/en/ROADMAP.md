@@ -376,3 +376,12 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Locally verified:** focused contract `5/5`; full Apps Script suite `617/617`.
 - **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
 - **Related:** `GT-061`, `RCA-014`, `VR-032`, `REQ-0035`.
+
+## B1-42 — E-05 Mail-list semantics and multi-selection
+
+- **Status:** `PARTIAL`
+- **Result:** unread state has textual accessible semantics; checkbox/`Space` selects without opening; `Enter` and single click open through one duplicate-guarded pipeline.
+- **Isolation:** the selection namespace includes the current Gmail account/shared context, folder/label, query, and filter; each bulk mutation carries the exact thread `connectionId` and runs sequentially with a limit of 50.
+- **Locally verified:** focused contract `4/4`; full Apps Script suite `623/623`.
+- **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
+- **Related:** `GT-062`, `RCA-015`, `VR-034`, `REQ-0035`.

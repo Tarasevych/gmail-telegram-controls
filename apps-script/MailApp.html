@@ -891,6 +891,52 @@
       background: var(--rail);
     }
 
+    .bulk-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 48px;
+      padding: 5px 10px 5px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--rail);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .bulk-toolbar[hidden] {
+      display: none;
+    }
+
+    .bulk-selection-count {
+      flex: 0 0 auto;
+      margin-right: auto;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .bulk-action {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .bulk-action:hover,
+    .bulk-action:focus-visible {
+      border-color: var(--primary);
+      background: var(--selected);
+      outline: 0;
+    }
+
     .thread-list {
       min-height: 0;
       flex: 1 1 auto;
@@ -903,7 +949,7 @@
     .thread-row {
       position: relative;
       display: grid;
-      grid-template-columns: 40px minmax(0, 1fr);
+      grid-template-columns: 32px 40px minmax(0, 1fr);
       gap: 10px;
       width: 100%;
       min-height: 94px;
@@ -923,6 +969,11 @@
       background: var(--selected);
     }
 
+    .thread-row[data-selected="true"] {
+      background: var(--selected);
+      box-shadow: inset 3px 0 var(--primary);
+    }
+
     .thread-row.unread {
       background: color-mix(in srgb, var(--primary) 7%, var(--bg));
       box-shadow: inset 3px 0 color-mix(in srgb, var(--primary) 72%, transparent);
@@ -934,6 +985,40 @@
 
     .thread-row.unread[aria-current="true"] {
       background: var(--selected);
+    }
+
+    .thread-row.unread[data-selected="true"] {
+      background: var(--selected);
+      box-shadow: inset 3px 0 var(--primary);
+    }
+
+    .thread-select-control {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      min-height: 44px;
+      margin: -5px 0;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .thread-select-control:hover,
+    .thread-select-control:focus-within {
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+    }
+
+    .thread-select-checkbox {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .thread-select-checkbox:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 3px;
     }
 
     .thread-row.focus-priority {
@@ -4428,9 +4513,13 @@
       }
 
       .thread-row {
-        grid-template-columns: 38px minmax(0, 1fr);
+        grid-template-columns: 32px 38px minmax(0, 1fr);
         gap: 9px;
         padding-left: 13px;
+      }
+
+      .bulk-toolbar {
+        padding-left: 10px;
       }
 
       .avatar {
@@ -4905,6 +4994,7 @@
           <svg class="icon" aria-hidden="true"><use href="#i-filter"></use></svg>
         </button>
       </header>
+      <div class="bulk-toolbar" id="bulkToolbar" role="region" aria-label="Групові дії з вибраними листами" hidden></div>
       <div class="snooze-repair-notice" id="snoozeRepairNotice" role="status" hidden></div>
       <section class="focus-session-bar" id="focusSessionBar" aria-label="Режим короткої сесії" hidden></section>
       <div class="thread-list" id="threadList" role="list" aria-label="Список розмов"></div>
@@ -5588,6 +5678,10 @@
         pendingListIntent: null,
         selectedThreadId: "",
         selectedConnectionId: "",
+        threadSelectionNamespace: "",
+        selectedThreadKeys: [],
+        bulkActionBusy: false,
+        threadOpenIntent: { key: "", startedAt: 0, promise: null },
         thread: null,
         threadLoading: false,
         requestVersion: 0,
@@ -5748,7 +5842,7 @@
           "composeButton", "accountAvatar", "mobileSearchPanel", "mobileSearchBox",
           "mobileSearch", "mobileSearchClear", "closeMobileSearch", "sidebar",
           "sidebarComposeButton", "folderNav", "categorySection", "categoryNav", "labelCreateButton", "labelNav", "drawerScrim", "listPane", "listTitle",
-          "listResultCount", "filterSelect", "filterButton", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
+          "listResultCount", "filterSelect", "filterButton", "bulkToolbar", "snoozeRepairNotice", "focusSessionBar", "threadList", "readerPane",
           "readerEmpty", "readerContentHost", "moreMenu", "labelMenu", "focusMenu", "accountPanel", "closeAccountPanel", "accountList", "connectGoogleAccount", "continueGoogleOAuth", "signOutMailboxSession", "workspaceAccessPanel", "gmailMetadataPanel", "gmailMetadataContent", "refreshGmailMetadata", "focusSettingsPanel", "focusSettingsContent", "refreshFocusSettings", "openOnboardingSettings",
           "onboardingLayer", "onboardingDialog", "onboardingProgress", "onboardingTitle", "onboardingDescription", "onboardingStepOne", "onboardingStepTwo", "onboardingStepThree", "onboardingDigestWindow", "onboardingDigestSelect", "onboardingQuietHours", "onboardingSummary", "skipOnboarding", "onboardingBack", "onboardingNext",
           "handoffLayer", "handoffDialog", "handoffTitle", "handoffDescription", "closeHandoff", "handoffAccount", "handoffTitleInput", "handoffDeadlineRow", "handoffDeadline", "handoffStartRow", "handoffStart", "handoffEndRow", "handoffEnd", "handoffTimezoneRow", "handoffTimezone", "handoffEvidence", "handoffOriginal", "cancelHandoff", "confirmHandoff",
@@ -8835,6 +8929,10 @@
         state.pendingListIntent = null;
         state.selectedThreadId = "";
         state.selectedConnectionId = "";
+        state.threadSelectionNamespace = "";
+        state.selectedThreadKeys = [];
+        state.bulkActionBusy = false;
+        state.threadOpenIntent = { key: "", startedAt: 0, promise: null };
         state.thread = null;
         state.threadLoading = false;
         state.threads = [];
@@ -10822,11 +10920,169 @@
         return visibleListTitle;
       }
 
+      var BULK_THREAD_ACTION_LIMIT = 50;
+
+      function threadSelectionKey(thread) {
+        var value = thread || {};
+        var accountId = safeId(value.accountId || value.connectionId);
+        var threadId = safeId(value.id || value.threadId);
+        return accountId && threadId ? accountId + ":" + threadId : "";
+      }
+
+      function threadSelectionNamespace() {
+        return p0ListCacheKey(mailboxViewContext());
+      }
+
+      function syncThreadSelectionNamespace() {
+        var namespace = threadSelectionNamespace();
+        if (state.threadSelectionNamespace !== namespace) {
+          state.threadSelectionNamespace = namespace;
+          state.selectedThreadKeys = [];
+        }
+        return namespace;
+      }
+
+      function selectedThreadItems(threadsValue) {
+        syncThreadSelectionNamespace();
+        var candidates = Array.isArray(threadsValue)
+          ? threadsValue
+          : state.threads.concat(state.backlogRescue && state.backlogRescue.threads || []);
+        var byKey = new Map();
+        candidates.forEach(function (thread) {
+          var key = threadSelectionKey(thread);
+          if (key) byKey.set(key, thread);
+        });
+        var items = state.selectedThreadKeys.map(function (key) { return byKey.get(key); }).filter(Boolean);
+        state.selectedThreadKeys = items.map(threadSelectionKey);
+        return items;
+      }
+
+      function setThreadSelection(thread, selected) {
+        syncThreadSelectionNamespace();
+        var key = threadSelectionKey(thread);
+        if (!key) return false;
+        var keys = new Set(state.selectedThreadKeys);
+        if (selected) keys.add(key);
+        else keys.delete(key);
+        state.selectedThreadKeys = Array.from(keys);
+        renderThreadList();
+        return true;
+      }
+
+      function clearThreadSelection() {
+        state.selectedThreadKeys = [];
+        renderThreadList();
+      }
+
+      function activateThreadRow(thread) {
+        var key = threadSelectionKey(thread);
+        if (!key) return false;
+        var now = Date.now();
+        var previous = state.threadOpenIntent || {};
+        if (previous.key === key && (previous.promise || now - Number(previous.startedAt || 0) < 650)) return false;
+        var intent = { key: key, startedAt: now, promise: null };
+        state.threadOpenIntent = intent;
+        ensureMailboxListHistory_();
+        writeMailboxRoute_({
+          view: "thread",
+          threadId: thread.id,
+          connectionId: thread.accountId
+        }, "push");
+        var result = openThread(thread.id, false, thread.accountId);
+        intent.promise = result && typeof result.then === "function" ? result : null;
+        if (intent.promise) {
+          intent.promise.then(function () {
+            if (state.threadOpenIntent === intent) intent.promise = null;
+          }, function () {
+            if (state.threadOpenIntent === intent) intent.promise = null;
+          });
+        }
+        return result;
+      }
+
+      function renderBulkThreadToolbar(visibleThreads) {
+        var selected = selectedThreadItems(visibleThreads);
+        clear(els.bulkToolbar);
+        els.bulkToolbar.hidden = !selected.length;
+        if (!selected.length) return;
+        var busy = state.bulkActionBusy || state.actionBusy;
+        els.bulkToolbar.append(make("span", {
+          className: "bulk-selection-count",
+          text: "Вибрано: " + selected.length,
+          attrs: { "aria-live": "polite" }
+        }));
+
+        function appendAction(label, action) {
+          var button = make("button", {
+            className: "bulk-action", type: "button", text: label,
+            attrs: { "data-mail-action": action, "aria-label": label + " для вибраних листів" }
+          });
+          button.disabled = busy;
+          button.addEventListener("click", function () { runBulkThreadAction(action); });
+          els.bulkToolbar.append(button);
+        }
+
+        appendAction("Прочитано", "markRead");
+        appendAction("Непрочитано", "markUnread");
+        if (!state.currentLabelId && state.currentFolderId === "INBOX") appendAction("Архівувати", "archive");
+        var clearButton = make("button", {
+          className: "bulk-action", type: "button", text: "Скасувати вибір",
+          attrs: { "aria-label": "Скасувати вибір усіх листів" }
+        });
+        clearButton.disabled = busy;
+        clearButton.addEventListener("click", clearThreadSelection);
+        els.bulkToolbar.append(clearButton);
+      }
+
+      async function runBulkThreadAction(action) {
+        if (state.bulkActionBusy || state.actionBusy) return false;
+        var items = selectedThreadItems();
+        if (!items.length) return false;
+        if (items.length > BULK_THREAD_ACTION_LIMIT) {
+          showSnackbar("За одну дію можна обробити не більше " + BULK_THREAD_ACTION_LIMIT + " листів.", { error: true });
+          return false;
+        }
+        state.bulkActionBusy = true;
+        renderBulkThreadToolbar(items);
+        var remaining = new Set(state.selectedThreadKeys);
+        var completed = 0;
+        var failed = 0;
+        for (var index = 0; index < items.length; index += 1) {
+          var thread = items[index];
+          var result = await changeThreadAction(action, thread.id, {
+            connectionId: thread.accountId,
+            silentSuccess: true
+          });
+          if (result) {
+            remaining.delete(threadSelectionKey(thread));
+            completed += 1;
+          } else {
+            failed += 1;
+          }
+        }
+        state.selectedThreadKeys = Array.from(remaining);
+        state.bulkActionBusy = false;
+        renderThreadList();
+        if (failed) {
+          showSnackbar("Виконано: " + completed + ". Не вдалося: " + failed + ".", { error: true });
+          return false;
+        }
+        showSnackbar("Групову дію виконано для " + completed + " листів.", { success: true });
+        return true;
+      }
+
       function handleThreadRowKeydown(event, row) {
         if (event.target !== row) return;
-        if (event.key === "Enter" || event.key === " ") {
+        if (event.key === "Enter") {
           event.preventDefault();
           row.click();
+          return;
+        }
+        if (event.key === " ") {
+          var checkbox = row.querySelector(".thread-select-checkbox");
+          if (!checkbox) return;
+          event.preventDefault();
+          checkbox.click();
           return;
         }
         var direction = {
@@ -11198,18 +11454,41 @@
 
       function p0BuildThreadRow(thread) {
         var hasFocus = thread.focus && thread.focus.priority !== "none" && thread.focus.color;
-        var key = safeId(thread.accountId) + ":" + thread.id;
+        var key = threadSelectionKey(thread);
+        var selected = state.selectedThreadKeys.indexOf(key) !== -1;
         var row = make("article", {
           className: "thread-row" + (thread.unread ? " unread" : "") + (hasFocus ? " focus-priority" : ""),
           attrs: {
             role: "listitem", tabindex: "0", "data-p0-thread-key": key,
             "data-p0-signature": p0ThreadRenderSignature(thread),
+            "data-selected": selected ? "true" : "false",
             "aria-current": thread.id === state.selectedThreadId && thread.accountId === state.selectedConnectionId ? "true" : null,
-            "aria-label": thread.senderName + ": " + thread.subject
+            "aria-label": (thread.unread ? "Непрочитаний лист. " : "") + thread.senderName + ": " + thread.subject
           }
         });
         if (hasFocus) row.style.setProperty("--focus-color", thread.focus.color);
         if (thread.unread) row.append(make("span", { className: "unread-dot", attrs: { "aria-hidden": "true" } }));
+        var selectControl = make("label", {
+          className: "thread-select-control",
+          attrs: { title: selected ? "Скасувати вибір листа" : "Вибрати лист" }
+        });
+        var selector = make("input", {
+          className: "thread-select-checkbox", type: "checkbox",
+          attrs: {
+            "data-mail-select": key,
+            "aria-label": (selected ? "Скасувати вибір: " : "Вибрати: ") + thread.senderName + ", " + thread.subject
+          }
+        });
+        selector.checked = selected;
+        selector.disabled = state.actionBusy || state.bulkActionBusy;
+        selector.addEventListener("click", function (event) { event.stopPropagation(); });
+        selector.addEventListener("change", function (event) {
+          event.stopPropagation();
+          setThreadSelection(thread, selector.checked);
+        });
+        selectControl.addEventListener("click", function (event) { event.stopPropagation(); });
+        selectControl.append(selector);
+        row.append(selectControl);
         row.append(makeAvatar(thread));
         var copy = make("div", { className: "thread-copy" });
         var top = make("div", { className: "thread-line" });
@@ -11255,15 +11534,8 @@
         indicators.append(star);
         copy.append(indicators);
         row.append(copy);
-        row.addEventListener("click", function () {
-          ensureMailboxListHistory_();
-          writeMailboxRoute_({
-            view: "thread",
-            threadId: thread.id,
-            connectionId: thread.accountId
-          }, "push");
-          openThread(thread.id, false, thread.accountId);
-        });
+        row.addEventListener("click", function () { activateThreadRow(thread); });
+        row.addEventListener("dblclick", function (event) { event.preventDefault(); });
         row.addEventListener("keydown", function (event) { handleThreadRowKeydown(event, row); });
         p0Runtime.metrics.rowCreates += 1;
         return row;
@@ -11271,6 +11543,7 @@
 
       function renderThreadList() {
         p0Runtime.metrics.listRenders += 1;
+        syncThreadSelectionNamespace();
         var visibleListTitle = updateListHeader();
         var focusMode = !state.currentLabelId && state.currentFolderId === "FOCUS";
         renderFocusSessionBar(focusMode);
@@ -11292,6 +11565,7 @@
         els.listResultCount.textContent = focusMode
           ? formatCount(visibleThreads.length) + " у фокусі"
           : (state.totalEstimate == null ? "" : formatCount(state.totalEstimate) + " листів");
+        renderBulkThreadToolbar(visibleThreads);
         if (!visibleThreads.length) {
           clear(els.threadList);
           renderListState("empty", focusMode
@@ -11302,6 +11576,11 @@
           return;
         }
 
+        var activeElement = document.activeElement;
+        var focusedRow = activeElement && activeElement.closest ? activeElement.closest(".thread-row[data-p0-thread-key]") : null;
+        var focusedKey = focusedRow ? focusedRow.getAttribute("data-p0-thread-key") : "";
+        var focusWasCheckbox = Boolean(activeElement && activeElement.classList &&
+          activeElement.classList.contains("thread-select-checkbox"));
         var existing = new Map();
         Array.from(els.threadList.querySelectorAll(".thread-row[data-p0-thread-key]")).forEach(function (row) {
           existing.set(row.getAttribute("data-p0-thread-key"), row);
@@ -11314,6 +11593,15 @@
           if (!row || row.getAttribute("data-p0-signature") !== signature) row = p0BuildThreadRow(thread);
           else p0Runtime.metrics.rowReuses += 1;
           row.setAttribute("aria-current", thread.id === state.selectedThreadId && thread.accountId === state.selectedConnectionId ? "true" : "false");
+          var selected = state.selectedThreadKeys.indexOf(key) !== -1;
+          row.setAttribute("data-selected", selected ? "true" : "false");
+          var selectionBox = row.querySelector(".thread-select-checkbox");
+          if (selectionBox) {
+            selectionBox.checked = selected;
+            selectionBox.disabled = state.actionBusy || state.bulkActionBusy;
+            selectionBox.setAttribute("aria-label",
+              (selected ? "Скасувати вибір: " : "Вибрати: ") + thread.senderName + ", " + thread.subject);
+          }
           var actionButton = row.querySelector("[data-mail-action]");
           if (actionButton) actionButton.disabled = state.actionBusy;
           fragment.append(row);
@@ -11327,6 +11615,25 @@
           fragment.append(moreWrap);
         }
         els.threadList.replaceChildren(fragment);
+        if (focusedKey) {
+          window.requestAnimationFrame(function () {
+            var currentFocus = document.activeElement;
+            if (currentFocus && currentFocus !== document.body && currentFocus !== els.threadList &&
+                currentFocus.getAttribute && currentFocus.getAttribute("data-p0-thread-key") !== focusedKey) return;
+            var restoredRow = Array.prototype.slice.call(
+              els.threadList.querySelectorAll(".thread-row[data-p0-thread-key]")
+            ).find(function (candidate) {
+              return candidate.getAttribute("data-p0-thread-key") === focusedKey;
+            });
+            var focusTarget = focusWasCheckbox && restoredRow
+              ? restoredRow.querySelector(".thread-select-checkbox")
+              : restoredRow;
+            if (focusTarget) {
+              try { focusTarget.focus({ preventScroll: true }); }
+              catch (error) { focusTarget.focus(); }
+            }
+          });
+        }
         p0RestoreListScroll(p0Runtime.currentListKey);
       }
 
@@ -13960,6 +14267,9 @@
         els.readerPane.setAttribute("aria-busy", state.actionBusy ? "true" : "false");
         document.querySelectorAll("[data-mail-action]").forEach(function (button) {
           button.disabled = state.actionBusy;
+        });
+        document.querySelectorAll("[data-mail-select]").forEach(function (checkbox) {
+          checkbox.disabled = state.actionBusy || state.bulkActionBusy;
         });
       }
 

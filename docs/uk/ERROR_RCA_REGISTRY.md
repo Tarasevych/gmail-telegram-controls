@@ -26,6 +26,8 @@
 
 | RCA-014 | Back/Forward не мав canonical list/thread state, banner не повертав до Inbox, reader дублював account identity | Dynamic account context, route state і reader presentation були окремими механізмами без спільного history contract | Додано canonical hash routes, user-transition `pushState`, deduplicated `hashchange`/`popstate`, Inbox action та contextual account chip | Один route serializer, один history scheduler, stable connection IDs і regression contract для single/shared/mismatch | `PARTIAL` | [VR-032](verification-reports/reports/VR-032/README.md) |
 
+| RCA-015 | Checkbox selection був відсутній, `Space` відкривав лист, а double-click міг повторити route/open | Single-selection reader state помилково використовувався як повний list interaction model; click activation не мав single-flight guard | Додано namespaced stable-key selection, explicit keyboard contract, bounded account-scoped bulk pipeline і focus restoration | Не перевикористовувати `row.click()` для різних намірів; selection, activation і Gmail mutation мають окремі invariants та regression matrix | `PARTIAL` | [VR-034](verification-reports/reports/VR-034/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.
