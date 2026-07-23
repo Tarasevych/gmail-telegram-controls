@@ -527,3 +527,12 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Safety boundary:** fixtures are synthetic; live Gmail, Telegram, OAuth, staging, production, and release state were unchanged.
 - **Remaining:** owner-native `/mail folder:spam` and pagination acceptance remain `UNVERIFIED`; quota-blocked runtime is not used as evidence.
 - **Evidence:** [VR-029](verification-reports/reports/VR-029/README.md)
+
+## GT-059 — Box OAuth: least privilege and stable account identity
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Problem:** the authorize URL did not explicitly constrain scope; reconnect used mutable login/email, while the provider-specific callback did not fully validate `errorDescription`.
+- **Correction:** `scope=root_readonly`, a strict callback envelope, stable Box account ID, and a compatible lookup of historical protected token records.
+- **Evidence:** [VR-030](verification-reports/reports/VR-030/README.md).
+- **Residual:** authenticated Box acceptance, callback, refresh, revoke, and picker remain `UNVERIFIED`; no new OAuth was started.

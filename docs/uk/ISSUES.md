@@ -527,3 +527,12 @@ Status: BLOCKED
 - **Safety boundary:** fixtures синтетичні; live Gmail, Telegram, OAuth, staging, production і release state не змінювалися.
 - **Залишається:** owner-native `/mail folder:spam` і pagination acceptance лишаються `UNVERIFIED`; quota-blocked runtime не використовується як доказ.
 - **Доказ:** [VR-029](verification-reports/reports/VR-029/README.md)
+
+## GT-059 — Box OAuth: мінімальні права та стабільна ідентичність акаунта
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Проблема:** authorize URL не обмежував scope явно; повторне підключення шукало Box-акаунт за змінною login/email, а provider-specific callback не завершував перевірку `errorDescription`.
+- **Виправлення:** `scope=root_readonly`, строгий callback envelope, stable Box account ID та сумісний lookup історичного protected token record.
+- **Доказ:** [VR-030](verification-reports/reports/VR-030/README.md).
+- **Залишок:** authenticated Box acceptance, callback, refresh, revoke і picker залишаються `UNVERIFIED`; новий OAuth не запускався.
