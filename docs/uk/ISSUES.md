@@ -443,3 +443,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Збереження Gmail-чернеток тепер використовує обмежений спільний менеджер передач, зберігаючи чинні serialized autosave, стабільний client operation ID, канонічне Gmail readback, злиття revision, локальне відновлення та поведінку конфліктів. Apps Script RPC лишається чесним невизначеним прогресом без непідтримуваної кнопки cancel. Retry повторно використовує точну ідентичність draft operation/task і працює fail-closed після зміни compose, snapshot або контексту акаунта. Focused contract-тести пройшли 102/102, а повний Apps Script suite — 580/580. URL import, server-resumable restart, справжній транспортний abort і native acceptance для повільної мережі/згортання залишаються відкритими в GT-051.
+
+## 2026-07-23: продовження GT-051 для public HTTPS import
+
+Status: PARTIAL
+
+Імпорт public HTTPS-вкладення тепер виконується як одне обмежене спільне transfer-task для повної submit-операції. Паралельні submit використовують один metadata RPC і додають одне вкладення; task label та ID ніколи не містять URL. Apps Script RPC показує невизначений прогрес, не пропонує непідтримуваний cancel і повторюється лише доки активні ті самі compose session та Gmail connection. Чинні server-side перевірки normalization, DNS/IP, redirect, MIME і byte bounds для public HTTPS не змінено. Focused contract-тести пройшли 111/111, а повний Apps Script suite — 584/584. Server-resumable restart, справжній транспортний abort і native acceptance для повільної мережі/згортання залишаються відкритими в GT-051.

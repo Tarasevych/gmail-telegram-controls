@@ -273,3 +273,9 @@ The first unfinished B-03 continuation lane is implemented: thread/message-detai
 Status: PARTIAL
 
 The next B-03 lane is implemented: the existing Gmail draft save RPC now participates in the bounded shared transfer state without replacing compose autosave, idempotency, revision, conflict, or recovery semantics. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. A line-ending-agnostic regression guard also keeps the prior thread-detail evidence portable across LF and CRLF checkouts.
+
+## 2026-07-23: B1-31 public-HTTPS import increment
+
+Status: PARTIAL
+
+The URL-import lane is implemented without changing the server security boundary: the client now deduplicates the complete public-HTTPS metadata-and-attach operation through the bounded shared transfer manager, keeps private URLs out of task labels and IDs, and fails closed after compose/account changes. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584.

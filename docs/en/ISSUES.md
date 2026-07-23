@@ -443,3 +443,9 @@ The shared transfer manager now also owns the thread/message-detail fetch lane. 
 Status: PARTIAL
 
 Gmail draft persistence now uses the bounded shared transfer manager while retaining the existing serialized autosave, stable client operation ID, canonical Gmail readback, revision merge, local recovery, and conflict behavior. Apps Script RPC remains honest indeterminate progress with no unsupported cancel action. Retry reuses the exact draft operation/task identity and fails closed when the compose, snapshot, or account context changes. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. URL import, server-resumable restart, real transport abort, and native slow-network/minimize acceptance remain open under GT-051.
+
+## 2026-07-23: GT-051 public-HTTPS import continuation
+
+Status: PARTIAL
+
+Public HTTPS attachment import now runs as one bounded shared transfer task for the complete submit operation. Parallel submits share one metadata RPC and add one attachment; the task label and ID never contain the URL. Apps Script RPC reports indeterminate progress, exposes no unsupported cancel action, and retries only while the same compose session and Gmail connection remain active. Existing server-side public-HTTPS normalization, DNS/IP, redirect, MIME, and byte bounds are unchanged. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584. Server-resumable restart, real transport abort, and native slow-network/minimize acceptance remain open under GT-051.

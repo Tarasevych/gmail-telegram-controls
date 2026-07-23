@@ -273,3 +273,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Реалізовано наступну смугу B-03: чинний Gmail draft save RPC тепер входить до обмеженого спільного transfer-state без заміни семантики compose autosave, idempotency, revision, conflict або recovery. Focused contract-тести пройшли 102/102, а повний Apps Script suite — 580/580. Line-ending-agnostic regression guard також зберігає переносимість попередніх доказів thread-detail між LF і CRLF checkout.
+
+## 2026-07-23: інкремент B1-31 для public HTTPS import
+
+Status: PARTIAL
+
+Смугу URL import реалізовано без зміни server security boundary: клієнт тепер дедуплікує повну public-HTTPS metadata-and-attach операцію через обмежений shared transfer manager, не додає приватні URL до task label та ID і працює fail-closed після зміни compose/account. Focused contract-тести пройшли 111/111, а повний Apps Script suite — 584/584.

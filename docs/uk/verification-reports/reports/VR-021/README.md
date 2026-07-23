@@ -53,3 +53,9 @@ REQ-0035 розширює реалізацію спільного transfer-state
 Status: PARTIAL
 
 REQ-0035 розширює реалізацію спільного transfer-state на чинний Gmail draft persistence RPC. Точні compose snapshot і operation ID лишаються авторитетними; прогрес невизначений, непідтримуване скасування відсутнє, retry повторно використовує точну ідентичність task, а змінений compose/account context працює fail-closed. Focused contract-тести пройшли 102/102, а повний Apps Script suite — 580/580. Для цього source-інкремента не виконувались live Gmail mutation, OAuth-дія, staging deployment або production promotion.
+
+## 2026-07-23: докази продовження для public HTTPS import
+
+Status: PARTIAL
+
+REQ-0035 розширює shared transfer-state на повний public-HTTPS source submit. Runtime-тести підтверджують один RPC та одне вкладення для паралельних submit, generic content-free task identity, чесний невизначений прогрес і account/session fail-closed retry. Чинні server SSRF і content-bound контракти лишаються покритими повним suite. Focused contract-тести пройшли 111/111, а повний Apps Script suite — 584/584. Live external URL, Gmail mutation, OAuth-дія, staging deployment або production promotion не використовувалися.
