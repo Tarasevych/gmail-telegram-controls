@@ -40,3 +40,11 @@
 - Production і HEAD залишилися на exact v64; journal зупинився на `staging_create_reserved`, тому повторне створення було заборонене.
 - Helper доповнено обмеженим polling: не більше п'яти read-back спроб з паузою одну секунду. Він не повторює `deployments.create` і приймає лише рівно один deployment з exact version та description.
 - Staging acceptance і production promotion залишаються непідтвердженими до окремої перевірки.
+
+## Staging bridge
+
+- **Статус:** `PARTIAL`
+- Immutable v65 і рівно один staging deployment підтверджені helper read-back.
+- Окремий noindex bridge передає лише підписаний Telegram `initData` через form POST до exact v65 staging deployment; URL не містить токенів або приватних ключів.
+- Поточний owner-menu updater розділяє v65 staging та незмінний production URL; історичний v64 bridge не переписано.
+- Native Telegram acceptance ще не виконано, тому production promotion заборонений.
