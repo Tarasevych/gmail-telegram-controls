@@ -112,9 +112,11 @@ const BOT_UI = Object.freeze({
   EML_PREFIX: 'mail.eml:',
   ORIGINAL_PREFIX: 'mail.original:',
   ATTACHMENT_PREFIX: 'mail.att:',
+  ATTACHMENT_EXACT_PREFIX: 'ax.',
   ORIGINAL_MULTI_PREFIX: 'o2.',
   EML_MULTI_PREFIX: 'e2.',
   ATTACHMENT_MULTI_PREFIX: 'a2.',
+  ATTACHMENT_EXACT_MULTI_PREFIX: 'a3.',
   UNSUBSCRIBE_UNAVAILABLE_ACTION: 'mail.unsub_na',
   MAILBOX_PREFIX: 'm.',
   MAILBOX_MULTI_PREFIX: 'm2.',
@@ -5121,7 +5123,12 @@ function routeTelegramUpdate_(update) {
     }
     const attachment = parseAttachmentCallback_(action);
     if (attachment) {
-      const sendAttachment = () => sendAttachmentByIndex_(
+      const sendAttachment = () => attachment.token
+        ? sendAttachmentByIdentity_(
+          attachment.messageId, attachment.token, replyTo,
+          update.callback_query.message && update.callback_query.message.message_thread_id
+        )
+        : sendAttachmentByIndex_(
           attachment.messageId, attachment.index, replyTo,
           update.callback_query.message && update.callback_query.message.message_thread_id
         );
@@ -5359,10 +5366,41 @@ function parseMailboxCallback_(value) {
   };
 }
 
-function attachmentCallbackData_(messageId, index, connectionId) {
+function attachmentIdentityToken_(attachmentValue) {
+  const attachment = attachmentValue && typeof attachmentValue === 'object' ? attachmentValue : {};
+  const inlineData = String(attachment.data || '');
+  const inlineDataDigest = inlineData
+    ? bytesToHex_(Utilities.computeDigest(
+        Utilities.DigestAlgorithm.SHA_256,
+        inlineData,
+        Utilities.Charset.UTF_8
+      )).slice(0, 32)
+    : '';
+  const material = [
+    String(attachment.partId || ''),
+    String(attachment.attachmentId || ''),
+    inlineDataDigest,
+    String(attachment.contentId || ''),
+    String(attachment.contentLocation || ''),
+    String(attachment.name || ''),
+    String(attachment.mimeType || ''),
+    String(Number(attachment.size || 0)),
+  ].join('\u001f');
+  if (!String(attachment.partId || '') ||
+      (!String(attachment.attachmentId || '') && !inlineDataDigest)) {
+    throw new Error('Вкладення не має стабільної Gmail-ідентичності.');
+  }
+  return bytesToHex_(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    material,
+    Utilities.Charset.UTF_8
+  )).slice(0, 16);
+}
+
+function attachmentCallbackData_(messageId, attachment, connectionId) {
   const id = String(messageId || '');
-  const ordinal = Number(index);
-  if (!/^[a-zA-Z0-9_-]{5,50}$/.test(id) || !Number.isInteger(ordinal) || ordinal < 0 || ordinal > 99) {
+  const token = attachmentIdentityToken_(attachment);
+  if (!/^[a-zA-Z0-9_-]{5,50}$/.test(id)) {
     throw new Error('Некоректне вкладення для Telegram-кнопки.');
   }
   const connection = String(connectionId || '');
@@ -5370,8 +5408,8 @@ function attachmentCallbackData_(messageId, index, connectionId) {
     throw new Error('Некоректний Gmail-акаунт вкладення.');
   }
   const value = connection
-    ? BOT_UI.ATTACHMENT_MULTI_PREFIX + connection + ':' + id + ':' + ordinal.toString(36)
-    : BOT_UI.ATTACHMENT_PREFIX + id + ':' + ordinal.toString(36);
+    ? BOT_UI.ATTACHMENT_EXACT_MULTI_PREFIX + connection + ':' + id + ':' + token
+    : BOT_UI.ATTACHMENT_EXACT_PREFIX + id + ':' + token;
   if (BufferSafeByteLength_(value) > 64) {
     throw new Error('Telegram callback_data вкладення перевищує 64 байти.');
   }
@@ -5379,6 +5417,22 @@ function attachmentCallbackData_(messageId, index, connectionId) {
 }
 
 function parseAttachmentCallback_(value) {
+  const exactMultiPrefix = BOT_UI.ATTACHMENT_EXACT_MULTI_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const exactMulti = String(value || '').match(new RegExp(
+    '^' + exactMultiPrefix +
+    '(gmail-[A-Za-z0-9_-]{1,32}):([a-zA-Z0-9_-]{5,50}):([a-f0-9]{16})$'
+  ));
+  if (exactMulti) {
+    return { connectionId: exactMulti[1], messageId: exactMulti[2], token: exactMulti[3] };
+  }
+  const exactPrefix = BOT_UI.ATTACHMENT_EXACT_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const exact = String(value || '').match(new RegExp(
+    '^' + exactPrefix + '([a-zA-Z0-9_-]{5,50}):([a-f0-9]{16})$'
+  ));
+  if (exact) return { messageId: exact[1], token: exact[2] };
+
+  // Historical cards used an ordinal. Keep them readable, but every newly
+  // rendered card uses the exact opaque attachment identity above.
   const escapedMultiPrefix = BOT_UI.ATTACHMENT_MULTI_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const multi = String(value || '').match(new RegExp(
     '^' + escapedMultiPrefix + '(gmail-[A-Za-z0-9_-]{1,32}):([a-zA-Z0-9_-]{5,50}):([0-9a-z]{1,2})$'
@@ -10539,7 +10593,7 @@ function buildMailKeyboard_(gmailUrl, senderEmail, otpCodes, gmailMessageId, uns
   downloadable.forEach((entry, index) => {
     rows.push([{
       text: telegramAttachmentButtonText_(entry, index),
-      callback_data: attachmentCallbackData_(gmailMessageId, index, connectionId),
+      callback_data: attachmentCallbackData_(gmailMessageId, entry.attachment, connectionId),
     }]);
   });
   if ((attachments || []).length > downloadable.length && threadId) {
@@ -10721,12 +10775,7 @@ function telegramDownloadableAttachments_(message) {
   return regular.concat(inline).slice(0, 100);
 }
 
-function sendAttachmentByIndex_(messageId, index, replyTo, threadId, chatId) {
-  const message = getGmailMessage_(messageId);
-  const selected = telegramDownloadableAttachments_(message)[Number(index)];
-  if (!selected || !selected.attachment) {
-    throw new Error('Це вкладення більше не доступне в поточній версії листа.');
-  }
+function sendAttachmentSelection_(messageId, message, selected, replyTo, threadId, chatId) {
   const delivery = sendAttachmentSafely_(
     messageId,
     selected.attachment,
@@ -10739,6 +10788,29 @@ function sendAttachmentByIndex_(messageId, index, replyTo, threadId, chatId) {
   return delivery && delivery.sent
     ? { message: 'Вкладення надіслано в чат' }
     : { message: 'Вкладення завелике для Telegram; відкрийте його в Gmail' };
+}
+
+function sendAttachmentByIdentity_(messageId, identityToken, replyTo, threadId, chatId) {
+  const token = String(identityToken || '');
+  if (!/^[a-f0-9]{16}$/.test(token)) {
+    throw new Error('Некоректна ідентичність вкладення.');
+  }
+  const message = getGmailMessage_(messageId);
+  const matches = telegramDownloadableAttachments_(message)
+    .filter(entry => attachmentIdentityToken_(entry.attachment) === token);
+  if (matches.length !== 1) {
+    throw new Error('Це вкладення більше не доступне або має неоднозначну ідентичність.');
+  }
+  return sendAttachmentSelection_(messageId, message, matches[0], replyTo, threadId, chatId);
+}
+
+function sendAttachmentByIndex_(messageId, index, replyTo, threadId, chatId) {
+  const message = getGmailMessage_(messageId);
+  const selected = telegramDownloadableAttachments_(message)[Number(index)];
+  if (!selected || !selected.attachment) {
+    throw new Error('Це вкладення більше не доступне в поточній версії листа.');
+  }
+  return sendAttachmentSelection_(messageId, message, selected, replyTo, threadId, chatId);
 }
 
 function sendAttachmentSafely_(messageId, attachment, subject, replyTo, isInline, threadId, chatId) {
