@@ -92,3 +92,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-013/README.md](reports/VR-013/README.md)
 - **Conclusion:** immutable v64 is production/HEAD with staging `0` and journal `cleaned`; GT-031 and GT-037 are verified, while the remaining P0 scenarios stay partial.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-014 — GT-036 production client release detection correction
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-22
+- **Coverage:** canonical manifest-field mismatch, stale v60 marker in production-v64 source, exact v65 source marker, and real-manifest one-reload/no-loop regression contract.
+- **Report:** [reports/VR-014/README.md](reports/VR-014/README.md)
+- **Conclusion:** the causal source correction is locally verified; production remains v64 and v65 staging/production acceptance is unverified.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

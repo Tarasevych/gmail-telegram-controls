@@ -5,6 +5,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'MailApp.html'), 'utf8');
+const releaseState = JSON.parse(fs.readFileSync(
+  path.join(__dirname, '..', '..', 'docs', 'release-state.json'),
+  'utf8',
+));
 
 function functionSource(name) {
   const marker = new RegExp(`(?:async\\s+)?function\\s+${name}\\s*\\(`);
@@ -190,10 +194,21 @@ test('draft recovery stores text locally without tokens or attachment bytes', ()
 });
 
 test('release decision performs at most one automatic reload per target', () => {
-  const context = loadFunctions(['p0ReleaseAction']);
-  assert.equal(context.p0ReleaseAction(60, 60, 0), 'none');
-  assert.equal(context.p0ReleaseAction(60, 61, 0), 'reload');
-  assert.equal(context.p0ReleaseAction(60, 61, 61), 'manual');
+  const context = loadFunctions(['p0ReleaseAction', 'p0ExtractReleaseVersion']);
+  const productionVersion = releaseState.production.appsScriptImmutable;
+  const sourceVersion = Number(source.match(/var P0_CLIENT_RELEASE_VERSION = (\d+);/)[1]);
+  const sourceReleaseId = source.match(/var P0_CLIENT_RELEASE_ID = "([^"]+)";/)[1];
+
+  assert.equal(context.p0ExtractReleaseVersion(releaseState), productionVersion,
+    'the client must read the canonical release-state manifest field');
+  assert.ok(sourceVersion === productionVersion || sourceVersion === productionVersion + 1,
+    'source must identify either current production or exactly one cumulative candidate');
+  assert.equal(sourceReleaseId, 'Versie-1-v' + sourceVersion + '-p0');
+  assert.equal(context.p0ReleaseAction(sourceVersion, productionVersion, 0), 'none');
+  assert.equal(context.p0ReleaseAction(productionVersion, productionVersion + 1, 0), 'reload');
+  assert.equal(context.p0ReleaseAction(productionVersion, productionVersion + 1, productionVersion + 1), 'manual');
+  assert.equal(context.p0ReleaseAction(productionVersion + 1, productionVersion + 1, productionVersion + 1), 'none');
+  assert.match(functionSource('p0ExtractReleaseVersion'), /production\.appsScriptImmutable/);
   assert.equal((functionSource('p0CheckClientRelease').match(/location\.reload\(\)/g) || []).length, 1);
 });
 

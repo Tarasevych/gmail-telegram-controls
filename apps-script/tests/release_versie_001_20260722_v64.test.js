@@ -34,7 +34,7 @@ function normalizedFileHash(name) {
   const source = fs.readFileSync(path.join(root, name + '.' + extensions[name]), 'utf8').replace(/\r\n?/g, '\n');
   return crypto.createHash('sha256').update(source, 'utf8').digest('hex');
 }
-test('v64 helper pins exact v63 rollback, v63 history, and current source', () => {
+test('v64 helper pins exact v63 rollback, v63 history, and frozen v64 source', () => {
   assert.match(helper, /\$SourceMainSha\s*=\s*'da8b2768323db8fd8c1ba886b556bbfd2148d6de'/);
   assert.match(helper, /\$RollbackVersion\s*=\s*63\b/);
   assert.match(helper, /\$LegacyStagingVersion\s*=\s*63\b/);
@@ -48,8 +48,12 @@ test('v64 helper pins exact v63 rollback, v63 history, and current source', () =
   }
   for (const [name, hash] of Object.entries(expectedCandidate)) {
     assert.ok(helper.includes(hash), 'missing v64 candidate hash for ' + name);
-    assert.equal(normalizedFileHash(name), hash);
   }
+  assert.notEqual(normalizedFileHash('MailApp'), expectedCandidate.MailApp,
+    'mutable source must be allowed to advance without rewriting immutable v64');
+  const currentMailApp = fs.readFileSync(path.join(root, 'MailApp.html'), 'utf8');
+  assert.match(currentMailApp, /P0_CLIENT_RELEASE_VERSION = 65/);
+  assert.match(currentMailApp, /production\.appsScriptImmutable/);
 });
 
 test('v64 helper is fail closed and reconciles deployment propagation without duplicate mutation', () => {
