@@ -510,3 +510,15 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Records / Записи:** `GT-062`, `B1-42`, `RCA-015`, `VR-034`.
 - **Boundary / Межа:** synthetic IDs only; no real Gmail read/mark/archive, Telegram mutation, OAuth, staging, production promotion, release-helper mutation, token read, or secret-property read / лише synthetic IDs; без реальних Gmail read/mark/archive, змін Telegram, OAuth, staging, production promotion, release-helper mutation, читання токенів або secret properties.
 - **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable v70 remains historical and unchanged / production лишається v65, staging `0`, immutable v70 лишається історичною та незмінною.
+
+## F-01 mail-reader fidelity evidence / Доказ F-01 fidelity поштового reader
+
+- **Status / Статус:** source/tests/docs are `VERIFIED`; overall F-01 remains `PARTIAL` because native Telegram Desktop/mobile rendering with representative real fixtures is `UNVERIFIED` / source/tests/docs `VERIFIED`; загальний F-01 залишається `PARTIAL`, бо native Telegram Desktop/mobile rendering із representative real fixtures — `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `4ccb468a513d5162273770461967e56467fae7fd`.
+- **Normal merge / Звичайне злиття:** PR [#95](https://github.com/Tarasevych/gmail-telegram-controls/pull/95), merge `50c6d9a7a8edccf8f5a7eb72810963b941361ed8`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `50c6d9a7a8edccf8f5a7eb72810963b941361ed8`.
+- **Implemented / Реалізовано:** bounded `dir=ltr|rtl|auto` and BCP47-like `lang` survive server sanitization; plain and HTML content use content-derived direction and logical quote styling; the reader drops every image without an authenticated attachment token and allows hydrated mail images only as short-lived MIME-checked `blob:` values.
+- **Tests / Тести:** focused F-01 corpus `6/6`; full Apps Script suite `629/629`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, release-state, diff, and changed-file sensitive-signature gates passed.
+- **Records / Записи:** `GT-063`, `B1-43`, `RCA-016`, `VR-035`.
+- **Boundary / Межа:** synthetic fixtures only; no real Gmail read, remote image request, Telegram mutation, OAuth, staging, production promotion, release-helper mutation, token read, or secret-property read / лише synthetic fixtures; без читання реального Gmail, remote image request, змін Telegram, OAuth, staging, production promotion, release-helper mutation, читання токенів або secret properties.
+- **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable v70 remains historical and unchanged / production лишається v65, staging `0`, immutable v70 лишається історичною та незмінною.
