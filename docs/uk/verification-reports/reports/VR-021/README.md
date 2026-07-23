@@ -41,3 +41,9 @@
 ## Platform та release boundary
 
 Manager не заявляє JavaScript continuation після вивантаження Telegram WebView. Restart recovery можна перевести у `VERIFIED` лише для server-side resumable session. Apps Script RPC лишається indeterminate, бо не надає trustworthy transport byte stream або abort handle. Перед production claims потрібні окремо авторизований cumulative candidate і native slow/stalled-network acceptance.
+
+## 2026-07-23: докази продовження для деталей ланцюжка
+
+Status: PARTIAL
+
+REQ-0035 розширює реалізацію спільного transfer-state на отримання деталей ланцюжка/листа. Реалізація зберігає cache-first рендеринг, ставить Apps Script RPC у чергу з невизначеним прогресом, не показує непідтримуване скасування, повторно використовує ідентичність завдання для retry та зберігає generation guard проти застарілого рендерингу. Focused contract-тести пройшли 104/104, а повний Apps Script suite — 577/577. Перевірки bilingual, knowledge hub, verification report, release state, diff і доданих рядків на секрети пройшли. Native acceptance для повільної мережі/згортання лишається поза межами цього інкремента.

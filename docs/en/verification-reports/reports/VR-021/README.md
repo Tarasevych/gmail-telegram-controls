@@ -41,3 +41,9 @@ The client had no shared transfer truth. Local device files used compose-only `F
 ## Platform and release boundary
 
 The manager does not claim JavaScript continuation after Telegram unloads the WebView. Restart recovery can be `VERIFIED` only for a server-side resumable session. Apps Script RPC remains indeterminate because it exposes no trustworthy transport byte stream or abort handle. A separately authorized cumulative candidate and native slow/stalled-network acceptance are required before production claims.
+
+## 2026-07-23: thread-detail continuation evidence
+
+Status: PARTIAL
+
+REQ-0035 extends the shared transfer-state implementation to thread/message-detail retrieval. The implementation preserves cache-first rendering, queues the Apps Script RPC as indeterminate progress, omits unsupported cancellation, reuses the task identity for retry, and retains the generation guard against stale paint. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. Bilingual, knowledge-hub, verification-report, release-state, diff, and added-line secret checks pass. Native slow-network/minimize acceptance remains outside this increment.

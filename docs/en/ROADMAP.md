@@ -261,3 +261,9 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Still required after quota recovery:** one bounded v65/causal-candidate A/B, ten native launches, exact SecureStorage status, hard reload, mobile/WebView reopen, concurrent launch, bidirectional account switching, and measurable p95. Cached-thread restoration is qualitatively observed but not a formal performance result.
 - **Evidence:** [GT-053](ISSUES.md), [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## 2026-07-23: B1-31 thread-detail increment
+
+Status: PARTIAL
+
+The first unfinished B-03 continuation lane is implemented: thread/message-detail retrieval now participates in the bounded shared transfer queue without blocking cache-first rendering. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. The remaining B1-31 work is draft persistence, URL import, server-resumable restart, real abort where transport support exists, and native slow-network/minimize acceptance.
