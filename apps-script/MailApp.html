@@ -3154,21 +3154,29 @@
       text-align: left;
     }
 
-    .compose-save-status:hover,
-    .compose-save-status:focus-visible {
+    .compose-save-status:not([aria-disabled="true"]):hover,
+    .compose-save-status:not([aria-disabled="true"]):focus-visible {
       border-color: var(--border-strong);
       color: var(--text);
+    }
+
+    .compose-save-status[aria-disabled="true"] {
+      cursor: default;
     }
 
     .compose-save-status[data-state="saved"] {
       color: var(--success);
     }
 
+    .compose-save-status[data-state="changed"],
+    .compose-save-status[data-state="saving"],
+    .compose-save-status[data-state="offline"],
     .compose-save-status[data-state="local"],
     .compose-save-status[data-state="pending"] {
       color: var(--primary-strong);
     }
 
+    .compose-save-status[data-state="conflict"],
     .compose-save-status[data-state="error"] {
       color: var(--danger);
     }
@@ -5358,8 +5366,8 @@
         </div>
         <div class="topbar-spacer"></div>
         <div class="compose-header-actions">
-          <button class="compose-save-status" id="composeSaveStatusButton" type="button" data-state="saved" aria-label="Перевірити стан збереження чернетки">
-            <span id="composeSaveStatusText">Збережено в Gmail</span>
+          <button class="compose-save-status" id="composeSaveStatusButton" type="button" data-state="changed" data-action="" aria-disabled="true" tabindex="-1" aria-label="Статус збереження чернетки: змінено">
+            <span id="composeSaveStatusText" role="status" aria-live="polite" aria-atomic="true">Змінено</span>
           </button>
           <button class="icon-button" id="minimizeComposeButton" type="button" aria-label="Згорнути редактор" title="Згорнути редактор">—</button>
         </div>
@@ -10505,6 +10513,7 @@
           bodyHtml: draft.bodyHtml == null ? "" : String(draft.bodyHtml),
           revision: Number(draft.revision || 0),
           savedRevision: Number(draft.savedRevision || 0),
+          lastCanonicalSavedAt: Math.max(0, Number(draft.lastCanonicalSavedAt || 0)),
           serverFingerprint: safeText(draft.baselineFingerprint),
           attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length,
           missingAttachmentCount: Math.max(0, Number(draft.restartRecoveryBlockedCount || 0)),
@@ -10597,10 +10606,18 @@
           bodyHtml: value.bodyHtml,
           revision: Math.max(Number(base.revision || 0), Number(value.revision || 0)),
           savedRevision: Number(value.savedRevision || 0),
+          lastCanonicalSavedAt: Math.max(
+            Number(base.lastCanonicalSavedAt || 0),
+            Number(value.lastCanonicalSavedAt || 0)
+          ),
           dirty: true,
           baselineFingerprint: safeText(value.serverFingerprint, base.baselineFingerprint),
           p0RecoveryKey: p0DraftRecoveryKey(value),
-          p0LocalRecovery: true
+          p0LocalRecovery: true,
+          draftSaveFailureCount: 0,
+          draftSaveDeferred: false,
+          draftSaveError: "",
+          draftSaveNextDelay: 0
         });
         recovered.restartRecoveryBlockedCount = Math.max(
           0,
@@ -15311,6 +15328,11 @@
           closeAfterSave: false,
           revision: 0,
           savedRevision: 0,
+          lastCanonicalSavedAt: 0,
+          draftSaveFailureCount: 0,
+          draftSaveDeferred: false,
+          draftSaveError: "",
+          draftSaveNextDelay: 0,
           dirty: false,
           baselineFingerprint: ""
         });
@@ -15358,6 +15380,11 @@
           closeAfterSave: false,
           revision: 0,
           savedRevision: 0,
+          lastCanonicalSavedAt: safeId(draft.id || draft.draftId) ? Date.now() : 0,
+          draftSaveFailureCount: 0,
+          draftSaveDeferred: false,
+          draftSaveError: "",
+          draftSaveNextDelay: 0,
           dirty: false,
           baselineFingerprint: ""
         });
@@ -15654,38 +15681,111 @@
         });
       }
 
+      function formatComposeSavedTime(value) {
+        var timestamp = Math.max(0, Number(value || 0));
+        if (!timestamp) return "";
+        var date = new Date(timestamp);
+        if (!Number.isFinite(date.getTime())) return "";
+        try {
+          return date.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
+        } catch (error) {
+          return "";
+        }
+      }
+
+      function composeSaveStatusPresentation(value) {
+        var input = value || {};
+        var savedTime = String(input.savedTime || "").trim();
+        if (input.conflict) {
+          return { stateName: "conflict", label: "Конфлікт", action: "resolve-conflict" };
+        }
+        if (Number(input.failedFiles || 0) > 0) {
+          return {
+            stateName: "error",
+            label: "Потрібна дія для файлів: " + Number(input.failedFiles || 0),
+            action: ""
+          };
+        }
+        if (Number(input.processingFiles || 0) > 0) {
+          return {
+            stateName: "changed",
+            label: "Змінено · обробляється файлів: " + Number(input.processingFiles || 0),
+            action: ""
+          };
+        }
+        if (input.sendPending) {
+          return { stateName: "pending", label: "Перевірити надсилання", action: "retry-send" };
+        }
+        if (input.offline && (input.dirty || input.pendingDraft || input.saving)) {
+          return { stateName: "offline", label: "Офлайн — у черзі", action: "" };
+        }
+        if (input.deferred || input.blocked || input.error) {
+          return { stateName: "error", label: "Не збережено — повторити", action: "retry-save" };
+        }
+        if (input.saving || input.pendingDraft) {
+          return { stateName: "saving", label: "Зберігаю…", action: "" };
+        }
+        if (Number(input.readyFiles || 0) > 0) {
+          return {
+            stateName: "changed",
+            label: "Змінено · файли готові локально",
+            action: input.dirty ? "save-now" : ""
+          };
+        }
+        if (input.dirty) {
+          return { stateName: "changed", label: "Змінено", action: "save-now" };
+        }
+        if (input.canonicalSaved) {
+          return {
+            stateName: "saved",
+            label: "Збережено ✓" + (savedTime ? " " + savedTime : ""),
+            action: ""
+          };
+        }
+        return { stateName: "changed", label: "Змінено", action: "" };
+      }
+
       function updateComposeSaveStatus() {
         if (!els.composeSaveStatusButton || !els.composeSaveStatusText) return;
         var allJobs = composeAttachmentJobs();
         var jobs = composeAttachmentJobsPending();
         var failedJobs = allJobs.filter(function (job) { return job.state === "error"; });
         var pending = composePendingKind();
-        var stateName = "saved";
-        var label = "Збережено в Gmail";
-        if (jobs.length) {
-          stateName = "local";
-          label = "Локально: обробляється " + jobs.length;
-        } else if (failedJobs.length) {
-          stateName = "error";
-          label = "Потрібна дія для файлів: " + failedJobs.length;
-        } else if (allJobs.length) {
-          stateName = "local";
-          label = "Файли готові локально";
-        } else if (pending === "send") {
-          stateName = "pending";
-          label = "Перевірити надсилання";
-        } else if (state.composeSaveInFlight || pending === "draft") {
-          stateName = "pending";
-          label = pending === "draft" ? "Перевірити збереження" : "Зберігаю в Gmail…";
-        } else if (state.compose && state.compose.dirty) {
-          stateName = "local";
-          label = navigator.onLine === false
-            ? "Немає з’єднання · локально збережено"
-            : "Локально збережено · Gmail ще не підтвердив";
-        }
-        els.composeSaveStatusButton.dataset.state = stateName;
-        els.composeSaveStatusText.textContent = label;
-        els.composeSaveStatusButton.setAttribute("aria-label", label + ". Натисніть, щоб перевірити стан.");
+        var draft = state.compose;
+        var model = composeSaveStatusPresentation({
+          conflict: Boolean(p0Runtime.composeConflict),
+          failedFiles: failedJobs.length,
+          processingFiles: jobs.length,
+          readyFiles: allJobs.length,
+          sendPending: pending === "send",
+          pendingDraft: pending === "draft",
+          saving: state.composeSaveInFlight,
+          dirty: Boolean(draft && draft.dirty),
+          offline: navigator.onLine === false,
+          deferred: Boolean(draft && (draft.restartRecoveryDeferred || draft.draftSaveDeferred)),
+          blocked: Boolean(draft && Number(draft.restartRecoveryBlockedCount || 0)),
+          error: Boolean(draft && draft.draftSaveError),
+          canonicalSaved: Boolean(draft && Number(draft.lastCanonicalSavedAt || 0)),
+          savedTime: formatComposeSavedTime(draft && draft.lastCanonicalSavedAt)
+        });
+        var actionText = model.action === "retry-save"
+          ? " Активуйте, щоб повторити збереження."
+          : model.action === "save-now"
+          ? " Активуйте, щоб зберегти зараз."
+          : model.action === "resolve-conflict"
+          ? " Активуйте, щоб вибрати версію."
+          : model.action === "retry-send"
+          ? " Активуйте, щоб перевірити надсилання."
+          : "";
+        els.composeSaveStatusButton.dataset.state = model.stateName;
+        els.composeSaveStatusButton.dataset.action = model.action;
+        els.composeSaveStatusButton.setAttribute("aria-disabled", model.action ? "false" : "true");
+        els.composeSaveStatusButton.tabIndex = model.action ? 0 : -1;
+        els.composeSaveStatusText.textContent = model.label;
+        els.composeSaveStatusButton.setAttribute(
+          "aria-label",
+          "Статус збереження чернетки: " + model.label + "." + actionText
+        );
       }
 
       function checkComposeSaveStatus() {
@@ -15701,9 +15801,27 @@
           return Promise.resolve(false);
         }
         if (state.composeSavePromise) return state.composeSavePromise;
-        if (state.compose.dirty || composePendingKind() === "draft") return saveDraft({ quiet: false, background: false });
-        if (composePendingKind() === "send") return sendCompose();
-        if (!jobs.length) showSnackbar("Чернетку збережено в Gmail.", { success: true });
+        var action = safeText(els.composeSaveStatusButton.dataset.action);
+        if (action === "resolve-conflict") {
+          p0RenderDraftConflictControls();
+          showSnackbar("Оберіть локальну або Gmail-версію чернетки.", { error: true });
+          return Promise.resolve(false);
+        }
+        if (action === "retry-save") {
+          state.compose.restartRecoveryDeferred = false;
+          state.compose.draftSaveDeferred = false;
+          state.compose.draftSaveError = "";
+          state.compose.draftSaveFailureCount = 0;
+          state.compose.draftSaveNextDelay = 0;
+          if (state.compose.pendingSaveSnapshot) {
+            state.compose.pendingSaveSnapshot.pendingAttempts = 0;
+            state.compose.pendingSaveSnapshot.restartAttempts = 0;
+          }
+          updateComposeLifecycleControls();
+          return saveDraft({ quiet: false, background: false });
+        }
+        if (action === "save-now") return saveDraft({ quiet: false, background: false });
+        if (action === "retry-send") return sendCompose();
         return Promise.resolve(true);
       }
 
@@ -15751,6 +15869,10 @@
           updateComposeLifecycleControls();
           return;
         }
+        if (navigator.onLine === false || state.compose.draftSaveDeferred || state.compose.restartRecoveryDeferred) {
+          updateComposeLifecycleControls();
+          return;
+        }
         state.composeAutosaveTimer = window.setTimeout(function () {
           state.composeAutosaveTimer = 0;
           saveDraft({ quiet: true, background: true });
@@ -15762,6 +15884,10 @@
         clearComposeAutosaveTimer();
         if (!state.compose || !state.compose.dirty || !hasDraftContent() || composePendingKind() === "send") {
           return state.composeSavePromise || Promise.resolve(true);
+        }
+        if (navigator.onLine === false || state.compose.draftSaveDeferred || state.compose.restartRecoveryDeferred) {
+          updateComposeLifecycleControls();
+          return Promise.resolve(false);
         }
         return saveDraft({ quiet: true, background: true, reason: safeText(reason) });
       }
@@ -15830,7 +15956,7 @@
       function pendingComposeMessage(kind) {
         return kind === "send"
           ? "Gmail перевіряє, чи лист уже надіслано. Натисніть «Перевірити надсилання»."
-          : "Gmail перевіряє, чи чернетку вже збережено. Натисніть «Перевірити збереження».";
+          : "Gmail перевіряє, чи чернетку вже збережено. Перевірка виконується автоматично.";
       }
 
       function fallbackReplyPreset(lastMessage) {
@@ -17181,6 +17307,12 @@
         if (!state.compose) return;
         var opts = options || {};
         state.compose.revision = Number(state.compose.revision || 0) + 1;
+        if (!composePendingKind()) {
+          state.compose.draftSaveFailureCount = 0;
+          state.compose.draftSaveDeferred = false;
+          state.compose.draftSaveError = "";
+          state.compose.draftSaveNextDelay = 0;
+        }
         updateComposeDirty();
         p0PersistComposeRecovery();
         if (!opts.skipHistory) recordComposeHistory();
@@ -17470,12 +17602,14 @@
             fingerprint: composeFingerprint(composeAtStart),
             operationId: composeAtStart.draftOperationId,
             attachmentKeys: composeRegularAttachmentSnapshot(composeAtStart.attachments),
-            payload: composePayload()
+            payload: composePayload(),
+            pendingAttempts: 0
           };
           composeAtStart.pendingSaveSnapshot = snapshot;
         }
         if (!snapshot.restartCheckOnly) await p0PersistComposeRecovery();
         composeAtStart.pendingKind = "";
+        composeAtStart.draftSaveError = "";
         state.composeSaveInFlight = true;
         state.composeSaveQueued = false;
         setComposeBusy(state.composeBusy);
@@ -17490,6 +17624,12 @@
             throw incompleteSave;
           }
             var canonical = normalizeDraft(data.draft, "draft");
+            var canonicalAcknowledgedAt = Date.now();
+            canonical.lastCanonicalSavedAt = canonicalAcknowledgedAt;
+            canonical.draftSaveFailureCount = 0;
+            canonical.draftSaveDeferred = false;
+            canonical.draftSaveError = "";
+            canonical.draftSaveNextDelay = 0;
             var completedDraftOperationId = snapshot.operationId;
             if (state.compose === composeAtStart) {
               var currentRevision = Number(composeAtStart.revision || 0);
@@ -17528,6 +17668,11 @@
                 }
                 composeAtStart.savedRevision = snapshot.revision;
                 composeAtStart.baselineFingerprint = canonical.baselineFingerprint;
+                composeAtStart.lastCanonicalSavedAt = canonicalAcknowledgedAt;
+                composeAtStart.draftSaveFailureCount = 0;
+                composeAtStart.draftSaveDeferred = false;
+                composeAtStart.draftSaveError = "";
+                composeAtStart.draftSaveNextDelay = 0;
                 composeAtStart.draftOperationId = "";
                 composeAtStart.pendingKind = "";
                 composeAtStart.pendingSaveSnapshot = null;
@@ -17560,6 +17705,8 @@
               composeAtStart.p0RestartRecovery = false;
               composeAtStart.restartRecoveryDeferred = false;
               composeAtStart.restartRecoveryBlockedCount = missingAttachments;
+              composeAtStart.draftSaveDeferred = Boolean(missingAttachments);
+              composeAtStart.draftSaveError = missingAttachments ? "missing-attachments" : "";
               composeAtStart.closeAfterSave = false;
               if (missingAttachments) {
                 state.composeSaveQueued = false;
@@ -17582,6 +17729,8 @@
               composeAtStart.closeAfterSave = closeAfter;
               composeAtStart.pendingSaveSnapshot = snapshot;
               composeAtStart.restartRecoveryDeferred = true;
+              composeAtStart.draftSaveDeferred = true;
+              composeAtStart.draftSaveError = "pending-confirmation";
               state.composeSaveQueued = false;
               p0PersistComposeRecovery();
               if (!opts.quiet) {
@@ -17590,23 +17739,34 @@
               return false;
             }
             if (composeOperationIsPending(error, "draft")) {
+              snapshot.pendingAttempts = Number(snapshot.pendingAttempts || 0) + 1;
+              var pendingDeferred = snapshot.pendingAttempts >= 3;
               composeAtStart.pendingKind = "draft";
               composeAtStart.closeAfterSave = closeAfter;
               composeAtStart.pendingSaveSnapshot = snapshot;
+              composeAtStart.draftSaveDeferred = pendingDeferred;
+              composeAtStart.draftSaveError = pendingDeferred ? "pending-confirmation" : "";
+              composeAtStart.draftSaveNextDelay = 3500;
+              state.composeSaveQueued = !pendingDeferred;
+              p0PersistComposeRecovery();
               if (!opts.quiet) showSnackbar(pendingComposeMessage("draft"));
               if (closeAfter) minimizeCompose({ quiet: true });
-              else scheduleComposeAutosave(3500);
-            return false;
-          }
+              return false;
+            }
             composeAtStart.draftOperationId = "";
             composeAtStart.pendingKind = "";
             composeAtStart.pendingSaveSnapshot = null;
             composeAtStart.closeAfterSave = false;
             var failure = safeText(error.message, "Не вдалося зберегти чернетку.");
+            composeAtStart.draftSaveFailureCount = Number(composeAtStart.draftSaveFailureCount || 0) + 1;
+            composeAtStart.draftSaveDeferred = composeAtStart.draftSaveFailureCount >= 3;
+            composeAtStart.draftSaveError = failure;
+            composeAtStart.draftSaveNextDelay = 5000;
+            state.composeSaveQueued = !composeAtStart.draftSaveDeferred;
             if (state.composeCloseDialogOpen) els.composeCloseStatus.textContent = failure;
             if (!opts.quiet) showSnackbar(failure, { error: true });
-            scheduleComposeAutosave(5000);
-          return false;
+            p0PersistComposeRecovery();
+            return false;
           }
         })();
 
@@ -17618,9 +17778,14 @@
           state.composeSaveInFlight = false;
           setComposeBusy(state.composeBusy);
           if (state.compose === composeAtStart) {
-            var retryDelay = composePendingKind() === "draft" ? 3500 : 80;
+            var retryDelay = Math.max(
+              80,
+              Number(state.compose.draftSaveNextDelay || (composePendingKind() === "draft" ? 3500 : 80))
+            );
+            state.compose.draftSaveNextDelay = 0;
             var shouldContinue = !Number(state.compose.restartRecoveryBlockedCount || 0) &&
               !state.compose.restartRecoveryDeferred &&
+              !state.compose.draftSaveDeferred &&
               (state.composeSaveQueued ||
                 (state.compose.dirty &&
                   Number(state.compose.revision || 0) > Number(state.compose.savedRevision || 0)));
@@ -18049,7 +18214,7 @@
           ? "Зберігаю…"
           : networkBusy
           ? "Зачекайте…"
-          : pendingKind === "draft" ? "Перевірити збереження" : "Зберегти чернетку";
+          : pendingKind === "draft" ? "Збереження триває…" : "Зберегти зараз";
         els.sendButton.textContent = networkBusy
           ? "Зачекайте…"
           : pendingKind === "send" ? "Перевірити надсилання" : "Надіслати";
@@ -20706,9 +20871,13 @@
         });
         window.addEventListener("online", function () {
           showSnackbar("З’єднання відновлено", { success: true });
+          updateComposeLifecycleControls();
           flushComposeAutosave("online");
         });
-        window.addEventListener("offline", function () { showSnackbar("Немає з’єднання з інтернетом", { error: true }); });
+        window.addEventListener("offline", function () {
+          updateComposeLifecycleControls();
+          showSnackbar("Немає з’єднання з інтернетом", { error: true });
+        });
         window.addEventListener("hashchange", scheduleLocationRouteHandling_);
         window.addEventListener("popstate", scheduleLocationRouteHandling_);
         document.addEventListener("visibilitychange", function () {

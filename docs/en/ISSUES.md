@@ -270,8 +270,11 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ## GT-045 — Drafts
 
 - **Status:** PARTIAL
-- Local recovery, serialized autosave, stable draft operation IDs and Gmail readback contracts pass locally.
-- Cross-session/device continuation, offline conflicts and native restart acceptance remain `UNVERIFIED`.
+- Local recovery, serialized autosave, stable draft operation IDs, and Gmail canonical readback contracts pass locally.
+- **C-01 source correction:** normal UX no longer asks the user to “Check saving.” A derived state machine distinguishes `Changed`, `Saving…`, `Saved ✓ <time>`, `Offline — queued`, `Conflict`, and terminal `Not saved — retry`.
+- `Saved` is assigned only after canonical Gmail draft readback; pending and terminal retries are bounded, while a manual retry preserves the exact operation ID. A local/server conflict never silently overwrites either version.
+- Cross-session/device continuation, a real offline conflict, and native restart acceptance remain `UNVERIFIED`.
+- **Evidence:** [VR-040](verification-reports/reports/VR-040/README.md), `RCA-021`. Source request: `REQ-0035`.
 
 ## GT-046 — Version-aware client update
 

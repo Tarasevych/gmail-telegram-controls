@@ -270,8 +270,11 @@
 ## GT-045 — Чернетки
 
 - **Статус:** PARTIAL
-- Локальний recovery, serialized autosave, stable draft operation IDs і Gmail readback contracts проходять локально.
-- Cross-session/device continuation, offline conflict і native restart acceptance лишаються `UNVERIFIED`.
+- Локальний recovery, serialized autosave, stable draft operation IDs і Gmail canonical readback contracts проходять локально.
+- **C-01 source correction:** normal UX більше не вимагає ручного «Перевірити збереження». Derived state machine розрізняє `Змінено`, `Зберігаю…`, `Збережено ✓ <час>`, `Офлайн — у черзі`, `Конфлікт` і terminal `Не збережено — повторити`.
+- `Збережено` встановлюється лише після canonical Gmail draft readback; pending і terminal retries bounded, а manual retry зберігає exact operation ID. Local/server conflict не перезаписує жодну версію мовчки.
+- Cross-session/device continuation, real offline conflict і native restart acceptance лишаються `UNVERIFIED`.
+- **Доказ:** [VR-040](verification-reports/reports/VR-040/README.md), `RCA-021`. Source request: `REQ-0035`.
 
 ## GT-046 — Version-aware client update
 

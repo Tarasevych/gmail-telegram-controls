@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-039](reports/VR-039/README.md) фіксує F-05: measurable scroll-position progress, exact thread/account debounce guards, compact чесний text, reduced-motion handling і збереження під час background layout changes. Native reader і production acceptance лишаються окремими gates.
+[VR-040](reports/VR-040/README.md) фіксує C-01: canonical-ack autosave states, offline queue, bounded retry, stable operation reuse і explicit conflict boundary. Native Gmail draft, restart/offline і production acceptance лишаються окремими gates.

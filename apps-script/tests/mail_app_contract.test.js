@@ -3102,7 +3102,8 @@ test('pending compose state keeps exit controls usable while exposing reconcilia
   );
   assert.match(busySource, /pendingKind === "send"/);
   assert.match(busySource, /pendingKind === "draft"/);
-  assert.match(busySource, /"Перевірити збереження"/);
+  assert.match(busySource, /"Збереження триває…"/);
+  assert.doesNotMatch(busySource, /"Перевірити збереження"/);
   assert.match(busySource, /"Перевірити надсилання"/);
   assert.match(busySource, /contenteditable", locked \? "false" : "true"/);
   assert.match(busySource, /closeComposeButton\.disabled = false/);
