@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'MailApp.html'), 'utf8');
+const mailClientSource = fs.readFileSync(path.join(__dirname, '..', 'MailClient.gs'), 'utf8');
 const releaseState = JSON.parse(fs.readFileSync(
   path.join(__dirname, '..', '..', 'docs', 'release-state.json'),
   'utf8',
@@ -53,37 +54,50 @@ function loadFunctions(names) {
 }
 
 test('P0 cache is bounded, versioned and account-scoped', () => {
-  assert.match(source, /var P0_CACHE_SCHEMA = 1;/);
-  assert.match(source, /P0_CACHE_MAX_RECORDS = 120/);
-  assert.match(source, /P0_CACHE_MAX_BYTES = 4 \* 1024 \* 1024/);
+  assert.match(source, /var P0_CACHE_SCHEMA = 2;/);
+  assert.match(source, /P0_CACHE_MAX_RECORDS = 480/);
+  assert.match(source, /P0_CACHE_MAX_BYTES = 16 \* 1024 \* 1024/);
   assert.match(source, /indexedDB\.open\("gmail-telegram-controls-versie-1"/);
   assert.match(source, /p0NamespaceAllowed\(record\.namespace, p0Runtime\.allowedAccountIds\)/);
 });
 
 test('namespace contract rejects cross-account and malformed shared records', () => {
   const context = loadFunctions([
+    'p0SafeCacheScope',
     'p0NamespaceAllowed',
     'p0NamespaceAccountIds',
     'p0ListSnapshotMatchesNamespace',
   ]);
-  assert.equal(context.p0NamespaceAllowed('a:alpha', ['alpha', 'beta']), true);
-  assert.equal(context.p0NamespaceAllowed('a:gamma', ['alpha', 'beta']), false);
-  assert.equal(context.p0NamespaceAllowed('u:alpha,beta', ['alpha', 'beta']), true);
-  assert.equal(context.p0NamespaceAllowed('u:alpha,gamma', ['alpha', 'beta']), false);
-  assert.equal(context.p0NamespaceAllowed('u:alpha', ['alpha']), false);
+  const owner = 'A'.repeat(43);
+  const otherOwner = 'B'.repeat(43);
+  context.p0Runtime = { cacheScope: owner };
+  assert.equal(context.p0NamespaceAllowed(`t:${owner}|a:alpha`, ['alpha', 'beta'], owner), true);
+  assert.equal(context.p0NamespaceAllowed(`t:${owner}|a:gamma`, ['alpha', 'beta'], owner), false);
+  assert.equal(context.p0NamespaceAllowed(`t:${owner}|u:alpha,beta`, ['alpha', 'beta'], owner), true);
+  assert.equal(context.p0NamespaceAllowed(`t:${owner}|u:alpha,gamma`, ['alpha', 'beta'], owner), false);
+  assert.equal(context.p0NamespaceAllowed(`t:${owner}|u:alpha`, ['alpha'], owner), false);
+  assert.equal(context.p0NamespaceAllowed(`t:${otherOwner}|a:alpha`, ['alpha', 'beta'], owner), false);
   assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
     { accountId: 'alpha' },
-  ] }, 'a:alpha'), true);
+  ] }, `t:${owner}|a:alpha`), true);
   assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
     { accountId: 'beta' },
-  ] }, 'a:alpha'), false);
+  ] }, `t:${owner}|a:alpha`), false);
   assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
     { account: { id: 'alpha' } },
     { connectionId: 'beta' },
-  ] }, 'u:alpha,beta'), true);
+  ] }, `t:${owner}|u:alpha,beta`), true);
   assert.equal(context.p0ListSnapshotMatchesNamespace({ threads: [
     { accountId: 'gamma' },
-  ] }, 'u:alpha,beta'), false);
+  ] }, `t:${owner}|u:alpha,beta`), false);
+});
+
+test('server issues an opaque owner-bound cache scope without exposing Telegram identifiers', () => {
+  assert.match(mailClientSource, /function mailboxCacheScope_/);
+  assert.match(mailClientSource, /computeHmacSha256Signature\([\s\S]*mailbox-cache-scope-v1:/);
+  assert.match(mailClientSource, /cacheScope:\s*mailboxCacheScope_\(session\.userId\)/);
+  assert.match(source, /state\.cacheScope = \/\^\[A-Za-z0-9_-\]\{43\}\$\//);
+  assert.match(source, /\^t:\(\[A-Za-z0-9_-\]\{43\}\)\\\|\(a\|u\):/);
 });
 
 test('account switch clears the prior account reader before the new bootstrap', () => {
@@ -165,6 +179,27 @@ test('warm list and thread paths render cached state before background revalidat
   assert.match(thread, /p0PeekRecord\("thread"/);
   assert.match(thread, /refresh\.catch/);
   assert.doesNotMatch(thread, /state\.threadLoading \|\|/);
+  assert.match(list, /opts\.returnAfterCache/);
+  assert.match(list, /loadThreads\(true, \{ background: true \}\)/);
+});
+
+test('background prefetch caches unread-first thread bodies without marking them read', () => {
+  const prefetch = functionSource('p0PrefetchThreadSummary');
+  const scheduler = functionSource('p0PrefetchVisibleThreads');
+  assert.match(prefetch, /op: "getThread"/);
+  assert.match(prefetch, /p0RememberThread\(detail\)/);
+  assert.doesNotMatch(prefetch, /changeThreadAction|markRead|UNREAD/);
+  assert.match(scheduler, /Boolean\(right\.unread\)/);
+  assert.match(scheduler, /\.slice\(0, 3\)/);
+});
+
+test('persistent storage request is advisory and never blocks the app shell', () => {
+  const request = functionSource('p0RequestPersistentStorage');
+  const background = functionSource('p0StartBackgroundWork');
+  assert.match(request, /navigator\.storage\.persisted/);
+  assert.match(request, /navigator\.storage\.persist/);
+  assert.match(request, /\.catch\(function \(\) \{ return false; \}\)/);
+  assert.match(background, /p0RequestPersistentStorage\(\);/);
 });
 
 test('thread list reconciliation reuses stable keyed rows', () => {
@@ -245,7 +280,7 @@ test('fresh cached thread navigation skips an immediate duplicate RPC', () => {
   assert.match(source, /lastThreadUsableMs/,
     'preview diagnostics must report internal reader usability time without identifiers');
   assert.match(functionSource('runBootPipeline'),
-    /initializeFromBootstrap\(bootstrap \|\| \{\}\);[\s\S]{0,120}await p0HydratePersistentState\(\);[\s\S]*await loadThreads\(true\)/,
+    /initializeFromBootstrap\(bootstrap \|\| \{\}\);[\s\S]*?await p0HydratePersistentState\(\);[\s\S]*?await loadThreads\(true,\s*\{\s*returnAfterCache:\s*true\s*\}\)/,
     'initial bootstrap must establish the account allowlist before cached state and list reads');
   assert.match(functionSource('openCompose'),
     /draft\.replyToMessageId[\s\S]*state\.compose = p0ApplyRecoveredDraft\(setComposeBaseline\(draft\)\)/,

@@ -192,7 +192,7 @@ test('mail list uses honest server-wide Gmail filters and has no fake oldest sor
 
   const requestSource = sourceBetween(
     '      function safeMailboxFilter(value) {',
-    '      var P0_CACHE_SCHEMA = 1;'
+    '      var P0_CACHE_SCHEMA = 2;'
   ) + sourceBetween(
     '      function mailboxViewContext() {',
     '      function formatTimestampLabel(value, fallback) {'
@@ -239,7 +239,7 @@ test('automatic stale thread routes recover to the loaded list while manual fail
     '      function mailboxViewContext() {'
   );
   const bootSource = sourceBetween(
-    '      async function boot() {',
+    '      async function boot(options) {',
     '      function previewOpenSession() {'
   );
   assert.match(uiSource, /function recoverFailedAutomaticThreadRoute\(\)[\s\S]*embeddedLaunchRoute = "";[\s\S]*history\.replaceState\(null, "", location\.pathname \+ location\.search\)[\s\S]*state\.selectedThreadId = "";[\s\S]*els\.readerEmpty\.hidden = false/);
@@ -314,6 +314,7 @@ test('a slow list request is superseded and the latest queued view is rendered',
       accounts: [{ id: 'gmail-unit-list' }],
       unifiedMode: false,
       accountSettings: { unifiedConnectionIds: [] },
+      cacheScope: 'A'.repeat(43),
       currentFolderId: 'INBOX',
       currentLabelId: '',
       query: '',
@@ -337,7 +338,11 @@ test('a slow list request is superseded and the latest queued view is rendered',
     renderListState(kind, message) { throw new Error(`${kind}: ${message}`); },
     renderThreadList() { renders.push(context.state.threads.map(thread => thread.id)); },
     updateListHeader() {},
-    p0Runtime: { currentListKey: '', metrics: { listCacheHits: 0, staleResponses: 0 } },
+    p0Runtime: {
+      cacheScope: 'A'.repeat(43),
+      currentListKey: '',
+      metrics: { listCacheHits: 0, staleResponses: 0 },
+    },
     p0ListCacheKey: view => JSON.stringify(view),
     p0SaveListScroll() {},
     p0PeekRecord: () => null,
@@ -371,6 +376,8 @@ test('a slow list request is superseded and the latest queued view is rendered',
     },
   });
   vm.runInContext(`${requestSource}\n${sortSource}\n${loadSource}`, context);
+  context.p0Runtime.cacheScope = 'A'.repeat(43);
+  context.p0PrefetchVisibleThreads = () => {};
 
   const firstLoad = context.loadThreads(true);
   await new Promise(resolve => setImmediate(resolve));
@@ -2261,7 +2268,7 @@ test('compose uses a safe rich-text editor and persists both HTML and plain-text
 
   const editorEventsSource = sourceBetween(
     '      function bindEvents() {',
-    '      async function boot() {'
+    '      async function boot(options) {'
   );
   assert.match(editorEventsSource, /event\.clipboardData \|\| window\.clipboardData/);
   assert.match(editorEventsSource, /insertPlainTextIntoCompose/);
@@ -2435,7 +2442,7 @@ test('compose autosave is serialized, revision-aware, and lifecycle exits are ex
 
   const eventSource = sourceBetween(
     '      function bindEvents() {',
-    '      async function boot() {'
+    '      async function boot(options) {'
   );
   assert.match(eventSource, /visibilitychange[\s\S]*bestEffortLifecycleAutosave\("visibility"\)/);
   assert.match(eventSource, /pagehide[\s\S]*bestEffortLifecycleAutosave\("pagehide"\)/);
@@ -3550,13 +3557,14 @@ test('three-screen onboarding is accessible explicit and isolated per Gmail acco
   assert.match(uiSource, /timezone: state\.onboardingDraft\.timezone/);
 
   const bootSource = sourceBetween(
-    '      async function boot() {',
+    '      async function boot(options) {',
     '      function previewOpenSession() {'
   );
-  assert.match(bootSource, /await loadThreads\(true\);[\s\S]*state\.routeReady = true;[\s\S]*!state\.attentionPreferences\.onboardingCompletedAt[\s\S]*setOnboardingOpen\(true/,
-    'first-run onboarding must wait for the exact account attention state');
-  assert.ok(bootSource.indexOf('setOnboardingOpen(true') < bootSource.indexOf('await openThread(initialRoute.threadId'),
-    'onboarding must gate automatic thread opening');
+  assert.match(bootSource,
+    /await loadThreads\(true,\s*\{\s*returnAfterCache:\s*true\s*\}\);[\s\S]*state\.routeReady = true;[\s\S]*attentionPromise\.then[\s\S]*!state\.attentionPreferences\.onboardingCompletedAt[\s\S]*setOnboardingOpen\(true/,
+    'cache-first launch must become usable before account-scoped onboarding state returns');
+  assert.ok(bootSource.indexOf('attentionPromise.then') < bootSource.indexOf('setOnboardingOpen(true'),
+    'first-run onboarding must be decided only from the exact account attention response');
 
   const switchSource = sourceBetween(
     '      async function switchMailboxAccount(connectionId) {',

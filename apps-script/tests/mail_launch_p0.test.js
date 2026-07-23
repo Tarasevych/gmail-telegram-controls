@@ -31,6 +31,7 @@ test('mailbox bridge performs one hidden single-flight handoff', () => {
 
 test('ordinary validated launch does not recreate the connection overlay', () => {
   assert.match(mailApp, /id="bootState"[^>]*hidden/);
+  assert.equal((mailApp.match(/Відкриваю пошту/g) || []).length, 1);
   const pipeline = functionSource(mailApp, 'runBootPipeline');
   assert.doesNotMatch(pipeline, /setBootLoading\(\)/);
   assert.match(pipeline, /bootState\.hidden = true/);
@@ -40,8 +41,10 @@ test('launch is single-flight and warms storage without reading private records'
   const boot = functionSource(mailApp, 'boot');
   const pipeline = functionSource(mailApp, 'runBootPipeline');
   assert.match(boot, /launchBootPromise/);
+  assert.match(boot, /launchBootSettled/);
   assert.match(boot, /duplicateBootCalls/);
-  assert.match(pipeline, /p0OpenDatabase/);
+  assert.match(pipeline, /p0OpenDb/);
+  assert.doesNotMatch(pipeline, /p0OpenDatabase/);
   const warmup = pipeline.slice(pipeline.indexOf('if (!launchTrace.storageWarmup'), pipeline.indexOf('renderMailContext'));
   assert.doesNotMatch(warmup, /p0ReadRecord|p0HydratePersistentState/);
   assert.ok(pipeline.indexOf('initializeFromBootstrap') < pipeline.indexOf('p0HydratePersistentState'),
@@ -55,7 +58,7 @@ test('RPC layer retains single-flight request deduplication', () => {
 });
 
 test('new code delta uses the next immutable client marker', () => {
-  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 67/);
-  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 66/);
-  assert.match(mailApp, /Versie-1-v67-p0/);
+  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 68/);
+  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 67/);
+  assert.match(mailApp, /Versie-1-v68-p0/);
 });

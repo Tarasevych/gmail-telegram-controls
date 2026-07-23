@@ -5297,13 +5297,7 @@
     </div>
   </div>
 
-  <div class="boot-state" id="bootState" role="status" aria-live="polite" hidden>
-    <div class="state-content">
-      <div class="spinner" aria-hidden="true"></div>
-      <h2>Відкриваю пошту</h2>
-      <p>Захищено підключаю Gmail до вашого Telegram.</p>
-    </div>
-  </div>
+  <div class="boot-state" id="bootState" role="status" aria-live="polite" hidden></div>
 
   <script>
     (function () {
@@ -5326,6 +5320,7 @@
       var state = {
         session: null,
         refreshToken: null,
+        cacheScope: "",
         renewPromise: null,
         sessionClosing: false,
         account: { id: "", name: "", email: "", initial: "" },
@@ -6830,7 +6825,7 @@
         app.setAttribute("aria-busy", "true");
         setBootLoading();
         if (state.preview) {
-          boot();
+          boot({ force: true });
           return;
         }
         if (state.refreshToken) {
@@ -7252,6 +7247,8 @@
       function initializeFromBootstrap(data) {
         var bootstrap = data || {};
         var account = bootstrap.account || {};
+        var cacheScope = safeText(bootstrap.session && bootstrap.session.cacheScope);
+        state.cacheScope = /^[A-Za-z0-9_-]{43}$/.test(cacheScope) ? cacheScope : "";
         var fallbackAccount = {
           id: safeId(account.id || (bootstrap.session && bootstrap.session.connectionId)),
           name: safeText(account.name || account.displayName),
@@ -8819,19 +8816,20 @@
           : "all";
       }
 
-      var P0_CACHE_SCHEMA = 1;
-      var P0_PREVIOUS_IMMUTABLE_VERSION = 66;
-      var P0_CLIENT_RELEASE_VERSION = 67;
-      var P0_CLIENT_RELEASE_ID = "Versie-1-v67-p0";
+      var P0_CACHE_SCHEMA = 2;
+      var P0_PREVIOUS_IMMUTABLE_VERSION = 67;
+      var P0_CLIENT_RELEASE_VERSION = 68;
+      var P0_CLIENT_RELEASE_ID = "Versie-1-v68-p0";
       var P0_RELEASE_MANIFEST_URL = "https://raw.githubusercontent.com/Tarasevych/gmail-telegram-controls/main/docs/release-state.json";
-      var P0_CACHE_MAX_RECORDS = 120;
-      var P0_CACHE_MAX_BYTES = 4 * 1024 * 1024;
-      var P0_CACHE_MAX_RECORD_BYTES = 640 * 1024;
-      var P0_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+      var P0_CACHE_MAX_RECORDS = 480;
+      var P0_CACHE_MAX_BYTES = 16 * 1024 * 1024;
+      var P0_CACHE_MAX_RECORD_BYTES = 1536 * 1024;
+      var P0_CACHE_MAX_AGE_MS = 45 * 24 * 60 * 60 * 1000;
       var p0Runtime = {
         dbPromise: null,
         memory: new Map(),
         inflight: new Map(),
+        cacheScope: "",
         allowedAccountIds: [],
         currentListKey: "",
         currentThreadKey: "",
@@ -8856,7 +8854,13 @@
           rowReuses: 0,
           staleResponses: 0,
           reloadAttempts: 0,
-          lastThreadUsableMs: 0
+          lastThreadUsableMs: 0,
+          warmLaunchUsableMs: 0,
+          prefetchRequests: 0,
+          prefetchCacheHits: 0,
+          storagePersistenceRequests: 0,
+          storagePersisted: false,
+          duplicateBootCalls: 0
         }
       };
 
@@ -8881,16 +8885,39 @@
         catch (error) { return ""; }
       }
 
-      function p0NamespaceAllowed(namespace, accountIds) {
+      function p0SafeCacheScope(value) {
+        var scope = safeText(value);
+        return /^[A-Za-z0-9_-]{43}$/.test(scope) ? scope : "";
+      }
+
+      function p0OwnerNamespacePrefix(cacheScopeValue) {
+        var scope = p0SafeCacheScope(cacheScopeValue || state.cacheScope);
+        return scope ? "t:" + scope + "|" : "";
+      }
+
+      function p0AccountNamespace(connectionId) {
+        var prefix = p0OwnerNamespacePrefix();
+        var accountId = safeId(connectionId);
+        return prefix && accountId ? prefix + "a:" + accountId : "";
+      }
+
+      function p0NamespaceAllowed(namespace, accountIds, cacheScopeValue) {
         var ids = Array.isArray(accountIds) ? accountIds.map(safeId).filter(Boolean) : [];
         var allowed = new Set(ids);
         var value = safeText(namespace);
-        if (value.indexOf("a:") === 0) return allowed.has(safeId(value.slice(2)));
-        if (value.indexOf("u:") === 0) {
-          var members = value.slice(2).split(",").map(safeId).filter(Boolean);
-          return members.length > 1 && members.every(function (id) { return allowed.has(id); });
+        var expectedScope = p0SafeCacheScope(
+          cacheScopeValue || (typeof p0Runtime !== "undefined" && p0Runtime.cacheScope)
+        );
+        var match = value.match(/^t:([A-Za-z0-9_-]{43})\|(a|u):(.+)$/);
+        if (!match || !expectedScope || match[1] !== expectedScope) return false;
+        if (match[2] === "a") {
+          var accountId = safeId(match[3]);
+          return accountId === match[3] && allowed.has(accountId);
         }
-        return false;
+        var members = match[3].split(",").map(safeId).filter(Boolean);
+        return members.length > 1 &&
+          members.join(",") === match[3] &&
+          members.every(function (id) { return allowed.has(id); });
       }
 
       function p0EvictionKeys(records, maxRecords, maxBytes) {
@@ -8919,7 +8946,11 @@
               var db = request.result;
               if (!db.objectStoreNames.contains("records")) db.createObjectStore("records", { keyPath: "key" });
             };
-            request.onsuccess = function () { resolve(request.result); };
+            request.onsuccess = function () {
+              var db = request.result;
+              db.onversionchange = function () { db.close(); };
+              resolve(db);
+            };
             request.onerror = function () { resolve(null); };
             request.onblocked = function () { resolve(null); };
           } catch (error) {
@@ -9050,12 +9081,16 @@
       }
 
       function p0CurrentNamespace() {
+        var prefix = p0OwnerNamespacePrefix();
         var activeId = safeId(state.account && state.account.id);
         var selected = state.unifiedMode
           ? (state.accountSettings.unifiedConnectionIds || []).map(safeId).filter(Boolean)
           : [activeId].filter(Boolean);
         selected = Array.from(new Set(selected)).sort();
-        return selected.length > 1 ? "u:" + selected.join(",") : (selected[0] ? "a:" + selected[0] : "");
+        if (!prefix) return "";
+        return selected.length > 1
+          ? prefix + "u:" + selected.join(",")
+          : (selected[0] ? prefix + "a:" + selected[0] : "");
       }
 
       function p0ListCacheKey(view) {
@@ -9064,14 +9099,15 @@
 
       function p0NamespaceAccountIds(namespaceValue) {
         var namespace = safeText(namespaceValue);
-        if (namespace.indexOf("a:") === 0) {
-          var accountId = safeId(namespace.slice(2));
-          return accountId ? [accountId] : [];
+        var match = namespace.match(/^t:([A-Za-z0-9_-]{43})\|(a|u):(.+)$/);
+        if (!match || match[1] !== p0SafeCacheScope(p0Runtime.cacheScope)) return [];
+        if (match[2] === "a") {
+          var accountId = safeId(match[3]);
+          return accountId && accountId === match[3] ? [accountId] : [];
         }
-        if (namespace.indexOf("u:") !== 0) return [];
-        var accountIds = namespace.slice(2).split(",").map(safeId).filter(Boolean);
+        var accountIds = match[3].split(",").map(safeId).filter(Boolean);
         accountIds = Array.from(new Set(accountIds)).sort();
-        return accountIds.length > 1 ? accountIds : [];
+        return accountIds.length > 1 && accountIds.join(",") === match[3] ? accountIds : [];
       }
 
       function p0ListSnapshotMatchesNamespace(snapshot, namespaceValue) {
@@ -9087,7 +9123,9 @@
       }
 
       function p0ThreadCacheKey(threadId, connectionId) {
-        return "a:" + safeId(connectionId) + ":" + safeId(threadId);
+        var namespace = p0AccountNamespace(connectionId);
+        var id = safeId(threadId);
+        return namespace && id ? namespace + ":" + id : "";
       }
 
       function p0ListSnapshot() {
@@ -9121,7 +9159,13 @@
         var connectionId = safeId(detail && detail.accountId);
         var threadId = safeId(detail && detail.id);
         if (!connectionId || !threadId) return;
-        p0WriteRecord("thread", p0ThreadCacheKey(threadId, connectionId), "a:" + connectionId, detail, 10 * 60 * 1000);
+        p0WriteRecord(
+          "thread",
+          p0ThreadCacheKey(threadId, connectionId),
+          p0AccountNamespace(connectionId),
+          detail,
+          10 * 60 * 1000
+        );
       }
 
       function p0SetSyncStatus(text, options) {
@@ -9210,16 +9254,20 @@
       }
 
       async function p0HydratePersistentState() {
+        p0Runtime.cacheScope = p0SafeCacheScope(state.cacheScope);
         p0Runtime.allowedAccountIds = state.accounts.map(function (account) { return safeId(account.id); }).filter(Boolean);
         var all = await p0DbGetAll();
         var now = Date.now();
         var usable = [];
         all.forEach(function (record) {
-          if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= now ||
-              !p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds)) {
+          if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= now) {
             if (record && record.key) p0DbDelete(record.key);
             return;
           }
+          // Records for another Telegram owner or a disconnected Gmail
+          // account remain locked. Only a matching verified bootstrap can
+          // reactivate their opaque owner/account namespace.
+          if (!p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds, p0Runtime.cacheScope)) return;
           usable.push(record);
           if (record.kind !== "draft") p0MemoryPut(record);
         });
@@ -9259,7 +9307,8 @@
       function p0DraftRecoveryKey(compose) {
         var draft = compose || {};
         var identity = safeId(draft.id) || [safeText(draft.mode), safeId(draft.threadId), safeId(draft.replyToMessageId)].join(":");
-        return safeId(draft.connectionId) + ":" + identity;
+        var namespace = p0AccountNamespace(draft.connectionId);
+        return namespace && identity ? namespace + ":" + identity : "";
       }
 
       function p0ComposeRecoveryValue(compose) {
@@ -9297,7 +9346,7 @@
         var oldKey = safeText(state.compose.p0RecoveryKey);
         state.compose.p0RecoveryKey = key;
         if (oldKey && oldKey !== key) p0DbDelete(p0RecordKey("draft", oldKey));
-        return p0WriteRecord("draft", key, "a:" + value.connectionId, value, 24 * 60 * 60 * 1000).then(function (saved) {
+        return p0WriteRecord("draft", key, p0AccountNamespace(value.connectionId), value, 24 * 60 * 60 * 1000).then(function (saved) {
           if (saved) {
             p0DbGetAll().then(function (all) {
               all.filter(function (record) { return record.kind === "draft"; })
@@ -9493,6 +9542,57 @@
         }
       }
 
+      function p0RequestPersistentStorage() {
+        if (!navigator.storage || typeof navigator.storage.persisted !== "function" ||
+            typeof navigator.storage.persist !== "function") return Promise.resolve(false);
+        p0Runtime.metrics.storagePersistenceRequests += 1;
+        return navigator.storage.persisted()
+          .then(function (persisted) { return persisted || navigator.storage.persist(); })
+          .then(function (persisted) {
+            p0Runtime.metrics.storagePersisted = Boolean(persisted);
+            p0PublishDiagnostics();
+            return Boolean(persisted);
+          })
+          .catch(function () { return false; });
+      }
+
+      function p0PrefetchThreadSummary(summary) {
+        var threadId = safeId(summary && summary.id);
+        var connectionId = safeId(summary && summary.accountId);
+        if (!threadId || !connectionId) return Promise.resolve(false);
+        var cacheKey = p0ThreadCacheKey(threadId, connectionId);
+        var cached = p0PeekRecord("thread", cacheKey);
+        if (cached && Number(cached.freshUntil || 0) > Date.now()) {
+          p0Runtime.metrics.prefetchCacheHits += 1;
+          return Promise.resolve(true);
+        }
+        p0Runtime.metrics.prefetchRequests += 1;
+        return rpc({ op: "getThread", threadId: threadId, connectionId: connectionId })
+          .then(function (data) {
+            var detail = normalizeThreadDetail(data);
+            detail.accountId = safeId(detail.accountId || connectionId);
+            if (detail.id !== threadId || detail.accountId !== connectionId) return false;
+            p0RememberThread(detail);
+            p0PublishDiagnostics();
+            return true;
+          })
+          .catch(function () { return false; });
+      }
+
+      function p0PrefetchVisibleThreads() {
+        if (state.needsGoogleConnection || document.visibilityState === "hidden") return Promise.resolve([]);
+        var seen = new Set();
+        var candidates = state.threads.slice().sort(function (left, right) {
+          return Number(Boolean(right.unread)) - Number(Boolean(left.unread));
+        }).filter(function (thread) {
+          var key = safeId(thread && thread.accountId) + ":" + safeId(thread && thread.id);
+          if (key === ":" || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 3);
+        return Promise.all(candidates.map(p0PrefetchThreadSummary));
+      }
+
       function p0DiagnosticSnapshot() {
         return {
           releaseId: P0_CLIENT_RELEASE_ID,
@@ -9528,6 +9628,8 @@
         if (p0Runtime.started) return;
         p0Runtime.started = true;
         p0ExposeDiagnostics();
+        p0RequestPersistentStorage();
+        window.setTimeout(p0PrefetchVisibleThreads, 0);
         if (els.listPane) els.listPane.addEventListener("scroll", p0ScheduleUiStateSave, { passive: true });
         document.addEventListener("visibilitychange", function () {
           if (document.visibilityState === "visible") p0RevalidateVisible();
@@ -10225,6 +10327,7 @@
       async function loadThreads(reset, options) {
         var opts = options || {};
         var shouldReset = Boolean(reset);
+        var renderedCached = false;
         var view = mailboxViewContext();
         var namespace = p0CurrentNamespace();
         var cacheKey = p0ListCacheKey(view);
@@ -10253,6 +10356,7 @@
             cached = null;
           }
           if (cached) {
+            renderedCached = true;
             p0Runtime.metrics.listCacheHits += 1;
             p0ApplyListSnapshot(cached.value, cacheKey);
             renderThreadList();
@@ -10264,6 +10368,14 @@
             p0Runtime.currentListKey = cacheKey;
             renderListLoading();
           }
+        }
+        if (renderedCached && opts.returnAfterCache) {
+          state.pendingListIntent = null;
+          p0ScheduleUiStateSave();
+          window.setTimeout(function () {
+            loadThreads(true, { background: true });
+          }, 0);
+          return true;
         }
         if (state.listLoading) return;
 
@@ -10308,6 +10420,7 @@
               else updateListHeader();
               p0SetSyncStatus("");
               p0ScheduleUiStateSave();
+              window.setTimeout(p0PrefetchVisibleThreads, 0);
             } catch (error) {
               if (activeIntent.version === state.requestVersion) {
                 if (state.threads.length) p0SetSyncStatus("Показано кеш; оновлення недоступне");
@@ -17892,8 +18005,10 @@
       }
 
       var launchBootPromise = null;
+      var launchBootSettled = false;
 
-      async function boot() {
+      async function boot(options) {
+        var force = Boolean(options && options.force);
         var launchTrace = window.__gtLaunchTrace || (window.__gtLaunchTrace = {
           startedAt: typeof performance !== "undefined" ? performance.now() : Date.now(),
           bootCalls: 0,
@@ -17905,11 +18020,20 @@
         launchTrace.bootCalls += 1;
         if (launchBootPromise) {
           launchTrace.duplicateBootCalls += 1;
+          p0Runtime.metrics.duplicateBootCalls += 1;
           return launchBootPromise;
         }
+        if (launchBootSettled && !force) {
+          launchTrace.duplicateBootCalls += 1;
+          p0Runtime.metrics.duplicateBootCalls += 1;
+          return;
+        }
+        if (force) launchBootSettled = false;
         launchBootPromise = runBootPipeline();
         try {
-          return await launchBootPromise;
+          var result = await launchBootPromise;
+          launchBootSettled = true;
+          return result;
         } finally {
           launchBootPromise = null;
         }
@@ -17918,9 +18042,9 @@
       async function runBootPipeline() {
         var launchTrace = window.__gtLaunchTrace;
         bootState.hidden = true;
-        if (!launchTrace.storageWarmup && typeof p0OpenDatabase === "function") {
+        if (!launchTrace.storageWarmup && typeof p0OpenDb === "function") {
           launchTrace.storageWarmup = Promise.resolve()
-            .then(function warmPersistentStorage() { return p0OpenDatabase(); })
+            .then(function warmPersistentStorage() { return p0OpenDb(); })
             .catch(function ignoreStorageWarmupFailure() { return null; });
         }
         renderMailContext({ status: "loading" });
@@ -17959,35 +18083,26 @@
           initializeFromBootstrap(bootstrap || {});
           launchTrace.sessionReadyAt = typeof performance !== "undefined" ? performance.now() : Date.now();
           await p0HydratePersistentState();
-          var savedAttention = null;
+          var attentionPromise = Promise.resolve(null);
           if (!state.needsGoogleConnection && state.account && state.account.id) {
-            try {
-              savedAttention = normalizeAttentionState(await rpc({
+            attentionPromise = rpc({
                 op: "attentionState", connectionId: state.account.id
-              }), "");
+              }).then(function (value) {
+              var savedAttention = normalizeAttentionState(value, "");
               state.resumeRail = savedAttention.resume;
               state.attentionPreferences = savedAttention.preferences;
               state.backlogRescue = savedAttention.rescue;
               state.coProcessing = savedAttention.presence;
               syncCoProcessingTicker();
-            } catch (attentionError) {
+              return savedAttention;
+            }).catch(function () {
               state.resumeRail = null;
-            }
+              return null;
+            });
           }
           var initialRoute = parseLocationRoute();
           if (initialRoute && initialRoute.view === "list") applyListRoute(initialRoute);
-          var resume = savedAttention && savedAttention.resume;
-          var resumeFresh = resume && resume.threadId && resume.updatedAt > 0 &&
-            Date.now() - resume.updatedAt <= 7 * 24 * 60 * 60 * 1000;
-          if (!initialRoute && resumeFresh) {
-            state.currentFolderId = safeId(resume.folderId || "INBOX").toUpperCase();
-            state.currentLabelId = safeId(resume.labelId);
-            state.query = safeText(resume.query);
-            state.filter = safeMailboxFilter(resume.filter);
-            renderNavigation();
-          } else if (!initialRoute) {
-            p0ApplyPersistedView();
-          }
+          if (!initialRoute) p0ApplyPersistedView();
           bootState.hidden = true;
           app.setAttribute("aria-busy", "false");
           if (state.needsGoogleConnection) {
@@ -17996,26 +18111,52 @@
             setAccountPanelOpen(true, els.accountAvatar, false);
             return;
           }
-          await loadThreads(true);
+          await loadThreads(true, { returnAfterCache: true });
           launchTrace.interactiveAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-          if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
+          p0Runtime.metrics.warmLaunchUsableMs = Math.max(
+            0,
+            launchTrace.interactiveAt - launchTrace.startedAt
+          );
           state.routeReady = true;
           p0StartBackgroundWork();
-          if (!state.attentionPreferences.onboardingCompletedAt) {
-            setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
-            return;
-          }
+          var restoredLocalThread = Boolean(
+            !initialRoute && p0Runtime.restoredUi &&
+            p0Runtime.restoredUi.selectedThreadId &&
+            p0Runtime.restoredUi.selectedConnectionId
+          );
+          attentionPromise.then(function (savedAttention) {
+            if (!savedAttention) return;
+            if (savedAttention && savedAttention.rescue && savedAttention.rescue.active) {
+              loadBacklogRescue("load", { silent: true });
+            }
+            if (!state.attentionPreferences.onboardingCompletedAt) {
+              setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
+              return;
+            }
+            var resume = savedAttention.resume || {};
+            var resumeFresh = resume.threadId && resume.updatedAt > 0 &&
+              Date.now() - resume.updatedAt <= 7 * 24 * 60 * 60 * 1000;
+            if (!initialRoute && !restoredLocalThread && resumeFresh) {
+              state.currentFolderId = safeId(resume.folderId || "INBOX").toUpperCase();
+              state.currentLabelId = safeId(resume.labelId);
+              state.query = safeText(resume.query);
+              state.filter = safeMailboxFilter(resume.filter);
+              renderNavigation();
+              loadThreads(true, { returnAfterCache: true }).then(function () {
+                return openThread(resume.threadId, true, state.account.id, {
+                  recoverToListOnFailure: true
+                });
+              }).catch(function () {
+                recoverFailedAutomaticThreadRoute();
+              });
+            }
+          });
           if (initialRoute && initialRoute.view === "thread") {
             var initialThreadOpened = await openThread(initialRoute.threadId, true, initialRoute.connectionId, {
               recoverToListOnFailure: true
             });
             if (initialThreadOpened) openThreadRoutePanel(initialRoute);
-          } else if (!initialRoute && resumeFresh) {
-            await openThread(resume.threadId, true, state.account.id, {
-              recoverToListOnFailure: true
-            });
-          } else if (!initialRoute && p0Runtime.restoredUi &&
-              p0Runtime.restoredUi.selectedThreadId && p0Runtime.restoredUi.selectedConnectionId) {
+          } else if (restoredLocalThread) {
             await openThread(
               p0Runtime.restoredUi.selectedThreadId,
               true,
