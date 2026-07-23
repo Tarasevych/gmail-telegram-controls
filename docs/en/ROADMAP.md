@@ -427,3 +427,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Locally verified:** focused `5/5`, complete Apps Script suite `656/656`, synthetic browser close/minimize/restore and simultaneous-chip layout, plus a separate executable pointer contract for drag bounds.
 - **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, and Gmail/OAuth/Telegram runtime remain unchanged. Native slow-network/restart acceptance remains `UNVERIFIED`.
 - **Related:** `GT-066`, `RCA-022`, `VR-041`, `REQ-0035`.
+
+## B1-47 - P0-A cross-document launch single-flight and canonical proof ledger
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** source now serializes launch ownership across documents through `navigator.locks` with an expiring content-free IndexedDB lease fallback. Ordinary validated launches remain overlay-free, and release reload is mutation-quiescent with the exact `p0-release-reload` session key.
+- **Server boundary:** launch issuance and redemption use one `ScriptLock`-backed canonical ledger with HMAC owner/route scopes, a deterministic 60-second nonce lifetime, 11-minute tombstones, a 100-record bound, and no stored secrets or identifiers.
+- **Locally verified:** focused `37/37`; complete Apps Script suite `668/668` in `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Still required:** native Telegram target-device p95 `<=1000 ms`, ten real-launch acceptance runs, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging, and production. These remain `UNVERIFIED` or `BLOCKED` by shared Apps Script URL Fetch quota and `T-03`.
+- **Release boundary:** source/docs contour only; no deployment, staging, production, Gmail, or mailbox mutation.
+- **Related:** existing `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; new `GT-067`, `RCA-023`, `VR-042`.

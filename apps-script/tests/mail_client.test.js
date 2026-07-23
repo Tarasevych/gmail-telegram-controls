@@ -461,23 +461,23 @@ test('mailbox launch initData is claimed once and a new browser cannot replay it
   const { context } = harness;
   const initData = telegramInitData();
 
-  const firstOpen = resultData(context.mailboxOpenSession(initData));
+  const issued = context.mailboxIssueLaunch_(initData, '');
+  assert.match(issued.launchNonce, /^[A-Za-z0-9_-]{43}$/);
+  const firstOpen = resultData(context.mailboxRedeemLaunch(issued.launchNonce));
   assert.ok(firstOpen.sessionToken);
   assert.match(firstOpen.refreshToken, /^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/);
-  const replay = context.mailboxOpenSession(initData);
-  assert.equal(
-    resultFailed(replay, 'the same signed Telegram launch must not mint another session').code,
-    'UNTRUSTED_NONCE_REPLAY'
-  );
-  assert.match(replay.error.message, /вже використано/i);
+  let replay = null;
+  try {
+    context.mailboxIssueLaunch_(initData, '');
+  } catch (error) {
+    replay = error;
+  }
+  assert.ok(replay, 'the same signed Telegram launch must not mint another session');
+  assert.equal(replay.mailboxCode, 'UNTRUSTED_NONCE_REPLAY');
+  assert.match(replay.message, /вже використано/i);
 
-  const token = firstOpen.sessionToken;
-  const nonce = context.storeMailboxLaunchSession_(token, firstOpen.refreshToken);
-  const redeemed = resultData(context.mailboxRedeemLaunch(nonce));
-  assert.equal(redeemed.sessionToken, token);
-  assert.equal(redeemed.refreshToken, firstOpen.refreshToken);
   resultFailed(
-    context.mailboxRedeemLaunch(nonce),
+    context.mailboxRedeemLaunch(issued.launchNonce),
     'a launch nonce must be removed before its first redemption returns'
   );
 });
@@ -607,17 +607,15 @@ test('refresh claims round-trip through the strict Apps Script base64url and Blo
       };
     },
   });
-  const opened = resultData(harness.context.mailboxOpenSession(telegramInitData()));
+  const issued = harness.context.mailboxIssueLaunch_(telegramInitData(), '');
+  const opened = resultData(harness.context.mailboxRedeemLaunch(issued.launchNonce));
   const payload = opened.refreshToken.split('.')[1];
   assert.notEqual(payload.length % 4, 0, 'the issued token must exercise padding restoration');
 
-  const nonce = harness.context.storeMailboxLaunchSession_(
-    opened.sessionToken,
-    opened.refreshToken
-  );
-  const redeemed = resultData(harness.context.mailboxRedeemLaunch(nonce));
+  const redeemed = opened;
   assert.equal(redeemed.sessionToken, opened.sessionToken);
   assert.equal(redeemed.refreshToken, opened.refreshToken);
+  harness.context.mailboxVerifyRefreshToken_(opened.refreshToken);
   assert.deepEqual(blobArgumentCounts, [0], 'UTF-8 must use the zero-argument Blob overload');
   assert.equal(decodedInputs[0].length % 4, 0);
   assert.equal(decodedInputs[0].replace(/=+$/g, ''), payload);

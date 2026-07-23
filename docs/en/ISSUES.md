@@ -616,3 +616,15 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Local evidence:** focused C-02 contracts `5/5`; complete Apps Script suite `656/656`; synthetic browser acceptance covers close/minimize/restore and no overlap without a real Gmail mutation, while the executable pointer contract separately covers drag bounds.
 - **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth, Telegram menu, and release journal remain unchanged. Native slow-network, app-restart, and current-production acceptance remain `UNVERIFIED`.
 - **Evidence:** [VR-041](verification-reports/reports/VR-041/README.md).
+
+## GT-067 - P0-A launch ownership and proof state were not canonical across documents
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues `GT-040-GT-047`, `GT-051`, `GT-053`, and `GT-054` without replacing or duplicating them.
+- **Product task:** `B1-47` / P0-A cross-document launch serialization and canonical launch-proof ledger.
+- **Confirmed root cause:** launch ownership was not single-flight across documents, while historical server issuance and redemption used split state paths instead of one canonical claim ledger.
+- **Source correction:** launch first uses `navigator.locks`, then an expiring content-free IndexedDB lease as fallback. An ordinary validated launch remains overlay-free. Release reload waits for mutation quiescence and uses the exact content-free `sessionStorage` key `p0-release-reload`.
+- **Server correction:** issuance and redemption now share one `ScriptLock`-backed ledger with a canonical claim, HMAC-scoped owner and route bindings, a deterministic 60-second nonce lifetime, 11-minute tombstones, and a maximum of 100 records. The ledger stores no secrets or identifiers.
+- **Source evidence:** focused P0-A contracts `37/37`; complete Apps Script suite `668/668` in `24.229s`; implementation baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Release boundary:** no runtime deployment or mailbox mutation was performed. Native Telegram target-device p95 `<=1000 ms`, ten real launches, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging, and production remain `UNVERIFIED` or `BLOCKED` by the shared Apps Script URL Fetch quota and `T-03`.
+- **Evidence:** [VR-042](verification-reports/reports/VR-042/README.md).

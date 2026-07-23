@@ -10739,6 +10739,218 @@
         return p0StableStringify(thread || {});
       }
 
+      var P0_LAUNCH_LOCK_NAME_P0A = "gmail-telegram-controls:versie-1:p0-launch";
+      var P0_LAUNCH_COORDINATION_DB_P0A = "gmail-telegram-controls-versie-1-coordination";
+      var P0_LAUNCH_COORDINATION_STORE_P0A = "leases";
+      var P0_LAUNCH_COORDINATION_KEY_P0A = "boot";
+      var P0_LAUNCH_COORDINATION_SCHEMA_P0A = 1;
+      var P0_LAUNCH_LEASE_MS_P0A = 15000;
+      var P0_LAUNCH_WAIT_MS_P0A = 16500;
+      var P0_LAUNCH_POLL_MS_P0A = 125;
+      var p0LaunchCoordinationDbPromiseP0A = null;
+
+      function p0LaunchDelayP0A_(delayMs) {
+        return new Promise(function (resolve) {
+          window.setTimeout(resolve, Math.max(0, Number(delayMs || 0)));
+        });
+      }
+
+      function p0LaunchOwnerNonceP0A_() {
+        var bytes = new Uint8Array(16);
+        if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+          window.crypto.getRandomValues(bytes);
+          return Array.from(bytes).map(function (value) { return value.toString(16).padStart(2, "0"); }).join("");
+        }
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 18);
+      }
+
+      function p0OpenLaunchCoordinationDbP0A_() {
+        if (p0LaunchCoordinationDbPromiseP0A) return p0LaunchCoordinationDbPromiseP0A;
+        if (!window.indexedDB || typeof window.indexedDB.open !== "function") return Promise.resolve(null);
+        p0LaunchCoordinationDbPromiseP0A = new Promise(function (resolve) {
+          var settled = false;
+          var request;
+          var finish = function (value) {
+            if (settled) return;
+            settled = true;
+            resolve(value || null);
+          };
+          try {
+            request = window.indexedDB.open(P0_LAUNCH_COORDINATION_DB_P0A, P0_LAUNCH_COORDINATION_SCHEMA_P0A);
+          } catch (error) {
+            finish(null);
+            return;
+          }
+          request.onupgradeneeded = function () {
+            var db = request.result;
+            if (!db.objectStoreNames.contains(P0_LAUNCH_COORDINATION_STORE_P0A)) {
+              db.createObjectStore(P0_LAUNCH_COORDINATION_STORE_P0A, { keyPath: "key" });
+            }
+          };
+          request.onsuccess = function () { finish(request.result); };
+          request.onerror = function () { finish(null); };
+          request.onblocked = function () { finish(null); };
+        });
+        return p0LaunchCoordinationDbPromiseP0A;
+      }
+
+      function p0TryAcquireLaunchLeaseP0A_(ownerNonce) {
+        return p0OpenLaunchCoordinationDbP0A_().then(function (db) {
+          if (!db) return { supported: false, acquired: false, expiresAt: 0 };
+          return new Promise(function (resolve) {
+            var acquired = false;
+            var expiresAt = 0;
+            var failed = false;
+            var transaction;
+            try {
+              transaction = db.transaction(P0_LAUNCH_COORDINATION_STORE_P0A, "readwrite");
+              var store = transaction.objectStore(P0_LAUNCH_COORDINATION_STORE_P0A);
+              var request = store.get(P0_LAUNCH_COORDINATION_KEY_P0A);
+              request.onsuccess = function () {
+                var now = Date.now();
+                var current = request.result || null;
+                var currentExpiresAt = Number(current && current.expiresAt || 0);
+                expiresAt = currentExpiresAt;
+                if (current && current.ownerNonce !== ownerNonce && currentExpiresAt > now) return;
+                expiresAt = now + P0_LAUNCH_LEASE_MS_P0A;
+                acquired = true;
+                store.put({
+                  key: P0_LAUNCH_COORDINATION_KEY_P0A,
+                  ownerNonce: ownerNonce,
+                  createdAt: now,
+                  expiresAt: expiresAt,
+                  schema: P0_LAUNCH_COORDINATION_SCHEMA_P0A
+                });
+              };
+              request.onerror = function () { failed = true; };
+              transaction.oncomplete = function () {
+                resolve({ supported: !failed, acquired: acquired && !failed, expiresAt: expiresAt });
+              };
+              transaction.onerror = function () { resolve({ supported: false, acquired: false, expiresAt: 0 }); };
+              transaction.onabort = function () { resolve({ supported: false, acquired: false, expiresAt: 0 }); };
+            } catch (error) {
+              resolve({ supported: false, acquired: false, expiresAt: 0 });
+            }
+          });
+        });
+      }
+
+      function p0ReleaseLaunchLeaseP0A_(ownerNonce) {
+        return p0OpenLaunchCoordinationDbP0A_().then(function (db) {
+          if (!db) return false;
+          return new Promise(function (resolve) {
+            try {
+              var removed = false;
+              var transaction = db.transaction(P0_LAUNCH_COORDINATION_STORE_P0A, "readwrite");
+              var store = transaction.objectStore(P0_LAUNCH_COORDINATION_STORE_P0A);
+              var request = store.get(P0_LAUNCH_COORDINATION_KEY_P0A);
+              request.onsuccess = function () {
+                var current = request.result || null;
+                if (!current || current.ownerNonce !== ownerNonce) return;
+                removed = true;
+                store.delete(P0_LAUNCH_COORDINATION_KEY_P0A);
+              };
+              transaction.oncomplete = function () { resolve(removed); };
+              transaction.onerror = function () { resolve(false); };
+              transaction.onabort = function () { resolve(false); };
+            } catch (error) {
+              resolve(false);
+            }
+          });
+        });
+      }
+
+      async function p0RunWithIndexedDbLaunchLeaseP0A_(work) {
+        var ownerNonce = p0LaunchOwnerNonceP0A_();
+        var deadline = Date.now() + P0_LAUNCH_WAIT_MS_P0A;
+        var attempt = await p0TryAcquireLaunchLeaseP0A_(ownerNonce);
+        if (!attempt.supported) return work();
+        while (!attempt.acquired) {
+          var now = Date.now();
+          if (now >= deadline) {
+            var remainingLeaseMs = Math.max(1, Math.min(P0_LAUNCH_LEASE_MS_P0A, Number(attempt.expiresAt || 0) - now + 1));
+            await p0LaunchDelayP0A_(remainingLeaseMs);
+          } else {
+            await p0LaunchDelayP0A_(Math.min(P0_LAUNCH_POLL_MS_P0A, deadline - now));
+          }
+          attempt = await p0TryAcquireLaunchLeaseP0A_(ownerNonce);
+          if (!attempt.supported) return work();
+        }
+        try {
+          return await work();
+        } finally {
+          await p0ReleaseLaunchLeaseP0A_(ownerNonce).catch(function () { return false; });
+        }
+      }
+
+      async function p0RunCoordinatedBootP0A_(work) {
+        var lockApi = window.navigator && window.navigator.locks;
+        if (!lockApi || typeof lockApi.request !== "function") {
+          return p0RunWithIndexedDbLaunchLeaseP0A_(work);
+        }
+        var controller = typeof AbortController === "function" ? new AbortController() : null;
+        var timer = controller ? window.setTimeout(function () { controller.abort(); }, P0_LAUNCH_WAIT_MS_P0A) : 0;
+        try {
+          var options = { mode: "exclusive" };
+          if (controller) options.signal = controller.signal;
+          return await lockApi.request(P0_LAUNCH_LOCK_NAME_P0A, options, function () {
+            return p0RunWithIndexedDbLaunchLeaseP0A_(work);
+          });
+        } catch (error) {
+          return p0RunWithIndexedDbLaunchLeaseP0A_(work);
+        } finally {
+          if (timer) window.clearTimeout(timer);
+        }
+      }
+
+      var P0_RELEASE_ATTEMPT_STORAGE_KEY_P0A = "p0-release-reload";
+      var P0_RELEASE_CHECK_TIMEOUT_MS_P0A = 2500;
+      var P0_RELEASE_QUIESCENCE_WAIT_MS_P0A = 10000;
+      var P0_RELEASE_QUIESCENCE_POLL_MS_P0A = 100;
+      var p0ReleaseReloadTargetP0A = 0;
+      var p0ReleaseReloadPromiseP0A = null;
+
+      function p0ReleaseActiveTransferMutationP0A_() {
+        if (typeof transferTaskStore !== "function") return false;
+        var store = transferTaskStore();
+        var tasks = [];
+        if (store instanceof Map) tasks = Array.from(store.values());
+        else if (Array.isArray(store)) tasks = store.slice();
+        else if (store && typeof store.forEach === "function") store.forEach(function (task) { tasks.push(task); });
+        return tasks.some(function (task) {
+          if (!task) return false;
+          var transferState = typeof transferCanonicalState === "function"
+            ? transferCanonicalState(task)
+            : safeText(task.transferState || task.state);
+          return typeof TRANSFER_ACTIVE_STATES !== "undefined" && Boolean(TRANSFER_ACTIVE_STATES[transferState]);
+        });
+      }
+
+      function p0ReleaseMutationActiveP0A_() {
+        if (state.composeBusy || state.composeSavePromise || state.composeOperationPromise) return true;
+        if (state.actionBusy || state.handoffBusy || state.accountManagementBusy) return true;
+        if (typeof composeAttachmentJobsPending === "function" && composeAttachmentJobsPending()) return true;
+        return p0ReleaseActiveTransferMutationP0A_();
+      }
+
+      async function p0WaitForReleaseQuiescenceP0A_() {
+        var deadline = Date.now() + P0_RELEASE_QUIESCENCE_WAIT_MS_P0A;
+        while (p0ReleaseMutationActiveP0A_() && Date.now() < deadline) {
+          await p0LaunchDelayP0A_(P0_RELEASE_QUIESCENCE_POLL_MS_P0A);
+        }
+        return !p0ReleaseMutationActiveP0A_();
+      }
+
+      async function p0PersistReleaseRecoveryP0A_() {
+        if (state.compose) {
+          if (typeof p0PersistComposeRecovery !== "function") return false;
+          var recovered = await p0PersistComposeRecovery();
+          if (recovered === false) return false;
+        }
+        if (typeof p0PersistUiStateNow === "function") await p0PersistUiStateNow();
+        return true;
+      }
+
       function p0ReleaseAction(loadedVersion, targetVersion, attemptedVersion) {
         var loaded = Number(loadedVersion || 0);
         var target = Number(targetVersion || 0);
@@ -10762,35 +10974,49 @@
       }
 
       async function p0CheckClientRelease() {
-        if (state.preview || !P0_CLIENT_RELEASE_VERSION || !window.fetch) return;
+        if (!P0_RELEASE_MANIFEST_URL || typeof window.fetch !== "function") return false;
+        var controller = typeof AbortController === "function" ? new AbortController() : null;
+        var timeout = controller ? window.setTimeout(function () { controller.abort(); }, P0_RELEASE_CHECK_TIMEOUT_MS_P0A) : 0;
         try {
-          var response = await window.fetch(P0_RELEASE_MANIFEST_URL, {
-            method: "GET", cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer"
-          });
-          if (!response.ok) return;
-          var target = p0ExtractReleaseVersion(await response.json());
-          var attempted = 0;
-          try { attempted = Number(window.sessionStorage.getItem("p0-release-reload") || 0); }
-          catch (storageError) { attempted = 0; }
-          var action = p0ReleaseAction(P0_CLIENT_RELEASE_VERSION, target, attempted);
-          if (action === "manual") {
-            p0SetSyncStatus("Доступне оновлення клієнта — відкрийте Mini App повторно", { persistent: true });
-            return;
+          var requestOptions = { cache: "no-store", credentials: "omit" };
+          if (controller) requestOptions.signal = controller.signal;
+          var response = await window.fetch(P0_RELEASE_MANIFEST_URL, requestOptions);
+          if (!response || !response.ok) return false;
+          var manifest = await response.json();
+          var targetVersion = p0ExtractReleaseVersion(manifest);
+          var attemptedVersion = 0;
+          try {
+            attemptedVersion = Number(window.sessionStorage.getItem("p0-release-reload") || 0);
+          } catch (storageError) {
+            attemptedVersion = 0;
           }
-          if (action !== "reload") return;
-          if (state.compose && state.compose.dirty) {
-            var saved = await flushComposeAutosave("release-update");
-            if (!saved || (state.compose && state.compose.dirty)) {
-              p0SetSyncStatus("Оновлення очікує підтвердженого збереження чернетки", { persistent: true });
-              return;
+          var action = p0ReleaseAction(P0_CLIENT_RELEASE_VERSION, targetVersion, attemptedVersion);
+          if (action !== "reload") return false;
+          if (p0ReleaseReloadPromiseP0A && p0ReleaseReloadTargetP0A === targetVersion) return p0ReleaseReloadPromiseP0A;
+          if (p0ReleaseReloadPromiseP0A) return false;
+          p0ReleaseReloadTargetP0A = targetVersion;
+          p0ReleaseReloadPromiseP0A = (async function () {
+            if (!(await p0WaitForReleaseQuiescenceP0A_())) return false;
+            if (!(await p0PersistReleaseRecoveryP0A_())) return false;
+            if (p0ReleaseMutationActiveP0A_()) return false;
+            try {
+              window.sessionStorage.setItem("p0-release-reload", String(targetVersion));
+            } catch (storageError) {
+              return false;
             }
+            location.reload();
+            return true;
+          })().catch(function () { return false; });
+          var scheduled = await p0ReleaseReloadPromiseP0A;
+          if (!scheduled) {
+            p0ReleaseReloadPromiseP0A = null;
+            p0ReleaseReloadTargetP0A = 0;
           }
-          try { window.sessionStorage.setItem("p0-release-reload", String(target)); }
-          catch (storageError) { /* A missing guard fails closed to a visible manual update. */ }
-          p0Runtime.metrics.reloadAttempts += 1;
-          window.location.reload();
+          return scheduled;
         } catch (error) {
-          /* Release discovery is advisory and must never block mail. */
+          return false;
+        } finally {
+          if (timeout) window.clearTimeout(timeout);
         }
       }
 
@@ -21171,7 +21397,7 @@
           return;
         }
         if (force) launchBootSettled = false;
-        launchBootPromise = runBootPipeline();
+        launchBootPromise = p0RunCoordinatedBootP0A_(function () { return runBootPipeline(); });
         try {
           var result = await launchBootPromise;
           launchBootSettled = true;

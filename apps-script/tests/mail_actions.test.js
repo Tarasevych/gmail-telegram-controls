@@ -1836,12 +1836,9 @@ test('mailbox bootstrap form POST precedes the legacy private-key path', () => {
   );
 });
 
-test('mailbox POST validates Telegram before rendering a short-lived session', () => {
+test('mailbox POST atomically validates Telegram before rendering a short-lived launch', () => {
   const originals = {
-    mailboxOpenSession: context.mailboxOpenSession,
-    validateTelegramMiniApp_: context.validateTelegramMiniApp_,
-    claimMailboxLaunchInitData_: context.claimMailboxLaunchInitData_,
-    storeMailboxLaunchSession_: context.storeMailboxLaunchSession_,
+    mailboxIssueLaunch_: context.mailboxIssueLaunch_,
     serveMailboxApp_: context.serveMailboxApp_,
     PropertiesService: context.PropertiesService,
   };
@@ -1852,22 +1849,12 @@ test('mailbox POST validates Telegram before rendering a short-lived session', (
         getProperty: () => { throw new Error('webhook properties must not be read for mailbox launch'); },
       }),
     };
-    context.mailboxOpenSession = initData => {
-      calls.push(initData);
+    context.mailboxIssueLaunch_ = (initData, route) => {
+      calls.push({ initData, route });
       return {
-        ok: true,
-        data: {
-          sessionToken: 's'.repeat(43),
-          refreshToken: 'mbr1.' + 'p'.repeat(60) + '.' + 'r'.repeat(43),
-        },
+        launchNonce: 'n'.repeat(43),
+        route,
       };
-    };
-    context.validateTelegramMiniApp_ = () => ({ id: '123' });
-    context.claimMailboxLaunchInitData_ = () => {};
-    context.storeMailboxLaunchSession_ = (token, refreshToken) => {
-      assert.equal(token, 's'.repeat(43));
-      assert.equal(refreshToken, 'mbr1.' + 'p'.repeat(60) + '.' + 'r'.repeat(43));
-      return 'n'.repeat(43);
     };
     context.serveMailboxApp_ = options => ({ rendered: options });
 
@@ -1879,7 +1866,10 @@ test('mailbox POST validates Telegram before rendering a short-lived session', (
         route: 'view=thread&thread=19f5f8958d96673c&message=19f5f8958d96673d',
       },
     });
-    assert.deepEqual(calls, ['signed-telegram-init-data']);
+    assert.deepEqual(calls, [{
+      initData: 'signed-telegram-init-data',
+      route: 'view=thread&thread=19f5f8958d96673c&message=19f5f8958d96673d',
+    }]);
     assert.deepEqual(JSON.parse(JSON.stringify(result.rendered)), {
       launchNonce: 'n'.repeat(43),
       route: 'view=thread&thread=19f5f8958d96673c&message=19f5f8958d96673d',

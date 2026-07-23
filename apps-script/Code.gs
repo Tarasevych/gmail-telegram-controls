@@ -3747,6 +3747,12 @@ function mailboxBootstrapUrl_() {
  * Telegram.WebApp.initData is available. That page form-POSTs the signed data
  * here, keeping it out of URLs, browser history, referrers, and client storage.
  */
+const MAILBOX_LAUNCH_LEDGER_INDEX_ = 'MAILBOX_LAUNCH_LEDGER_V1';
+const MAILBOX_LAUNCH_LEDGER_PREFIX_ = 'MAILBOX_LAUNCH_LEDGER_V1_';
+const MAILBOX_LAUNCH_LEDGER_LIMIT_ = 100;
+const MAILBOX_LAUNCH_NONCE_TTL_MS_ = 60 * 1000;
+const MAILBOX_LAUNCH_TOMBSTONE_TTL_MS_ = 11 * 60 * 1000;
+
 function serveMailboxLaunchPost_(e) {
   const params = e && e.parameter ? e.parameter : {};
   const rawInitData = String(params.init_data || '');
@@ -3757,144 +3763,433 @@ function serveMailboxLaunchPost_(e) {
       requestedLaunchStartedAt <= now + 5000
     ? Math.floor(requestedLaunchStartedAt)
     : 0;
-  const opened = mailboxOpenSession(rawInitData);
-  if (!opened || opened.ok !== true || !opened.data) {
-    const message = opened && opened.error && opened.error.message
-      ? String(opened.error.message)
-      : 'Не вдалося перевірити Telegram-команду.';
+  const route = normalizeMailboxLaunchRoute_(params.route);
+  let issued = null;
+  try {
+    issued = mailboxIssueLaunch_(rawInitData, route);
+  } catch (error) {
+    const failure = typeof mailboxFailure_ === 'function'
+      ? mailboxFailure_(error, 'UNAUTHORIZED')
+      : {
+          ok: false,
+          error: {
+            code: String(error && error.mailboxCode || 'UNAUTHORIZED'),
+            message: String(error && error.message || 'Не вдалося перевірити Telegram-команду.'),
+          },
+        };
     return serveMailboxApp_({
-      launchError: message,
-      launchErrorCode: opened && opened.error && opened.error.code,
-      capacityRecoveryToken: opened && opened.capacityRecoveryToken,
+      launchError: failure && failure.error && failure.error.message
+        ? String(failure.error.message)
+        : 'Не вдалося перевірити Telegram-команду.',
+      launchErrorCode: failure && failure.error && failure.error.code,
       launchStartedAt,
     });
   }
-
-  const token = String(opened.data.sessionToken || '');
-  const refreshToken = String(opened.data.refreshToken || '');
-  if (!/^[A-Za-z0-9_-]{40,128}$/.test(token)) {
-    return serveMailboxApp_({ launchError: 'Сервер не створив захищену сесію пошти.' });
-  }
-  if (!/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(refreshToken)) {
-    return serveMailboxApp_({ launchError: 'Сервер не створив токен оновлення сесії пошти.' });
-  }
-  const launchNonce = storeMailboxLaunchSession_(token, refreshToken);
   return serveMailboxApp_({
-    launchNonce,
-    route: normalizeMailboxLaunchRoute_(params.route),
+    launchNonce: issued.launchNonce,
+    route: issued.route,
     launchStartedAt,
   });
 }
 
-function claimMailboxLaunchInitData_(rawInitData) {
-  // validateTelegramMiniApp_ runs immediately before this function. Deriving
-  // the claim from its canonical signed hash makes reordered or equivalently
-  // percent-encoded copies collide with the original launch.
-  const parsed = parseTelegramMiniAppInitData_(rawInitData);
-  const digest = Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256,
-    parsed.receivedHash,
-    Utilities.Charset.UTF_8
-  );
-  const claimId = Utilities.base64EncodeWebSafe(digest).replace(/=+$/g, '');
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(5000)) {
-    throw new Error('Пошта вже відкривається. Спробуйте ще раз за кілька секунд.');
-  }
-  try {
-    const props = PropertiesService.getScriptProperties();
-    const now = Date.now();
-    let claims = [];
-    try { claims = JSON.parse(props.getProperty('MAILBOX_INITDATA_CLAIMS') || '[]'); } catch (error) { claims = []; }
-    claims = (Array.isArray(claims) ? claims : [])
-      .filter(item => item && /^[A-Za-z0-9_-]{43}$/.test(String(item.id || '')) &&
-        now - Number(item.at || 0) < 10 * 60 * 1000);
-    if (claims.some(item => constantTimeEqual_(String(item.id), claimId))) {
+// Source request: REQ-0037 / P0-A.
+function mailboxIssueLaunch_(rawInitData, routeValue) {
+  const raw = String(rawInitData || '');
+  const user = validateTelegramMiniAppIdentity_(raw);
+  const principal = mailboxMultiPrincipal_(String(user.id || ''));
+  const parsed = parseTelegramMiniAppInitData_(raw);
+  const claimId = mailboxLaunchCanonicalClaimId_(parsed);
+  const ownerScope = mailboxLaunchOwnerScope_(principal.userId);
+  const route = normalizeMailboxLaunchRoute_(routeValue);
+  const routeScope = mailboxLaunchRouteScope_(route);
+
+  return mailboxWithLaunchLedgerLock_((properties, ledger, now) => {
+    const existing = mailboxLaunchEntryByClaim_(ledger, claimId);
+    if (existing) {
+      if (!constantTimeEqual_(existing.record.ownerScope, ownerScope)) {
+        throw mailboxError_('FORBIDDEN', 'Код запуску належить іншому Telegram-користувачу.');
+      }
+      if (!constantTimeEqual_(existing.record.route, routeScope)) {
+        throw mailboxError_('OPERATION_CONFLICT', 'Маршрут повторного запуску не збігається.');
+      }
+      if (existing.record.state === 'issued' && now < existing.record.expiresAt) {
+        mailboxPersistLaunchLedgerLocked_(properties, ledger);
+        return mailboxLaunchResponseForRecord_(existing, route);
+      }
+      if (existing.record.state === 'issued') existing.record.state = 'expired';
+      mailboxPersistLaunchLedgerLocked_(properties, ledger);
+      if (existing.record.state === 'expired') {
+        throw mailboxError_('SESSION_EXPIRED', 'Код запуску завершився. Відкрийте Mini App знову.');
+      }
       throw mailboxError_(
         'UNTRUSTED_NONCE_REPLAY',
         'Цю Telegram-команду вже використано. Закрийте вікно та відкрийте пошту ще раз.'
       );
     }
-    if (claims.length >= 100) {
-      throw new Error('Забагато активних запусків пошти. Спробуйте пізніше.');
+    if (ledger.entries.length >= MAILBOX_LAUNCH_LEDGER_LIMIT_) {
+      throw mailboxError_('BUSY', 'Забагато активних запусків пошти. Спробуйте пізніше.');
     }
-    claims.push({ id: claimId, at: now });
-    const serialized = JSON.stringify(claims);
-    assertTelegramPropertyValueFits_('MAILBOX_INITDATA_CLAIMS', serialized);
-    assertTelegramPropertyStoreFits_(props, { MAILBOX_INITDATA_CLAIMS: serialized });
-    props.setProperty('MAILBOX_INITDATA_CLAIMS', serialized);
+
+    const expiresAt = now + MAILBOX_LAUNCH_NONCE_TTL_MS_;
+    const entry = {
+      key: mailboxLaunchLedgerRecordKey_(claimId),
+      claimId,
+      record: mailboxLaunchRecord_(
+        'issued',
+        claimId,
+        ownerScope,
+        routeScope,
+        expiresAt,
+        now + MAILBOX_LAUNCH_TOMBSTONE_TTL_MS_
+      ),
+    };
+    ledger.entries.push(entry);
+    mailboxPersistLaunchLedgerLocked_(properties, ledger);
+    return mailboxLaunchResponseForRecord_(entry, route);
+  });
+}
+
+function claimMailboxLaunchInitData_(rawInitData) {
+  // mailboxOpenSession validates and resolves the principal immediately before
+  // this compatibility claim. Validate again here so this security boundary is
+  // fail-closed if another server caller is introduced later.
+  const raw = String(rawInitData || '');
+  const user = validateTelegramMiniAppIdentity_(raw);
+  const parsed = parseTelegramMiniAppInitData_(raw);
+  const claimId = mailboxLaunchCanonicalClaimId_({
+    dataCheckString: parsed.dataCheckString,
+    receivedHash: parsed.receivedHash,
+  });
+  const ownerScope = mailboxLaunchOwnerScope_(String(user.id || ''));
+  const routeScope = mailboxLaunchRouteScope_('');
+
+  mailboxWithLaunchLedgerLock_((properties, ledger, now) => {
+    const existing = mailboxLaunchEntryByClaim_(ledger, claimId);
+    if (existing) {
+      if (!constantTimeEqual_(existing.record.ownerScope, ownerScope)) {
+        throw mailboxError_('FORBIDDEN', 'Код запуску належить іншому Telegram-користувачу.');
+      }
+      throw mailboxError_(
+        'UNTRUSTED_NONCE_REPLAY',
+        'Цю Telegram-команду вже використано. Закрийте вікно та відкрийте пошту ще раз.'
+      );
+    }
+    if (ledger.entries.length >= MAILBOX_LAUNCH_LEDGER_LIMIT_) {
+      throw mailboxError_('BUSY', 'Забагато активних запусків пошти. Спробуйте пізніше.');
+    }
+    const expiresAt = now + MAILBOX_LAUNCH_NONCE_TTL_MS_;
+    ledger.entries.push({
+      key: mailboxLaunchLedgerRecordKey_(claimId),
+      claimId,
+      record: mailboxLaunchRecord_(
+        'redeemed',
+        claimId,
+        ownerScope,
+        routeScope,
+        expiresAt,
+        now + MAILBOX_LAUNCH_TOMBSTONE_TTL_MS_
+      ),
+    });
+    mailboxPersistLaunchLedgerLocked_(properties, ledger);
+    return null;
+  });
+}
+
+function mailboxLaunchRecord_(state, claimId, ownerScope, routeScope, expiresAt, purgeAt) {
+  const nonce = mailboxLaunchNonceForClaim_(claimId, expiresAt);
+  return {
+    v: 1,
+    state: String(state || ''),
+    nonceHash: mailboxLaunchDigest_(nonce),
+    ownerScope: String(ownerScope || ''),
+    route: String(routeScope || ''),
+    expiresAt: Number(expiresAt || 0),
+    purgeAt: Number(purgeAt || 0),
+  };
+}
+
+function mailboxLaunchCanonicalClaimId_(parsedValue) {
+  const parsed = parsedValue || {};
+  return mailboxLaunchDigest_(
+    'canonical-init-v1\n' +
+    String(parsed.dataCheckString || '') +
+    '\nhash=' + String(parsed.receivedHash || '')
+  );
+}
+
+function mailboxLaunchOwnerScope_(userIdValue) {
+  const userId = String(userIdValue || '');
+  if (!/^\d{1,24}$/.test(userId)) {
+    throw mailboxError_('UNAUTHORIZED', 'Telegram-користувач недійсний.');
+  }
+  return mailboxLaunchHmac_('owner-scope-v1', userId);
+}
+
+function mailboxLaunchRouteScope_(routeValue) {
+  return mailboxLaunchHmac_('route-scope-v1', normalizeMailboxLaunchRoute_(routeValue));
+}
+
+function mailboxLaunchNonceForClaim_(claimId, expiresAt) {
+  return mailboxLaunchHmac_(
+    'nonce-v1',
+    String(claimId || '') + '\n' + String(Math.floor(Number(expiresAt || 0)))
+  );
+}
+
+function mailboxLaunchHmac_(purpose, value) {
+  const secret = requireSetting_(PropertiesService.getScriptProperties(), 'BOT_TOKEN');
+  return Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature(
+      String(purpose || '') + '\n' + String(value || ''),
+      secret
+    )
+  ).replace(/=+$/g, '');
+}
+
+function mailboxLaunchDigest_(value) {
+  return Utilities.base64EncodeWebSafe(
+    Utilities.computeDigest(
+      Utilities.DigestAlgorithm.SHA_256,
+      String(value || ''),
+      Utilities.Charset.UTF_8
+    )
+  ).replace(/=+$/g, '');
+}
+
+function mailboxLaunchLedgerRecordKey_(claimId) {
+  const id = String(claimId || '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(id)) {
+    throw mailboxError_('SERVER_CONFIG', 'Ключ журналу запуску недійсний.');
+  }
+  return MAILBOX_LAUNCH_LEDGER_PREFIX_ + id;
+}
+
+function mailboxValidateLaunchLedgerRecord_(key, value) {
+  const propertyKey = String(key || '');
+  const claimId = propertyKey.indexOf(MAILBOX_LAUNCH_LEDGER_PREFIX_) === 0
+    ? propertyKey.slice(MAILBOX_LAUNCH_LEDGER_PREFIX_.length)
+    : '';
+  const record = value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  const states = ['issued', 'redeeming', 'redeemed', 'expired', 'failed'];
+  if (!/^[A-Za-z0-9_-]{43}$/.test(claimId) || !record || record.v !== 1 ||
+      states.indexOf(String(record.state || '')) === -1 ||
+      !/^[A-Za-z0-9_-]{43}$/.test(String(record.nonceHash || '')) ||
+      !/^[A-Za-z0-9_-]{43}$/.test(String(record.ownerScope || '')) ||
+      !/^[A-Za-z0-9_-]{43}$/.test(String(record.route || '')) ||
+      !Number.isFinite(Number(record.expiresAt)) ||
+      !Number.isFinite(Number(record.purgeAt)) ||
+      Number(record.expiresAt) <= 0 ||
+      Number(record.purgeAt) < Number(record.expiresAt)) {
+    throw mailboxError_('SERVER_CONFIG', 'Журнал запуску пошти пошкоджений.');
+  }
+  return {
+    key: propertyKey,
+    claimId,
+    record: {
+      v: 1,
+      state: String(record.state),
+      nonceHash: String(record.nonceHash),
+      ownerScope: String(record.ownerScope),
+      route: String(record.route),
+      expiresAt: Math.floor(Number(record.expiresAt)),
+      purgeAt: Math.floor(Number(record.purgeAt)),
+    },
+  };
+}
+
+function mailboxReadLaunchLedgerLocked_(properties, nowValue) {
+  const now = Number(nowValue || Date.now());
+  const all = properties.getProperties();
+  let indexedKeys = [];
+  const serializedIndex = String(all[MAILBOX_LAUNCH_LEDGER_INDEX_] || '');
+  if (serializedIndex) {
+    try { indexedKeys = JSON.parse(serializedIndex); } catch (error) {
+      throw mailboxError_('SERVER_CONFIG', 'Індекс журналу запуску пошкоджений.');
+    }
+  }
+  if (!Array.isArray(indexedKeys)) {
+    throw mailboxError_('SERVER_CONFIG', 'Індекс журналу запуску пошкоджений.');
+  }
+
+  const discoveredKeys = Object.keys(all)
+    .filter(key => key.indexOf(MAILBOX_LAUNCH_LEDGER_PREFIX_) === 0);
+  const keys = Array.from(new Set(indexedKeys.concat(discoveredKeys)));
+  if (keys.length > MAILBOX_LAUNCH_LEDGER_LIMIT_) {
+    throw mailboxError_('SERVER_CONFIG', 'Журнал запуску перевищив безпечну межу.');
+  }
+
+  const entries = [];
+  const deleteKeys = [];
+  keys.forEach(key => {
+    if (!Object.prototype.hasOwnProperty.call(all, key)) {
+      throw mailboxError_('SERVER_CONFIG', 'Індекс журналу запуску містить відсутній запис.');
+    }
+    let value = null;
+    try { value = JSON.parse(String(all[key] || '')); } catch (error) {
+      throw mailboxError_('SERVER_CONFIG', 'Запис журналу запуску пошкоджений.');
+    }
+    const entry = mailboxValidateLaunchLedgerRecord_(key, value);
+    if (entry.record.purgeAt <= now) deleteKeys.push(key);
+    else entries.push(entry);
+  });
+  return { entries, deleteKeys };
+}
+
+function mailboxPersistLaunchLedgerLocked_(properties, ledger) {
+  const entries = Array.isArray(ledger && ledger.entries) ? ledger.entries : [];
+  const deleteKeys = Array.isArray(ledger && ledger.deleteKeys) ? ledger.deleteKeys : [];
+  if (entries.length > MAILBOX_LAUNCH_LEDGER_LIMIT_) {
+    throw mailboxError_('BUSY', 'Забагато активних запусків пошти. Спробуйте пізніше.');
+  }
+  const updates = {};
+  updates[MAILBOX_LAUNCH_LEDGER_INDEX_] = JSON.stringify(entries.map(entry => entry.key));
+  entries.forEach(entry => {
+    updates[entry.key] = JSON.stringify(entry.record);
+  });
+  Object.keys(updates).forEach(key => assertTelegramPropertyValueFits_(key, updates[key]));
+  assertTelegramPropertyStoreFits_(properties, updates, deleteKeys);
+  properties.setProperties(updates);
+  deleteKeys.forEach(key => properties.deleteProperty(key));
+  ledger.deleteKeys = [];
+}
+
+function mailboxWithLaunchLedgerLock_(callback) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    throw mailboxError_('BUSY', 'Пошта вже відкривається. Спробуйте ще раз.');
+  }
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const now = Date.now();
+    return callback(properties, mailboxReadLaunchLedgerLocked_(properties, now), now);
   } finally {
     lock.releaseLock();
   }
 }
 
-function storeMailboxLaunchSession_(sessionToken, refreshTokenValue) {
-  const token = String(sessionToken || '');
-  const refreshToken = String(refreshTokenValue || '');
-  if (!/^[A-Za-z0-9_-]{40,128}$/.test(token)) {
-    throw new Error('Сервер не створив захищену сесію пошти.');
+function mailboxLaunchEntryByClaim_(ledger, claimId) {
+  const key = mailboxLaunchLedgerRecordKey_(claimId);
+  return (ledger.entries || []).find(entry => entry.key === key) || null;
+}
+
+function mailboxLaunchEntryByNonceHash_(ledger, nonceHash) {
+  return (ledger.entries || []).find(entry =>
+    constantTimeEqual_(entry.record.nonceHash, nonceHash)
+  ) || null;
+}
+
+function mailboxLaunchResponseForRecord_(entry, routeValue) {
+  const route = normalizeMailboxLaunchRoute_(routeValue);
+  if (!entry || entry.record.state !== 'issued' ||
+      !constantTimeEqual_(entry.record.route, mailboxLaunchRouteScope_(route))) {
+    throw mailboxError_('OPERATION_CONFLICT', 'Маршрут запуску не збігається.');
   }
-  if (!/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(refreshToken)) {
-    throw new Error('Сервер не створив токен оновлення сесії пошти.');
+  const launchNonce = mailboxLaunchNonceForClaim_(entry.claimId, entry.record.expiresAt);
+  if (!constantTimeEqual_(entry.record.nonceHash, mailboxLaunchDigest_(launchNonce))) {
+    throw mailboxError_('SERVER_CONFIG', 'Код запуску не відповідає журналу.');
   }
-  const nonce = mailboxRandomToken_();
-  CacheService.getScriptCache().put(
-    mailboxLaunchSessionKey_(nonce),
-    JSON.stringify({ version: 2, token, refreshToken, createdAt: Date.now() }),
-    60
+  return { launchNonce, route };
+}
+
+function mailboxClaimLaunchRedemption_(launchNonce) {
+  const nonce = String(launchNonce || '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(nonce)) {
+    throw mailboxError_('UNAUTHORIZED', 'Код запуску пошти недійсний. Відкрийте Mini App знову.');
+  }
+  const nonceHash = mailboxLaunchDigest_(nonce);
+  return mailboxWithLaunchLedgerLock_((properties, ledger, now) => {
+    const entry = mailboxLaunchEntryByNonceHash_(ledger, nonceHash);
+    if (!entry) {
+      mailboxPersistLaunchLedgerLocked_(properties, ledger);
+      throw mailboxError_('UNAUTHORIZED', 'Код запуску пошти недійсний. Відкрийте Mini App знову.');
+    }
+    if (entry.record.state !== 'issued') {
+      mailboxPersistLaunchLedgerLocked_(properties, ledger);
+      throw mailboxError_(
+        'UNTRUSTED_NONCE_REPLAY',
+        'Код запуску вже використано. Відкрийте Mini App знову.'
+      );
+    }
+    if (now >= entry.record.expiresAt) {
+      entry.record.state = 'expired';
+      mailboxPersistLaunchLedgerLocked_(properties, ledger);
+      throw mailboxError_('SESSION_EXPIRED', 'Код запуску завершився. Відкрийте Mini App знову.');
+    }
+    entry.record.state = 'redeeming';
+    mailboxPersistLaunchLedgerLocked_(properties, ledger);
+    return {
+      key: entry.key,
+      nonceHash: entry.record.nonceHash,
+      ownerScope: entry.record.ownerScope,
+    };
+  });
+}
+
+function mailboxFinishLaunchRedemption_(claim, finalState) {
+  const state = String(finalState || '');
+  if (['redeemed', 'failed'].indexOf(state) === -1) {
+    throw mailboxError_('SERVER_CONFIG', 'Стан завершення запуску недійсний.');
+  }
+  return mailboxWithLaunchLedgerLock_((properties, ledger) => {
+    const entry = (ledger.entries || []).find(item => item.key === String(claim && claim.key || ''));
+    if (!entry || entry.record.state !== 'redeeming' ||
+        !constantTimeEqual_(entry.record.nonceHash, String(claim && claim.nonceHash || '')) ||
+        !constantTimeEqual_(entry.record.ownerScope, String(claim && claim.ownerScope || ''))) {
+      throw mailboxError_('UNTRUSTED_NONCE_REPLAY', 'Перехід запуску пошти вже завершено.');
+    }
+    entry.record.state = state;
+    mailboxPersistLaunchLedgerLocked_(properties, ledger);
+    return null;
+  });
+}
+
+function mailboxResolveLaunchOwnerId_(ownerScopeValue) {
+  const ownerScope = String(ownerScopeValue || '');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(ownerScope)) {
+    throw mailboxError_('FORBIDDEN', 'Власник запуску пошти недійсний.');
+  }
+  const registry = mailboxMultiReadRegistry_();
+  const candidates = Array.from(new Set(
+    (registry.members || [])
+      .filter(item => item && item.status === 'active' && /^\d{1,24}$/.test(String(item.userId || '')))
+      .map(item => String(item.userId))
+  ));
+  const matches = candidates.filter(userId =>
+    constantTimeEqual_(mailboxLaunchOwnerScope_(userId), ownerScope)
   );
-  return nonce;
+  if (matches.length !== 1) {
+    throw mailboxError_('FORBIDDEN', 'Запуск пошти не належить активному Telegram-користувачу.');
+  }
+  return matches[0];
 }
 
 /** Redeem the one-use launch nonce from MailApp for the in-memory RPC bearer. */
 function mailboxRedeemLaunch(launchNonce) {
+  let claim = null;
+  let ownerId = '';
   try {
-    const nonce = String(launchNonce || '');
-    if (!/^[A-Za-z0-9_-]{40,128}$/.test(nonce)) {
-      throw mailboxError_('UNAUTHORIZED', 'Код запуску пошти недійсний. Відкрийте Mini App знову.');
-    }
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(5000)) {
-      throw mailboxError_('BUSY', 'Пошта вже відкривається. Спробуйте ще раз.');
-    }
-    let serialized = '';
-    try {
-      const cache = CacheService.getScriptCache();
-      const key = mailboxLaunchSessionKey_(nonce);
-      serialized = String(cache.get(key) || '');
-      cache.remove(key);
-    } finally {
-      lock.releaseLock();
-    }
-
-    let launch = null;
-    try { launch = JSON.parse(serialized); } catch (error) { launch = null; }
-    if (!launch || launch.version !== 2 ||
-        Date.now() - Number(launch.createdAt || 0) > 60 * 1000) {
-      throw mailboxError_('SESSION_EXPIRED', 'Код запуску завершився. Відкрийте Mini App знову.');
-    }
-    const token = String(launch.token || '');
-    const refreshToken = String(launch.refreshToken || '');
-    const session = mailboxRequireSession_(token);
-    mailboxVerifyRefreshToken_(refreshToken);
-    return mailboxOk_({
-      sessionToken: token,
-      refreshToken,
-      expiresInSeconds: mailboxSessionRemainingSeconds_(session),
-    });
+    claim = mailboxClaimLaunchRedemption_(launchNonce);
+    ownerId = mailboxResolveLaunchOwnerId_(claim.ownerScope);
+    const sessionData = mailboxCreateSession_(ownerId, ownerId);
+    mailboxFinishLaunchRedemption_(claim, 'redeemed');
+    claim = null;
+    return mailboxOk_(sessionData);
   } catch (error) {
-    return mailboxFailure_(error, 'UNAUTHORIZED');
+    if (claim) {
+      try { mailboxFinishLaunchRedemption_(claim, 'failed'); } catch (tombstoneError) {
+        console.error('Could not tombstone failed mailbox launch redemption.');
+      }
+    }
+    const failure = mailboxFailure_(error, 'UNAUTHORIZED');
+    if (ownerId && error && error.mailboxCode === 'SESSION_CAPACITY') {
+      try {
+        failure.capacityRecoveryToken = mailboxStoreSessionCapacityRecovery_(ownerId);
+      } catch (recoveryError) {
+        console.error('Could not stage owner-bound mailbox session recovery.');
+      }
+    }
+    return failure;
   }
-}
-
-function mailboxLaunchSessionKey_(nonce) {
-  const digest = Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256,
-    String(nonce || ''),
-    Utilities.Charset.UTF_8
-  );
-  return 'mailbox.launch.session.v1.' +
-    Utilities.base64EncodeWebSafe(digest).replace(/=+$/g, '');
 }
 
 function normalizeMailboxLaunchRoute_(value) {
