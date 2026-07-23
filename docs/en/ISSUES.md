@@ -277,3 +277,15 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Status:** CONFLICTING
 - Local namespace/switch contracts pass, but v66 staging did not return the UI marker from the secondary to the primary account.
 - Promotion is forbidden until native bidirectional switching passes without OAuth or zone mixing.
+
+## 2026-07-23 v67 staging disposition
+
+- GT-040 one-second performance: PARTIAL. Correct cached-view launches were observed, but no valid native p95 trace exists.
+- GT-041 launch/auth deduplication: PARTIAL. Source and automated tests pass and correct launches show no duplicate connection screen; native single-flight telemetry is still required.
+- GT-042 offline cache: PARTIAL. Persistent storage exists, but private records remain intentionally locked until server account validation.
+- GT-043 background prefetch: PARTIAL. Automated contracts pass; closed-WebView execution is not claimed.
+- GT-044 session/cache locking: PARTIAL. The allowlist gate is preserved; device-bound offline unlock is not implemented.
+- GT-045 drafts: UNVERIFIED in native staging acceptance.
+- GT-046 version-aware update: PARTIAL. Source contracts pass; one controlled production reload was not exercised because v67 was not promoted.
+- GT-047 multi-account isolation: UNVERIFIED in native staging acceptance.
+- Disposition: immutable v67 preserved, temporary staging removed, production v65 unchanged, no promotion.

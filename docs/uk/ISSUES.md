@@ -277,3 +277,15 @@
 - **Статус:** CONFLICTING
 - Локальні namespace/switch contracts проходять, але v66 staging не повернув UI marker із secondary до primary account.
 - Promotion заборонений до native bidirectional switch acceptance без OAuth і без змішування зон.
+
+## Рішення щодо staging v67 від 2026-07-23
+
+- GT-040 продуктивність однієї секунди: PARTIAL. Коректні запуски кешованого представлення спостерігалися, але валідного нативного p95 trace немає.
+- GT-041 дедуплікація launch/auth: PARTIAL. Код і автоматичні тести проходять, а коректні запуски не показують дубльованого екрана підключення; нативна single-flight telemetry ще потрібна.
+- GT-042 offline cache: PARTIAL. Persistent storage існує, але приватні записи навмисно заблоковані до серверної перевірки акаунтів.
+- GT-043 background prefetch: PARTIAL. Автоматичні контракти проходять; виконання після закриття WebView не заявляється.
+- GT-044 блокування session/cache: PARTIAL. Allowlist gate збережено; device-bound offline unlock не реалізовано.
+- GT-045 чернетки: UNVERIFIED у нативному staging acceptance.
+- GT-046 version-aware update: PARTIAL. Контракти коду проходять; один контрольований production reload не перевірявся, оскільки v67 не просувався.
+- GT-047 багатоакаунтна ізоляція: UNVERIFIED у нативному staging acceptance.
+- Рішення: immutable v67 збережено, тимчасовий staging видалено, production v65 незмінний, promotion не виконувався.

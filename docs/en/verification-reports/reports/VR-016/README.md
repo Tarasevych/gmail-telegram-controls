@@ -56,3 +56,27 @@
 ## Release decision
 
 Source marker v67 is the next cumulative immutable candidate after preserved v66. Staging may be created only after the complete local/CI gate. Promotion is forbidden until native acceptance verifies account switching in both directions, ten launch traces, zero duplicate overlay/bootstrap and a defined cache/security scenario. Production remains v65.
+
+## Staging acceptance addendum: immutable v67
+
+- Date: 2026-07-23
+- Status: PARTIAL
+- Production boundary: v65 remained unchanged.
+
+### Verified evidence
+
+- The cumulative v67 source, release helper, and staging bridge passed the local release suite (522/522) and required GitHub checks.
+- Correct native Telegram Desktop launches opened the previously cached working view without the GitHub handoff card, the repeated connection screen, or a new OAuth interaction.
+- The launch implementation uses one in-flight bootstrap promise and keeps private cached records locked until the server bootstrap returns the allowed account set.
+- The Telegram menu was restored to the production bridge after acceptance stopped.
+- The exact v67 staging deployment was deleted fail-closed, the immutable v67 version was preserved, and production was not promoted.
+
+### Evidence not accepted as verification
+
+- A ten-run coordinate-driven Telegram Desktop sequence also opened native profile and file overlays. Its timing samples are invalid product-performance evidence and are not used for the one-second SLO.
+- Native p95 time-to-interactive, offline private-mail launch, bidirectional account switching, draft recovery, and multi-account cache isolation remain unverified.
+- The current two-origin GitHub bridge to Apps Script flow has no verified device-bound unlock that would permit private cached mail to be displayed before server bootstrap.
+
+### Release decision
+
+No production promotion was performed. A future cumulative candidate requires a reproducible in-app time-to-interactive trace and a reviewed device-bound unlock or single-origin architecture decision before the offline-private and one-second requirements can become VERIFIED.

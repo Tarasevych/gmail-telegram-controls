@@ -171,3 +171,12 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Evidence:** [VR-016](verification-reports/reports/VR-016/README.md), issues [GT-040–GT-047](ISSUES.md), source request `REQ-0034`.
 
 - **Final local gate 2026-07-23:** cumulative `518/518`; bilingual `71` pairs; knowledge hub `17` pairs/`295` source IDs; verification checker passed.
+
+## P0 continuation gate after v67
+
+- [x] Remove the duplicate visible bridge and bootstrap loading sequence.
+- [x] Preserve one bootstrap/auth single-flight and keep private cache locked until server account validation.
+- [x] Preserve immutable v67, restore the production menu, and remove only the exact temporary v67 staging deployment after incomplete acceptance.
+- [ ] Add a reproducible in-app time-to-interactive measurement that excludes desktop-control and screenshot overhead.
+- [ ] Approve and implement a device-bound unlock or single-origin architecture before claiming offline private-mail startup.
+- [ ] Verify ten native warm launches, offline cached-mail access, draft recovery, and bidirectional multi-account switching before any later promotion.
