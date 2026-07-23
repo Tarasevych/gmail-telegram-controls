@@ -8256,11 +8256,14 @@
 
       function p0ResetAccountScopedView() {
         p0SaveReaderScroll();
+        p0DisconnectReaderLayoutTracking();
         clearTimeout(p0Runtime.uiSaveTimer);
         p0Runtime.uiSaveTimer = 0;
         p0Runtime.readerGeneration += 1;
         p0Runtime.currentThreadKey = "";
         p0Runtime.currentListKey = "";
+        p0Runtime.readerRenderKey = "";
+        p0Runtime.readerRenderSignature = "";
         p0Runtime.restoredUi = null;
         state.requestVersion += 1;
         state.pendingListIntent = null;
@@ -8835,7 +8838,13 @@
         currentThreadKey: "",
         readerGeneration: 0,
         readerScrolls: new Map(),
+        readerViews: new Map(),
+        readerFocuses: new Map(),
         listScrolls: new Map(),
+        readerLayout: null,
+        readerRestoreGeneration: 0,
+        readerRenderKey: "",
+        readerRenderSignature: "",
         restoredUi: null,
         pendingDrafts: [],
         composeConflict: null,
@@ -8860,7 +8869,10 @@
           prefetchCacheHits: 0,
           storagePersistenceRequests: 0,
           storagePersisted: false,
-          duplicateBootCalls: 0
+          duplicateBootCalls: 0,
+          readerRenderSkips: 0,
+          readerAnchorRestores: 0,
+          readerFocusRestores: 0
         }
       };
 
@@ -9186,20 +9198,256 @@
         }
       }
 
+      function p0ReaderThreadKey() {
+        if (!state.selectedThreadId || !state.selectedConnectionId) return "";
+        return p0ThreadCacheKey(state.selectedThreadId, state.selectedConnectionId);
+      }
+
+      function p0ReaderAnchorById(scroll, anchorId) {
+        if (!scroll || !anchorId) return null;
+        return Array.prototype.slice.call(scroll.querySelectorAll("[data-reader-anchor]")).find(function (node) {
+          return safeText(node.getAttribute("data-reader-anchor")) === anchorId;
+        }) || null;
+      }
+
+      function p0ReaderAnchorSnapshot(scroll) {
+        if (!scroll) return null;
+        var top = Number(scroll.scrollTop || 0);
+        var maximum = Math.max(0, Number(scroll.scrollHeight || 0) - Number(scroll.clientHeight || 0));
+        var snapshot = {
+          top: top,
+          atBottom: maximum - top <= 2,
+          anchorId: "",
+          anchorOffset: 0
+        };
+        if (typeof scroll.getBoundingClientRect !== "function") return snapshot;
+        var viewport = scroll.getBoundingClientRect();
+        var nodes = Array.prototype.slice.call(scroll.querySelectorAll("[data-reader-anchor]"));
+        var before = null;
+        var after = null;
+        nodes.forEach(function (node) {
+          if (!node || typeof node.getBoundingClientRect !== "function") return;
+          var rect = node.getBoundingClientRect();
+          if (rect.bottom <= viewport.top || rect.top >= viewport.bottom) return;
+          if (rect.top <= viewport.top + 8) {
+            if (!before || rect.top > before.rect.top) before = { node: node, rect: rect };
+          } else if (!after || rect.top < after.rect.top) {
+            after = { node: node, rect: rect };
+          }
+        });
+        var selected = before || after;
+        if (selected) {
+          snapshot.anchorId = safeText(selected.node.getAttribute("data-reader-anchor"));
+          snapshot.anchorOffset = Number(selected.rect.top - viewport.top);
+        }
+        return snapshot;
+      }
+
+      function p0ReaderFocusableNodes(host) {
+        if (!host) return [];
+        return Array.prototype.slice.call(host.querySelectorAll(
+          "button, a[href], input, textarea, select, [tabindex], [contenteditable='true']"
+        ));
+      }
+
+      function p0ReaderFocusIdentity(node) {
+        if (!node) return null;
+        return {
+          tag: safeText(node.tagName).toLowerCase(),
+          id: safeText(node.id),
+          mailAction: safeText(node.getAttribute && node.getAttribute("data-mail-action")),
+          ariaLabel: safeText(node.getAttribute && node.getAttribute("aria-label")),
+          name: safeText(node.getAttribute && node.getAttribute("name")),
+          type: safeText(node.getAttribute && node.getAttribute("type")),
+          text: safeText(node.textContent).trim().slice(0, 160)
+        };
+      }
+
+      function p0ReaderFocusIdentityMatches(node, identity) {
+        if (!node || !identity) return false;
+        var candidate = p0ReaderFocusIdentity(node);
+        return candidate.tag === identity.tag &&
+          candidate.id === identity.id &&
+          candidate.mailAction === identity.mailAction &&
+          candidate.ariaLabel === identity.ariaLabel &&
+          candidate.name === identity.name &&
+          candidate.type === identity.type &&
+          candidate.text === identity.text;
+      }
+
+      function p0ReaderFocusSnapshot() {
+        var host = els.readerContentHost;
+        var active = document.activeElement;
+        if (!host || !active || !host.contains(active)) return null;
+        var identity = p0ReaderFocusIdentity(active);
+        var occurrence = 0;
+        var nodes = p0ReaderFocusableNodes(host);
+        for (var index = 0; index < nodes.length; index += 1) {
+          if (nodes[index] === active) break;
+          if (p0ReaderFocusIdentityMatches(nodes[index], identity)) occurrence += 1;
+        }
+        return { identity: identity, occurrence: occurrence };
+      }
+
+      function p0RestoreReaderFocus(snapshot) {
+        if (!snapshot || !snapshot.identity || !els.readerContentHost) return false;
+        var current = document.activeElement;
+        if (current && current !== document.body && current !== document.documentElement &&
+            !els.readerContentHost.contains(current)) return false;
+        var occurrence = 0;
+        var target = p0ReaderFocusableNodes(els.readerContentHost).find(function (node) {
+          if (!p0ReaderFocusIdentityMatches(node, snapshot.identity)) return false;
+          if (occurrence === Number(snapshot.occurrence || 0)) return true;
+          occurrence += 1;
+          return false;
+        });
+        if (!target || typeof target.focus !== "function") return false;
+        try { target.focus({ preventScroll: true }); }
+        catch (error) { target.focus(); }
+        p0Runtime.metrics.readerFocusRestores += 1;
+        return true;
+      }
+
+      function p0CaptureReaderView(explicitScroll) {
+        var key = p0ReaderThreadKey();
+        var scroll = explicitScroll || (els.readerContentHost && els.readerContentHost.querySelector(".reader-scroll"));
+        if (!key || !scroll) return null;
+        var snapshot = p0ReaderAnchorSnapshot(scroll) || { top: Number(scroll.scrollTop || 0) };
+        snapshot.key = key;
+        snapshot.focus = p0ReaderFocusSnapshot();
+        var persisted = Object.assign({}, snapshot);
+        delete persisted.focus;
+        p0Runtime.readerScrolls.set(key, Number(snapshot.top || 0));
+        p0Runtime.readerViews.set(key, persisted);
+        if (snapshot.focus) p0Runtime.readerFocuses.set(key, snapshot.focus);
+        else p0Runtime.readerFocuses.delete(key);
+        return snapshot;
+      }
+
+      function p0ApplyReaderPosition(scroll, snapshot) {
+        if (!scroll || !snapshot) return false;
+        var maximum = Math.max(0, Number(scroll.scrollHeight || 0) - Number(scroll.clientHeight || 0));
+        if (snapshot.atBottom) {
+          scroll.scrollTop = maximum;
+          return true;
+        }
+        var anchor = p0ReaderAnchorById(scroll, safeText(snapshot.anchorId));
+        if (anchor && typeof anchor.getBoundingClientRect === "function" &&
+            typeof scroll.getBoundingClientRect === "function") {
+          var delta = anchor.getBoundingClientRect().top - scroll.getBoundingClientRect().top -
+            Number(snapshot.anchorOffset || 0);
+          if (Math.abs(delta) > .5) scroll.scrollTop = Math.max(0, Number(scroll.scrollTop || 0) + delta);
+          return true;
+        }
+        scroll.scrollTop = Math.max(0, Math.min(maximum, Number(snapshot.top || 0)));
+        return true;
+      }
+
+      function p0DisconnectReaderLayoutTracking() {
+        var tracker = p0Runtime.readerLayout;
+        if (!tracker) return;
+        if (tracker.raf) window.cancelAnimationFrame(tracker.raf);
+        if (tracker.observer && typeof tracker.observer.disconnect === "function") tracker.observer.disconnect();
+        p0Runtime.readerLayout = null;
+      }
+
+      function p0TrackReaderLayout(scroll) {
+        var tracker = p0Runtime.readerLayout;
+        if (!tracker || tracker.scroll !== scroll || tracker.adjusting) return;
+        tracker.snapshot = p0ReaderAnchorSnapshot(scroll);
+      }
+
+      function p0ScheduleTrackedReaderRestore(scroll) {
+        var tracker = p0Runtime.readerLayout;
+        if (!tracker || tracker.scroll !== scroll || tracker.raf || !tracker.snapshot) return;
+        var expectedKey = tracker.key;
+        var snapshot = Object.assign({}, tracker.snapshot);
+        tracker.raf = window.requestAnimationFrame(function () {
+          tracker.raf = 0;
+          if (p0Runtime.readerLayout !== tracker || tracker.key !== expectedKey ||
+              p0ReaderThreadKey() !== expectedKey) return;
+          tracker.adjusting = true;
+          if (p0ApplyReaderPosition(scroll, snapshot)) p0Runtime.metrics.readerAnchorRestores += 1;
+          window.requestAnimationFrame(function () {
+            if (p0Runtime.readerLayout !== tracker) return;
+            tracker.adjusting = false;
+            tracker.snapshot = p0ReaderAnchorSnapshot(scroll);
+          });
+        });
+      }
+
+      function p0InstallReaderLayoutTracking(scroll) {
+        p0DisconnectReaderLayoutTracking();
+        var key = p0ReaderThreadKey();
+        if (!scroll || !key) return;
+        var tracker = {
+          key: key,
+          scroll: scroll,
+          snapshot: p0ReaderAnchorSnapshot(scroll),
+          observer: null,
+          raf: 0,
+          adjusting: false
+        };
+        p0Runtime.readerLayout = tracker;
+        if (typeof ResizeObserver === "function") {
+          tracker.observer = new ResizeObserver(function () { p0ScheduleTrackedReaderRestore(scroll); });
+          tracker.observer.observe(scroll);
+          var content = scroll.querySelector(".reader-content");
+          if (content) tracker.observer.observe(content);
+        }
+        Array.prototype.slice.call(scroll.querySelectorAll("img")).forEach(function (image) {
+          if (!image.complete) image.addEventListener("load", function () {
+            p0ScheduleTrackedReaderRestore(scroll);
+          }, { once: true });
+        });
+      }
+
+      function p0ReaderScrollIsProgrammatic(scroll) {
+        var tracker = p0Runtime.readerLayout;
+        return Boolean(tracker && tracker.scroll === scroll && tracker.adjusting);
+      }
+
+      function p0RestoreReaderView(scroll, preserved, options) {
+        if (!scroll) return false;
+        var opts = options || {};
+        var key = p0ReaderThreadKey();
+        if (!key) return false;
+        var snapshot = preserved && preserved.key === key
+          ? Object.assign({}, preserved)
+          : (p0Runtime.readerViews.has(key) ? Object.assign({}, p0Runtime.readerViews.get(key)) : null);
+        if (!snapshot && p0Runtime.readerScrolls.has(key)) {
+          snapshot = { top: Number(p0Runtime.readerScrolls.get(key) || 0), atBottom: false };
+        }
+        var focusSnapshot = preserved && preserved.key === key && preserved.focus
+          ? preserved.focus
+          : p0Runtime.readerFocuses.get(key);
+        var generation = ++p0Runtime.readerRestoreGeneration;
+        window.requestAnimationFrame(function () {
+          if (generation !== p0Runtime.readerRestoreGeneration || p0ReaderThreadKey() !== key ||
+              !scroll.isConnected) return;
+          var target = snapshot;
+          if (!target && Number(opts.resumeProgress || 0) > 0) {
+            var available = Math.max(0, Number(scroll.scrollHeight || 0) - Number(scroll.clientHeight || 0));
+            target = {
+              top: Math.round((available * Math.min(100, Number(opts.resumeProgress))) / 100),
+              atBottom: false
+            };
+          }
+          if (target) p0ApplyReaderPosition(scroll, target);
+          if (focusSnapshot && p0RestoreReaderFocus(focusSnapshot) && target) {
+            p0ApplyReaderPosition(scroll, target);
+          }
+          p0InstallReaderLayoutTracking(scroll);
+        });
+        return Boolean(snapshot || focusSnapshot || Number(opts.resumeProgress || 0) > 0);
+      }
+
       function p0SaveReaderScroll() {
-        if (!state.selectedThreadId || !state.selectedConnectionId) return;
-        var scroll = els.readerContentHost && els.readerContentHost.querySelector(".reader-scroll");
-        if (!scroll) return;
-        var key = p0ThreadCacheKey(state.selectedThreadId, state.selectedConnectionId);
-        p0Runtime.readerScrolls.set(key, Number(scroll.scrollTop || 0));
+        p0CaptureReaderView();
       }
 
       function p0RestoreReaderScroll(scroll) {
-        if (!scroll || !state.selectedThreadId || !state.selectedConnectionId) return;
-        var key = p0ThreadCacheKey(state.selectedThreadId, state.selectedConnectionId);
-        if (!p0Runtime.readerScrolls.has(key)) return;
-        var top = Number(p0Runtime.readerScrolls.get(key) || 0);
-        window.requestAnimationFrame(function () { scroll.scrollTop = top; });
+        return p0RestoreReaderView(scroll, null, {});
       }
 
       function p0SaveListScroll() {
@@ -9216,8 +9464,10 @@
 
       function p0UiStateValue() {
         var readerScrolls = {};
+        var readerViews = {};
         var listScrolls = {};
         p0Runtime.readerScrolls.forEach(function (value, key) { readerScrolls[key] = value; });
+        p0Runtime.readerViews.forEach(function (value, key) { readerViews[key] = value; });
         p0Runtime.listScrolls.forEach(function (value, key) { listScrolls[key] = value; });
         return {
           folderId: state.currentFolderId,
@@ -9228,6 +9478,7 @@
           selectedConnectionId: state.selectedConnectionId,
           listKey: p0Runtime.currentListKey,
           readerScrolls: readerScrolls,
+          readerViews: readerViews,
           listScrolls: listScrolls,
           updatedAt: Date.now()
         };
@@ -9280,6 +9531,10 @@
         if (p0Runtime.restoredUi) {
           Object.keys(p0Runtime.restoredUi.readerScrolls || {}).forEach(function (key) {
             p0Runtime.readerScrolls.set(key, Number(p0Runtime.restoredUi.readerScrolls[key] || 0));
+          });
+          Object.keys(p0Runtime.restoredUi.readerViews || {}).forEach(function (key) {
+            var view = p0Runtime.restoredUi.readerViews[key];
+            if (view && typeof view === "object") p0Runtime.readerViews.set(key, p0Clone(view));
           });
           Object.keys(p0Runtime.restoredUi.listScrolls || {}).forEach(function (key) {
             p0Runtime.listScrolls.set(key, Number(p0Runtime.restoredUi.listScrolls[key] || 0));
@@ -10801,6 +11056,9 @@
         state.threadLoading = false;
         app.classList.remove("reader-open");
         els.readerContentHost.hidden = true;
+        p0DisconnectReaderLayoutTracking();
+        p0Runtime.readerRenderKey = "";
+        p0Runtime.readerRenderSignature = "";
         clear(els.readerContentHost);
         els.readerEmpty.hidden = false;
         renderThreadList();
@@ -10875,6 +11133,9 @@
         closeActionMenus();
         closeSnoozePanel(false);
         if (window.matchMedia("(max-width: 900px)").matches) {
+          p0DisconnectReaderLayoutTracking();
+          p0Runtime.readerRenderKey = "";
+          p0Runtime.readerRenderSignature = "";
           releaseAttachmentResources();
           state.selectedThreadId = "";
           state.selectedConnectionId = "";
@@ -12127,8 +12388,52 @@
         return host;
       }
 
+      function p0ReaderRenderSignature() {
+        return p0StableStringify({
+          key: p0ReaderThreadKey(),
+          thread: state.thread,
+          resumeRail: state.resumeRail,
+          attentionPreferences: state.attentionPreferences,
+          actionBusy: state.actionBusy,
+          attentionBusy: state.attentionBusy,
+          attentionPreferencesBusy: state.attentionPreferencesBusy,
+          handoffBusy: state.handoffBusy,
+          densityMode: effectiveDensityMode()
+        });
+      }
+
+      function p0MarkReaderMessageAnchors(node, message) {
+        if (!node) return node;
+        var messageId = safeId(message && message.id);
+        if (!messageId) return node;
+        var prefix = "message:" + messageId;
+        node.setAttribute("data-reader-anchor", prefix);
+        var body = node.querySelector(".message-body");
+        if (!body) return node;
+        Array.prototype.slice.call(body.querySelectorAll(
+          "p, li, blockquote, h1, h2, h3, h4, h5, h6, table, pre, img, hr"
+        )).slice(0, 240).forEach(function (anchor, index) {
+          if (!anchor.hasAttribute("data-reader-anchor")) {
+            anchor.setAttribute("data-reader-anchor", prefix + ":body:" + index);
+          }
+        });
+        return node;
+      }
+
       function renderThread() {
         if (!state.thread) return;
+        var readerKey = p0ReaderThreadKey();
+        var renderSignature = p0ReaderRenderSignature();
+        var existingScroll = els.readerContentHost.querySelector(".reader-scroll");
+        if (existingScroll && p0Runtime.readerRenderKey === readerKey &&
+            p0Runtime.readerRenderSignature === renderSignature) {
+          p0Runtime.metrics.readerRenderSkips += 1;
+          p0TrackReaderLayout(existingScroll);
+          renderThreadList();
+          return;
+        }
+        var preservedReaderView = p0CaptureReaderView(existingScroll);
+        p0DisconnectReaderLayoutTracking();
         var densityMode = effectiveDensityMode();
         els.readerEmpty.hidden = true;
         els.readerContentHost.hidden = false;
@@ -12146,7 +12451,10 @@
           attrs: { tabindex: "0", role: "region", "aria-label": "Повний вміст розмови", "data-density": densityMode }
         });
         var content = make("div", { className: "reader-content" });
-        var titleRow = make("div", { className: "thread-title-row" });
+        var titleRow = make("div", {
+          className: "thread-title-row",
+          attrs: { "data-reader-anchor": "thread:" + safeId(state.thread.id) + ":title" }
+        });
         var titleBlock = make("div", {});
         titleBlock.append(make("h2", { text: state.thread.subject }));
         var chips = make("div", { className: "state-labels" });
@@ -12231,14 +12539,14 @@
             ? make("div", { className: "density-original-content" })
             : content;
           var latest = messages[messages.length - 1];
-          messageHost.append(renderMessage(latest));
+          messageHost.append(p0MarkReaderMessageAnchors(renderMessage(latest), latest));
           if (messages.length > 1) {
             var history = make("details", { className: "quoted-history" });
             history.open = densityMode === "analytical";
             history.append(make("summary", { text: "Показати цитовану переписку (" + (messages.length - 1) + ")" }));
             var historyContent = make("div", { className: "quoted-history-content" });
             messages.slice(0, -1).forEach(function (message) {
-              historyContent.append(renderMessage(message));
+              historyContent.append(p0MarkReaderMessageAnchors(renderMessage(message), message));
             });
             history.append(historyContent);
             messageHost.append(history);
@@ -12255,18 +12563,19 @@
         }
         scroll.append(content);
         scroll.addEventListener("scroll", function () {
-          scheduleReadingProgress(scroll);
+          p0TrackReaderLayout(scroll);
+          if (!p0ReaderScrollIsProgrammatic(scroll)) scheduleReadingProgress(scroll);
           p0ScheduleUiStateSave();
         }, { passive: true });
         els.readerContentHost.append(scroll);
         els.readerContentHost.append(buildMobileActionBar());
-        if (state.resumeRail && state.resumeRail.threadId === state.thread.id && state.resumeRail.readingProgress > 0) {
-          window.setTimeout(function () {
-            var available = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
-            scroll.scrollTop = Math.round((available * state.resumeRail.readingProgress) / 100);
-          }, 0);
-        }
-        p0RestoreReaderScroll(scroll);
+        p0Runtime.readerRenderKey = readerKey;
+        p0Runtime.readerRenderSignature = renderSignature;
+        p0RestoreReaderView(scroll, preservedReaderView, {
+          resumeProgress: state.resumeRail && state.resumeRail.threadId === state.thread.id
+            ? state.resumeRail.readingProgress
+            : 0
+        });
         renderThreadList();
       }
 

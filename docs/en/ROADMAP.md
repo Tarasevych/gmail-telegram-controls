@@ -214,3 +214,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Authority boundary:** the documentation creates or expands no permission.
 - **Evidence:** [GT-049](ISSUES.md), [VR-019](verification-reports/reports/VR-019/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-30 — Stable reader position and focus during background updates
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0035`; V3 task `A-03`.
+- **Locally VERIFIED:** no-op state skips root replacement; necessary renders preserve a stable content anchor, viewport offset, bottom pin, and memory-only focus identity; delayed layout changes are reconciled without a reading-progress loop.
+- **Gates:** focused reader contracts `8/8`, related contracts `101/101`, complete Apps Script suite `540/540`, clean diff check, and `0` secret-signature matches.
+- **Still required:** native desktop and mobile acceptance, long real HTML and remote-image layout verification, return-navigation scroll readback, and separately authorized cumulative staging/production acceptance.
+- **Release boundary:** source commit `1d7c6c1`; no immutable, staging, production, OAuth, Gmail, or Telegram state changed in this contour.
+- **Evidence:** [GT-050](ISSUES.md), [VR-020](verification-reports/reports/VR-020/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

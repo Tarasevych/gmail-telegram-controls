@@ -1754,10 +1754,12 @@ test('mobile reader close releases attachment blobs and both caches have hard bo
   const closeContext = vm.createContext({
     app: { classList: { remove() {} } },
     state: closeState,
+    p0Runtime: { readerRenderKey: '', readerRenderSignature: '' },
     window: { matchMedia: () => ({ matches: true }) },
     closeActionMenus() {},
     closeSnoozePanel() {},
     p0SaveReaderScroll() {},
+    p0DisconnectReaderLayoutTracking() {},
     p0ScheduleUiStateSave() {},
     renderThreadList() {},
     releaseAttachmentResources() {

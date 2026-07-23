@@ -148,3 +148,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-019/README.md](reports/VR-019/README.md)
 - **Conclusion:** confirmed failures are consolidated without changing historical evidence; the playbook is a quality gate, not an authority source. Runtime/release state is unchanged.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-020 — Reader scroll and focus stability
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `A-03`, unconditional reader-root replacement, stable content anchors, focus restoration, layout-shift handling, local regression/full-suite evidence, and the release boundary.
+- **Report:** [reports/VR-020/README.md](reports/VR-020/README.md)
+- **Conclusion:** the source correction and complete `540/540` suite are VERIFIED; native desktop/mobile, real remote-image layout, staging acceptance, and deployment remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

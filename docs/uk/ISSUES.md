@@ -375,3 +375,14 @@
 - **Виправлення:** створено парні [ERROR_RCA_REGISTRY](ERROR_RCA_REGISTRY.md) та [AGENT_FAILURE_PREVENTION](AGENT_FAILURE_PREVENTION.md) з causal evidence, applicability boundaries, resource leases, identity/dedupe, lock, schema, bilingual, release та cleanup gates.
 - **Межа:** playbook не є authority source і не змінює permissions, runtime, Apps Script, Gmail, Telegram або release state.
 - **Доказ:** [VR-019](verification-reports/reports/VR-019/README.md)
+
+## GT-050 — Фоновий render читача скидав позицію та фокус
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-30` / V3 `A-03`
+- **Root cause:** `renderThread()` безумовно очищував і перебудовував root читача. Фонові attention, reconciliation, draft, attachment або layout updates могли замінити активний DOM, а конкурентні асинхронні відновлення `scrollTop` не мали стабільного content anchor і могли втратити keyboard focus.
+- **Source fix:** для ідентичного стану читача root більше не замінюється. Перед необхідним render зберігаються stable thread/message/body anchor, його viewport offset, bottom-pinned state і memory-only focus identity; після layout changes позицію відновлює один generation-guarded pipeline. `ResizeObserver` та image-load handling утримують anchor без reading-progress render loop.
+- **Локальний доказ:** focused reader contracts `8/8`, пов'язані MailApp/launch/reader contracts `101/101`, повний Apps Script suite `540/540`, чистий `git diff --check` і `0` secret-signature matches у змінених файлах.
+- **Release boundary:** source commit `1d7c6c1`; Apps Script staging, production promotion, OAuth, Gmail або Telegram mutation не виконувалися. Native desktop/mobile, long HTML із реальними remote-image layout changes і production acceptance лишаються `UNVERIFIED`.
+- **Доказ:** [VR-020](verification-reports/reports/VR-020/README.md)
