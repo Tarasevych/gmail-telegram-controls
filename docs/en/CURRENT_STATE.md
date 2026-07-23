@@ -2,7 +2,7 @@
 
 [Українською](../uk/CURRENT_STATE.md)
 
-<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
 
 ## Canonical release state
 
@@ -44,11 +44,12 @@
 
 ## P0 ONE-SECOND boundary — 2026-07-23
 
-- Production and release-state HEAD remain immutable v65; staging is `0`.
+- Production and release-state stable remain immutable v65; the owner menu remains on production.
 - Immutable v66–v69 are preserved historically; v69 ended fail closed as `abandoned` after the native hard-reload/session conflict and was not promoted.
-- The active controlled source delta carries marker v70; it is locally `VERIFIED` by `113/113` and `567/567` tests plus privacy scan `0`, but is not merged or deployed.
+- Source v70 was merged by normal PR at SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 was created exactly once and active owner-only staging is `1`.
+- Local gates after release assets: helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax and `git diff --check` pass.
 - Source v70 adds content-free SecureStorage classification, a fail-closed locked state without a restart loop, and validated bridge-to-usable timing; nonce replay protection is not weakened.
-- Native button-to-interactive p95, ten launches, offline private Inbox, Windows Desktop recovery, and cached-thread acceptance remain `UNVERIFIED`/`BLOCKED` by the current two-origin architecture.
+- Native button-to-interactive p95, ten launches, hard reload, offline private Inbox, Windows Desktop recovery, and cached-thread acceptance remain `UNVERIFIED`/`BLOCKED`; promotion is forbidden pending complete staging acceptance.
 - Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## 2026-07-23 P0 v67 acceptance boundary

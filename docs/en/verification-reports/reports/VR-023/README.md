@@ -78,3 +78,12 @@ The source correction is locally VERIFIED, but v69 native acceptance failed. The
 - Local gates: P0 `113/113`, full suite `567/567`, privacy scan `0`, and clean `git diff --check`.
 - v70 is not merged and has no immutable version or staging deployment; production v65 and active staging `0` are unchanged.
 - Native hard reload, exact SecureStorage result, and one-second p95 remain `UNVERIFIED`; browser-level POST resubmission is not claimed fixed.
+
+## v70 staging boundary
+
+- **Date:** 2026-07-23
+- **Status:** PARTIAL
+- Source v70 was merged at `0666165`; guarded preflight passed, and immutable v70 plus one staging were created without changing stable v65.
+- The exact staging reference is not published; it is retained in the protected journal. The menu remains on production pending a published bridge and native acceptance.
+- Local release gates: `572/572`, bridge `4/4`, syntax/whitespace pass.
+- v69 evidence was not rewritten. v70 was not promoted; native hard reload and SecureStorage behavior remain `UNVERIFIED`.

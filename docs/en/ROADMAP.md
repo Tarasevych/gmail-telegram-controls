@@ -255,8 +255,8 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Source request:** `REQ-0036`; related P0 contour `REQ-0034`.
 - **Locally VERIFIED in source v70:** single-flight recovery remains intact; Telegram `SecureStorage` now exposes only a content-free diagnostic status; replay without a usable secure credential ends in an explicit locked state without a restart loop; a bridge timestamp enables cross-document timing. Focused tests `113/113`, full suite `567/567`, privacy scan `0`.
 - **Native v69 result:** production v65 loaded the mailbox twice; staging v69 loaded the mailbox after a bounded repeat, but a hard reload in Telegram Desktop resubmitted the POST and ended with `UNTRUSTED_NONCE_REPLAY`.
-- **Still required:** merge/CI source v70; one immutable staging; ten native launches; exact SecureStorage status; hard reload; cached thread; mobile/WebView reopen; concurrent launch; measurable p95.
+- **Completed:** source v70 merged/CI; immutable v70 and exactly one owner-only staging were created; release/bridge gates pass `572/572` and `4/4`.
 - **Platform boundary:** browser-level POST resubmission occurs before inner JavaScript. Without a supported device-bound unlock or single-origin app shell, private offline Inbox and automatic Desktop recovery remain `BLOCKED`/`UNVERIFIED`; unprotected web storage is not used.
-- **Release boundary:** production v65 and staging `0` are unchanged; immutable v69 remains historical; v70 is currently only a local cumulative source candidate.
+- **Still required:** ten native launches; exact SecureStorage status; hard reload; cached thread; mobile/WebView reopen; concurrent launch; measurable p95. Production v65 and the menu are unchanged; active v70 staging is `1`; promotion is forbidden pending complete acceptance.
 - **Evidence:** [GT-053](ISSUES.md), [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

@@ -109,3 +109,14 @@ Promotion у production не виконувався. Майбутній cumulati
 ### Поточне рішення
 
 v70 не переписує immutable v69 і не змінює production. Після merge/CI дозволено створити лише один cumulative immutable staging candidate. Promotion заборонено, доки всі native acceptance gates не стануть `VERIFIED`. Якщо SecureStorage знову не дасть підтримуваного device-bound recovery, результат лишається `PARTIAL`/`BLOCKED`, а потрібним наступним кроком є окремий architecture decision для першостороннього single-origin app shell або іншого підтвердженого secure unlock primitive.
+
+## Staging creation addendum: immutable v70
+
+- **Дата:** 2026-07-23
+- **Статус:** PARTIAL
+- Source v70 merged normal PR на SHA `0666165b614f430103530728aa45349083db5e78` і синхронізований у GitLab main тим самим SHA.
+- `PreflightOnly` підтвердив stable v65, HEAD `stable_v65`, future immutable відсутній, staging `0`, journal порожній і `readyToStage=true`.
+- Guarded `StageOnly` створив immutable v70 та рівно один owner-only staging deployment; точний deployment reference зберігається лише у protected recovery journal.
+- Release helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax і whitespace gate пройшли.
+- Owner menu ще не перемкнено зі production; production v65 не змінено.
+- Native acceptance, one-second p95, SecureStorage result, hard reload і cached-thread test ще не виконані, тому promotion заборонено.

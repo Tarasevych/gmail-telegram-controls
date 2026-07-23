@@ -233,7 +233,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Source request:** `REQ-0034`
 - **Local source v70:** VERIFIED — the bridge supplies a validated content-free launch start time and MailApp measures cross-document time to usable UI; focused tests `113/113`, full suite `567/567`, added-production-line secret-value scan `0`, and clean `git diff --check`.
 - **Measurement boundary:** the new trace begins in the bridge document, not at the Telegram button press; it improves evidence but is not yet a native button-to-interactive p95.
-- **Remaining boundary:** warm-launch `≤1000 ms` p95, ten native launches, and offline private-mail opening remain `UNVERIFIED`; production v65 and staging `0` are unchanged.
+- **Remaining boundary:** warm-launch `≤1000 ms` p95, ten native launches, and offline private-mail opening remain `UNVERIFIED`; production v65 is unchanged, one owner-only v70 staging is active, and promotion is forbidden pending acceptance.
 - **Evidence:** [VR-016](verification-reports/reports/VR-016/README.md)
 
 ## GT-041 — Duplicate launch/auth pipeline
@@ -426,5 +426,5 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Historical v69 boundary:** immutable v69 was tested and retained historically; staging was removed, the journal is `abandoned`, the owner menu was restored to production, active staging is `0`, and production v65 was unchanged.
 - **Source correction v70:** the SecureStorage wrapper retains only a content-free status/error class; a bridge timestamp provides a cross-document launch trace; replay plus a missing secure credential opens a fail-closed locked state without a restart loop. Access/refresh tokens, Telegram `initData`, the session bearer, and mail content are not written to browser telemetry/storage.
 - **Local evidence:** focused P0 contracts `113/113`, full Apps Script suite `567/567`, production added-line privacy scan `0`, and clean `git diff --check`.
-- **Remaining boundary:** source v70 is not merged or deployed; native Windows SecureStorage status, hard reload, ten launches, mobile/WebView reopen, and concurrent launch remain `UNVERIFIED`. Browser-level POST resubmission occurs before inner MailApp JavaScript executes, so the current patch does not claim to remove it.
+- **Remaining boundary:** source v70 was merged at `0666165`, and immutable v70 plus one owner-only staging were created; native Windows SecureStorage status, hard reload, ten launches, mobile/WebView reopen, and concurrent launch remain `UNVERIFIED`. Browser-level POST resubmission occurs before inner MailApp JavaScript executes, so the patch does not claim to remove it and production v65 is unchanged.
 - **Evidence:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)
