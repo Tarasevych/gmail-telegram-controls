@@ -30,6 +30,15 @@ Source request: `REQ-0004`.
 - **Примітка:** shared machine index залишається на VR-003; VR-005 не змінює machine-report contract.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
 
+## VR-027 — Керовані desktop panes
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `E-02`, accessible pointer/keyboard separators, bounded widths, collapse/restore, account-scoped P0 persistence, behavioral contracts і source-only release boundary.
+- **Звіт:** [reports/VR-027/README.md](reports/VR-027/README.md)
+- **Висновок:** focused source contracts `90/90` пройшли; native Telegram Desktop/WebView drag, keyboard, visual і restart acceptance лишається `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
 ## VR-026 — Події viewport Telegram Mini App
 
 - **Статус:** PARTIAL

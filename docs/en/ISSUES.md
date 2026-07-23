@@ -490,3 +490,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Safety boundary:** the bridge does not start another bootstrap, render, RPC, reload, OAuth, or Gmail mutation.
 - **Verification:** the automated VM contract and complete Apps Script suite must pass before publication; native Telegram Desktop/mobile acceptance remains `UNVERIFIED`.
 - **Evidence:** [VR-026](verification-reports/reports/VR-026/README.md)
+
+## GT-056 — Desktop panes had no resize/collapse/persistence
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-36`
+- **Root cause:** the grid used fixed `--rail-w` and `--list-w` values without accessible resize controls, collapse-to-icons behavior, or scoped restoration.
+- **Source correction:** desktop-only ARIA separators support bounded pointer and keyboard resizing; the sidebar can collapse to icons and restore; layout persists through the existing account-scoped P0 IndexedDB namespace with a memory-only fallback.
+- **Safety boundary:** no `localStorage`/`sessionStorage`, new account state, RPC, reload, OAuth, or Gmail mutation; the mobile drawer is unchanged.
+- **Verification:** focused Mail App suite `90/90`; the complete suite and documentation/release/privacy gates are publication gates. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
+- **Evidence:** [VR-027](verification-reports/reports/VR-027/README.md)

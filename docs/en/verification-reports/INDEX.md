@@ -30,6 +30,15 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Note:** the shared machine index remains at VR-003; VR-005 does not change the machine-report contract.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
+## VR-027 — Adjustable desktop panes
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `E-02`, accessible pointer/keyboard separators, bounded widths, collapse/restore, account-scoped P0 persistence, behavioral contracts, and the source-only release boundary.
+- **Report:** [reports/VR-027/README.md](reports/VR-027/README.md)
+- **Conclusion:** focused source contracts passed `90/90`; native Telegram Desktop/WebView drag, keyboard, visual, and restart acceptance remains `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
 ## VR-026 — Telegram Mini App viewport events
 
 - **Status:** PARTIAL
