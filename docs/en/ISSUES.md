@@ -375,3 +375,14 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Correction:** paired [ERROR_RCA_REGISTRY](ERROR_RCA_REGISTRY.md) and [AGENT_FAILURE_PREVENTION](AGENT_FAILURE_PREVENTION.md) pages now define causal evidence, applicability boundaries, resource leases, identity/dedupe, locks, schemas, bilingual parity, release, and cleanup gates.
 - **Boundary:** the playbook is not an authority source and changes no permission, runtime, Apps Script, Gmail, Telegram, or release state.
 - **Evidence:** [VR-019](verification-reports/reports/VR-019/README.md)
+
+## GT-050 — Background reader rendering reset scroll position and focus
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-30` / V3 `A-03`
+- **Root cause:** `renderThread()` unconditionally cleared and rebuilt the reader root. Background attention, reconciliation, draft, attachment, or layout updates could therefore replace the active DOM, while competing asynchronous `scrollTop` restores had no stable content anchor and could lose keyboard focus.
+- **Source fix:** identical reader state now skips root replacement. A necessary render captures a stable thread/message/body anchor, its viewport offset, bottom-pinned state, and a memory-only focus identity; one generation-guarded restore applies the new position after layout changes. `ResizeObserver` and image-load handling preserve the anchor without scheduling a reading-progress render loop.
+- **Local evidence:** focused reader contracts `8/8`, related MailApp/launch/reader contracts `101/101`, complete Apps Script suite `540/540`, clean `git diff --check`, and `0` secret-signature matches in the changed files.
+- **Release boundary:** source commit `1d7c6c1`; no Apps Script staging, production promotion, OAuth, Gmail, or Telegram mutation was performed. Native desktop/mobile, long HTML with real remote-image layout changes, and production acceptance remain `UNVERIFIED`.
+- **Evidence:** [VR-020](verification-reports/reports/VR-020/README.md)

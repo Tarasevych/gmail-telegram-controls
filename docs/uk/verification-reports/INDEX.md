@@ -148,3 +148,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-019/README.md](reports/VR-019/README.md)
 - **Висновок:** confirmed failures зведено без зміни historical evidence; playbook є quality gate, не authority source. Runtime/release state не змінено.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-020 — Стабільність scroll і focus читача
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `A-03`, unconditional reader-root replacement, stable content anchors, focus restoration, layout-shift handling, local regression/full-suite evidence і release boundary.
+- **Звіт:** [reports/VR-020/README.md](reports/VR-020/README.md)
+- **Висновок:** source correction і повний suite `540/540` VERIFIED; native desktop/mobile, real remote-image layout, staging acceptance і deployment лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
