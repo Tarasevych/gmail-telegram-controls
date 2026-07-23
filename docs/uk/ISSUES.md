@@ -579,3 +579,14 @@ Status: BLOCKED
 - **Локальний доказ:** focused F-01 corpus `6/6`; повний Apps Script suite `629/629`.
 - **Межа:** native Telegram Desktop/mobile fidelity для реальних newsletter/invoice/RTL/CID fixtures лишається `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
 - **Доказ:** [VR-035](verification-reports/reports/VR-035/README.md).
+
+## GT-064 — Дії листа дублювалися, а Gmail handoff міг відкрити неправильний browser account
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Product task:** `B1-44` / V3 `F-02`
+- **Першопричина:** desktop toolbar, conversation footer і mobile action bar незалежно створювали Reply/Forward; mobile bar був видимий і на desktop. Чотири handoff-місця напряму відкривали server-provided `gmailUrl`, який міг містити позиційний `/u/0`, а metadata panel не відрізняв Mini App/API можливості від native Gmail-only налаштувань.
+- **Виправлення:** один primary action surface на viewport; компактний desktop toolbar і progressive `Ще`; exact connection-first resolver формує `authuser=<email>` або fail-closed; settings capability hub класифікує підтримані дії, account-correct Gmail handoff і чесно непідтримувані операції.
+- **Локальний доказ:** focused message-capability contract `6/6`; focused Mail App group `98/98`; повний Apps Script suite `635/635`.
+- **Межа:** не додано RPC, OAuth scope, raw MIME transfer або Gmail mutation. Browser settings fragments і native popup/deep-link behavior лишаються `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
+- **Доказ:** [VR-036](verification-reports/reports/VR-036/README.md).

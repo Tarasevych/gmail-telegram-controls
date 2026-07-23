@@ -394,3 +394,13 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Release boundary:** source/docs contour; no real message was read or changed, and production v65, staging `0`, and immutable history are unchanged.
 - **Still required:** native desktop/mobile comparison with representative owner-approved fixtures after the shared quota recovers.
 - **Related:** `GT-063`, `RCA-016`, `VR-035`, `REQ-0035`.
+
+## B1-44 — F-02 Consistent message actions and account-correct Gmail handoff
+
+- **Status:** `PARTIAL`
+- **Result:** desktop and mobile each have one primary action surface; secondary actions progressively disclose through `More`; unsupported phishing/raw/translate/print contracts do not imitate a Gmail API mutation.
+- **Isolation:** Gmail handoff first binds a stable connection ID to the exact account email, uses `authuser`, and fails closed on ambiguity; `/u/0` is not used.
+- **Settings hub:** General, Labels, Inbox, Accounts/import, Filters, Forwarding/POP/IMAP, Add-ons, Chat/Meet, Advanced, Offline, and Themes have an explicit capability classification and accessible buttons.
+- **Locally verified:** focused `6/6`, Mail App group `98/98`, complete Apps Script suite `635/635`.
+- **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native popup/deep-link and Telegram WebView acceptance remain `UNVERIFIED`.
+- **Related:** `GT-064`, `RCA-017`, `VR-036`, `REQ-0035`.

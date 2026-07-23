@@ -2229,7 +2229,7 @@
       left: calc(var(--rail-w) + var(--list-w));
       right: 0;
       bottom: 0;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: space-around;
       min-height: 58px;
@@ -2238,6 +2238,50 @@
       background: color-mix(in srgb, var(--bg) 95%, transparent);
       backdrop-filter: blur(14px);
       z-index: 6;
+    }
+
+    .conversation-actions {
+      display: none;
+    }
+
+    .gmail-capability-hub {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 16px;
+    }
+
+    .gmail-capability-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .gmail-capability-copy {
+      min-width: 0;
+    }
+
+    .gmail-capability-copy strong,
+    .gmail-capability-copy span {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .gmail-capability-copy span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .gmail-capability-row .outline-button {
+      min-width: 92px;
+      min-height: 40px;
+      white-space: normal;
     }
 
     .reader-actionbar .toolbar-button {
@@ -4445,6 +4489,18 @@
       .reader-actionbar {
         left: 0;
         display: flex;
+      }
+
+      .thread-toolbar .toolbar-button:not([aria-controls="moreMenu"]) {
+        display: none;
+      }
+
+      .gmail-capability-row {
+        grid-template-columns: 1fr;
+      }
+
+      .gmail-capability-row .outline-button {
+        justify-self: stretch;
       }
 
       .thread-toolbar .toolbar-label {
@@ -8397,6 +8453,64 @@
         return labelsCard;
       }
 
+      function buildGmailCapabilityHub() {
+        var hub = make("section", {
+          className: "gmail-capability-hub",
+          attrs: { "aria-labelledby": "gmailCapabilityTitle" }
+        });
+        hub.append(make("h3", { id: "gmailCapabilityTitle", text: "Можливості й налаштування Gmail" }));
+        hub.append(make("p", {
+          className: "gmail-metadata-muted",
+          text: "Mini App змінює лише підтримані Gmail API параметри. Решта кнопок відкриває відповідний розділ саме вибраного Gmail-акаунта."
+        }));
+        var rows = [
+          ["Загальні", "Gmail API та Gmail", "Мова, автовідповідач та інші підтримані параметри; повний набір відкривається у Gmail.", "general"],
+          ["Мітки", "Mini App та Gmail API", "Створення, перейменування й безпечне видалення користувацьких міток доступні нижче.", "labels", true],
+          ["Вхідні", "Gmail", "Тип і категорії Inbox налаштовуються у native Gmail.", "inbox"],
+          ["Акаунти й імпорт", "Gmail", "Підключення Mini App не імітує Gmail import або delegation.", "accounts"],
+          ["Фільтри", "Gmail API та Gmail", "Mini App показує наявні фільтри; розширене створення відкривається у Gmail.", "filters"],
+          ["Пересилання, POP та IMAP", "Gmail API та Gmail", "Підтримані стани читаються через API; повне керування виконується у Gmail.", "forwarding"],
+          ["Додатки", "Gmail", "Marketplace і Gmail add-ons не керуються Mini App.", "addons"],
+          ["Chat і Meet", "Gmail", "Ці налаштування належать інтерфейсу Gmail.", "chat"],
+          ["Розширені", "Gmail", "Експериментальні Gmail-функції не імітуються.", "advanced"],
+          ["Офлайн", "Gmail", "Gmail Offline відокремлений від локального кешу Mini App.", "offline"],
+          ["Теми", "Gmail", "Тема Gmail не змінює тему Telegram Mini App.", "themes"]
+        ];
+        rows.forEach(function (row, index) {
+          var item = make("div", { className: "gmail-capability-row" });
+          var descriptionId = "gmailCapabilityDescription" + index;
+          var copy = make("div", { className: "gmail-capability-copy" });
+          copy.append(make("strong", { text: row[0] + " · " + row[1] }));
+          copy.append(make("span", { id: descriptionId, text: row[2] }));
+          var button = make("button", {
+            className: "outline-button",
+            type: "button",
+            text: row[4] ? "Керувати тут" : "Відкрити в Gmail",
+            attrs: {
+              "aria-describedby": descriptionId,
+              "aria-label": (row[4] ? "Керувати розділом " : "Відкрити в Gmail розділ ") + row[0]
+            }
+          });
+          button.addEventListener("click", function () {
+            if (row[4]) {
+              var manager = document.querySelector(".gmail-label-manager");
+              if (!manager) {
+                showSnackbar("Менеджер міток ще завантажується.", { error: true });
+                return;
+              }
+              manager.scrollIntoView({ behavior: "smooth", block: "start" });
+              var firstControl = manager.querySelector("button, input, select, textarea, [tabindex]");
+              if (firstControl) firstControl.focus();
+              return;
+            }
+            openGmailSettingsSection(row[3]);
+          });
+          item.append(copy, button);
+          hub.append(item);
+        });
+        return hub;
+      }
+
       function renderGmailMetadata() {
         if (!els.gmailMetadataContent) return;
         clear(els.gmailMetadataContent);
@@ -8405,6 +8519,7 @@
           els.gmailMetadataContent.append(makeGmailLabelStatus("Отримую актуальні мітки й налаштування з Gmail…", false));
           return;
         }
+        els.gmailMetadataContent.append(buildGmailCapabilityHub());
         var metadata = state.gmailMetadata;
         var activeId = safeId(state.account && state.account.id);
         if (!metadata || metadata.account.id !== activeId) {
@@ -12482,6 +12597,84 @@
         ];
       }
 
+      function currentGmailAccountIdentity() {
+        var thread = state.thread || {};
+        var wantedId = safeId(thread.accountId || state.selectedConnectionId || (state.account && state.account.id));
+        var wantedEmail = safeText(
+          thread.accountEmail || (state.account && state.account.email),
+          ""
+        ).trim().toLowerCase();
+        var records = Array.isArray(state.accounts) ? state.accounts.slice() : [];
+        if (state.account && safeId(state.account.id) &&
+            !records.some(function (record) { return safeId(record && record.id) === safeId(state.account.id); })) {
+          records.push(state.account);
+        }
+        var exact = null;
+        if (wantedId) {
+          exact = records.find(function (record) {
+            return safeId(record && record.id) === wantedId;
+          }) || null;
+        }
+        if (!wantedId && wantedEmail) {
+          exact = records.find(function (record) {
+            return safeText(record && record.email, "").trim().toLowerCase() === wantedEmail;
+          }) || null;
+        }
+        return {
+          connectionId: safeId(exact && exact.id),
+          email: safeText(exact && exact.email, "").trim().toLowerCase()
+        };
+      }
+
+      function accountCorrectGmailUrl(hash) {
+        var identity = currentGmailAccountIdentity();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity.email)) return "";
+        var target = safeText(hash, "#inbox");
+        if (target.charAt(0) !== "#") target = "#" + target.replace(/^\/+/, "");
+        return "https://mail.google.com/mail/?authuser=" + encodeURIComponent(identity.email) + target;
+      }
+
+      function currentThreadGmailHash() {
+        var raw = safeText(state.thread && state.thread.gmailUrl, "");
+        var hashAt = raw.indexOf("#");
+        if (hashAt >= 0) return raw.slice(hashAt);
+        var threadId = safeText(state.thread && (state.thread.threadId || state.thread.id), "");
+        return threadId ? "#inbox/" + encodeURIComponent(threadId) : "#inbox";
+      }
+
+      function openCurrentThreadInGmail() {
+        var url = accountCorrectGmailUrl(currentThreadGmailHash());
+        if (!url) {
+          showSnackbar("Не вдалося однозначно визначити Gmail-акаунт. Перемкніть акаунт і повторіть.", { error: true });
+          return false;
+        }
+        openSafeUrl(url, false);
+        return true;
+      }
+
+      function openGmailSettingsSection(section) {
+        var sections = {
+          general: "#settings/general",
+          labels: "#settings/labels",
+          inbox: "#settings/inbox",
+          accounts: "#settings/accounts",
+          filters: "#settings/filters",
+          forwarding: "#settings/fwdandpop",
+          addons: "#settings/addons",
+          chat: "#settings/chat",
+          advanced: "#settings/advanced",
+          offline: "#settings/offline",
+          themes: "#settings/themes"
+        };
+        var url = accountCorrectGmailUrl(sections[section] || "");
+        if (!url) {
+          showSnackbar("Не вдалося однозначно визначити Gmail-акаунт для переходу.", { error: true });
+          return false;
+        }
+        openSafeUrl(url, false);
+        return true;
+      }
+
       function appendMailboxActionButton(host, item, iconOnly) {
         host.append(toolbarButton(item.icon, item.label, function () {
           changeThreadAction(item.action);
@@ -12521,12 +12714,17 @@
           toggleLabelMenu(event.currentTarget);
         }, { menuId: "labelMenu", popupRole: "dialog" }));
         toolbar.append(toolbarButton("external", "Відкрити в Gmail", function () {
-          if (state.thread) openSafeUrl(state.thread.gmailUrl, false);
+          if (state.thread) openCurrentThreadInGmail();
         }));
         toolbar.append(toolbarButton("more", "Ще", function (event) {
           event.stopPropagation();
           toggleMoreMenu(event.currentTarget);
         }, { iconOnly: true, menuId: "moreMenu" }));
+        var primaryLabels = ["Редагувати чернетку", "Відповісти", "Переслати", "Ще"];
+        Array.prototype.slice.call(toolbar.children).forEach(function (button) {
+          var label = safeText(button.getAttribute("aria-label"), "").trim() || safeText(button.textContent, "").trim();
+          if (primaryLabels.indexOf(label) < 0) button.remove();
+        });
         return toolbar;
       }
 
@@ -13356,7 +13554,7 @@
                   els.readerContentHost.querySelectorAll("[data-message-id]")
                 ).find(function (node) { return node.getAttribute("data-message-id") === fragment.messageId; });
                 if (!target) {
-                  openSafeUrl(state.thread.gmailUrl, false);
+                  openCurrentThreadInGmail();
                   return;
                 }
                 var history = target.closest("details.quoted-history");
@@ -13975,7 +14173,7 @@
 
       async function openAttachmentPreview(attachment, message, index, trigger) {
         if (!attachment.downloadable || !attachment.partId) {
-          if (state.thread && state.thread.gmailUrl) openSafeUrl(state.thread.gmailUrl, false);
+          if (state.thread) openCurrentThreadInGmail();
           else showSnackbar("Це вкладення не можна переглянути в Mini App.", { error: true });
           return;
         }
@@ -14463,7 +14661,53 @@
             run: function (event) { toggleLabelMenu(event.currentTarget); }
           },
           { icon: "unsubscribe", label: "Відписатися", onlyUnsubscribe: true, mailAction: "unsubscribe", run: function () { changeThreadAction("unsubscribe"); } },
-          { icon: "external", label: "Відкрити в Gmail", run: function () { openSafeUrl(state.thread.gmailUrl, false); } }
+          { icon: "external", label: "Відкрити в Gmail", run: openCurrentThreadInGmail },
+          { icon: "external", label: "Відкрити в новому вікні", run: openCurrentThreadInGmail },
+          {
+            icon: "external",
+            label: "Друк через Gmail",
+            run: function () {
+              showSnackbar("Mini App не імітує native друк Gmail. Відкриваю точний лист у вибраному акаунті.");
+              openCurrentThreadInGmail();
+            }
+          },
+          {
+            icon: "label",
+            label: "Фільтрувати схожі листи",
+            run: function () {
+              showSnackbar("Створення розширеного фільтра виконується у Gmail для вибраного акаунта.");
+              openGmailSettingsSection("filters");
+            }
+          },
+          {
+            icon: "external",
+            label: "Перекласти в Gmail",
+            run: function () {
+              showSnackbar("Gmail API не має окремої команди перекладу. Відкриваю лист у Gmail.");
+              openCurrentThreadInGmail();
+            }
+          },
+          {
+            icon: "info",
+            label: "Показати оригінал або .eml",
+            run: function () {
+              showSnackbar("Raw MIME не передається в Mini App. Використайте «Показати оригінал» у Gmail.", { error: true });
+            }
+          },
+          {
+            icon: "info",
+            label: "Повідомити про фішинг",
+            run: function () {
+              showSnackbar("Gmail API не надає безпечного контракту для цієї скарги. Виконайте її у Gmail.", { error: true });
+            }
+          },
+          {
+            icon: "info",
+            label: "Надіслати відгук",
+            run: function () {
+              showSnackbar("Відгук про Gmail надсилається через довідку Gmail; Mini App не видає це за API-дію.");
+            }
+          }
         );
         var handoff = state.thread.handoff || {};
         if (effectiveDensityMode() === "minimal" && handoff.calendar && handoff.calendar.available) {

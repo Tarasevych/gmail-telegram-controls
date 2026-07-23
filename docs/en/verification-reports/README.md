@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-035](reports/VR-035/README.md) records F-01 reader fidelity, RTL/language preservation, and fail-closed remote-image privacy. Native acceptance remains a separate gate.
+[VR-036](reports/VR-036/README.md) records F-02: one action surface per viewport, account-correct Gmail handoff, and settings capability classification. Native acceptance remains a separate gate.

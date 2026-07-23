@@ -250,3 +250,5 @@ Source request: `REQ-0004`.
 | [VR-034](reports/VR-034/README.md) | E-05 Семантика списку, мультивибір і deterministic activation | `PARTIAL` | `REQ-0035`, `GT-062`, `B1-42`, `RCA-015` |
 
 | [VR-035](reports/VR-035/README.md) | F-01 Fidelity reader, RTL і remote-image privacy | `PARTIAL` | `REQ-0035`, `GT-063`, `B1-43`, `RCA-016` |
+
+| [VR-036](reports/VR-036/README.md) | F-02 Узгоджені дії листа та account-correct Gmail handoff | `PARTIAL` | `REQ-0035`, `GT-064`, `B1-44`, `RCA-017` |

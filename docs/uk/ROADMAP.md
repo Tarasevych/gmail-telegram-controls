@@ -394,3 +394,13 @@ Status: BLOCKED
 - **Межа релізу:** source/docs contour; реальні листи не читалися й не змінювалися, production v65, staging `0` та immutable history не змінюються.
 - **Ще потрібно:** native desktop/mobile comparison для representative owner-approved fixtures після відновлення shared quota.
 - **Пов’язано:** `GT-063`, `RCA-016`, `VR-035`, `REQ-0035`.
+
+## B1-44 — F-02 Узгоджені дії листа та account-correct Gmail handoff
+
+- **Статус:** `PARTIAL`
+- **Результат:** desktop і mobile мають по одній primary action surface; другорядні дії розкриваються через `Ще`; непідтримувані phishing/raw/translate/print contracts не імітують Gmail API mutation.
+- **Ізоляція:** Gmail handoff спочатку зв’язує stable connection ID з exact account email, використовує `authuser` і fail-closed зупиняється при неоднозначності; `/u/0` не використовується.
+- **Settings hub:** General, Labels, Inbox, Accounts/import, Filters, Forwarding/POP/IMAP, Add-ons, Chat/Meet, Advanced, Offline і Themes мають явну capability-класифікацію та доступні кнопки.
+- **Локально перевірено:** focused `6/6`, Mail App group `98/98`, повний Apps Script suite `635/635`.
+- **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native popup/deep-link і Telegram WebView acceptance лишаються `UNVERIFIED`.
+- **Пов’язано:** `GT-064`, `RCA-017`, `VR-036`, `REQ-0035`.
