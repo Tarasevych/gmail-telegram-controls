@@ -69,11 +69,11 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 ### B1-16 — Close the delivery-worker overlap gate
 
 - **Status:** VERIFIED
-- **Release:** immutable v63 is production and HEAD; staging is `0`.
-- **Completed:** deterministic reproduction, tokenized seven-minute crash lease, 150-second soft stage deadline, token-matched release, focused `17/17`, cumulative `501/501`, owner-only staging, two production launches and seven successive no-overlap runtime executions.
-- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md) and the [v63 release report](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md).
-- **Residual boundary:** History-substage runtime telemetry and external automatic INBOX after v63 remain separate evidence items, not blockers to the proven worker no-overlap gate.
-
+- **Release:** immutable v64 is production and HEAD; staging is `0`. The worker code accepted in v63 is unchanged in v64.
+- **Completed:** deterministic reproduction, tokenized seven-minute crash lease, 150-second soft stage deadline, token-matched release, focused `17/17`, cumulative `501/501`, v63 owner acceptance and seven successive no-overlap runtime executions.
+- **v64 observation:** six post-cleanup executions completed. One 3.164-second process shell overlapped the preceding row by about 5.7 seconds; no concurrent long-running worker body was observed, while the exact lease-rejection substage remains UNVERIFIED.
+- **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md), [v63 release report](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md), and [VR-013](verification-reports/reports/VR-013/README.md).
+- **Residual boundary:** History-substage telemetry and external automatic INBOX after v64 remain separate evidence items, not a rewrite of the verified GT-030 source/runtime gate.
 ### B1-17 — Google primary-source gate and publication surfaces
 
 - Review the canonical Advanced Gmail Service and Advanced Google services pages before Gmail/Apps Script changes, and record the access date and decision.
@@ -141,23 +141,21 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-24 — Dynamic active-mail context
 
-- **Status:** PARTIAL — source implementation is added within Versie 1; production acceptance is absent.
+- **Status:** VERIFIED — source, native staging and production acceptance passed in immutable v64.
 - **Date:** 2026-07-22.
 - **Scope:** replace the static owner heading with a block derived from an opaque connection ID for one account or the actual shared view, without a second state model.
-- **Implementation:** full name/email, Ukrainian genitive with a safe fallback, `Спільна пошта` only for two or more included accounts, accessible name-to-email disclosure, loading/empty/error states, and responsive wrapping.
-- **Invariants:** do not change OAuth, Gmail permissions, shared membership, or mail flow; do not identify an account by name or avatar; update through current bootstrap/switch/preferences render paths without reload.
-- **Next evidence:** targeted UI contract, non-release suite, paired documentation gates, responsive visual check, and a normal PR. Immutable/staging/production remain a separate bounded cycle after GT-030 is resolved.
-- **Evidence:** [GT-031](ISSUES.md), [VR-008](verification-reports/reports/VR-008/README.md). Source request: `REQ-0032`.
+- **Implementation:** full name/email, Ukrainian genitive with a safe fallback, `Спільна пошта` only for two or more included accounts, accessible name-to-email disclosure, loading/empty/error states, responsive wrapping and a narrow-screen full-address disclosure.
+- **Acceptance:** three isolated roots, real avatar plus fallback, alternate-account switch and return without OAuth, actual shared mapping, and two fresh production launches.
+- **Tests:** focused `88/88`; final cumulative suite `505/505`.
+- **Evidence:** [GT-031](ISSUES.md), [VR-013](verification-reports/reports/VR-013/README.md). Source requests: `REQ-0032` and `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
-
 ## B1-25 — P0 fast navigation, bounded cache, drafts, typography and client updates
 
 - **Status:** PARTIAL
-- **Production boundary:** the cumulative P0 source is now deployed as immutable v63; native staging/production mailbox and account-isolation acceptance passed.
-- **Verified:** dynamic active context, three isolated roots, account switching without OAuth, production app-shell load, worker no-overlap gate and exact release-state cleanup.
-- **Current source step:** GT-031 now has a tested narrow-screen full-address disclosure (`88/88` focused, `501/501` full); staging and production visual acceptance are still required.
-- **Current release step:** the cumulative v64 helper pins source `da8b2768323db8fd8c1ba886b556bbfd2148d6de` and adds bounded GT-037 reconciliation; local release contracts are green, but no v64 immutable exists yet.
+- **Production boundary:** cumulative source is deployed as immutable v64; staging is `0`, journal is `cleaned`, and exact v63 is rollback.
+- **Verified:** dynamic active context and narrow full-address disclosure, three isolated roots, switching without OAuth, shared mapping, production app-shell load, GT-030 worker gate, GT-037 bounded promotion and exact release cleanup.
+- **Current terminal release step:** GT-031 and GT-037 passed native staging and production acceptance; no v65 candidate exists.
 - **Still required:** measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; same-scale production typography comparison; and stale-open-client exactly-one-reload/no-loop acceptance.
-- **Related issues:** GT-031 through GT-038.
-- **Rule:** continue within Versie 1. Do not create another immutable candidate until a code change requires it and the existing release operation is in a terminal state.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-010](verification-reports/reports/VR-010/README.md), [VR-011](verification-reports/reports/VR-011/README.md), [VR-012](verification-reports/reports/VR-012/README.md), and [VR-013](verification-reports/reports/VR-013/README.md).
+- **Related issues:** GT-032 through GT-036 and GT-038 remain open/partial; GT-031 and GT-037 are verified.
+- **Rule:** continue within Versie 1. Create another immutable only for a separately tested cumulative code change after a clean preflight boundary.
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-011](verification-reports/reports/VR-011/README.md), [VR-012](verification-reports/reports/VR-012/README.md), and [VR-013](verification-reports/reports/VR-013/README.md).

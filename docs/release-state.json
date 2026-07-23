@@ -4,20 +4,24 @@
   "asOf": "2026-07-22",
   "versie": "Versie 1",
   "production": {
-    "appsScriptImmutable": 63,
+    "appsScriptImmutable": 64,
     "status": "VERIFIED"
   },
   "candidate": {
-    "appsScriptImmutable": 63,
+    "appsScriptImmutable": 64,
     "status": "VERIFIED",
     "activeStagingDeployments": 0
+  },
+  "rollback": {
+    "appsScriptImmutable": 63,
+    "status": "VERIFIED"
   },
   "releaseArticle": {
     "en": "docs/en/releases/VERSIE-001-2026-07-19.md",
     "uk": "docs/uk/releases/VERSIE-001-2026-07-19.md"
   },
   "productionEvidence": {
-    "en": "docs/en/reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md",
-    "uk": "docs/uk/reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md"
+    "en": "docs/en/reports/VERSIE_001_V64_RELEASE_AND_GT031_GT037_CLOSURE_2026-07-22.md",
+    "uk": "docs/uk/reports/VERSIE_001_V64_RELEASE_AND_GT031_GT037_CLOSURE_2026-07-22.md"
   }
 }
