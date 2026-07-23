@@ -514,3 +514,16 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Safety boundary:** only `.invalid` identities and in-memory provider responses are used. No real Google OAuth, consent, account selection, secret, Gmail, Telegram, staging, production, or release-helper action was started or changed.
 - **Remaining:** native Google provider redirect, deployed callback, real refresh/revocation, and user-visible Mini App acceptance remain `UNVERIFIED`; the overall status is therefore `PARTIAL`.
 - **Evidence:** [VR-028](verification-reports/reports/VR-028/README.md)
+
+## GT-058 — The read-only Spam list lacked a direct regression contract separate from proactive policy
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-38` / V3 `G-01`
+- **Verified state:** product source already accepts explicit `/mail folder:spam`, compiles the exact `SPAM` system label, sets `includeSpamTrash=true`, and paginates through a bounded Gmail page token. The proactive notification scan is a separate time-slice path and applies a current-`INBOX` gate after metadata read.
+- **Evidence gap:** existing tests did not pin this policy boundary directly, so a future change could incorrectly forbid owner read-only Spam or begin creating proactive Spam cards.
+- **Correction:** a synthetic contract now covers the parser, exact `SPAM` label, two pages, read-only endpoint boundary, and separate current-`INBOX` proactive gate. `Code.gs` is unchanged because no source defect was confirmed.
+- **Local evidence:** focused contract `2/2`; complete Apps Script suite `612/612`.
+- **Safety boundary:** fixtures are synthetic; live Gmail, Telegram, OAuth, staging, production, and release state were unchanged.
+- **Remaining:** owner-native `/mail folder:spam` and pagination acceptance remain `UNVERIFIED`; quota-blocked runtime is not used as evidence.
+- **Evidence:** [VR-029](verification-reports/reports/VR-029/README.md)

@@ -339,3 +339,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native provider redirect, deployed callback, provider refresh/revocation, and Mini App acceptance. Status remains `PARTIAL` until that evidence exists.
 - **Evidence:** [GT-057](ISSUES.md), [VR-028](verification-reports/reports/VR-028/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-38 — Safe separation of Spam list and proactive notification policy
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Completed in source evidence:** explicit `/mail folder:spam` is verified as a read-only exact-`SPAM` list with bounded pagination; the proactive scan separately retains its current-`INBOX` delivery gate. Product source is unchanged.
+- **Verified locally:** focused synthetic contract `2/2`, complete Apps Script suite `612/612`, and documentation/release/privacy gates.
+- **Release boundary:** source-test/documentation only; production v65 and staging `0` remain unchanged, with no runtime Gmail/Telegram/OAuth mutation.
+- **Still required:** native owner acceptance for the Spam list, next-page callback, and empty/error states in a clean runtime window.
+- **Evidence:** [GT-058](ISSUES.md), [VR-029](verification-reports/reports/VR-029/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
