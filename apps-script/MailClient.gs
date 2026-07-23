@@ -1782,6 +1782,32 @@ function mailboxNormalizeRequest_(request) {
   return { op, payload, connectionId };
 }
 
+function mailboxCacheScope_(userIdValue) {
+  const userId = String(userIdValue || '');
+  if (!/^\d{1,24}$/.test(userId)) {
+    throw mailboxError_('UNAUTHORIZED', 'Telegram-сеанс недійсний.');
+  }
+  const signature = Utilities.computeHmacSha256Signature(
+    'mailbox-cache-scope-v1:' + userId,
+    mailboxRefreshSigningSecret_(),
+    Utilities.Charset.UTF_8
+  );
+  return Utilities.base64EncodeWebSafe(signature).replace(/=+$/g, '');
+}
+
+function mailboxBootstrapSession_(sessionValue) {
+  const session = sessionValue || {};
+  return {
+    ownerId: mailboxSafeText_(session.ownerId, 32),
+    userId: mailboxSafeText_(session.userId, 32),
+    zoneId: mailboxSafeText_(session.zoneId, 96),
+    connectionId: mailboxSafeText_(session.connectionId, 96),
+    role: mailboxSafeText_(session.role, 32),
+    cacheScope: mailboxCacheScope_(session.userId),
+    expiresInSeconds: MAILBOX_CLIENT_CONFIG_.SESSION_SECONDS,
+  };
+}
+
 function mailboxBootstrap_(payload, session) {
   mailboxAssertAllowedKeys_(payload, []);
   if (!session.connectionId) {
@@ -1800,6 +1826,7 @@ function mailboxBootstrap_(payload, session) {
       folders: [],
       customLabels: [],
       needsGoogleConnection: true,
+      session: mailboxBootstrapSession_(session),
       capabilities: {
         operations: ['bootstrap', 'switchAccount', 'connectGoogleStart', 'workspaceAccess', 'acceptInvite'],
         actions: [],
@@ -1903,14 +1930,7 @@ function mailboxBootstrap_(payload, session) {
       maxSourcePreviewBytes: MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_PREVIEW_BYTES,
       maxSourceDownloadBytes: MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_DOWNLOAD_BYTES,
     },
-    session: {
-      ownerId: mailboxSafeText_(session.ownerId, 32),
-      userId: mailboxSafeText_(session.userId, 32),
-      zoneId: mailboxSafeText_(session.zoneId, 96),
-      connectionId: mailboxSafeText_(session.connectionId, 96),
-      role: mailboxSafeText_(session.role, 32),
-      expiresInSeconds: MAILBOX_CLIENT_CONFIG_.SESSION_SECONDS,
-    },
+    session: mailboxBootstrapSession_(session),
   };
 }
 

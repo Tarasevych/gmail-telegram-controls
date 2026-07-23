@@ -50,9 +50,18 @@ test('v67 helper pins merged P0 source, v65 rollback and v66 history', () => {
   }
   for (const [name, hash] of Object.entries(expectedCandidate)) {
     assert.ok(helper.includes(hash), 'missing v67 candidate hash for ' + name);
-    assert.equal(normalizedFileHash(name), hash, 'current source mismatch for ' + name);
   }
-  assert.match(fs.readFileSync(path.join(root, 'MailApp.html'), 'utf8'), /Versie-1-v67-p0/);
+  const currentReleaseMarker = fs.readFileSync(path.join(root, 'MailApp.html'), 'utf8')
+    .match(/Versie-1-v(\d+)-p0/);
+  assert.ok(currentReleaseMarker, 'current cumulative source must expose a Versie 1 release marker');
+  assert.ok(Number(currentReleaseMarker[1]) >= 67,
+    'current cumulative source must not predate immutable v67');
+});
+
+test('v67 history remains pinned without binding later cumulative source', () => {
+  assert.match(helper, /\$CandidateVersion\s*=\s*67\b/);
+  assert.ok(helper.includes(expectedCandidate.MailApp));
+  assert.doesNotMatch(helper, /\$CandidateVersion\s*=\s*68\b/);
 });
 
 test('v67 helper remains fail closed and at-most-once', () => {

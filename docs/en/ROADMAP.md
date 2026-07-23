@@ -180,3 +180,15 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - [ ] Add a reproducible in-app time-to-interactive measurement that excludes desktop-control and screenshot overhead.
 - [ ] Approve and implement a device-bound unlock or single-origin architecture before claiming offline private-mail startup.
 - [ ] Verify ten native warm launches, offline cached-mail access, draft recovery, and bidirectional multi-account switching before any later promotion.
+
+## B1-27 — V3 cache-first launch hardening
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0035`.
+- **Source candidate:** cumulative Versie 1 marker v68 based on preserved immutable v67.
+- **Locally VERIFIED:** duplicate boot copy removed; settled single-flight, correct IndexedDB warmup, cache-first list/thread paths, an opaque owner/account namespace, bounded schema v2, advisory persistent storage, unread-first prefetch without `markRead`, and a non-blocking account-attention flow.
+- **Gates:** targeted `25/25`, MailApp contract `88/88`, cumulative `526/526`, bilingual/knowledge/verification/release-state validators, and required PR checks passed.
+- **Remaining:** create the exact hash-pinned v68 helper only from merged `main`; pass `PreflightOnly`; create one owner-only staging deployment; collect native performance, duplicate-bootstrap, offline/cache-lock, draft, and multi-account evidence.
+- **Promotion:** forbidden until the critical native gates pass. Production remains v65, staging is `0`, and immutable v67 is historical.
+- **Evidence:** [VR-017](verification-reports/reports/VR-017/README.md), issues [GT-040–GT-047](ISSUES.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

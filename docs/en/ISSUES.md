@@ -296,3 +296,60 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - Chrome Telegram Web authentication and the owner bot chat are working, but the Mini App child surface could not be retained for DOM or network inspection.
 - Do not use this result to assign a regression to production v65 or immutable v67.
 - Do not repeat staging until content-free launch telemetry or a supported child-target trace can produce a correlated time-to-interactive result.
+
+## REQ-0035 update for GT-040 through GT-047
+
+- **Date:** 2026-07-23
+- **Source request:** `REQ-0035`
+- **Evidence:** [VR-017](verification-reports/reports/VR-017/README.md)
+- No parallel GT records were created: `GT-040–GT-047` are already the canonical issues for the eight P0 directions.
+
+### GT-040 — ONE-SECOND warm-launch performance
+
+- **Status:** PARTIAL.
+- Source candidate v68 adds content-free `warmLaunchUsableMs`, cache-hit, and request counters, but native p95 `≤1000 ms` and ten controlled launches remain `UNVERIFIED`.
+- Prior `898/431/409 ms` values remain a local baseline only and are not production button-to-interactive evidence.
+
+### GT-041 — Duplicate launch/auth pipeline
+
+- **Status:** PARTIAL.
+- Verified source root causes are duplicate static/runtime connection copy, the invalid `p0OpenDatabase` call instead of `p0OpenDb`, and the ability to boot again after the first Promise settled.
+- The source fix uses one empty hidden boot host, a settled single-flight guard, the correct storage warmup helper, and an account-scoped onboarding decision after `attentionState`.
+- Local contracts pass; zero repeated screens and zero duplicate bootstrap calls in native staging remain `UNVERIFIED`.
+
+### GT-042 — Offline persistent cache
+
+- **Status:** PARTIAL.
+- Schema v2 has bounded budgets of `480 records / 16 MiB / 45 days`, a per-record cap, LRU, and an advisory persistent-storage request.
+- A private offline Inbox before server validation remains `BLOCKED`: plaintext tokens or Telegram signatures are not allowed in browser storage.
+
+### GT-043 — Background prefetch and incremental sync
+
+- **Status:** PARTIAL.
+- A bounded unread-first prefetch of three thread bodies runs after the UI becomes usable; it does not call `markRead` or any mail mutation.
+- Closed-WebView Background Sync is not claimed; a native arrival/prefetch trace remains `UNVERIFIED`.
+
+### GT-044 — Session/cache locking
+
+- **Status:** PARTIAL.
+- Cache namespaces now include a server-issued opaque HMAC scope for the Telegram owner and the stable Gmail connection ID. Another owner/account cannot pass the allowlist.
+- Records for another owner or a temporarily disconnected account remain locked instead of being exposed or unconditionally deleted.
+- A device-bound unlock before server bootstrap is not implemented.
+
+### GT-045 — Drafts
+
+- **Status:** PARTIAL.
+- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs, and conflict contracts did not regress in the `526/526` suite.
+- Native restart, offline/online recovery, and verified cross-device Gmail Draft continuation remain `UNVERIFIED`.
+
+### GT-046 — Version-aware client update
+
+- **Status:** PARTIAL.
+- Source marker v68, schema migration, and one-reload/no-loop guards exist; historical immutable v67 was not rewritten.
+- v68 is not yet an immutable release and was not promoted; production-transition evidence is absent.
+
+### GT-047 — Multi-account cache isolation and switching
+
+- **Status:** PARTIAL.
+- Owner/account namespaces, poisoned-record rejection, and deterministic switch contracts pass locally.
+- Native primary-secondary-primary switching, shared mode, and cache lock/readback remain `UNVERIFIED`; no new OAuth flow was started.

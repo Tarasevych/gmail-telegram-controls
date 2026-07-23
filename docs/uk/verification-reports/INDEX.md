@@ -121,3 +121,12 @@ Source request: `REQ-0004`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
 
 - **VR-016 final local gate:** cumulative `518/518` і всі documentation validators пройшли.
+
+## VR-017 — V3 cache-first launch hardening
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** REQ-0035 recovery boundary, confirmed v67 source defects, v68 code correction, owner/account cache isolation, local/CI gates, platform limits і release gate.
+- **Звіт:** [reports/VR-017/README.md](reports/VR-017/README.md)
+- **Висновок:** source/test evidence verified у локальному scope; production лишається v65, staging `0`, immutable v67 не переписано, а native one-second/offline/drafts/switch acceptance ще не виконано.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

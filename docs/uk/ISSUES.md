@@ -296,3 +296,60 @@
 - Chrome-авторизація Telegram Web і чат owner-бота працюють, але child surface Mini App не вдалося утримати для DOM або network inspection.
 - Цей результат не можна використовувати для приписування regression production v65 або immutable v67.
 - Не повторювати staging, доки content-free launch telemetry або підтримуваний child-target trace не надасть корельований результат time-to-interactive.
+
+## Оновлення REQ-0035 для GT-040–GT-047
+
+- **Дата:** 2026-07-23
+- **Source request:** `REQ-0035`
+- **Доказ:** [VR-017](verification-reports/reports/VR-017/README.md)
+- Нові паралельні GT не створено: `GT-040–GT-047` уже є канонічними issues для восьми напрямів P0.
+
+### GT-040 — ONE-SECOND warm-launch performance
+
+- **Статус:** PARTIAL.
+- Source candidate v68 додає content-free `warmLaunchUsableMs`, cache-hit і request counters, але native p95 `≤1000 ms` та десять контрольованих запусків ще `UNVERIFIED`.
+- Попередні `898/431/409 ms` лишаються лише локальним baseline і не є production button-to-interactive доказом.
+
+### GT-041 — Дубльований launch/auth pipeline
+
+- **Статус:** PARTIAL.
+- Підтверджені source root causes: дубльований static/runtime connection copy, помилковий виклик неіснуючого `p0OpenDatabase` замість `p0OpenDb` і можливість повторного boot після завершення першої Promise.
+- Source fix: один порожній hidden boot host, settled single-flight guard, правильний storage warmup helper і account-scoped onboarding decision після `attentionState`.
+- Local contracts проходять; нуль повторних екранів і нуль duplicate bootstrap у native staging ще `UNVERIFIED`.
+
+### GT-042 — Offline persistent cache
+
+- **Статус:** PARTIAL.
+- Schema v2 має bounded budgets `480 records / 16 MiB / 45 days`, per-record cap, LRU і advisory persistent-storage request.
+- Приватний offline Inbox до серверної перевірки лишається `BLOCKED`: plaintext token або Telegram signature у browser storage не допускаються.
+
+### GT-043 — Фоновий prefetch та incremental sync
+
+- **Статус:** PARTIAL.
+- Додано bounded unread-first prefetch трьох thread bodies після появи UI; він не викликає `markRead` або mail mutation.
+- Closed-WebView Background Sync не заявляється; native arrival/prefetch trace ще `UNVERIFIED`.
+
+### GT-044 — Session/cache locking
+
+- **Статус:** PARTIAL.
+- Cache namespace тепер містить server-issued opaque HMAC scope Telegram owner та stable Gmail connection ID. Інший owner/account не проходить allowlist.
+- Records іншого owner або тимчасово від’єднаного account залишаються заблокованими, а не видаються чи безумовно видаляються.
+- Device-bound unlock до server bootstrap не реалізовано.
+
+### GT-045 — Чернетки
+
+- **Статус:** PARTIAL.
+- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs і conflict contracts не регресували у suite `526/526`.
+- Native restart, offline/online recovery і підтверджене cross-device Gmail Draft continuation ще `UNVERIFIED`.
+
+### GT-046 — Version-aware client update
+
+- **Статус:** PARTIAL.
+- Source marker v68, schema migration і one-reload/no-loop guards існують; historical immutable v67 не переписано.
+- v68 ще не є immutable release і не просувався; production transition evidence відсутній.
+
+### GT-047 — Multi-account cache isolation та switch
+
+- **Статус:** PARTIAL.
+- Owner/account namespace, poisoned-record rejection і deterministic switch contracts проходять локально.
+- Native primary-secondary-primary switching, shared mode і cache lock/readback ще `UNVERIFIED`; новий OAuth не запускався.
