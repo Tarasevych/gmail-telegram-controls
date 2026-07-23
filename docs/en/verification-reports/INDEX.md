@@ -153,9 +153,9 @@ A historical report is not rewritten after publication to hide an error. A new i
 
 - **Status:** PARTIAL
 - **Date:** 2026-07-23
-- **Coverage:** V3 `B-01`, the ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, local regression/full-suite evidence, and the release boundary.
+- **Coverage:** V3 `B-01`, the ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, the complete role/zone/invite/revocation access matrix, and the release boundary.
 - **Report:** [reports/VR-018/README.md](reports/VR-018/README.md)
-- **Conclusion:** the source correction and local `532/532` suite are VERIFIED; native Telegram download, staging acceptance, and deployment remain `UNVERIFIED`. Production/HEAD v65 and immutable v68 are unchanged.
+- **Conclusion:** the source correction, prior local `532/532` suite, and focused `7/7` access matrix are VERIFIED; closing the access gap required no `MultiAccount.gs` change. Native Telegram download, staging acceptance, and deployment remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
 ## VR-019 — Error/RCA registry and agent failure prevention

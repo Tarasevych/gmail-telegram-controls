@@ -368,7 +368,8 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Root cause:** the Telegram card encoded an attachment position in the MIME list. When Gmail was read again, reordered parts, duplicate names, or a changed MIME shape could direct the callback to a different attachment.
 - **Source fix:** new cards use a short opaque identity token derived from stable MIME/Gmail attributes. The server reads the message again, requires exactly one identity match, and fails closed when no match or an ambiguous match exists. A raw Gmail attachment ID is not exposed in callback data.
 - **Compatibility:** historical `mail.att:` and `a2.` callbacks remain available only through the legacy ordinal path; every new card uses exact identity.
-- **Local evidence:** reorder, duplicate-name, Unicode inline-data, zero-byte, ambiguous-match rejection, and legacy-parser cases pass; the complete Apps Script suite is `532/532` and the added-lines secret scan found `0`.
+- **Evidence gap:** the exact connection context previously had no direct behavioral matrix for all five roles, mail zones, the invite lifecycle, revoked membership/connections, and exact selection. This was a test-evidence deficit, not a confirmed source defect.
+- **Local evidence:** reorder, duplicate-name, Unicode inline-data, zero-byte, ambiguous-match rejection, and legacy-parser cases pass; the focused access-matrix test is `7/7` and separately covers `25` role thresholds, owner/shared access, zone mismatch, cross-user denial, pending/expired/revoked/replayed invites, revoked/hidden connections, the reauth boundary, and exact connection selection. `MultiAccount.gs` is unchanged.
 - **Release boundary:** source commit `f2c00d3`; Apps Script production/HEAD remains v65, staging is `0`, and immutable v68 was not rewritten. Native Telegram download and staging acceptance are `UNVERIFIED`.
 - **Evidence:** [VR-018](verification-reports/reports/VR-018/README.md)
 
