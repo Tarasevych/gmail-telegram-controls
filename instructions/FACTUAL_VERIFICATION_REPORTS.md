@@ -1,6 +1,6 @@
 # Незалежні factual verification reports / Independent factual verification reports
 
-Source request: `REQ-0004`.
+Source requests: `REQ-0004`, `REQ-0035`.
 
 <!-- lang:uk -->
 ## Українською
@@ -17,6 +17,15 @@ Verification report є окремим доказовим шаром між sourc
 - Рівні доказу: `E0` report-only, `E1` Git/file presence, `E2` static implementation, `E3` local automated test, `E4` read-only staging/runtime, `E5` production acceptance.
 - Наявність файла не доводить поведінку. `verified` test claim потребує E3+, runtime claim E4+, production claim E5.
 - Git evidence URL містить повний immutable commit і реальний path. Доказ відсутності посилається на audited commit tree та описує метод пошуку.
+
+## Coverage і canonical status contract
+
+- Перед claim extraction створюється coverage manifest: source path або sanitized alias, byte/line totals, SHA-256, неперетинні gap-free ranges і hash кожного range.
+- Byte-identical aliases аналізуються один раз і явно позначаються як duplicates. Файл, назва якого не відповідає фактичному вмісту, отримує `CONFLICTING`; відсутнє джерело не реконструюється й не позначається прочитаним.
+- Для нових Versie 1 артефактів канонічні statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMMENDED`. Legacy lowercase statuses зберігаються історично, але не копіюються до нових записів.
+- Кожне атомарне твердження має exact provenance, source range/hash, актуальність, залежності, конфлікти, sensitivity та evidence grade. Summary або попередній report не є незалежним доказом.
+- `VERIFIED` заборонений без відтворюваного trace. Якщо native acceptance, authenticated readback або source corpus недоступні, результат залишається `PARTIAL`, `UNVERIFIED`, `CONFLICTING` або `BLOCKED`.
+- Приватні transcripts, mailbox content, identifiers і session data не публікуються. Публічний report містить sanitized claim і перевірюване походження без розкриття source payload.
 
 ## Незалежність і маршрутизація
 
@@ -50,6 +59,15 @@ A verification report is a separate evidence layer between a source report, the 
 - Evidence grades are `E0` report-only, `E1` Git/file presence, `E2` static implementation, `E3` local automated test, `E4` read-only staging/runtime, and `E5` production acceptance.
 - File presence does not prove behavior. A `verified` test claim requires E3+, a runtime claim E4+, and a production claim E5.
 - A Git evidence URL contains a full immutable commit and real path. Absence evidence links to the audited commit tree and describes the search method.
+
+## Coverage and canonical status contract
+
+- Before claim extraction, create a coverage manifest with the source path or sanitized alias, byte/line totals, SHA-256, non-overlapping gap-free ranges, and a hash for every range.
+- Analyze byte-identical aliases once and mark them explicitly as duplicates. A file whose name conflicts with its actual content receives `CONFLICTING`; a missing source is never reconstructed or marked as read.
+- Canonical statuses for new Versie 1 artifacts are `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, and `RECOMMENDED`. Legacy lowercase statuses remain historical but are not copied into new records.
+- Every atomic claim has exact provenance, source range/hash, relevance, dependencies, conflicts, sensitivity, and evidence grade. A summary or prior report is not independent evidence.
+- `VERIFIED` is forbidden without a reproducible trace. If native acceptance, authenticated readback, or the source corpus is unavailable, the result remains `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, or `BLOCKED`.
+- Private transcripts, mailbox content, identifiers, and session data are not published. A public report contains a sanitized claim and verifiable provenance without exposing the source payload.
 
 ## Independence and routing
 
