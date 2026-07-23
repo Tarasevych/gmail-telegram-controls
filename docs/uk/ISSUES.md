@@ -227,26 +227,30 @@
 - **Доказ:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 
-## GT-040 — ONE-SECOND warm-launch performance
+## GT-040 — ONE-SECOND продуктивність теплого запуску
 
 - **Статус:** PARTIAL
-- **Source request:** `REQ-0034`
+- **Джерело запиту:** `REQ-0034`
+- **Локальний source v70:** VERIFIED — bridge передає перевірюваний content-free час початку, а MailApp обчислює міждокументний час до придатного інтерфейсу; фокусні тести `113/113`, повний suite `567/567`, перевірка доданих production-рядків на значення секретів `0`, `git diff --check` чистий.
+- **Межа вимірювання:** новий trace починається у bridge-документі, а не в момент натискання кнопки Telegram; це покращує доказовість, але ще не є native button-to-interactive p95.
+- **Залишкова межа:** warm-launch `≤1000 ms` p95, десять native запусків і offline-відкриття приватної пошти залишаються `UNVERIFIED`; production v65 і staging `0` не змінено.
 - **Доказ:** [VR-016](verification-reports/reports/VR-016/README.md)
-- Локальний попередній trace: cold `898 ms`, B `431 ms`, cached A `409 ms`.
-- Production p95 від Telegram button до реального interactive cached Inbox ще `UNVERIFIED`; потрібні 10 native staging launches.
 
 ## GT-041 — Дубльований launch/auth pipeline
 
 - **Статус:** PARTIAL
-- **Root cause:** bridge handoff, статичний MailApp overlay і повторний `setBootLoading()` показували однаковий connection screen.
-- **Source fix:** hidden credentialless handoff, single-flight form submit, shared in-flight `boot()` Promise і відсутність boot overlay у звичайному validated launch.
-- **Доказ:** launch contract `5/5`; native staging acceptance ще `UNVERIFIED`.
+- **Першопричина:** bridge handoff, статичний MailApp overlay і повторний `setBootLoading()` показували однаковий екран підключення; hard reload POST-документа додатково перебуває поза контролем внутрішнього iframe.
+- **Source-виправлення:** прихований credentialless handoff, single-flight відправлення форми, спільний in-flight `boot()` Promise та відсутність boot overlay під час звичайного валідованого запуску. Source v70 зберігає цю ідемпотентність і додає content-free launch trace.
+- **Локальний доказ:** launch/client/app контракти `113/113`; повний Apps Script suite `567/567`.
+- **Залишкова межа:** нуль повторних екранів і нуль дубльованих auth/bootstrap-запитів у десяти native запусках залишаються `UNVERIFIED`; browser-level form-resubmission prompt не можна усунути кодом уже завантаженого MailApp-документа.
 
-## GT-042 — Offline persistent cache
+## GT-042 — Постійний offline-кеш
 
 - **Статус:** PARTIAL
-- Чинний bounded/versioned IndexedDB cache, LRU і account namespaces перевірені локально.
-- Приватне читання лишається після server bootstrap/allowlist. Справжній offline private Inbox до bootstrap є `BLOCKED` без окремого device-bound unlock contract.
+- Обмежений/versioned IndexedDB-кеш, LRU, нормалізовані сутності та account/owner namespaces локально `VERIFIED`.
+- Source v70 не послаблює allowlist: приватні записи читаються лише після підтвердження Telegram/Gmail connection IDs.
+- Справжній offline private Inbox до server bootstrap залишається `BLOCKED` без підтримуваного device-bound unlock або першостороннього single-origin app shell.
+- Service Worker/Background Sync у чинному дво-origin Apps Script IFRAME-контурі не оголошуються підтримуваними без фактичного доказу.
 
 ## GT-043 — Фоновий prefetch та incremental sync
 
@@ -254,11 +258,13 @@
 - Warm list/thread stale-while-revalidate і Gmail History boundary вже існують у cumulative source.
 - Closed-app Background Sync не заявляється: він залежить від Service Worker і не має універсальної WebView підтримки. Native arrival/prefetch trace лишається `UNVERIFIED`.
 
-## GT-044 — Session/cache locking
+## GT-044 — Блокування сесії та кешу
 
 - **Статус:** PARTIAL
-- Cache namespaces fail closed за Telegram/Gmail connection IDs; storage warmup не читає приватних records.
-- Device-bound unlock для показу приватного cache до server bootstrap не реалізований і потребує окремого security decision.
+- Cache namespaces fail closed за Telegram/Gmail connection IDs; storage warmup не читає приватні записи.
+- Source v70 класифікує лише content-free стани Telegram `SecureStorage` (`UNSUPPORTED`, `TIMEOUT`, `ERROR`, `MISSING`, `FOUND` та інші дозволені коди) і не записує credential value у telemetry.
+- Якщо one-time launch proof повторено, а підтримуваного secure recovery credential немає, клієнт переходить у явний locked state замість рекурсивного restart-loop; replay protection не послаблено.
+- Автоматичний device-bound unlock на протестованому Telegram Desktop залишається `BLOCKED`/`UNVERIFIED` до native acceptance або окремого architecture decision.
 
 ## GT-045 — Чернетки
 
@@ -411,15 +417,14 @@
 - **Release boundary:** source commit `d4beb1e`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
 - **Доказ:** [VR-022](verification-reports/reports/VR-022/README.md)
 
-## GT-053 — Hard reload втрачав app session і повторно використовував уже спожитий launch proof
+## GT-053 — Hard reload втрачає app session і повторно використовує вже спожитий launch proof
 
 - **Статус:** PARTIAL
-- **Source request:** `REQ-0036`
+- **Джерело запиту:** `REQ-0036`; пов’язаний P0-контур `REQ-0034`
 - **Product task:** `B1-33` / P0 session continuity
-- **Root cause:** bearer session і rotating app-refresh family уже існували на сервері, але клієнт зберігав обидва credentials лише в RAM. Після F5/hard reload новий document не мав refresh credential і повторював одноразовий Telegram `initData` claim або вже видалений launch nonce. Сервер правильно відхиляв replay, але UI помилково перетворював безпечну відмову на повторний екран підключення.
-- **Source fix:** лише app refresh credential зберігається через Telegram `SecureStorage`; session bearer залишається memory-only. Boot спочатку виконує single-flight secure recovery, сервер обертає refresh family, а bounded `60 s` idempotency cache повертає той самий підтверджений rotation result конкурентним вкладкам. Explicit revoke або невідповідність чинній family блокує replay. Terminal refresh failure очищає secure item; transient network failure не маскується як auth loss.
-- **Локальний доказ:** focused `mail_client`, `mail_actions`, `mail_app_contract` і `mail_launch_p0` suites пройшли; повний Apps Script suite пройшов `561/561`; `git diff --check` чистий; у нових рядках `0` credential signatures. Behavioral test підтверджує десять ідентичних renewal requests із одним результатом та відмову старому token після завершення replay window.
-- **Native evidence:** контрольний A/B підтвердив, що production v65 завантажується у двох свіжих запусках, а staging v69 може завантажити mailbox після bounded repeat. Однак hard reload у Telegram Desktop спочатку відкрив native form-resubmission prompt, а потім завершився `UNTRUSTED_NONCE_REPLAY`. Отже POST-document повторно подав уже спожитий Telegram launch proof, а `SecureStorage` на перевіреному Windows Desktop не надав придатного recovery credential. Wrapper не зберіг platform error code, тому точна причина відмови storage лишається `UNVERIFIED`.
-- **Залишкова межа:** source correction VERIFIED, але native Desktop session continuity `CONFLICTING` із локальними контрактами. Потрібен окремий безпечний Desktop fallback або підтверджене platform рішення; mobile/WebView reopen і паралельні native launches лишаються `UNVERIFIED`. Source не заявляє persistent session без придатного Telegram `SecureStorage` і не зберігає Gmail OAuth tokens, Telegram `initData`, mail content або session bearer у JS web storage.
-- **Release boundary:** source commit `975785a` увійшов до immutable v69. Staging v69 перевірено й fail-closed abandoned; exact staging deployment видалено, journal має terminal state `abandoned`, owner menu повернуто на production, active staging `0`, production лишилася на verified v65. OAuth і Gmail state не змінювалися.
-- **Доказ:** [VR-023](verification-reports/reports/VR-023/README.md)
+- **Підтверджена першопричина:** bearer session і rotating app-refresh family існують на сервері, але після hard reload POST-документ може повторно надіслати вже спожитий Telegram launch proof. Сервер коректно відповідає `UNTRUSTED_NONCE_REPLAY`. На протестованому Windows Telegram Desktop `SecureStorage` не надав придатного recovery credential, а v69 wrapper приховав точний platform result.
+- **Історична межа v69:** immutable v69 протестовано й залишено історичним; staging видалено, journal `abandoned`, owner menu повернуто на production, active staging `0`, production v65 не змінено.
+- **Source-корекція v70:** SecureStorage wrapper зберігає лише content-free status/error class; bridge timestamp дає міждокументний launch trace; replay разом із відсутнім secure credential відкриває fail-closed locked state без restart-loop. Access/refresh tokens, Telegram `initData`, session bearer і вміст пошти не потрапляють у browser telemetry/storage.
+- **Локальний доказ:** фокусні P0-контракти `113/113`, повний Apps Script suite `567/567`, production added-line privacy scan `0`, `git diff --check` чистий.
+- **Залишкова межа:** source v70 ще не merged/deployed; native Windows SecureStorage status, hard reload, десять запусків, mobile/WebView reopen і concurrent launch залишаються `UNVERIFIED`. Browser-level POST resubmission виникає до виконання внутрішнього MailApp JavaScript, тому поточний patch не оголошує його усуненим.
+- **Доказ:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)

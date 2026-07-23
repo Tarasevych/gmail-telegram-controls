@@ -90,3 +90,22 @@ Promotion у production не виконувався. Майбутній cumulati
 - Readback Apps Script Executions завершився timeout керування браузером до отримання доказу. Тому невідомо, чи запуск досяг Apps Script.
 - Це спостереження не класифікується як regression v65 або v67. Staging deployment не відтворювався, production state не змінювався.
 - Умова повтору: підтримуваний child-target/iframe trace або власна content-free launch telemetry продукту з кореляцією точного запуску до authenticated Apps Script execution evidence.
+
+## Source-корекція v70 до релізу
+
+- **Дата:** 2026-07-23
+- **Статус:** PARTIAL
+- **Production boundary:** immutable v65, staging `0`; immutable v69 збережено як історичний `abandoned`; v70 є лише локальним source candidate.
+
+| ID | Твердження | Статус | Доказ |
+|---|---|---|---|
+| VR-016-13 | Bridge передає `launch_started_ms`, сервер приймає лише обмежене часове вікно, а клієнт обчислює content-free cross-document time-to-usable. | VERIFIED | source contract і `mail_launch_p0.test.js` |
+| VR-016-14 | SecureStorage wrapper зберігає дозволений status/error class без credential value; `UNSUPPORTED`, timeout і terminal failure більше не губляться безслідно. | VERIFIED | source contract і P0 tests |
+| VR-016-15 | Повторений one-time proof без придатного secure credential переходить у fail-closed locked state без рекурсивного `restartMailboxApp`; nonce replay guard не послаблено. | VERIFIED | source contract і P0 tests |
+| VR-016-16 | Фокусні P0-контракти проходять `113/113`, повний Apps Script suite `567/567`, added-production-line privacy scan `0`, `git diff --check` чистий. | VERIFIED | локальний deterministic gate |
+| VR-016-17 | Native button-to-interactive p95, десять запусків, точний Windows SecureStorage result, hard reload і offline private Inbox ще не перевірені на v70. | UNVERIFIED | staging v70 не створено |
+| VR-016-18 | Browser-level повторне надсилання POST відбувається до внутрішнього MailApp JavaScript; поточний source patch не може оголошувати prompt усуненим. | VERIFIED | v69 native trace та document boundary |
+
+### Поточне рішення
+
+v70 не переписує immutable v69 і не змінює production. Після merge/CI дозволено створити лише один cumulative immutable staging candidate. Promotion заборонено, доки всі native acceptance gates не стануть `VERIFIED`. Якщо SecureStorage знову не дасть підтримуваного device-bound recovery, результат лишається `PARTIAL`/`BLOCKED`, а потрібним наступним кроком є окремий architecture decision для першостороннього single-origin app shell або іншого підтвердженого secure unlock primitive.

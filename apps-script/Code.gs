@@ -3676,6 +3676,13 @@ function mailboxBootstrapUrl_() {
 function serveMailboxLaunchPost_(e) {
   const params = e && e.parameter ? e.parameter : {};
   const rawInitData = String(params.init_data || '');
+  const now = Date.now();
+  const requestedLaunchStartedAt = Number(params.launch_started_ms || 0);
+  const launchStartedAt = Number.isFinite(requestedLaunchStartedAt) &&
+      requestedLaunchStartedAt >= now - 2 * 60 * 1000 &&
+      requestedLaunchStartedAt <= now + 5000
+    ? Math.floor(requestedLaunchStartedAt)
+    : 0;
   const opened = mailboxOpenSession(rawInitData);
   if (!opened || opened.ok !== true || !opened.data) {
     const message = opened && opened.error && opened.error.message
@@ -3685,6 +3692,7 @@ function serveMailboxLaunchPost_(e) {
       launchError: message,
       launchErrorCode: opened && opened.error && opened.error.code,
       capacityRecoveryToken: opened && opened.capacityRecoveryToken,
+      launchStartedAt,
     });
   }
 
@@ -3700,6 +3708,7 @@ function serveMailboxLaunchPost_(e) {
   return serveMailboxApp_({
     launchNonce,
     route: normalizeMailboxLaunchRoute_(params.route),
+    launchStartedAt,
   });
 }
 
@@ -3895,6 +3904,10 @@ function serveMailboxApp_(options) {
   template.mailboxLaunchRouteB64 = mailboxTemplateBase64_(normalizeMailboxLaunchRoute_(input.route));
   template.mailboxLaunchErrorB64 = mailboxTemplateBase64_(String(input.launchError || '').slice(0, 500));
   template.mailboxLaunchErrorCodeB64 = mailboxTemplateBase64_(String(input.launchErrorCode || '').slice(0, 64));
+  const launchStartedAt = Number(input.launchStartedAt || 0);
+  template.mailboxLaunchStartedAt = Number.isFinite(launchStartedAt) && launchStartedAt > 0
+    ? String(Math.floor(launchStartedAt))
+    : '0';
   const capacityRecoveryToken = String(input.capacityRecoveryToken || '');
   template.mailboxCapacityRecoveryToken = /^[A-Za-z0-9_-]{43}$/.test(capacityRecoveryToken)
     ? capacityRecoveryToken

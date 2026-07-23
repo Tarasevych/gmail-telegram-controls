@@ -90,3 +90,22 @@ No production promotion was performed. A future cumulative candidate requires a 
 - The Apps Script Executions readback timed out in browser control before evidence was returned. It is therefore unknown whether the launch reached Apps Script.
 - This observation is not classified as a v65 or v67 regression. No staging deployment was recreated and no production state was changed.
 - Retry condition: use a supported child-target/iframe trace or product-owned content-free launch telemetry, then correlate the exact launch with authenticated Apps Script execution evidence.
+
+## Pre-release source correction v70
+
+- **Date:** 2026-07-23
+- **Status:** PARTIAL
+- **Production boundary:** immutable v65, staging `0`; immutable v69 is preserved as historical `abandoned`; v70 is only a local source candidate.
+
+| ID | Claim | Status | Evidence |
+|---|---|---|---|
+| VR-016-13 | The bridge sends `launch_started_ms`, the server accepts only a bounded time window, and the client computes content-free cross-document time-to-usable. | VERIFIED | source contract and `mail_launch_p0.test.js` |
+| VR-016-14 | The SecureStorage wrapper retains an allowed status/error class without a credential value; `UNSUPPORTED`, timeout, and terminal failure are no longer silently discarded. | VERIFIED | source contract and P0 tests |
+| VR-016-15 | A replayed one-time proof without a usable secure credential enters a fail-closed locked state without recursive `restartMailboxApp`; the nonce replay guard is not weakened. | VERIFIED | source contract and P0 tests |
+| VR-016-16 | Focused P0 contracts pass `113/113`, the complete Apps Script suite passes `567/567`, the added-production-line privacy scan is `0`, and `git diff --check` is clean. | VERIFIED | local deterministic gate |
+| VR-016-17 | Native button-to-interactive p95, ten launches, exact Windows SecureStorage result, hard reload, and offline private Inbox have not been tested on v70. | UNVERIFIED | no v70 staging exists |
+| VR-016-18 | Browser-level POST resubmission occurs before inner MailApp JavaScript; the current source patch cannot claim that the prompt is removed. | VERIFIED | v69 native trace and document boundary |
+
+### Current decision
+
+v70 does not rewrite immutable v69 and does not change production. After merge/CI, only one cumulative immutable staging candidate may be created. Promotion is forbidden until every native acceptance gate is `VERIFIED`. If SecureStorage again supplies no supported device-bound recovery, the result remains `PARTIAL`/`BLOCKED`, and the required next step is a separate architecture decision for a first-party single-origin app shell or another confirmed secure unlock primitive.
