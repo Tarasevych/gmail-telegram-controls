@@ -38,6 +38,8 @@
 
 | RCA-020 | Reading progress міг заявити, що короткий лист повністю прочитано, назвати scroll position розумінням змісту або записати stale position до іншого thread | Geometry edge case повертав `100%` для non-scrollable content, а debounced save не зберігав exact thread/connection identity і resume control не мав semantic boundary | Додано measurable geometry, чесний scroll-position text, compact omission, exact identity guards і user resume з урахуванням reduced motion; background layout restoration не зберігає progress | Тестувати short/long content, delayed callbacks, exact identity, resize/image anchors, quoted collapse, reduced motion і відсутність timer/auto-scroll semantics | `PARTIAL` | [VR-039](verification-reports/reports/VR-039/README.md) |
 
+| RCA-021 | Autosave показував manual «Перевірити збереження», міг назвати pristine/local state збереженим у Gmail і повторювати pending/terminal attempts без чесної terminal межі | UI напряму змішував dirty, in-flight і pending flags; default label не вимагав canonical acknowledgement; same-session retry не мав одного bounded presentation contract | Додано derived six-state presentation, canonical-ack timestamp, offline queue, три bounded automatic attempts, stable-operation manual retry та explicit conflict state | Відділяти local recovery від Gmail acknowledgement; тестувати state precedence, bounded retries, exact operation reuse, offline resume і conflict preservation | `PARTIAL` | [VR-040](verification-reports/reports/VR-040/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

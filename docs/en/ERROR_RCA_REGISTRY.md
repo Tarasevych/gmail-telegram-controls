@@ -38,6 +38,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-020 | Reading progress could claim a short message was fully read, describe scroll position as comprehension, or save a stale position into another thread | A geometry edge case returned `100%` for non-scrollable content, while the debounced save retained no exact thread/connection identity and the resume control lacked a semantic boundary | Added measurable geometry, honest scroll-position copy, compact omission, exact identity guards, and reduced-motion-aware user resume; background layout restoration never saves progress | Test short/long content, delayed callbacks, exact identity, resize/image anchors, quoted collapse, reduced motion, and absence of timer/auto-scroll semantics | `PARTIAL` | [VR-039](verification-reports/reports/VR-039/README.md) |
 
+| RCA-021 | Autosave displayed a manual “Check saving” action, could describe pristine/local state as saved in Gmail, and could repeat pending or terminal attempts without an honest terminal boundary | The UI directly mixed dirty, in-flight, and pending flags; its default label did not require canonical acknowledgement; same-session retry lacked one bounded presentation contract | Added a derived six-state presentation, canonical-ack timestamp, offline queue, three bounded automatic attempts, stable-operation manual retry, and an explicit conflict state | Keep local recovery separate from Gmail acknowledgement; test state precedence, bounded retries, exact operation reuse, offline resume, and conflict preservation | `PARTIAL` | [VR-040](verification-reports/reports/VR-040/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

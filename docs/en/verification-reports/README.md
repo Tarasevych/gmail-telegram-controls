@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-039](reports/VR-039/README.md) records F-05: measurable scroll-position progress, exact thread/account debounce guards, compact honest copy, reduced-motion handling, and preservation across background layout changes. Native reader and production acceptance remain separate gates.
+[VR-040](reports/VR-040/README.md) records C-01: canonical-ack autosave states, an offline queue, bounded retry, stable operation reuse, and an explicit conflict boundary. Native Gmail-draft, restart/offline, and production acceptance remain separate gates.
