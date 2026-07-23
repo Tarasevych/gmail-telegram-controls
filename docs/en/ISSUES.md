@@ -410,3 +410,15 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Remaining boundary:** native Telegram Desktop/mobile/WebView acceptance for PDF, media, Unicode ZIP, malformed real-world archives, and fallback/download remains `UNVERIFIED`; the source claims neither extraction nor universal preview.
 - **Release boundary:** source commit `d4beb1e`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box mutation was performed.
 - **Evidence:** [VR-022](verification-reports/reports/VR-022/README.md)
+
+## GT-053 — Hard reload lost the app session and reused an already-consumed launch proof
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0036`
+- **Product task:** `B1-33` / P0 session continuity
+- **Root cause:** the bearer session and rotating app-refresh family already existed on the server, but the client kept both credentials only in RAM. After F5 or a hard reload, the new document had no refresh credential and replayed either the one-time Telegram `initData` claim or a launch nonce that had already been deleted. The server correctly rejected the replay, but the UI turned that safe refusal into another connection screen.
+- **Source fix:** only the app refresh credential is persisted through Telegram `SecureStorage`; the session bearer remains memory-only. Boot attempts single-flight secure recovery first, the server rotates the refresh family, and a bounded `60 s` idempotency cache returns the same confirmed rotation result to racing tabs. Explicit revocation or a mismatch with the current family blocks replay. A terminal refresh failure removes the secure item; a transient network failure is not mislabeled as authentication loss.
+- **Local evidence:** the focused `mail_client`, `mail_actions`, `mail_app_contract`, and `mail_launch_p0` suites pass; the complete Apps Script suite passes `561/561`; `git diff --check` is clean; added lines contain `0` credential signatures. A behavioral test confirms ten identical renewal requests receive one result and the old token fails after the replay window is removed.
+- **Remaining boundary:** real Telegram Desktop/mobile `SecureStorage`, F5/WebView reopen, concurrent native launches, staging, and production acceptance remain `UNVERIFIED`. The source does not claim a persistent session in browsers without Telegram `SecureStorage`, and it never writes Gmail OAuth tokens, Telegram `initData`, mail content, or the session bearer to JavaScript web storage.
+- **Release boundary:** source commit `975785a`; no immutable, staging, production, OAuth, Gmail, or Telegram mutation was performed.
+- **Evidence:** [VR-023](verification-reports/reports/VR-023/README.md)

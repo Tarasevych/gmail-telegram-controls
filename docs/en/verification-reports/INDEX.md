@@ -175,3 +175,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-022/README.md](reports/VR-022/README.md)
 - **Conclusion:** source hardening and the complete `560/560` suite are VERIFIED; native preview/fallback acceptance, staging, and deployment remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-023 — Persistent app session after reload
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** `REQ-0036`, loss of memory-only refresh state, replay of an already-consumed launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, local regression/full-suite evidence, and the release boundary.
+- **Report:** [reports/VR-023/README.md](reports/VR-023/README.md)
+- **Conclusion:** the source fix and complete `561/561` suite are VERIFIED; native Telegram hard-reload, multi-tab, staging, and production acceptance remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
