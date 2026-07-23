@@ -260,3 +260,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - GitHub check reconciliation: a terminal-success workflow had a stale in-progress CheckRun; only that exact workflow was rerun without a new push, its replacement CheckRun completed with `SUCCESS`, and the PR became `CLEAN`.
 - No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
 - Remaining: native slow-network/minimize acceptance; future real RPC abort requires a separately verified cancellable transport architecture.
+
+## Оновлення доказів B-03: readback blocker native acceptance
+
+- Дата: 2026-07-23
+- Статус інкремента: BLOCKED
+- Documentation commit: `aa92958`
+- GitHub PR: `#82`
+- Normal merge у `main`: `0673e8e48be01ae4920a9070fda76ec0a9801d07`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Автентифікований read-only Apps Script Executions trace підтвердив, що невдалий `checkNewMail_` execution дійшов до `legacy_recovery` та завершився з `errorCode=urlfetch_quota`; сусідні content-free entries показали ту саму shared daily URL Fetch boundary для Telegram maintenance, Google OAuth token refresh і Gmail API transport.
+- Ширший Apps Script Processes OAuth scope не запитувався; новий Google consent не запускався.
+- Висновок: native slow-network/minimize acceptance зараз причинно недостовірний і лишається BLOCKED до clean quota window; candidate-specific regression не встановлено.
+- Release boundary: production v65 незмінний, active staging `0`; menu, Gmail, OAuth, deployment і release journal не змінювалися.
+- Перевірено: bilingual `80` pairs, knowledge hub `17` pairs / `295` source IDs / `245` canonical items, verification reports, release state і `git diff --check` пройшли; added-line sensitive-pattern matches `0`; усі PR checks успішні.
+
+## B-03 evidence update: native-acceptance blocker readback
+
+- Date: 2026-07-23
+- Increment status: BLOCKED
+- Documentation commit: `aa92958`
+- GitHub PR: `#82`
+- Normal merge into `main`: `0673e8e48be01ae4920a9070fda76ec0a9801d07`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- An authenticated read-only Apps Script Executions trace confirmed that a failed `checkNewMail_` execution reached `legacy_recovery` and terminated with `errorCode=urlfetch_quota`; adjacent content-free entries showed the same shared daily URL Fetch boundary affecting Telegram maintenance, Google OAuth token refresh, and Gmail API transport.
+- No broader Apps Script Processes OAuth scope was requested and no new Google consent was started.
+- Conclusion: native slow-network/minimize acceptance is currently causally invalid and remains BLOCKED until a clean quota window; no candidate-specific regression was established.
+- Release boundary: production v65 is unchanged and active staging is `0`; no menu, Gmail, OAuth, deployment, or release-journal mutation occurred.
+- Verified: bilingual `80` pairs, knowledge hub `17` pairs / `295` source IDs / `245` canonical items, verification reports, release state, and `git diff --check` passed; added-line sensitive-pattern matches `0`; all PR checks passed.
