@@ -230,3 +230,33 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Verified: focused contracts `169/169`, full Apps Script suite `590/590`, bilingual/knowledge/verification/release-state/diff checks passed, and the added-line sensitive-pattern scan found `0` matches.
 - No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
 - Remaining: real abort only for a transport that supports it and native slow-network/minimize acceptance; byte-resumable upload requires a separate verified transport design.
+
+## Оновлення доказів B-03: capability gate справжнього abort
+
+- Дата: 2026-07-23
+- Статус інкремента: PARTIAL
+- Source commit: `4fe307e2992e1fe620eccb683d8d090bce7b3ed8`
+- GitHub PR: `#81`
+- Normal merge у `main`: `3a273310b5d1a2a52351a0c430de360a4d7b6f33`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Реалізовано: queued local read можна скасувати до старту; running transfer показує і приймає cancel лише після реєстрації конкретного abort callback транспортом. Це закриває race у фазі `preparing`.
+- Перевірена межа: `FileReader.abort` працює як справжній abort; `google.script.run` не документує abort handle, тому Apps Script RPC не показує і не імітує cancel.
+- Перевірено: focused suites `170/170`, повний Apps Script suite `591/591`, документаційні, release-state, diff і privacy gates пройшли.
+- GitHub check reconciliation: terminal-success workflow мав stale in-progress CheckRun; повторено лише exact workflow без нового push, replacement CheckRun завершився `SUCCESS`, PR став `CLEAN`.
+- Live Gmail mutation, OAuth, staging і production promotion не виконувалися.
+- Залишається: native slow-network/minimize acceptance; майбутній справжній RPC abort потребує окремо перевіреної cancellable transport architecture.
+
+## B-03 evidence update: real-abort capability gate
+
+- Date: 2026-07-23
+- Increment status: PARTIAL
+- Source commit: `4fe307e2992e1fe620eccb683d8d090bce7b3ed8`
+- GitHub PR: `#81`
+- Normal merge into `main`: `3a273310b5d1a2a52351a0c430de360a4d7b6f33`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- Implemented: a queued local read can be cancelled before execution; a running transfer exposes and accepts cancel only after its transport registers a concrete abort callback. This closes the `preparing`-phase race.
+- Verified boundary: `FileReader.abort` is a real abort; `google.script.run` documents no abort handle, so Apps Script RPC exposes and simulates no cancel action.
+- Verified: focused suites `170/170`, full Apps Script suite `591/591`, and documentation, release-state, diff, and privacy gates passed.
+- GitHub check reconciliation: a terminal-success workflow had a stale in-progress CheckRun; only that exact workflow was rerun without a new push, its replacement CheckRun completed with `SUCCESS`, and the PR became `CLEAN`.
+- No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
+- Remaining: native slow-network/minimize acceptance; future real RPC abort requires a separately verified cancellable transport architecture.
