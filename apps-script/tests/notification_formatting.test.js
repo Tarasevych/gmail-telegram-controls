@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -33,6 +34,11 @@ test('notifyMessage_ card includes complete sender, Ukrainian sent date, summary
       getScriptTimeZone: () => 'Europe/Brussels',
     },
     Utilities: {
+      DigestAlgorithm: { SHA_256: 'SHA_256' },
+      Charset: { UTF_8: 'UTF_8' },
+      computeDigest(value) {
+        return Array.from(crypto.createHash('sha256').update(String(value), 'utf8').digest());
+      },
       formatDate(date, timezone, pattern) {
         assert.equal(timezone, 'Europe/Brussels');
         return ({
@@ -62,8 +68,20 @@ test('notifyMessage_ card includes complete sender, Ukrainian sent date, summary
     html: '',
     snippet: '',
     attachments: [
-      { name: 'рахунок липень.pdf', size: 2048 },
-      { name: 'умови договору.docx', size: 4096 },
+      {
+        partId: '1',
+        attachmentId: 'attachment_invoice',
+        name: 'рахунок липень.pdf',
+        type: 'application/pdf',
+        size: 2048,
+      },
+      {
+        partId: '2',
+        attachmentId: 'attachment_terms',
+        name: 'умови договору.docx',
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        size: 4096,
+      },
     ],
     unsubscribe: { available: false, mode: 'none' },
     labelIds: ['INBOX', 'UNREAD'],

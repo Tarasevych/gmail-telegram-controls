@@ -193,3 +193,14 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Next step:** do not repeat v68 staging without a new measurable acceptance contour or a separate cumulative fix. Prepare an in-app TTI trace and an architecture decision for a device-bound unlock/single-origin offline shell.
 - **Evidence:** [VR-017](verification-reports/reports/VR-017/README.md), issues [GT-040–GT-047](ISSUES.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-28 — Exact Gmail attachment identity in Telegram
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0035`; V3 task `B-01`.
+- **Locally VERIFIED:** new Telegram cards use an opaque exact-identity callback; the repeated read requires exactly one match; ambiguity fails closed; historical callbacks retain legacy compatibility.
+- **Gates:** targeted attachment tests `154/154`, final cumulative suite `532/532`, clean `git diff --check`, and `0` added-line secret-pattern matches.
+- **Still required:** a normal PR and required CI, owner-only native Telegram download acceptance, and only then a separately authorized cumulative immutable release contour.
+- **Release boundary:** production/HEAD v65, staging `0`, immutable v68 historical; this source correction is not deployed and does not change Versie 1.
+- **Evidence:** [GT-048](ISSUES.md), [VR-018](verification-reports/reports/VR-018/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

@@ -353,3 +353,15 @@
 - **Статус:** PARTIAL.
 - Owner/account namespace, poisoned-record rejection і deterministic switch contracts проходять локально.
 - Native primary-secondary-primary switching і shared mode для трьох roots `VERIFIED` без нового OAuth. Offline cache lock/readback іншого owner та eviction recovery лишаються `UNVERIFIED`.
+
+## GT-048 — Telegram callback вкладення використовував змінний порядковий номер
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-28` / V3 `B-01`
+- **Root cause:** Telegram-картка кодувала позицію вкладення в MIME-списку. Під час повторного читання Gmail зміна порядку, однакові назви або інший склад MIME-частин могли спрямувати callback на інше вкладення.
+- **Source fix:** нові картки використовують короткий opaque identity token, похідний від стабільних MIME/Gmail атрибутів. Сервер повторно читає лист, вимагає рівно один точний збіг і fail closed для відсутнього або неоднозначного результату. Raw Gmail attachment ID у callback не передається.
+- **Сумісність:** історичні `mail.att:` і `a2.` callback залишаються доступними лише через legacy ordinal path; усі нові картки використовують exact identity.
+- **Локальний доказ:** reorder, duplicate names, Unicode inline data, zero-byte attachment, ambiguous-match rejection і legacy parsing перевірено; повний Apps Script suite `532/532`, added-lines secret scan `0`.
+- **Release boundary:** source commit `f2c00d3`; production/HEAD Apps Script лишається v65, staging `0`, immutable v68 не переписано. Native Telegram download і staging acceptance `UNVERIFIED`.
+- **Доказ:** [VR-018](verification-reports/reports/VR-018/README.md)

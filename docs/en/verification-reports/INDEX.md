@@ -130,3 +130,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-017/README.md](reports/VR-017/README.md)
 - **Conclusion:** the final suite is `531/531`; multi-account switching/shared context passed partial native acceptance, but the one-second/offline/draft gate did not. v68 was not promoted; production is v65, staging is `0`, immutable v68 is retained, and the journal is `abandoned`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-018 — Exact identity for Telegram attachments
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `B-01`, the ordinal-callback root cause, opaque exact identity, fail-closed matching, historical callback compatibility, local regression/full-suite evidence, and the release boundary.
+- **Report:** [reports/VR-018/README.md](reports/VR-018/README.md)
+- **Conclusion:** the source correction and local `532/532` suite are VERIFIED; native Telegram download, staging acceptance, and deployment remain `UNVERIFIED`. Production/HEAD v65 and immutable v68 are unchanged.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

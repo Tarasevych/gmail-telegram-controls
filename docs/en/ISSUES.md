@@ -353,3 +353,15 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Status:** PARTIAL.
 - Owner/account namespaces, poisoned-record rejection, and deterministic switch contracts pass locally.
 - Native primary-secondary-primary switching and shared mode across three roots are `VERIFIED` without a new OAuth flow. Offline cross-owner cache lock/readback and eviction recovery remain `UNVERIFIED`.
+
+## GT-048 — Telegram attachment callback used a mutable ordinal
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-28` / V3 `B-01`
+- **Root cause:** the Telegram card encoded an attachment position in the MIME list. When Gmail was read again, reordered parts, duplicate names, or a changed MIME shape could direct the callback to a different attachment.
+- **Source fix:** new cards use a short opaque identity token derived from stable MIME/Gmail attributes. The server reads the message again, requires exactly one identity match, and fails closed when no match or an ambiguous match exists. A raw Gmail attachment ID is not exposed in callback data.
+- **Compatibility:** historical `mail.att:` and `a2.` callbacks remain available only through the legacy ordinal path; every new card uses exact identity.
+- **Local evidence:** reorder, duplicate-name, Unicode inline-data, zero-byte, ambiguous-match rejection, and legacy-parser cases pass; the complete Apps Script suite is `532/532` and the added-lines secret scan found `0`.
+- **Release boundary:** source commit `f2c00d3`; Apps Script production/HEAD remains v65, staging is `0`, and immutable v68 was not rewritten. Native Telegram download and staging acceptance are `UNVERIFIED`.
+- **Evidence:** [VR-018](verification-reports/reports/VR-018/README.md)

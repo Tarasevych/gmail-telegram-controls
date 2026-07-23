@@ -4061,8 +4061,23 @@ test('folder menu exposes deep Gmail views and unread uses a canonical filter ro
 });
 
 test('mail card exposes bounded attachment downloads, original view, labels, and safe action links', () => {
+  const originalUtilities = context.Utilities;
+  context.Utilities = {
+    DigestAlgorithm: { SHA_256: 'SHA_256' },
+    Charset: { UTF_8: 'UTF_8' },
+    computeDigest: (_algorithm, value) =>
+      Array.from(crypto.createHash('sha256').update(String(value)).digest()),
+  };
+  try {
   const attachments = Array.from({ length: 6 }, (_, index) => ({
-    attachment: { name: `invoice-${index + 1}.pdf`, size: 1024 + index }, inline: false,
+    attachment: {
+      partId: String(index + 1),
+      attachmentId: `gmail-attachment-${index + 1}`,
+      name: `invoice-${index + 1}.pdf`,
+      mimeType: 'application/pdf',
+      size: 1024 + index,
+    },
+    inline: false,
   }));
   const keyboard = JSON.parse(context.buildMailKeyboard_(
     'https://mail.google.com/mail/u/0/#all/thread',
@@ -4074,16 +4089,21 @@ test('mail card exposes bounded attachment downloads, original view, labels, and
   assert.ok(buttons.some(button => button.text === '📄 Оригінал у чаті' && button.callback_data === 'mail.original:abcde12345'));
   assert.ok(buttons.some(button => button.text === '🏷 Мітки' && /panel=labels$/.test(button.web_app.url)));
   assert.ok(buttons.some(button => button.url === 'https://example.com/account'));
-  const attachmentButtons = buttons.filter(button => String(button.callback_data || '').startsWith('mail.att:'));
+  const attachmentButtons = buttons.filter(button => String(button.callback_data || '').startsWith('ax.'));
   assert.equal(attachmentButtons.length, 4, 'card must cap native attachment buttons');
-  attachmentButtons.forEach((button, index) => {
+  const attachmentTokens = new Set();
+  attachmentButtons.forEach(button => {
     assert.ok(Buffer.byteLength(button.callback_data, 'utf8') <= 64);
-    assert.deepEqual(
-      { ...context.parseAttachmentCallback_(button.callback_data) },
-      { messageId: 'abcde12345', index }
-    );
+    const parsed = { ...context.parseAttachmentCallback_(button.callback_data) };
+    assert.equal(parsed.messageId, 'abcde12345');
+    assert.match(parsed.token, /^[a-f0-9]{16}$/);
+    attachmentTokens.add(parsed.token);
   });
+  assert.equal(attachmentTokens.size, 4);
   assert.ok(buttons.some(button => button.text === '📎 Ще 2 вкладень'));
+  } finally {
+    context.Utilities = originalUtilities;
+  }
 });
 
 test('retention deletes a scoped tenant card in its own Telegram chat before forgetting it', () => {
@@ -4190,11 +4210,28 @@ test('scoped mail checks isolate identical Gmail IDs by Telegram user and connec
 });
 
 test('multi-account card binds actions originals and attachments to one Gmail connection', () => {
+  const originalUtilities = context.Utilities;
+  context.Utilities = {
+    DigestAlgorithm: { SHA_256: 'SHA_256' },
+    Charset: { UTF_8: 'UTF_8' },
+    computeDigest: (_algorithm, value) =>
+      Array.from(crypto.createHash('sha256').update(String(value)).digest()),
+  };
+  try {
   const connectionId = 'gmail-account-unit';
   const keyboard = JSON.parse(context.buildMailKeyboard_(
     'https://mail.google.com/mail/?authuser=account@example.com#all/thread',
     'sender@example.com', [], 'abcde12345', { available: false, mode: 'none' },
-    'thread_12345', ['INBOX'], [{ attachment: { name: 'invoice.pdf', size: 1024 }, inline: false }],
+    'thread_12345', ['INBOX'], [{
+      attachment: {
+        partId: '1',
+        attachmentId: 'gmail-attachment-account-unit',
+        name: 'invoice.pdf',
+        mimeType: 'application/pdf',
+        size: 1024,
+      },
+      inline: false,
+    }],
     [], connectionId
   ));
   const buttons = keyboard.inline_keyboard.flat();
@@ -4210,13 +4247,17 @@ test('multi-account card binds actions originals and attachments to one Gmail co
   assert.deepEqual({ ...context.parseMailboxContentCallback_(eml.callback_data) }, {
     kind: 'eml', connectionId, messageId: 'abcde12345',
   });
-  const attachment = buttons.find(button => String(button.callback_data || '').startsWith('a2.'));
-  assert.deepEqual({ ...context.parseAttachmentCallback_(attachment.callback_data) }, {
-    connectionId, messageId: 'abcde12345', index: 0,
-  });
+  const attachment = buttons.find(button => String(button.callback_data || '').startsWith('a3.'));
+  const parsedAttachment = { ...context.parseAttachmentCallback_(attachment.callback_data) };
+  assert.equal(parsedAttachment.connectionId, connectionId);
+  assert.equal(parsedAttachment.messageId, 'abcde12345');
+  assert.match(parsedAttachment.token, /^[a-f0-9]{16}$/);
   [archive, original, eml, attachment].forEach(button => {
     assert.ok(Buffer.byteLength(button.callback_data, 'utf8') <= 64);
   });
+  } finally {
+    context.Utilities = originalUtilities;
+  }
 });
 
 test('Telegram cards expose an account-bound ADHD priority menu without mutating Gmail', () => {
@@ -4418,29 +4459,106 @@ test('durable callback payload omits large markup and retry hydration uses the e
   }
 });
 
-test('attachment callback re-reads Gmail and selects only the verified ordinal', () => {
+test('attachment callback uses an opaque exact identity and survives Gmail attachment reordering', () => {
   const originals = {
     getGmailMessage_: context.getGmailMessage_,
     sendAttachmentSafely_: context.sendAttachmentSafely_,
+    Utilities: context.Utilities,
   };
   const sent = [];
   try {
+    context.Utilities = {
+      DigestAlgorithm: { SHA_256: 'SHA_256' },
+      Charset: { UTF_8: 'UTF_8' },
+      computeDigest: (_algorithm, value) =>
+        Array.from(crypto.createHash('sha256').update(String(value)).digest()),
+    };
+    const first = {
+      partId: '1', attachmentId: 'gmail-attachment-first',
+      name: 'duplicate.pdf', mimeType: 'application/pdf', size: 10,
+    };
+    const selected = {
+      partId: '2', attachmentId: 'gmail-attachment-second',
+      name: 'duplicate.pdf', mimeType: 'application/pdf', size: 0,
+    };
+    const inline = {
+      partId: '3', data: 'aW5saW5l', contentId: 'logo',
+      name: 'логотип.png', mimeType: 'image/png', size: 8,
+    };
+    const callbackData = context.attachmentCallbackData_(
+      'abcde12345',
+      selected,
+      'gmail-unit'
+    );
+    assert.match(callbackData, /^a3\.gmail-unit:abcde12345:[a-f0-9]{16}$/);
+    assert.ok(!callbackData.includes(selected.attachmentId));
+    const parsed = context.parseAttachmentCallback_(callbackData);
+    assert.equal(parsed.connectionId, 'gmail-unit');
+    assert.equal(parsed.messageId, 'abcde12345');
+    assert.match(parsed.token, /^[a-f0-9]{16}$/);
+
     context.getGmailMessage_ = id => ({
       id, subject: 'Invoice',
-      attachments: [
-        { name: 'one.pdf', size: 10 },
-        { name: 'two.pdf', size: 20 },
-      ],
-      inlineAttachments: [{ name: 'logo.png', size: 30 }],
+      attachments: [selected, first],
+      inlineAttachments: [inline],
     });
     context.sendAttachmentSafely_ = (...args) => { sent.push(args); return { sent: true, via: 'document' }; };
-    const result = context.sendAttachmentByIndex_('abcde12345', 1, 456, 789);
+    const result = context.sendAttachmentByIdentity_('abcde12345', parsed.token, 456, 789);
     assert.equal(result.message, 'Вкладення надіслано в чат');
-    assert.equal(sent[0][1].name, 'two.pdf');
+    assert.equal(sent[0][1].attachmentId, selected.attachmentId);
+    assert.equal(sent[0][1].name, 'duplicate.pdf');
+    assert.equal(sent[0][1].size, 0);
     assert.equal(sent[0][3], 456);
     assert.equal(sent[0][4], false);
     assert.equal(sent[0][5], 789);
-    assert.throws(() => context.sendAttachmentByIndex_('abcde12345', 99, 456, 789), /більше не доступне/);
+
+    context.getGmailMessage_ = id => ({
+      id, subject: 'Invoice',
+      attachments: [first],
+      inlineAttachments: [inline],
+    });
+    assert.throws(
+      () => context.sendAttachmentByIdentity_('abcde12345', parsed.token, 456, 789),
+      /більше не доступне/
+    );
+  } finally {
+    Object.assign(context, originals);
+  }
+});
+
+test('attachment identity fails closed for ambiguous exact matches and preserves legacy callbacks', () => {
+  const originals = {
+    getGmailMessage_: context.getGmailMessage_,
+    sendAttachmentSafely_: context.sendAttachmentSafely_,
+    Utilities: context.Utilities,
+  };
+  try {
+    context.Utilities = {
+      DigestAlgorithm: { SHA_256: 'SHA_256' },
+      Charset: { UTF_8: 'UTF_8' },
+      computeDigest: (_algorithm, value) =>
+        Array.from(crypto.createHash('sha256').update(String(value)).digest()),
+    };
+    const duplicate = {
+      partId: '7', attachmentId: 'same-gmail-attachment',
+      name: 'звіт.pdf', mimeType: 'application/pdf', size: 1,
+    };
+    const token = context.attachmentIdentityToken_(duplicate);
+    context.getGmailMessage_ = id => ({
+      id,
+      subject: 'Report',
+      attachments: [duplicate, { ...duplicate }],
+      inlineAttachments: [],
+    });
+    context.sendAttachmentSafely_ = () => ({ sent: true });
+    assert.throws(
+      () => context.sendAttachmentByIdentity_('ambiguous12345', token, 1, 2),
+      /неоднозначну/
+    );
+    assert.deepEqual(
+      JSON.parse(JSON.stringify(context.parseAttachmentCallback_('a2.gmail-unit:abcde12345:1'))),
+      { connectionId: 'gmail-unit', messageId: 'abcde12345', index: 1 }
+    );
   } finally {
     Object.assign(context, originals);
   }
