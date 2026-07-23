@@ -124,7 +124,7 @@ test('Versie 1 v57 keeps v56 safety and adds connection-scoped metadata identity
   assert.match(code, /requested: Boolean\(traceToken\)/);
   assert.doesNotMatch(code, /traceToken:\s*traceToken/);
   assert.match(code, /function gmailNotificationLabelsEligible_\(labelIds, notificationMode\)/);
-  assert.match(code, /!labels\.SENT/);
+  assert.doesNotMatch(code, /!labels\.SENT/);
   assert.doesNotMatch(code, /gmailRuntimeMoveCurrentTraceSpamToInbox_/);
   assert.doesNotMatch(code, /gmailRuntimeTraceSpamToInbox_/);
   assert.doesNotMatch(code, /trace_action/);
