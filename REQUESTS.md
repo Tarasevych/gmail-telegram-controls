@@ -8,6 +8,7 @@
 | ID | Дата | Статус | Коротка тема | Запис |
 |---|---|---|---|---|
 <!-- request-index -->
+| REQ-0037 | 2026-07-23 | recorded | P0 one-second offline-first acceptance after C-02 | [record](requests/2026-07-23/REQ-0037-p0-one-second-offline-acceptance.md) |
 | REQ-0036 | 2026-07-23 | recorded | Стійка app session після reload без повторного споживання Telegram nonce | [record](requests/2026-07-23/REQ-0036-persistent-session-after-reload.md) |
 | REQ-0035 | 2026-07-23 | recorded | Versie 1 V3 autonomous remediation| [record](requests/2026-07-23/REQ-0035-versie-1-v3-autonomous-remediation.md) |
 | REQ-0034 | 2026-07-23 | recorded | P0 one-second offline-first launch and launch deduplication | [record](requests/2026-07-23/REQ-0034-p0-one-second-offline-launch.md) |
