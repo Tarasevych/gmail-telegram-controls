@@ -124,3 +124,27 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - An updated `P-009` index entry without changing its authority.
 - The next actual `GT`, `B1`, and `VR` identifiers are derived only from the live registry and are never guessed.
 - Separate normal pull requests, green checks, merge evidence, and remote SHA for each governance and product phase.
+
+## Оновлення доказів B-03: отримання деталей ланцюжка
+
+- Дата: 2026-07-23
+- Статус інкремента: PARTIAL
+- Source commit: `24e8c19`
+- GitHub PR: `#77`
+- Normal merge у `main`: `726a5757a8e22a3d2686ccc84703cf304bdab0cd`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Реалізовано: account-bound single-flight для отримання деталей ланцюжка, спільний bounded transfer manager, чесний indeterminate progress, відсутність несправжнього RPC cancel, стабільний task ID для retry та fail-closed generation guard.
+- Перевірено: focused contracts `104/104`, повний Apps Script suite `577/577`, bilingual/knowledge/verification/release-state/diff checks пройшли, added-line secret scan `0`.
+- Залишається: draft persistence, URL import, server-resumable restart, справжній abort лише для транспортів із підтримкою та native slow-network/minimize acceptance.
+
+## B-03 evidence update: thread-detail retrieval
+
+- Date: 2026-07-23
+- Increment status: PARTIAL
+- Source commit: `24e8c19`
+- GitHub PR: `#77`
+- Normal merge into `main`: `726a5757a8e22a3d2686ccc84703cf304bdab0cd`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- Implemented: account-bound single-flight thread-detail retrieval, the bounded shared transfer manager, honest indeterminate progress, no fake RPC cancellation, stable retry task identity, and a fail-closed generation guard.
+- Verified: focused contracts `104/104`, full Apps Script suite `577/577`, bilingual/knowledge/verification/release-state/diff checks passed, and added-line secret scan `0`.
+- Remaining: draft persistence, URL import, server-resumable restart, real abort only for transports that support it, and native slow-network/minimize acceptance.
