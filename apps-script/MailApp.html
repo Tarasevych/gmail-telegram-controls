@@ -16141,6 +16141,53 @@
         loadComposeScheduledSend({ alreadyLoading: true });
       }
 
+      function runManagedDraftPersistence(composeAtStart, snapshot, options) {
+        var opts = options || {};
+        var operationId = safeClientOperationId(snapshot && snapshot.operationId);
+        var task = opts.transferTask || createManagedTransfer({
+          id: operationId,
+          kind: "draft-persistence",
+          label: "Зберігаю чернетку",
+          canCancel: false,
+          canPause: false,
+          canRetry: true,
+          byteProgress: false
+        });
+
+        task.retry = function () {
+          if (state.compose !== composeAtStart ||
+              composeAtStart.pendingSaveSnapshot !== snapshot ||
+              safeClientOperationId(composeAtStart.draftOperationId) !== operationId) {
+            task.canRetry = false;
+            task.transferState = "cancelled";
+            task.finishedAt = Date.now();
+            renderTransferManager();
+            scheduleTransferPrune();
+            return Promise.resolve(false);
+          }
+          return saveDraft(Object.assign({}, opts, {
+            transferTask: task,
+            quiet: false,
+            background: false
+          }));
+        };
+
+        return {
+          task: task,
+          promise: enqueueManagedTransfer(task, function (_managedTask, controls) {
+            controls.setPhase("transferring");
+            return rpc({
+              op: "saveDraft",
+              connectionId: safeId(composeAtStart.connectionId),
+              draft: snapshot.payload
+            }).then(function (data) {
+              controls.setPhase("processing");
+              return data;
+            });
+          })
+        };
+      }
+
       async function saveDraft(options) {
         var opts = options || {};
         if (!state.compose) return false;
@@ -16197,11 +16244,8 @@
 
         var work = (async function () {
           try {
-            var data = await rpc({
-              op: "saveDraft",
-              connectionId: safeId(composeAtStart.connectionId),
-              draft: snapshot.payload
-            });
+            var transfer = runManagedDraftPersistence(composeAtStart, snapshot, opts);
+            var data = await transfer.promise;
           if (!data || !data.draft) {
             var incompleteSave = new Error("Gmail ще не повернув підтверджену чернетку.");
             incompleteSave.code = "DRAFT_PENDING";

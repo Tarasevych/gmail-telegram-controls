@@ -2630,6 +2630,13 @@ test('pending draft save retries the identical operation and baselines only afte
       }
       return { draft: { id: 'draft-1' } };
     },
+    runManagedDraftPersistence: (composeAtStart, snapshot) => ({
+      promise: context.rpc({
+        op: 'saveDraft',
+        connectionId: String(composeAtStart.connectionId || ''),
+        draft: snapshot.payload,
+      }),
+    }),
     normalizeDraft: () => ({
       id: 'draft-1', dirty: false, pendingKind: '', closeAfterSave: false,
       draftOperationId: '', sendOperationId: '', attachments: [],
@@ -2770,6 +2777,13 @@ test('definitive coded save and send failures clear their operation IDs and unlo
         error.code = errorCode;
         throw error;
       },
+      runManagedDraftPersistence: (composeAtStart, snapshot) => ({
+        promise: context.rpc({
+          op: 'saveDraft',
+          connectionId: String(composeAtStart.connectionId || ''),
+          draft: snapshot.payload,
+        }),
+      }),
       normalizeDraft: value => value,
       composeRegularAttachmentSnapshot: values => (values || []).map((value, index) => String(index)),
       mergeCanonicalRegularAttachments: canonical => canonical || [],
@@ -2943,6 +2957,13 @@ test('a clean existing draft with attachments is still confirmed by save before 
       }
       return { message: { id: 'sent-message-1' } };
     },
+    runManagedDraftPersistence: (composeAtStart, snapshot) => ({
+      promise: context.rpc({
+        op: 'saveDraft',
+        connectionId: String(composeAtStart.connectionId || ''),
+        draft: snapshot.payload,
+      }),
+    }),
     normalizeDraft: value => ({
       id: value.id, dirty: false, pendingKind: '', closeAfterSave: false,
       draftOperationId: '', sendOperationId: '', attachments: value.attachments,
