@@ -1,6 +1,6 @@
 # Автономне виконання і recovery / Autonomous execution and recovery
 
-Source request: `REQ-0011`
+Source requests: `REQ-0011`, `REQ-0035`
 
 ## Українською
 
@@ -13,6 +13,15 @@ Source request: `REQ-0011`
 5. Для recovery-sensitive task підтримувати same-thread goal і heartbeat кожні п’ять хвилин, якщо платформа це підтримує.
 6. Перед restart завершити або безпечно зупинити writes, зберегти checkpoint, commit перевірені артефакти й push у відповідну remote branch.
 7. Після restart спочатку перевірити live state й продовжити наступний незавершений крок; не повторювати auth, analysis, migrations або releases без доказової потреби.
+
+### Resource leases і приватний ledger
+
+- Перед browser, Telegram, phone, Gmail, release або Git write отримати task-scoped lease для точно визначеного ресурсу. Lease містить task/thread, resource, scope, acquired/renewed/expires timestamps і terminal release state без credentials.
+- Один ресурс не може мати два активні mutation leases. За конфлікту зупинити mutation, перевірити live owner/process і не вважати прострочений запис доказом, що процес завершився.
+- Перед reclaim stale lease звірити exact process/task/worktree/runtime identity. Не зупиняти процеси за загальною назвою та не застосовувати generic kill.
+- Продовжувати lease лише під час фактичної роботи; після commit/push, runtime terminal state або blocker звільнити його й записати результат.
+- Приватний recovery ledger зберігає hashes, coverage, resource leases, точні verified state transitions і next safe action. Публічні GitHub-артефакти містять лише sanitized висновки та evidence links.
+- Git write lease не замінює branch rules: кожна logical change використовує окремий чистий worktree/branch, exact file allowlist, normal PR і remote SHA readback.
 
 ### Progress і evidence log
 
@@ -36,6 +45,15 @@ Source request: `REQ-0011`
 5. For recovery-sensitive work, maintain the same-thread goal and a five-minute heartbeat where the platform supports it.
 6. Before restart, finish or safely stop writes, save the checkpoint, commit verified artifacts, and push the appropriate remote branch.
 7. After restart, inspect live state first and continue the next unfinished step; do not repeat authentication, analysis, migrations, or releases without evidence that repetition is required.
+
+### Resource leases and private ledger
+
+- Before a browser, Telegram, phone, Gmail, release, or Git write, acquire a task-scoped lease for the exact resource. The lease records task/thread, resource, scope, acquired/renewed/expires timestamps, and terminal release state without credentials.
+- A resource cannot have two active mutation leases. On conflict, stop the mutation, inspect the live owner/process, and never treat an expired record as proof that the process ended.
+- Before reclaiming a stale lease, reconcile the exact process/task/worktree/runtime identity. Never stop processes by a generic name or use a generic kill.
+- Renew a lease only while work is active; release it after commit/push, runtime terminal state, or a blocker, and record the result.
+- The private recovery ledger stores hashes, coverage, resource leases, exact verified state transitions, and the next safe action. Public GitHub artifacts contain sanitized findings and evidence links only.
+- A Git write lease does not replace branch rules: every logical change uses a separate clean worktree/branch, an exact file allowlist, a normal pull request, and remote SHA readback.
 
 ### Progress and evidence log
 
