@@ -5457,6 +5457,13 @@
         composeAttachmentJobs: new Map(),
         composeAttachmentSequence: 0,
         composeAttachmentFlushScheduled: false,
+        transferSequence: 0,
+        transferQueue: [],
+        transferActiveCount: 0,
+        transferMaxParallel: 3,
+        transferUi: null,
+        transferUiExpanded: false,
+        transferPruneTimer: 0,
         composeHistory: { undo: [], redo: [], lastHtml: "", applying: false },
         attachmentDataCache: new Map(),
         attachmentObjectUrls: new Set(),
@@ -11759,22 +11766,34 @@
         var key = safeText(attachment && attachment.stableKey) || stableAttachmentKey(attachment, message, index);
         var cached = cachedAttachmentData(key);
         if (cached) return cached;
-        var work = rpc(incomingAttachmentRequest(attachment, message)).then(function (data) {
-          var encoded = data && typeof data.dataBase64Url === "string" ? data.dataBase64Url : "";
-          if (!encoded || (data && data.encoding && data.encoding !== "base64url")) {
-            throw new Error("Сервер повернув вкладення в невідомому форматі.");
-          }
-          var mimeType = safeText(data && data.mimeType, attachment.mimeType || "application/octet-stream");
-          var size = Number(data && data.size || attachment.size);
-          return {
-            key: key,
-            blob: base64UrlToBlob(encoded, mimeType, size),
-            name: safeDownloadName(data && data.name, attachment.name),
-            mimeType: mimeType,
-            size: size,
-            attachment: attachment,
-            message: message
-          };
+        var transfer = createManagedTransfer({
+          kind: "attachment-fetch",
+          label: "Вкладення: " + safeDownloadName(attachment && attachment.name, "файл"),
+          total: Number(attachment && attachment.size || 0),
+          byteProgress: false,
+          canCancel: false,
+          canRetry: false
+        });
+        var work = enqueueManagedTransfer(transfer, function (task, controls) {
+          controls.setPhase("transferring");
+          return rpc(incomingAttachmentRequest(attachment, message)).then(function (data) {
+            controls.setPhase("processing");
+            var encoded = data && typeof data.dataBase64Url === "string" ? data.dataBase64Url : "";
+            if (!encoded || (data && data.encoding && data.encoding !== "base64url")) {
+              throw new Error("Сервер повернув вкладення в невідомому форматі.");
+            }
+            var mimeType = safeText(data && data.mimeType, attachment.mimeType || "application/octet-stream");
+            var size = Number(data && data.size || attachment.size);
+            return {
+              key: key,
+              blob: base64UrlToBlob(encoded, mimeType, size),
+              name: safeDownloadName(data && data.name, attachment.name),
+              mimeType: mimeType,
+              size: size,
+              attachment: attachment,
+              message: message
+            };
+          });
         }).catch(function (error) {
           if (state.attachmentDataCache.get(key) === work) state.attachmentDataCache.delete(key);
           throw error;
@@ -14019,13 +14038,16 @@
 
       function composeAttachmentJobs() {
         return Array.from(state.composeAttachmentJobs.values()).filter(function (job) {
-          return job && !job.cancelled;
+          return job && !job.cancelled && job.transferDomain !== "global" &&
+            transferCanonicalState(job) !== "completed" && transferCanonicalState(job) !== "cancelled";
         });
       }
 
       function composeAttachmentJobsPending() {
         return composeAttachmentJobs().filter(function (job) {
-          return job.state === "queued" || job.state === "reading";
+          var transferState = transferCanonicalState(job);
+          return transferState === "queued" || transferState === "preparing" || transferState === "transferring" ||
+            job.state === "queued" || job.state === "reading";
         });
       }
 
@@ -16754,11 +16776,25 @@
         setAttachmentPreviewIsolation(true);
         window.setTimeout(function () { els.attachmentPreviewDialog.focus(); }, 0);
         try {
-          var response = await rpc({
-            op: "sourceContent",
-            source: source,
-            purpose: "preview",
-            maxBytes: state.limits.maxSourcePreviewBytes
+          var transfer = createManagedTransfer({
+            kind: "provider-preview",
+            label: "Попередній перегляд: " + safeText(metadata.name, "файл"),
+            total: Number(metadata.size || 0),
+            byteProgress: false,
+            canCancel: false,
+            canRetry: false
+          });
+          var response = await enqueueManagedTransfer(transfer, function (task, controls) {
+            controls.setPhase("transferring");
+            return rpc({
+              op: "sourceContent",
+              source: source,
+              purpose: "preview",
+              maxBytes: state.limits.maxSourcePreviewBytes
+            }).then(function (value) {
+              controls.setPhase("processing");
+              return value;
+            });
           });
           if (!attachmentPreviewRequestIsCurrent(previewRequestId)) return;
           var data = sourcePreviewData(response, metadata);
@@ -17187,6 +17223,446 @@
         }
       }
 
+      var TRANSFER_STATES = {
+        queued: true,
+        preparing: true,
+        transferring: true,
+        processing: true,
+        attaching: true,
+        completed: true,
+        cancelled: true,
+        failed: true,
+        blocked: true,
+        retryable: true,
+        paused: true
+      };
+
+      var TRANSFER_ACTIVE_STATES = {
+        queued: true,
+        preparing: true,
+        transferring: true,
+        processing: true,
+        attaching: true
+      };
+
+      var TRANSFER_TERMINAL_STATES = {
+        completed: true,
+        cancelled: true,
+        failed: true,
+        blocked: true
+      };
+
+      function transferTaskStore() {
+        return state.composeAttachmentJobs;
+      }
+
+      function transferCanonicalState(task) {
+        var explicit = safeText(task && task.transferState).toLowerCase();
+        if (TRANSFER_STATES[explicit]) return explicit;
+        var legacy = safeText(task && task.state).toLowerCase();
+        if (legacy === "reading") return "transferring";
+        if (legacy === "ready") return "attaching";
+        if (legacy === "error") return "retryable";
+        if (legacy === "cancelled") return "cancelled";
+        return TRANSFER_STATES[legacy] ? legacy : "queued";
+      }
+
+      function transferStateLabel(value) {
+        var labels = {
+          queued: "У черзі",
+          preparing: "Підготовка",
+          transferring: "Передавання",
+          processing: "Обробка",
+          attaching: "Додавання",
+          completed: "Завершено",
+          cancelled: "Скасовано",
+          failed: "Помилка",
+          blocked: "Заблоковано",
+          retryable: "Можна повторити",
+          paused: "Призупинено"
+        };
+        return labels[TRANSFER_STATES[value] ? value : "queued"];
+      }
+
+      function transferTaskIsActive(task) {
+        return Boolean(TRANSFER_ACTIVE_STATES[transferCanonicalState(task)]);
+      }
+
+      function formatTransferRate(bytesPerSecond) {
+        var value = Math.max(0, Number(bytesPerSecond || 0));
+        return value > 0 ? formatSize(value) + "/с" : "";
+      }
+
+      function transferTaskEta(task) {
+        var total = Math.max(0, Number(task && task.total || task && task.size || 0));
+        var loaded = Math.max(0, Number(task && task.loaded || 0));
+        var speed = Math.max(0, Number(task && task.speedBps || 0));
+        if (!task || task.byteProgress !== true || !total || !speed || loaded >= total) return 0;
+        return Math.max(0, Math.round((total - loaded) * 1000 / speed));
+      }
+
+      function transferTaskProgressText(task) {
+        var phase = transferStateLabel(transferCanonicalState(task));
+        var total = Math.max(0, Number(task && task.total || task && task.size || 0));
+        var loaded = Math.max(0, Number(task && task.loaded || 0));
+        if (!task || task.byteProgress !== true || !total) return phase + " · обсяг недоступний";
+        var percent = Math.min(100, Math.max(0, Math.round(loaded * 100 / total)));
+        var speed = formatTransferRate(task.speedBps);
+        var eta = transferTaskEta(task);
+        return phase + " · " + formatSize(loaded) + " / " + formatSize(total) + " · " + percent + "%" +
+          (speed ? " · " + speed : "") +
+          (eta ? " · ще ≈ " + formatAttachmentJobDuration(eta) : "");
+      }
+
+      function recordManagedTransferProgress(task, loaded, total) {
+        if (!task) return false;
+        var now = Date.now();
+        var nextTotal = Math.max(0, Number(total || task.total || task.size || 0));
+        var nextLoaded = Math.max(0, Number(loaded || 0));
+        if (nextTotal) nextLoaded = Math.min(nextTotal, nextLoaded);
+        if (task.progressSampleAt && now > task.progressSampleAt && nextLoaded >= Number(task.progressSampleBytes || 0)) {
+          var sampleSpeed = (nextLoaded - Number(task.progressSampleBytes || 0)) * 1000 / (now - task.progressSampleAt);
+          if (sampleSpeed > 0) {
+            task.speedBps = task.speedBps > 0 ? (task.speedBps * 0.7 + sampleSpeed * 0.3) : sampleSpeed;
+          }
+        }
+        task.loaded = nextLoaded;
+        task.total = nextTotal;
+        task.byteProgress = Boolean(nextTotal);
+        task.progressSampleAt = now;
+        task.progressSampleBytes = nextLoaded;
+        task.updatedAt = now;
+        renderTransferManager();
+        return true;
+      }
+
+      function createManagedTransfer(options) {
+        var opts = options || {};
+        var id = safeClientOperationId(opts.id) || newClientOperationId();
+        var existing = transferTaskStore().get(id);
+        if (existing && !TRANSFER_TERMINAL_STATES[transferCanonicalState(existing)]) return existing;
+        var task = {
+          id: id,
+          transferDomain: "global",
+          transferOrder: ++state.transferSequence,
+          kind: safeText(opts.kind, "transfer"),
+          label: safeText(opts.label, "Передавання"),
+          transferState: "queued",
+          loaded: Math.max(0, Number(opts.loaded || 0)),
+          total: Math.max(0, Number(opts.total || 0)),
+          byteProgress: opts.byteProgress === true,
+          speedBps: 0,
+          progressSampleAt: 0,
+          progressSampleBytes: 0,
+          startedAt: 0,
+          updatedAt: Date.now(),
+          finishedAt: 0,
+          error: "",
+          cancelled: false,
+          canCancel: opts.canCancel === true,
+          canRetry: opts.canRetry === true,
+          canPause: opts.canPause === true,
+          canResume: opts.canResume === true,
+          abort: null,
+          retry: typeof opts.retry === "function" ? opts.retry : null,
+          pause: typeof opts.pause === "function" ? opts.pause : null,
+          resume: typeof opts.resume === "function" ? opts.resume : null,
+          transferRunner: null,
+          transferPromise: null
+        };
+        transferTaskStore().set(task.id, task);
+        renderTransferManager();
+        return task;
+      }
+
+      function managedTransferControls(task) {
+        return {
+          setPhase: function (phase) {
+            if (!task || task.cancelled || !TRANSFER_STATES[phase]) return false;
+            task.transferState = phase;
+            task.updatedAt = Date.now();
+            renderTransferManager();
+            return true;
+          },
+          progress: function (loaded, total) {
+            return recordManagedTransferProgress(task, loaded, total);
+          },
+          setAbort: function (abort) {
+            task.abort = typeof abort === "function" ? abort : null;
+            task.canCancel = Boolean(task.abort);
+            renderTransferManager();
+          }
+        };
+      }
+
+      function drainManagedTransfers() {
+        var limit = Math.max(1, Math.min(6, Number(state.transferMaxParallel || 3)));
+        while (state.transferActiveCount < limit && state.transferQueue.length) {
+          var entry = state.transferQueue.shift();
+          if (!entry || !entry.task) continue;
+          if (entry.task.cancelled || transferCanonicalState(entry.task) === "cancelled") {
+            entry.task.transferPromise = null;
+            entry.resolve(false);
+            continue;
+          }
+          (function (queued) {
+            var task = queued.task;
+            state.transferActiveCount += 1;
+            task.transferState = "preparing";
+            task.startedAt = task.startedAt || Date.now();
+            task.updatedAt = Date.now();
+            renderTransferManager();
+            Promise.resolve().then(function () {
+              return queued.runner(task, managedTransferControls(task));
+            }).then(function (result) {
+              if (task.cancelled) {
+                task.transferState = "cancelled";
+                task.finishedAt = Date.now();
+                queued.resolve(false);
+                return;
+              }
+              if (result && result.transferOutcome && TRANSFER_STATES[result.transferOutcome]) {
+                task.transferState = result.transferOutcome;
+                task.finishedAt = TRANSFER_ACTIVE_STATES[result.transferOutcome] ? 0 : Date.now();
+                queued.resolve(result.value);
+                return;
+              }
+              task.transferState = "completed";
+              task.finishedAt = Date.now();
+              task.error = "";
+              queued.resolve(result);
+            }, function (error) {
+              task.error = safeText(error && error.message, "Не вдалося завершити передавання.");
+              task.transferState = task.canRetry && task.retry ? "retryable" : "failed";
+              task.finishedAt = Date.now();
+              queued.reject(error);
+            }).then(function () {
+              state.transferActiveCount = Math.max(0, state.transferActiveCount - 1);
+              task.abort = null;
+              task.transferPromise = null;
+              task.updatedAt = Date.now();
+              renderTransferManager();
+              scheduleTransferPrune();
+              drainManagedTransfers();
+            });
+          })(entry);
+        }
+      }
+
+      function enqueueManagedTransfer(task, runner) {
+        if (!task || typeof runner !== "function") return Promise.reject(new Error("Передавання не має виконавця."));
+        if (task.transferPromise && TRANSFER_ACTIVE_STATES[transferCanonicalState(task)]) return task.transferPromise;
+        task.cancelled = false;
+        task.error = "";
+        task.transferState = "queued";
+        task.finishedAt = 0;
+        task.transferRunner = runner;
+        var promise = new Promise(function (resolve, reject) {
+          state.transferQueue.push({ task: task, runner: runner, resolve: resolve, reject: reject });
+          renderTransferManager();
+          drainManagedTransfers();
+        });
+        task.transferPromise = promise;
+        return promise;
+      }
+
+      function cancelManagedTransfer(taskId) {
+        var task = transferTaskStore().get(safeClientOperationId(taskId));
+        if (!task || !task.canCancel || !transferTaskIsActive(task)) return false;
+        task.cancelled = true;
+        task.transferState = "cancelled";
+        task.finishedAt = Date.now();
+        if (typeof task.abort === "function") {
+          try { task.abort(); } catch (error) { /* A transport may finish between the click and abort. */ }
+        }
+        renderTransferManager();
+        scheduleTransferPrune();
+        return true;
+      }
+
+      function retryManagedTransfer(taskId) {
+        var task = transferTaskStore().get(safeClientOperationId(taskId));
+        if (!task || !task.canRetry || typeof task.retry !== "function" ||
+            (transferCanonicalState(task) !== "retryable" && transferCanonicalState(task) !== "failed")) return Promise.resolve(false);
+        task.cancelled = false;
+        task.error = "";
+        task.transferState = "queued";
+        task.finishedAt = 0;
+        renderTransferManager();
+        return Promise.resolve(task.retry(task));
+      }
+
+      function pauseManagedTransfer(taskId) {
+        var task = transferTaskStore().get(safeClientOperationId(taskId));
+        if (!task || !task.canPause || typeof task.pause !== "function" || !transferTaskIsActive(task)) return false;
+        if (task.pause(task) === false) return false;
+        task.transferState = "paused";
+        renderTransferManager();
+        return true;
+      }
+
+      function resumeManagedTransfer(taskId) {
+        var task = transferTaskStore().get(safeClientOperationId(taskId));
+        if (!task || !task.canResume || typeof task.resume !== "function" || transferCanonicalState(task) !== "paused") return Promise.resolve(false);
+        task.transferState = "queued";
+        renderTransferManager();
+        return Promise.resolve(task.resume(task));
+      }
+
+      function transferAggregate(tasks) {
+        var active = (tasks || []).filter(transferTaskIsActive);
+        var determinate = Boolean(active.length && active.every(function (task) {
+          return task.byteProgress === true && Number(task.total || task.size || 0) > 0;
+        }));
+        var total = determinate ? active.reduce(function (sum, task) {
+          return sum + Number(task.total || task.size || 0);
+        }, 0) : 0;
+        var loaded = determinate ? active.reduce(function (sum, task) {
+          return sum + Math.min(Number(task.total || task.size || 0), Number(task.loaded || 0));
+        }, 0) : 0;
+        return {
+          active: active.length,
+          determinate: determinate,
+          loaded: loaded,
+          total: total,
+          percent: determinate && total ? Math.min(100, Math.round(loaded * 100 / total)) : null
+        };
+      }
+
+      function ensureTransferManagerUi() {
+        if (state.transferUi || !document.body) return state.transferUi;
+        var host = make("section", {
+          attrs: { "aria-label": "Передавання файлів", "aria-live": "polite" }
+        });
+        host.id = "transferManager";
+        host.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:90;width:min(360px,calc(100vw - 24px));font:inherit;color:var(--ink,#202124);";
+        var toggle = make("button", {
+          type: "button",
+          text: "Передавання",
+          attrs: { "aria-expanded": "false", "aria-controls": "transferManagerDetails" }
+        });
+        toggle.style.cssText = "width:100%;min-height:44px;border:1px solid var(--line,#dadce0);border-radius:16px;background:var(--panel,#fff);box-shadow:0 4px 16px rgba(60,64,67,.18);padding:10px 14px;text-align:left;font-weight:600;cursor:grab;";
+        var details = make("div", { attrs: { id: "transferManagerDetails", role: "list" } });
+        details.hidden = true;
+        details.style.cssText = "max-height:min(45vh,320px);overflow:auto;margin-top:6px;border:1px solid var(--line,#dadce0);border-radius:14px;background:var(--panel,#fff);box-shadow:0 4px 16px rgba(60,64,67,.18);padding:8px;";
+        host.append(toggle, details);
+        document.body.append(host);
+        var drag = null;
+        var moved = false;
+        toggle.addEventListener("pointerdown", function (event) {
+          if (event.button !== 0) return;
+          var rect = host.getBoundingClientRect();
+          drag = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+          moved = false;
+          if (typeof toggle.setPointerCapture === "function") toggle.setPointerCapture(event.pointerId);
+        });
+        toggle.addEventListener("pointermove", function (event) {
+          if (!drag) return;
+          var left = Math.max(4, Math.min(window.innerWidth - host.offsetWidth - 4, drag.left + event.clientX - drag.x));
+          var top = Math.max(4, Math.min(window.innerHeight - host.offsetHeight - 4, drag.top + event.clientY - drag.y));
+          moved = moved || Math.abs(event.clientX - drag.x) > 4 || Math.abs(event.clientY - drag.y) > 4;
+          host.style.left = left + "px";
+          host.style.top = top + "px";
+          host.style.right = "auto";
+          host.style.bottom = "auto";
+        });
+        toggle.addEventListener("pointerup", function () { drag = null; });
+        toggle.addEventListener("click", function () {
+          if (moved) {
+            moved = false;
+            return;
+          }
+          state.transferUiExpanded = !state.transferUiExpanded;
+          details.hidden = !state.transferUiExpanded;
+          toggle.setAttribute("aria-expanded", state.transferUiExpanded ? "true" : "false");
+        });
+        state.transferUi = { host: host, toggle: toggle, details: details };
+        return state.transferUi;
+      }
+
+      function renderTransferManager() {
+        if (!document.body) return;
+        var now = Date.now();
+        var tasks = Array.from(transferTaskStore().values()).filter(function (task) {
+          if (!task || (!task.transferDomain && !task.sessionId)) return false;
+          return transferTaskIsActive(task) || !task.finishedAt || now - task.finishedAt < 15000;
+        }).sort(function (left, right) {
+          return Number(left.transferOrder || left.order || 0) - Number(right.transferOrder || right.order || 0);
+        });
+        var ui = ensureTransferManagerUi();
+        if (!ui) return;
+        ui.host.hidden = !tasks.length;
+        if (!tasks.length) return;
+        var aggregate = transferAggregate(tasks);
+        ui.toggle.textContent = aggregate.active
+          ? "Передавання: " + aggregate.active + (aggregate.determinate ? " · " + aggregate.percent + "%" : " · у процесі")
+          : "Передавання завершено";
+        clear(ui.details);
+        tasks.slice(-8).forEach(function (task) {
+          var row = make("article", { attrs: { role: "listitem" } });
+          row.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:8px;border-radius:10px;";
+          var text = make("div", {});
+          text.style.minWidth = "0";
+          text.append(
+            make("strong", { text: safeText(task.label || task.name, "Передавання") }),
+            make("div", { text: transferTaskProgressText(task) })
+          );
+          var actions = make("div", {});
+          if (transferTaskIsActive(task) && task.canCancel) {
+            var cancel = make("button", {
+              type: "button",
+              text: "×",
+              attrs: { "aria-label": "Скасувати " + safeText(task.label || task.name, "передавання") }
+            });
+            cancel.addEventListener("click", function () { cancelManagedTransfer(task.id); });
+            actions.append(cancel);
+          }
+          if (transferCanonicalState(task) === "paused" && task.canResume) {
+            var resume = make("button", { type: "button", text: "Продовжити" });
+            resume.addEventListener("click", function () { resumeManagedTransfer(task.id); });
+            actions.append(resume);
+          } else if (transferTaskIsActive(task) && task.canPause) {
+            var pause = make("button", { type: "button", text: "Пауза" });
+            pause.addEventListener("click", function () { pauseManagedTransfer(task.id); });
+            actions.append(pause);
+          }
+          if ((transferCanonicalState(task) === "retryable" || transferCanonicalState(task) === "failed") && task.canRetry) {
+            var retry = make("button", { type: "button", text: "Ще раз" });
+            retry.addEventListener("click", function () {
+              retryManagedTransfer(task.id).catch(function (error) {
+                showSnackbar(safeText(error && error.message, "Не вдалося повторити передавання."), { error: true });
+              });
+            });
+            actions.append(retry);
+          }
+          row.append(text, actions);
+          ui.details.append(row);
+        });
+      }
+
+      function pruneManagedTransfers() {
+        var now = Date.now();
+        var store = transferTaskStore();
+        Array.from(store.entries()).forEach(function (entry) {
+          var task = entry[1];
+          if (task && task.transferDomain === "global" && !transferTaskIsActive(task) &&
+              task.finishedAt && now - task.finishedAt >= 15000) store.delete(entry[0]);
+        });
+        var completed = Array.from(store.values()).filter(function (task) {
+          return task && task.transferDomain === "global" && !transferTaskIsActive(task);
+        }).sort(function (left, right) { return Number(right.finishedAt || 0) - Number(left.finishedAt || 0); });
+        completed.slice(20).forEach(function (task) { store.delete(task.id); });
+        renderTransferManager();
+      }
+
+      function scheduleTransferPrune() {
+        if (state.transferPruneTimer) window.clearTimeout(state.transferPruneTimer);
+        state.transferPruneTimer = window.setTimeout(function () {
+          state.transferPruneTimer = 0;
+          pruneManagedTransfers();
+        }, 15500);
+      }
+
       function attachmentJobElapsed(job) {
         var end = Number(job && job.finishedAt || Date.now());
         return Math.max(0, end - Number(job && job.startedAt || end));
@@ -17217,6 +17693,7 @@
         var percent = total ? Math.min(100, Math.round(loaded * 100 / total)) : 0;
         var eta = attachmentJobEta(job);
         return formatSize(loaded) + " / " + formatSize(total) + " · " + percent + "%" +
+          (job.speedBps ? " · " + formatTransferRate(job.speedBps) : "") +
           elapsedLabel +
           (eta ? " · ще ≈ " + formatAttachmentJobDuration(eta) : "") +
           intentLabel + " · локально; після закриття Mini App файл треба вибрати знову";
@@ -17236,6 +17713,7 @@
         var job = state.composeAttachmentJobs.get(safeClientOperationId(jobId));
         if (!job) return false;
         job.cancelled = true;
+        job.transferState = "cancelled";
         job.finishedAt = Date.now();
         if (job.reader && Number(job.reader.readyState) === 1 && typeof job.reader.abort === "function") {
           try { job.reader.abort(); } catch (error) { /* The reader may have completed between frames. */ }
@@ -17244,13 +17722,13 @@
         state.composeAttachmentJobs.delete(job.id);
         renderComposeAttachments();
         updateComposeLifecycleControls();
+        if (typeof renderTransferManager === "function") renderTransferManager();
         window.setTimeout(flushReadyComposeAttachmentJobs, 0);
         return true;
       }
 
       function cancelAllComposeAttachmentJobs() {
-        Array.from(state.composeAttachmentJobs.keys()).forEach(cancelComposeAttachmentJob);
-        state.composeAttachmentJobs.clear();
+        composeAttachmentJobs().map(function (job) { return job.id; }).forEach(cancelComposeAttachmentJob);
       }
 
       function openLocalAttachmentJobPreview(job, trigger) {
@@ -17621,8 +18099,12 @@
         if (window.URL && typeof window.URL.createObjectURL === "function") {
           try { previewUrl = window.URL.createObjectURL(file); } catch (error) { previewUrl = ""; }
         }
-        return {
+        var job = {
           id: newClientOperationId(),
+          transferDomain: "compose",
+          transferOrder: ++state.transferSequence,
+          kind: "device-upload",
+          label: "Локальний файл: " + info.name,
           sessionId: state.composeSessionId,
           order: ++state.composeAttachmentSequence,
           file: file,
@@ -17634,7 +18116,13 @@
           targetRange: opts.targetRange && typeof opts.targetRange.cloneRange === "function" ? opts.targetRange.cloneRange() : null,
           token: opts.intent === "inline" ? newClientOperationId() : "",
           loaded: 0,
+          total: info.size,
+          byteProgress: true,
+          speedBps: 0,
+          progressSampleAt: 0,
+          progressSampleBytes: 0,
           state: "queued",
+          transferState: "queued",
           startedAt: 0,
           finishedAt: 0,
           lastRenderAt: 0,
@@ -17645,8 +18133,18 @@
           dataBase64: "",
           attachment: null,
           error: "",
-          cancelled: false
+          cancelled: false,
+          canCancel: true,
+          canRetry: true,
+          canPause: false,
+          canResume: false,
+          abort: null,
+          retry: null,
+          transferRunner: null,
+          transferPromise: null
         };
+        job.retry = function () { return startComposeAttachmentJob(job, true); };
+        return job;
       }
 
       function flushReadyComposeAttachmentJobs() {
@@ -17702,84 +18200,107 @@
 
       function startComposeAttachmentJob(job, retry) {
         if (!job || job.cancelled || !state.compose || job.sessionId !== state.composeSessionId) return Promise.resolve(false);
-        if (job.state === "reading" && job.promise) return job.promise;
-        job.state = "reading";
+        if ((job.state === "queued" || job.state === "reading") && job.promise &&
+            TRANSFER_ACTIVE_STATES[transferCanonicalState(job)]) return job.promise;
+        job.state = "queued";
+        job.transferState = "queued";
         job.error = "";
         job.loaded = 0;
-        job.startedAt = Date.now();
+        job.total = job.size;
+        job.speedBps = 0;
+        job.progressSampleAt = 0;
+        job.progressSampleBytes = 0;
+        job.startedAt = 0;
         job.finishedAt = 0;
         job.lastRenderAt = 0;
         job.cancelled = false;
+        job.transferDomain = "compose";
+        job.canCancel = true;
+        job.canRetry = true;
+        job.retry = function () { return startComposeAttachmentJob(job, true); };
         state.composeAttachmentJobs.set(job.id, job);
         renderComposeAttachments();
         updateComposeLifecycleControls();
-        if (job.tickTimer) window.clearInterval(job.tickTimer);
-        job.tickTimer = window.setInterval(function () {
-          if (job.cancelled || job.state !== "reading" || state.composeAttachmentJobs.get(job.id) !== job) {
-            window.clearInterval(job.tickTimer);
-            job.tickTimer = 0;
-            return;
-          }
-          renderComposeAttachments();
-          updateComposeLifecycleControls();
-        }, 1000);
-        var work = fileToBase64(job.file, {
-          onReader: function (reader) { job.reader = reader; },
-          onProgress: function (loaded, total) {
-            if (job.cancelled || state.composeAttachmentJobs.get(job.id) !== job) return;
-            job.loaded = Math.min(Number(total || job.size), Math.max(0, Number(loaded || 0)));
-            var now = Date.now();
-            if (now - job.lastRenderAt >= 80 || job.loaded >= job.size) {
-              job.lastRenderAt = now;
-              renderComposeAttachments();
+        renderTransferManager();
+        var work = enqueueManagedTransfer(job, function (task, controls) {
+          job.state = "reading";
+          controls.setPhase("transferring");
+          if (job.tickTimer) window.clearInterval(job.tickTimer);
+          job.tickTimer = window.setInterval(function () {
+            if (job.cancelled || job.state !== "reading" || state.composeAttachmentJobs.get(job.id) !== job) {
+              window.clearInterval(job.tickTimer);
+              job.tickTimer = 0;
+              return;
             }
-          }
-        }).then(function (encoded) {
-          if (job.cancelled || !state.compose || job.sessionId !== state.composeSessionId || state.composeAttachmentJobs.get(job.id) !== job) return false;
-          job.dataBase64 = encoded;
-          job.loaded = job.size;
-          job.state = "ready";
-          job.finishedAt = Date.now();
-          job.reader = null;
-          if (job.tickTimer) {
-            window.clearInterval(job.tickTimer);
-            job.tickTimer = 0;
-          }
-          job.attachment = job.intent === "inline"
-            ? {
-                token: job.token,
-                name: job.name,
-                mimeType: job.mimeType,
-                size: job.size,
-                dataBase64: encoded,
-                previewUrl: job.previewUrl
+            renderComposeAttachments();
+            updateComposeLifecycleControls();
+            renderTransferManager();
+          }, 1000);
+          return fileToBase64(job.file, {
+            onReader: function (reader) {
+              job.reader = reader;
+              controls.setAbort(function () {
+                if (job.reader && Number(job.reader.readyState) === 1 && typeof job.reader.abort === "function") job.reader.abort();
+              });
+            },
+            onProgress: function (loaded, total) {
+              if (job.cancelled || state.composeAttachmentJobs.get(job.id) !== job) return;
+              controls.progress(loaded, total || job.size);
+              var now = Date.now();
+              if (now - job.lastRenderAt >= 80 || job.loaded >= job.size) {
+                job.lastRenderAt = now;
+                renderComposeAttachments();
               }
-            : {
-                name: job.name,
-                mimeType: job.mimeType,
-                size: job.size,
-                dataBase64: encoded,
-                clientAttachmentKey: job.id,
-                downloadable: false
-              };
-          renderComposeAttachments();
-          updateComposeLifecycleControls();
-          flushReadyComposeAttachmentJobs();
-          return true;
-        }).catch(function (error) {
-          if (job.cancelled || safeText(error && error.code) === "ATTACHMENT_CANCELLED") return false;
-          job.reader = null;
-          job.state = "error";
-          job.finishedAt = Date.now();
-          if (job.tickTimer) {
-            window.clearInterval(job.tickTimer);
-            job.tickTimer = 0;
-          }
-          job.error = safeText(error && error.message, "Не вдалося прочитати файл.");
-          renderComposeAttachments();
-          updateComposeLifecycleControls();
-          if (!retry) showSnackbar(job.error, { error: true });
-          return false;
+            }
+          }).then(function (encoded) {
+            if (job.cancelled || !state.compose || job.sessionId !== state.composeSessionId || state.composeAttachmentJobs.get(job.id) !== job) return false;
+            job.dataBase64 = encoded;
+            recordManagedTransferProgress(job, job.size, job.size);
+            job.state = "ready";
+            controls.setPhase("attaching");
+            job.reader = null;
+            if (job.tickTimer) {
+              window.clearInterval(job.tickTimer);
+              job.tickTimer = 0;
+            }
+            job.attachment = job.intent === "inline"
+              ? {
+                  token: job.token,
+                  name: job.name,
+                  mimeType: job.mimeType,
+                  size: job.size,
+                  dataBase64: encoded,
+                  previewUrl: job.previewUrl
+                }
+              : {
+                  name: job.name,
+                  mimeType: job.mimeType,
+                  size: job.size,
+                  dataBase64: encoded,
+                  clientAttachmentKey: job.id,
+                  downloadable: false
+                };
+            renderComposeAttachments();
+            updateComposeLifecycleControls();
+            flushReadyComposeAttachmentJobs();
+            return true;
+          }).catch(function (error) {
+            if (job.cancelled || safeText(error && error.code) === "ATTACHMENT_CANCELLED") return false;
+            job.reader = null;
+            job.state = "error";
+            job.transferState = "retryable";
+            job.finishedAt = Date.now();
+            if (job.tickTimer) {
+              window.clearInterval(job.tickTimer);
+              job.tickTimer = 0;
+            }
+            job.error = safeText(error && error.message, "Не вдалося прочитати файл.");
+            renderComposeAttachments();
+            updateComposeLifecycleControls();
+            renderTransferManager();
+            if (!retry) showSnackbar(job.error, { error: true });
+            return { transferOutcome: "retryable", value: false };
+          });
         });
         job.promise = work;
         return work;
