@@ -74,7 +74,14 @@ test('v67 history remains immutable while v68 owns the cumulative source', () =>
 });
 
 test('v68 helper remains fail closed and at-most-once', () => {
-  for (const mode of ['PreflightOnly', 'StageOnly', 'Promote', 'CleanupStaging', 'Rollback']) {
+  for (const mode of [
+    'PreflightOnly',
+    'StageOnly',
+    'Promote',
+    'CleanupStaging',
+    'AbandonStaging',
+    'Rollback',
+  ]) {
     assert.ok(helper.includes(mode), 'missing release mode ' + mode);
   }
   assert.match(helper, /Future immutable version exists after v\$CandidateVersion/);
@@ -86,4 +93,14 @@ test('v68 helper remains fail closed and at-most-once', () => {
   assert.match(helper, /20260723-v68-release\.json/);
   const promote = helper.slice(helper.indexOf('  if ($Promote) {'), helper.indexOf('  if ($CleanupStaging) {'));
   assert.equal((promote.match(/Invoke-GoogleJson PUT \$stableUri/g) || []).length, 1);
+  const abandon = helper.slice(
+    helper.indexOf('  if ($AbandonStaging) {'),
+    helper.indexOf('  if ($CleanupStaging) {'),
+  );
+  assert.match(abandon, /\$stableVersion -ne \$RollbackVersion/);
+  assert.match(abandon, /\$staging\.Count -ne 1/);
+  assert.match(abandon, /\$journal\.state -ne 'staging_verified'/);
+  assert.match(abandon, /\$journalDeploymentId -ne \$guardedDeploymentId/);
+  assert.match(abandon, /\$staging\[0\]\.deploymentConfig\.versionNumber -ne \$CandidateVersion/);
+  assert.equal((abandon.match(/Invoke-GoogleJson DELETE/g) || []).length, 1);
 });
