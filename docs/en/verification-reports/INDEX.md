@@ -184,3 +184,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-023/README.md](reports/VR-023/README.md)
 - **Conclusion:** the source/session correction is locally VERIFIED. v69 hard reload ended with `UNTRUSTED_NONCE_REPLAY`; v70 later opened the native mailbox once, but secondary switching and a fresh v65 launch hit the same generic error while execution telemetry confirmed `urlfetch_quota`. v70 was not promoted, exact staging was removed, and production remains v65. One-second, offline, Desktop recovery, mobile, and concurrency acceptance remain `PARTIAL`/`UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-024 — Fail-fast URL Fetch quota circuit
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** authenticated continuation evidence after the first daily-quota error, transport signal propagation, the content-free 15-minute probe circuit, timer fail-fast behavior, deterministic/full-suite evidence, and the source-only release boundary.
+- **Report:** [reports/VR-024/README.md](reports/VR-024/README.md)
+- **Conclusion:** the repeated quota-dependent continuation is VERIFIED and corrected in source. Runtime-budget contracts `9/9` and the complete suite `593/593` pass. Live quota recovery, staging, native acceptance, and production promotion remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

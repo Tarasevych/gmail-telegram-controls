@@ -467,3 +467,15 @@ The transfer manager now exposes and accepts running cancellation only after the
 Status: BLOCKED
 
 An authenticated, read-only Apps Script Executions inspection confirmed that the shared daily URL Fetch quota was still exhausted during the proposed native acceptance window. A failed `checkNewMail_` execution reached `legacy_recovery` and terminated with `errorCode=urlfetch_quota`; adjacent content-free logs showed the same quota boundary affecting Telegram maintenance, Google OAuth token refresh, and Gmail API transport. This does not establish a transfer-manager regression. Production remains v65, active staging remains `0`, and no menu, Gmail, OAuth, deployment, or release-journal mutation was performed. Native slow-network/minimize acceptance must wait for a clean quota window.
+
+## GT-054 — Timer worker continued quota-dependent stages after URL Fetch exhaustion
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Product task:** `B1-34`
+- **Root cause:** timer-stage catches logged quota failures but continued later Telegram maintenance, reminder, OAuth-refresh, legacy-recovery, and multi-account paths. A per-user daily quota exception could therefore consume most of the 150-second slot and create another failed probe every minute.
+- **Source correction:** a content-free Script Properties circuit opens on the first classified URL Fetch daily-quota exception. Gmail, Telegram, and Google refresh transports propagate the signal; the worker stops the current pipeline, releases its lease with `quota_blocked` telemetry, skips subsequent minute runs, and permits one bounded probe every 15 minutes.
+- **Safety boundary:** the circuit stores only schema version and expiry. It contains no account, message, token, URL, Telegram, or Gmail identifier; it does not change OAuth grants, mail, menu, deployment, production, or immutable v70.
+- **Verification:** focused runtime-budget contracts `9/9`; complete Apps Script suite `593/593`; bilingual, knowledge-hub, verification-report, release-state, diff, and added-line sensitive-pattern gates pass.
+- **Remaining:** Apps Script documents per-user reset 24 hours after the first request but exposes no exact reset timestamp. Live quota recovery, a clean native A/B window, staging, and production acceptance remain `UNVERIFIED`.
+- **Evidence:** [VR-024](verification-reports/reports/VR-024/README.md)

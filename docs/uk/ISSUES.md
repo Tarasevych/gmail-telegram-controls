@@ -467,3 +467,15 @@ Status: PARTIAL
 Status: BLOCKED
 
 Автентифікована read-only перевірка Apps Script Executions підтвердила, що спільна добова квота URL Fetch усе ще була вичерпана у запропонованому вікні native acceptance. Невдале виконання `checkNewMail_` дійшло до `legacy_recovery` і завершилося з `errorCode=urlfetch_quota`; сусідні content-free logs показали ту саму межу квоти для Telegram maintenance, оновлення Google OAuth token і Gmail API transport. Це не встановлює regression transfer manager. Production лишається v65, active staging лишається `0`; menu, Gmail, OAuth, deployment або release journal не змінювалися. Native acceptance для повільної мережі/згортання має чекати чистого quota window.
+
+## GT-054 — Timer worker продовжував quota-dependent stages після вичерпання URL Fetch
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Product task:** `B1-34`
+- **Root cause:** catch у timer stages логували quota failures, але продовжували наступні Telegram maintenance, reminder, OAuth refresh, legacy recovery і multi-account paths. Через це exception добової per-user quota міг займати більшу частину 150-секундного slot і створювати ще одну невдалу probe щохвилини.
+- **Source correction:** content-free circuit у Script Properties відкривається на першому класифікованому exception добової URL Fetch quota. Gmail, Telegram і Google refresh transports передають signal; worker припиняє поточний pipeline, звільняє lease з telemetry `quota_blocked`, пропускає наступні minute runs і дозволяє одну bounded probe кожні 15 хвилин.
+- **Safety boundary:** circuit зберігає лише schema version та expiry. Він не містить account, message, token, URL, Telegram або Gmail identifier; OAuth grants, mail, menu, deployment, production та immutable v70 не змінюються.
+- **Verification:** focused runtime-budget contracts `9/9`; повний Apps Script suite `593/593`; bilingual, knowledge hub, verification report, release state, diff та added-line sensitive-pattern gates проходять.
+- **Залишається:** Apps Script документує per-user reset через 24 години після першого request, але не надає exact reset timestamp. Live quota recovery, чисте native A/B window, staging та production acceptance лишаються `UNVERIFIED`.
+- **Доказ:** [VR-024](verification-reports/reports/VR-024/README.md)

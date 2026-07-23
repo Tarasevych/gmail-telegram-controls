@@ -2118,6 +2118,9 @@ function mailboxGoogleRefreshAccess_(key, record, connection) {
         muteHttpExceptions: true
       });
     } catch (error) {
+      if (typeof gmailUrlFetchQuotaCircuitTrip_ === 'function') {
+        gmailUrlFetchQuotaCircuitTrip_(error);
+      }
       throw mailboxGoogleRefreshError_('REAUTH_REQUIRED', 'Google OAuth token refresh request failed');
     }
 

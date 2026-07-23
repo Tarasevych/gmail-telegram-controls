@@ -184,3 +184,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-023/README.md](reports/VR-023/README.md)
 - **Висновок:** source/session correction локально VERIFIED. Hard reload v69 завершився `UNTRUSTED_NONCE_REPLAY`; v70 пізніше один раз відкрив native mailbox, але secondary switching і fresh v65 launch отримали той самий generic error, тоді як execution telemetry підтвердила `urlfetch_quota`. v70 не promoted, exact staging видалено, production лишилася v65. One-second, offline, Desktop recovery, mobile і concurrency acceptance залишаються `PARTIAL`/`UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-024 — Fail-fast circuit URL Fetch quota
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** authenticated continuation evidence після першого daily-quota error, transport signal propagation, content-free 15-хвилинний probe circuit, timer fail-fast behavior, deterministic/full-suite evidence та source-only release boundary.
+- **Звіт:** [reports/VR-024/README.md](reports/VR-024/README.md)
+- **Висновок:** повторне quota-dependent continuation VERIFIED і виправлене у source. Runtime-budget contracts `9/9` і повний suite `593/593` проходять. Live quota recovery, staging, native acceptance та production promotion лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
