@@ -455,3 +455,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Клієнт тепер до Gmail dispatch зберігає лише account-scoped content-free descriptor draft operation. Після restart WebView він запитує `draftOperationStatus` із тим самим operation ID: committed-операція відновлюється через canonical Gmail readback; reservation, яка не перетнула dispatch boundary, переводиться в terminal state без Gmail mutation; pending reconciliation автоматично обмежено трьома перевірками, після чого доступний лише ручний retry. MIME bytes, source URL, OAuth-матеріал і resumable session URI цей контракт не зберігає та не надсилає повторно. Втрачені локальні bytes вкладень дають чесний стан `blocked` і вимагають повторного вибору. Шість restart-specific контрактів і повний Apps Script suite `590/590` пройшли локально. Справжній Gmail byte-resumable upload лишається `UNVERIFIED`; `resumableUpload` і `backgroundUpload` залишаються `false`.
+
+## 2026-07-23: capability gate справжнього abort для GT-051
+
+Status: PARTIAL
+
+Менеджер передач тепер показує і приймає скасування запущеної операції лише після реєстрації конкретного abort callback активним транспортом. Локальне читання в черзі можна скасувати до старту runner, але коротка фаза `preparing` не заявляє cancel, доки не доступний `FileReader.abort`. Apps Script RPC лишаються без cancel, оскільки офіційний контракт `google.script.run` надає asynchronous success/failure handlers і не має abort handle. Новий race-regression contract і focused transfer suites пройшли `170/170`; повний Apps Script suite пройшов `591/591`. Справжній abort локального reader має статус `VERIFIED`; справжній RPC abort не підтримується чинним транспортом і не імітується. Native acceptance для повільної мережі/згортання лишається відкритим.

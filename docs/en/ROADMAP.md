@@ -285,3 +285,9 @@ The URL-import lane is implemented without changing the server security boundary
 Status: PARTIAL
 
 The maximum safe restart contract in the current Apps Script architecture is implemented. A content-free operation descriptor survives WebView restart and performs account-scoped, read-only/idempotent Gmail draft outcome reconciliation without resending MIME or attachment bytes. Missing or never-dispatched operations may start a fresh save only when no transient attachment bytes were lost; otherwise the task is `blocked` until explicit reselection. Automatic pending checks stop after three attempts. Six new restart contracts and the complete `590/590` Apps Script suite pass. Official Gmail resumable upload exists, but the current `google.script.run` transport supplies neither streaming bytes nor an abort/progress handle, so byte-resumable upload remains a separate `UNVERIFIED` architecture decision.
+
+## 2026-07-23: B1-31 real-abort capability increment
+
+Status: PARTIAL
+
+The capability gate is now race-safe: queued local reads can be cancelled before execution, while a running transfer exposes cancel only after its transport registers a concrete abort handle. This verifies real `FileReader.abort` behavior and permanently prevents a false cancel control for current Apps Script RPC lanes. Focused suites pass `170/170` and the full suite passes `591/591`. The remaining B1-31 acceptance lane is native slow-network/minimize behavior; a future real RPC abort requires a separately verified cancellable transport architecture.

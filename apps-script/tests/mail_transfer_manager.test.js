@@ -202,6 +202,24 @@ test('running cancellation invokes the registered abort function', async () => {
   if (release) release(false);
 });
 
+test('running cancellation is rejected until the transport registers a real abort handle', async () => {
+  const context = managerContext(1);
+  let started = false;
+  let release;
+  const task = context.createManagedTransfer({ label: 'RPC lane', canCancel: true });
+  const promise = context.enqueueManagedTransfer(task, () => new Promise((resolve) => {
+    started = true;
+    release = resolve;
+  }));
+  while (!started) await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(context.managedTransferCanCancel(task), false);
+  assert.equal(context.cancelManagedTransfer(task.id), false);
+  assert.equal(task.cancelled, false);
+  release('ok');
+  assert.equal(await promise, 'ok');
+  assert.equal(context.transferCanonicalState(task), 'completed');
+});
+
 test('retry reuses the stable transfer ID', async () => {
   const context = managerContext();
   let attempts = 0;

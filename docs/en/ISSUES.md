@@ -455,3 +455,9 @@ Public HTTPS attachment import now runs as one bounded shared transfer task for 
 Status: PARTIAL
 
 The client now persists only an account-scoped, content-free draft operation descriptor before Gmail dispatch. After a WebView restart it queries `draftOperationStatus` with the same operation ID: a committed operation is recovered through canonical Gmail readback; a never-dispatched reservation is terminalized without a Gmail mutation; pending reconciliation is automatically bounded to three checks and then becomes manual retry. MIME bytes, source URLs, OAuth material, and resumable session URIs are never persisted or resent by this contract. Lost local attachment bytes produce a truthful `blocked` state and require reselection. Six restart-specific contracts and the complete `590/590` Apps Script suite pass locally. True Gmail byte-resumable upload remains `UNVERIFIED`; `resumableUpload` and `backgroundUpload` stay `false`.
+
+## 2026-07-23: GT-051 real-abort capability gate
+
+Status: PARTIAL
+
+The transfer manager now exposes and accepts running cancellation only after the active transport registers a concrete abort callback. A queued local read remains cancellable before its runner starts, but the brief `preparing` phase cannot claim cancellation until `FileReader.abort` is available. Apps Script RPC lanes remain non-cancellable because the official `google.script.run` contract exposes asynchronous success/failure handlers and no abort handle. The new race-regression contract and focused transfer suites pass `170/170`; the full Apps Script suite passes `591/591`. Real local-reader abort is `VERIFIED`; real RPC abort is unsupported in the current transport rather than simulated. Native slow-network/minimize acceptance remains open.
