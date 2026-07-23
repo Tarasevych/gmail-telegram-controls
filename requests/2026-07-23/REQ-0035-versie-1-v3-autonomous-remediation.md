@@ -316,3 +316,27 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Bilingual, knowledge-hub, verification-report, release-state, diff, and secret-pattern gates passed.
 - Production v65, staging `0`, immutable v70, the Telegram menu, Gmail, OAuth, and the release journal were unchanged.
 - The single owner action for this contour is to choose `(A)` skip self/alias `INBOX+SENT`, or `(B)` exactly-once for every `INBOX`, including self/alias. Independent V3 workstreams continue.
+
+## 2026-07-23 — E-01 Telegram viewport events evidence / Доказ подій viewport Telegram
+
+### Українською
+
+- V3 contour `E-01` реалізовано як source-only `B1-35`, `GT-055`, `VR-026`.
+- Ідемпотентний клієнтський bridge підписується на `viewportChanged`, `safeAreaChanged` та `contentSafeAreaChanged`, розділяє live/stable height і не запускає повторний bootstrap, RPC, reload, OAuth або Gmail mutation.
+- Focused Mail App contracts: `89/89`; повний Apps Script suite: `594/594`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff і added-line sensitive-pattern gates пройшли.
+- GitHub PR [#85](https://github.com/Tarasevych/gmail-telegram-controls/pull/85) пройшов `8/8` checks і був злитий normal merge як `d1b0f30110de22ba348dccba24fc3d1772e73728`.
+- Той самий merge SHA fast-forward опубліковано в приватний GitLab `main`.
+- Production лишається v65, staging `0`; immutable history, Telegram menu, OAuth і Gmail не змінювалися.
+- Native Telegram Desktop/mobile acceptance для keyboard resize, safe-area і різних viewport heights лишається `UNVERIFIED`; загальний статус `PARTIAL`.
+
+### English
+
+- V3 contour `E-01` was implemented as source-only `B1-35`, `GT-055`, and `VR-026`.
+- The idempotent client bridge subscribes to `viewportChanged`, `safeAreaChanged`, and `contentSafeAreaChanged`, separates live/stable height, and does not start another bootstrap, RPC, reload, OAuth, or Gmail mutation.
+- Focused Mail App contracts: `89/89`; complete Apps Script suite: `594/594`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and added-line sensitive-pattern gates passed.
+- GitHub PR [#85](https://github.com/Tarasevych/gmail-telegram-controls/pull/85) passed `8/8` checks and was normal-merged as `d1b0f30110de22ba348dccba24fc3d1772e73728`.
+- The same merge SHA was fast-forwarded to private GitLab `main`.
+- Production remains v65 and staging remains `0`; immutable history, Telegram menu, OAuth, and Gmail were unchanged.
+- Native Telegram Desktop/mobile acceptance for keyboard resize, safe-area, and varying viewport heights remains `UNVERIFIED`; the overall status is `PARTIAL`.
