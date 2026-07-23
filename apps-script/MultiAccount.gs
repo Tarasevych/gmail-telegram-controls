@@ -307,11 +307,18 @@ function mailboxDriveHandleOAuthCallback_(input) {
   const state = String(input.state || '');
   const code = String(input.code || '');
   const providerError = String(input.error || '');
+  const errorDescription = String(input.errorDescription || '');
   if (!/^[A-Za-z0-9_-]{43}$/.test(state) || Boolean(code) === Boolean(providerError) ||
-      code.length > 4096 || /[\u0000-\u001f\u007f]/.test(code)) {
+      code.length > 4096 || /[\u0000-\u001f\u007f]/.test(code) ||
+      (providerError && !/^[A-Za-z0-9_.-]{1,128}$/.test(providerError)) ||
+      errorDescription.length > 500 || /[\u0000-\u001f\u007f]/.test(errorDescription) ||
+      (!providerError && Boolean(errorDescription))) {
     throw mailboxError_('DRIVE_OAUTH_INVALID', 'Відповідь Google недійсна.');
   }
   const stateRecord = mailboxSourceConsumeOauthState_(state);
+  if (stateRecord.provider !== 'drive') {
+    throw mailboxError_('DRIVE_OAUTH_INVALID', 'OAuth-відповідь належить іншому джерелу.');
+  }
   if (providerError) {
     throw mailboxError_(providerError === 'access_denied' ? 'DRIVE_OAUTH_DENIED' : 'DRIVE_OAUTH_FAILED',
       providerError === 'access_denied' ? 'Підключення Google Drive скасовано.' : 'Google не завершив авторизацію Drive.');

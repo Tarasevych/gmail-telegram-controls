@@ -220,3 +220,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-025/README.md](reports/VR-025/README.md)
 - **Conclusion:** the production skip and current-source exactly-once behavior are both evidenced, but owner policy conflicts; release of this delta is `BLOCKED` until one direct decision.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-028 — Direct Google Drive OAuth contracts
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `D-01`, owner-bound one-use state, strict callback envelope, provider isolation, token-free DTOs, fail-closed refresh/generation handling, and exact disconnect.
+- **Report:** [reports/VR-028/README.md](reports/VR-028/README.md)
+- **Conclusion:** a source defect is confirmed and minimally corrected; the focused synthetic matrix provides local evidence. Native Google/deployed callback and user-visible acceptance remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

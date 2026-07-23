@@ -328,3 +328,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** clean-quota readback, one controlled staging candidate only when causally justified, native acceptance, and production promotion only after successful staging acceptance.
 - **Evidence:** [GT-054](ISSUES.md), [VR-024](verification-reports/reports/VR-024/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-37 — Direct Google Drive OAuth contracts
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Completed in source:** a strict Drive callback envelope, fail-closed provider binding after one-use state consumption, and preservation of the current owner/account/token-generation isolation.
+- **Local evidence gate:** the focused synthetic test must confirm the exact route/redirect, bounded hash-only state, replay/expiry, sanitized errors, token-free DTOs, refresh failure, and disconnection of only the exact selected Drive account.
+- **Release boundary:** this is source-only V3 `D-01`; real Google OAuth, consent, Gmail, Telegram, staging, production, and release helpers are outside the contour.
+- **Still required:** native provider redirect, deployed callback, provider refresh/revocation, and Mini App acceptance. Status remains `PARTIAL` until that evidence exists.
+- **Evidence:** [GT-057](ISSUES.md), [VR-028](verification-reports/reports/VR-028/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

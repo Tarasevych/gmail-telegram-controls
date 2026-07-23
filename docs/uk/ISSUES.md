@@ -502,3 +502,15 @@ Status: BLOCKED
 - **Safety boundary:** немає `localStorage`/`sessionStorage`, нового account state, RPC, reload, OAuth або Gmail mutation; mobile drawer не змінено.
 - **Verification:** focused Mail App suite `90/90`; повний suite та documentation/release/privacy gates є publication gates. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
 - **Доказ:** [VR-027](verification-reports/reports/VR-027/README.md)
+
+## GT-057 — Drive OAuth callback не відсікав state іншого source provider
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-37`
+- **Підтверджена першопричина:** спільний source OAuth state зберігав `provider`, але Drive callback після one-use consume не перевіряв `stateRecord.provider === "drive"`. Окремо Drive envelope не мав bounded validation для provider error та description, хоча Box-контур уже мав provider-error allowlist.
+- **Source correction:** callback тепер fail-closed відхиляє state іншого provider до token exchange, приймає лише bounded provider error і description без control characters та не дозволяє description без provider error.
+- **Behavioral evidence:** синтетична матриця перевіряє owner binding, exact callback URI/route, hash-only 10-хвилинний one-use state з limit 24, expiry/replay, sanitized denial, strict envelope, wrong provider/user/session, token-free DTO, refresh/generation fail-closed і exact selected-account revocation.
+- **Safety boundary:** використано лише `.invalid` identities та in-memory provider responses. Реальний Google OAuth, consent, account selection, secrets, Gmail, Telegram, staging, production і release helpers не запускалися й не змінювалися.
+- **Залишається:** native Google provider redirect, deployed callback, real refresh/revocation і user-visible Mini App acceptance лишаються `UNVERIFIED`; загальний статус тому `PARTIAL`.
+- **Доказ:** [VR-028](verification-reports/reports/VR-028/README.md)
