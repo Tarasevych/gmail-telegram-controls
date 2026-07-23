@@ -580,6 +580,20 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Boundary / Межа:** no Gmail/Telegram mutation, OAuth, staging, production promotion, immutable release, token read, or secret-property read / без змін Gmail/Telegram, OAuth, staging, production promotion, immutable release, читання token або secret properties.
 - **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable v70 remains historical and unchanged; shared quota/T-03 blockers still prohibit safe cumulative staging / production лишається v65, staging `0`, immutable v70 лишається історичною та незмінною; shared quota/T-03 blockers досі забороняють safe cumulative staging.
 
+## C-02 compose close/minimize evidence / Доказ C-02 close/minimize редактора
+
+- **Status / Статус:** source/tests/docs і local synthetic close/minimize/restore acceptance — `VERIFIED`; загальний C-02 лишається `PARTIAL`, бо native Telegram WebView, real Gmail attachment transfer, slow-network і restart acceptance — `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `ac6881ff34b5276eb7ad7894f048ecb3d55dd886`.
+- **Normal merge / Звичайне злиття:** PR [#103](https://github.com/Tarasevych/gmail-telegram-controls/pull/103), merge `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Root cause / Першопричина:** header `X` used a blocking shared close guard; final close cancelled every local attachment job; minimize erased the saved selection; the restore chip was fixed and could overlap the global transfer manager; the first offset correction ran before `composeMinimized=true`, so runtime activation was missed / header `X` використовував blocking shared close guard; final close скасовував усі local attachment jobs; minimize стирав saved selection; restore chip був fixed і міг перекривати global transfer manager; перша offset-корекція виконувалась до `composeMinimized=true`, тому runtime activation пропускалася.
+- **Implemented / Реалізовано:** one close intent hides the editor immediately and settles only after stable transfer and canonical Gmail-draft acknowledgement; active jobs retain the same compose/session/operation association; minimize/restore preserves the same draft, focus and selection; both chips are bounded and movable; runtime height-based offset prevents overlap; closed-WebView continuation is not claimed.
+- **Tests / Тести:** affected matrix `116/116`; full Apps Script suite `656/656`; GitHub checks `8/8`; bilingual documentation `98` pairs, knowledge hub, verification-report and release-state gates passed.
+- **Records / Записи:** `GT-066`, `B1-46`, `RCA-022`, `VR-041`.
+- **Visual boundary / Візуальна межа:** cache-busted synthetic desktop preview confirmed `overlap=false`, exact subject/body restoration, focus return to `composeBody`, and offset cleanup after restore. Pointer drag bounds are covered separately by the executable contract. No private mailbox content or identifier was published.
+- **Boundary / Межа:** no real Gmail draft, message or attachment mutation, OAuth, Telegram runtime mutation, staging, production promotion, immutable release, token read or secret-property read / без змін real Gmail draft, листів чи вкладень, OAuth, Telegram runtime, staging, production promotion, immutable release, читання token або secret properties.
+- **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable v70 remains historical and unchanged; shared quota/T-03 blockers still prohibit safe cumulative staging / production лишається v65, staging `0`, immutable v70 лишається історичною та незмінною; shared quota/T-03 blockers досі забороняють safe cumulative staging.
+
 ## C-01 autosave-state evidence / Доказ C-01 стану автозбереження
 
 - **Status / Статус:** source/tests/docs і local synthetic desktop/mobile/offline acceptance — `VERIFIED`; загальний C-01 лишається `PARTIAL`, бо native Telegram restart, real Gmail Drafts cross-session/offline conflict і current-production acceptance — `UNVERIFIED`.
