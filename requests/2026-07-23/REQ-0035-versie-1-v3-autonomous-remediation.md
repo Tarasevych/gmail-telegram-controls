@@ -474,3 +474,15 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Records / Записи:** `GT-060`, `B1-40`, `RCA-013`, `VR-031`.
 - **Boundary / Межа:** synthetic responses only; no live URL fetch, OAuth, Gmail/Telegram mutation, staging, production promotion, token read, or secret-property read / лише synthetic responses; без live URL fetch, OAuth, змін Gmail/Telegram, staging, production promotion, читання токенів або secret properties.
 - **Primary references / Первинні джерела:** [UrlFetchApp](https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app), [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas), [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html), [OWASP SSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+## E-03 navigation and mailbox-context evidence / Доказ E-03 навігації та поштового контексту
+
+- **Status / Статус:** `VERIFIED` for source/tests/docs; overall E-03 remains `PARTIAL` because native Telegram Desktop/WebView Back/Forward acceptance is `UNVERIFIED` / `VERIFIED` для source/tests/docs; загальний E-03 залишається `PARTIAL`, бо native Telegram Desktop/WebView acceptance Back/Forward — `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `02bf65ed52e06632e517163d17965ce814d9b88c`.
+- **Normal merge / Звичайне злиття:** PR [#92](https://github.com/Tarasevych/gmail-telegram-controls/pull/92), merge `06038af9489f36102adac7a5cce6ca5d61ff9648`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `06038af9489f36102adac7a5cce6ca5d61ff9648`.
+- **Implemented / Реалізовано:** canonical list/thread hash routes; user-transition `pushState`; one deduplicated `hashchange`/`popstate` scheduler; accessible context-banner return to Inbox; contextual reader account identity only in shared or mismatched contexts; fail-closed unsafe label routes.
+- **Tests / Тести:** focused `5/5`; full Apps Script suite `617/617`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, release-state, diff, and staged sensitive-data gates passed.
+- **Records / Записи:** `GT-061`, `B1-41`, `RCA-014`, `VR-032`.
+- **Boundary / Межа:** no Gmail/Telegram mutation, OAuth, staging, production promotion, release-helper mutation, token read, or secret-property read / без змін Gmail/Telegram, OAuth, staging, production promotion, release-helper mutation, читання токенів або secret properties.
+- **Release state / Стан релізу:** production remains v65, staging remains `0`, and immutable release history is unchanged / production лишається v65, staging `0`, immutable release history не змінено.
