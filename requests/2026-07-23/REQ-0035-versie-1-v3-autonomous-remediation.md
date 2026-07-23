@@ -288,3 +288,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Conclusion: native slow-network/minimize acceptance is currently causally invalid and remains BLOCKED until a clean quota window; no candidate-specific regression was established.
 - Release boundary: production v65 is unchanged and active staging is `0`; no menu, Gmail, OAuth, deployment, or release-journal mutation occurred.
 - Verified: bilingual `80` pairs, knowledge hub `17` pairs / `295` source IDs / `245` canonical items, verification reports, release state, and `git diff --check` passed; added-line sensitive-pattern matches `0`; all PR checks passed.
+
+## Оновлення доказів T-03: конфлікт політики `INBOX+SENT`
+
+- Дата: 2026-07-23
+- Статус контуру: BLOCKED; evidence classification `CONFLICTING`; `blocker_type=owner_decision`.
+- Production v65 пропускає self/alias `INBOX+SENT`; current `main` доставляє його один раз і має focused source evidence `161/161`.
+- `REQ-0009`/`REQ-0019` прямо підтримують skip self/alias copy, тоді як пізніший `GT-039` під `REQ-0033` змінив source без окремого прямого owner policy-рішення.
+- `GT-039`, `B1-25`, paired current-state surfaces та verification index узгоджено; створено `VR-025`.
+- Documentation commit: `98bc722f7cd364d67b21eae952de4612fc9cc245`.
+- GitHub PR: `#84`; normal merge: `764720b9cb6d0f33b6dc4afe11e74b9d59c5cbb3`.
+- GitHub і приватний GitLab `main` синхронізовані на exact merge commit.
+- Bilingual, knowledge-hub, verification-report, release-state, diff і secret-pattern gates пройшли.
+- Production v65, staging `0`, immutable v70, Telegram menu, Gmail, OAuth і release journal не змінювалися.
+- Єдина owner action для цього контуру: обрати `(A)` skip self/alias `INBOX+SENT` або `(B)` exactly-once для кожного `INBOX`, включно із self/alias. Незалежні V3 workstreams продовжуються.
+
+## T-03 evidence update: `INBOX+SENT` policy conflict
+
+- Date: 2026-07-23
+- Contour status: BLOCKED; evidence classification `CONFLICTING`; `blocker_type=owner_decision`.
+- Production v65 skips self/alias `INBOX+SENT`; current `main` delivers it once and has focused `161/161` source evidence.
+- `REQ-0009`/`REQ-0019` explicitly support skipping the self/alias copy, while the later `GT-039` under `REQ-0033` changed source without a separate direct owner policy decision.
+- `GT-039`, `B1-25`, paired current-state surfaces, and the verification index were reconciled; `VR-025` was added.
+- Documentation commit: `98bc722f7cd364d67b21eae952de4612fc9cc245`.
+- GitHub PR: `#84`; normal merge: `764720b9cb6d0f33b6dc4afe11e74b9d59c5cbb3`.
+- GitHub and private GitLab `main` are synchronized at the exact merge commit.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and secret-pattern gates passed.
+- Production v65, staging `0`, immutable v70, the Telegram menu, Gmail, OAuth, and the release journal were unchanged.
+- The single owner action for this contour is to choose `(A)` skip self/alias `INBOX+SENT`, or `(B)` exactly-once for every `INBOX`, including self/alias. Independent V3 workstreams continue.
