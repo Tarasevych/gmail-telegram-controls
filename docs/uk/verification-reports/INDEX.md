@@ -99,5 +99,14 @@ Source request: `REQ-0004`.
 - **Дата:** 2026-07-22
 - **Покриття:** mismatch canonical manifest field, stale marker v60 у production-v64 source, exact source marker v65 і real-manifest one-reload/no-loop regression contract.
 - **Звіт:** [reports/VR-014/README.md](reports/VR-014/README.md)
-- **Висновок:** causal source correction локально verified; production лишається v64, а staging/production acceptance v65 unverified.
+- **Висновок:** source correction deployed у v65 і fresh launches проходять; defective automatic transition v64-to-v65 лишається неможливо довести.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-015 — exactly-once correction доставки SENT+INBOX
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** controlled production observation, worker telemetry, deterministic source root cause, exactly-once regression contract і release boundary v65/v66.
+- **Звіт:** [reports/VR-015/README.md](reports/VR-015/README.md)
+- **Висновок:** exclusion у production v65 verified, source correction пройшов `161/161`; live acceptance потребує cumulative v66.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

@@ -52,7 +52,7 @@ test('v64 helper pins exact v63 rollback, v63 history, and frozen v64 source', (
   assert.notEqual(normalizedFileHash('MailApp'), expectedCandidate.MailApp,
     'mutable source must be allowed to advance without rewriting immutable v64');
   const currentMailApp = fs.readFileSync(path.join(root, 'MailApp.html'), 'utf8');
-  assert.match(currentMailApp, /P0_CLIENT_RELEASE_VERSION = 65/);
+  assert.match(currentMailApp, /P0_CLIENT_RELEASE_VERSION = \d+/);
   assert.match(currentMailApp, /production\.appsScriptImmutable/);
 });
 

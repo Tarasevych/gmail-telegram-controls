@@ -1,4 +1,4 @@
-# Source candidate release-helper v65 у Versie 1
+# Звіт про випуск і acceptance v65 у Versie 1
 
 [English](../../en/reports/VERSIE_001_V65_RELEASE_CANDIDATE_2026-07-23.md)
 
@@ -9,7 +9,7 @@
 
 ## Межі
 
-Це лише helper source. Production лишається immutable v64 зі staging `0`; immutable v65 не існує.
+Immutable v65 є production і HEAD, staging `0`, journal `cleaned`, а exact immutable v64 лишається rollback.
 
 ## Exact boundaries
 
@@ -29,22 +29,35 @@
 | `MailApp.html` | `ff2c04e1fd4fa88a5da90e22b012c078e8fad7a31aa8ae447e57a6a8f5555565` |
 | `appsscript.json` | `354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9` |
 
-## Наступний gate
+## Випуск і live acceptance
 
-Після focused/full tests, documentation і required PR checks виконати normal merge та read-only `PreflightOnly`. Рівно один `StageOnly` дозволено лише якщо stable/HEAD v64, rollback hashes, future-version guard, staging count і journal boundary пройшли.
+- Source contracts пройшли `14/14`, cumulative source suite пройшов `505/505`.
+- Helper contracts пройшли `2/2`, cumulative release suite `507/507`; bridge contracts пройшли `4/4` і `509/509`.
+- Один bounded `StageOnly` створив immutable v65 та один staging deployment. Propagation recovery прийняв exact deployment без повторного create.
+- Native Telegram Desktop staging завантажив mailbox, avatar і рівно три roots, після чого перемкнувся на secondary Gmail connection і назад без OAuth.
+- Один promotion просунув v64 до v65; два fresh production launches пройшли; cleanup видалив staging; final preflight підтвердив stable/HEAD v65 і journal `cleaned`.
 
 ## Follow-up: затримка видимості deployment
 
-- **Статус:** `PARTIAL`
+- **Статус:** `VERIFIED`
 - Перший `StageOnly` створив immutable v65 і рівно один staging, але негайне читання Apps Script Deployments API ще не побачило щойно створений deployment.
 - Production і HEAD залишилися на exact v64; journal зупинився на `staging_create_reserved`, тому повторне створення було заборонене.
 - Helper доповнено обмеженим polling: не більше п'яти read-back спроб з паузою одну секунду. Він не повторює `deployments.create` і приймає лише рівно один deployment з exact version та description.
-- Staging acceptance і production promotion залишаються непідтвердженими до окремої перевірки.
+- Bounded recovery успішно застосовано без створення другої immutable version або deployment.
 
 ## Staging bridge
 
-- **Статус:** `PARTIAL`
+- **Статус:** `VERIFIED`
 - Immutable v65 і рівно один staging deployment підтверджені helper read-back.
 - Окремий noindex bridge передає лише підписаний Telegram `initData` через form POST до exact v65 staging deployment; URL не містить токенів або приватних ключів.
 - Поточний owner-menu updater розділяє v65 staging та незмінний production URL; історичний v64 bridge не переписано.
-- Native Telegram acceptance ще не виконано, тому production promotion заборонений.
+- Native staging acceptance пройшов, а owner menu повернуто на production до promotion.
+
+## Post-release blocker доставки
+
+- **Статус:** `PARTIAL`
+- Послідовні production worker traces завершилися з `errorCode=none`; overlapping process shell було відхилено кодом `gmail_timer_worker_skip: lease_active`.
+- Один контрольований owner self-message мав Gmail labels `UNREAD+SENT+INBOX`, але automatic processing і два manual `/check` не створили Telegram card.
+- Першопричина: eligibility guard у production v65 відхиляє кожне `SENT` повідомлення, навіть якщо той самий Gmail message також має `INBOX`.
+- Source correction зберігає межі `INBOX`, `SPAM`, `TRASH` та important-mode і використовує durable dedupe за Gmail message ID. Focused tests пройшли `161/161`; deployment потребує окремо pinned cumulative candidate v66.
+- Доказ: [VR-015](../verification-reports/reports/VR-015/README.md).
