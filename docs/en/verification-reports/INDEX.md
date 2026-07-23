@@ -126,7 +126,7 @@ A historical report is not rewritten after publication to hide an error. A new i
 
 - **Status:** PARTIAL
 - **Date:** 2026-07-23
-- **Coverage:** REQ-0035 recovery boundary, confirmed v67 source defects, the v68 code correction, owner/account cache isolation, local/CI gates, platform limits, and the release gate.
+- **Coverage:** REQ-0035 recovery boundary, confirmed v67 source defects, the immutable v68 code correction, owner/account cache isolation, local/CI gates, owner-only native staging, platform limits, and fail-closed abandon.
 - **Report:** [reports/VR-017/README.md](reports/VR-017/README.md)
-- **Conclusion:** source/test evidence is verified in local scope; production remains v65, staging is `0`, immutable v67 was not rewritten, and native one-second/offline/draft/switch acceptance has not run.
+- **Conclusion:** the final suite is `531/531`; multi-account switching/shared context passed partial native acceptance, but the one-second/offline/draft gate did not. v68 was not promoted; production is v65, staging is `0`, immutable v68 is retained, and the journal is `abandoned`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

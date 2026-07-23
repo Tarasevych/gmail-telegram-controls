@@ -307,7 +307,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ### GT-040 — ONE-SECOND warm-launch performance
 
 - **Status:** PARTIAL.
-- Source candidate v68 adds content-free `warmLaunchUsableMs`, cache-hit, and request counters, but native p95 `≤1000 ms` and ten controlled launches remain `UNVERIFIED`.
+- Immutable v68 adds content-free `warmLaunchUsableMs`, cache-hit, and request counters. Owner-only staging showed the app shell near the first `1.2 s` control point but not a usable cached Inbox; native p95 `≤1000 ms` and ten controlled launches remain `UNVERIFIED`.
 - Prior `898/431/409 ms` values remain a local baseline only and are not production button-to-interactive evidence.
 
 ### GT-041 — Duplicate launch/auth pipeline
@@ -315,7 +315,7 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Status:** PARTIAL.
 - Verified source root causes are duplicate static/runtime connection copy, the invalid `p0OpenDatabase` call instead of `p0OpenDb`, and the ability to boot again after the first Promise settled.
 - The source fix uses one empty hidden boot host, a settled single-flight guard, the correct storage warmup helper, and an account-scoped onboarding decision after `attentionState`.
-- Local contracts pass; zero repeated screens and zero duplicate bootstrap calls in native staging remain `UNVERIFIED`.
+- Local contracts pass; two observed native launches showed no repeated connection overlay and no new OAuth. The complete ten-launch gate remains `UNVERIFIED`.
 
 ### GT-042 — Offline persistent cache
 
@@ -339,17 +339,17 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ### GT-045 — Drafts
 
 - **Status:** PARTIAL.
-- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs, and conflict contracts did not regress in the `526/526` suite.
+- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs, and conflict contracts did not regress in the final `531/531` suite.
 - Native restart, offline/online recovery, and verified cross-device Gmail Draft continuation remain `UNVERIFIED`.
 
 ### GT-046 — Version-aware client update
 
 - **Status:** PARTIAL.
-- Source marker v68, schema migration, and one-reload/no-loop guards exist; historical immutable v67 was not rewritten.
-- v68 is not yet an immutable release and was not promoted; production-transition evidence is absent.
+- Immutable v68, schema migration, and one-reload/no-loop guards exist; historical immutable v67 was not rewritten.
+- v68 was not promoted: the exact staging deployment was removed, the journal is `abandoned`, and production remains v65. Production-transition evidence is absent.
 
 ### GT-047 — Multi-account cache isolation and switching
 
 - **Status:** PARTIAL.
 - Owner/account namespaces, poisoned-record rejection, and deterministic switch contracts pass locally.
-- Native primary-secondary-primary switching, shared mode, and cache lock/readback remain `UNVERIFIED`; no new OAuth flow was started.
+- Native primary-secondary-primary switching and shared mode across three roots are `VERIFIED` without a new OAuth flow. Offline cross-owner cache lock/readback and eviction recovery remain `UNVERIFIED`.

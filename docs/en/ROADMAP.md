@@ -185,10 +185,11 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 - **Status:** PARTIAL.
 - **Source request:** `REQ-0035`.
-- **Source candidate:** cumulative Versie 1 marker v68 based on preserved immutable v67.
+- **Release candidate:** cumulative Versie 1 is recorded as a separate immutable v68 based on preserved immutable v67.
 - **Locally VERIFIED:** duplicate boot copy removed; settled single-flight, correct IndexedDB warmup, cache-first list/thread paths, an opaque owner/account namespace, bounded schema v2, advisory persistent storage, unread-first prefetch without `markRead`, and a non-blocking account-attention flow.
-- **Gates:** targeted `25/25`, MailApp contract `88/88`, cumulative `526/526`, bilingual/knowledge/verification/release-state validators, and required PR checks passed.
-- **Remaining:** create the exact hash-pinned v68 helper only from merged `main`; pass `PreflightOnly`; create one owner-only staging deployment; collect native performance, duplicate-bootstrap, offline/cache-lock, draft, and multi-account evidence.
-- **Promotion:** forbidden until the critical native gates pass. Production remains v65, staging is `0`, and immutable v67 is historical.
+- **Gates:** targeted `25/25`, release `3/3`, MailApp contract `88/88`, final cumulative `531/531`, documentation validators, and required PR checks passed.
+- **Native staging:** two launches had no repeated connection overlay/OAuth; three roots, primary-secondary-primary, and the shared context are verified. A real cached Inbox within `≤1000 ms`, ten launches, offline/cache locking, prefetch, and drafts remain `UNVERIFIED` or `BLOCKED`.
+- **Terminal state:** no promotion ran; the owner menu returned to production; merged fail-closed helper PR #62 removed the exact staging deployment; production/HEAD v65, staging `0`, immutable v68 retained, journal `abandoned`.
+- **Next step:** do not repeat v68 staging without a new measurable acceptance contour or a separate cumulative fix. Prepare an in-app TTI trace and an architecture decision for a device-bound unlock/single-origin offline shell.
 - **Evidence:** [VR-017](verification-reports/reports/VR-017/README.md), issues [GT-040–GT-047](ISSUES.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
