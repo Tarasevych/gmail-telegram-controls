@@ -109,3 +109,14 @@ No production promotion was performed. A future cumulative candidate requires a 
 ### Current decision
 
 v70 does not rewrite immutable v69 and does not change production. After merge/CI, only one cumulative immutable staging candidate may be created. Promotion is forbidden until every native acceptance gate is `VERIFIED`. If SecureStorage again supplies no supported device-bound recovery, the result remains `PARTIAL`/`BLOCKED`, and the required next step is a separate architecture decision for a first-party single-origin app shell or another confirmed secure unlock primitive.
+
+## Staging creation addendum: immutable v70
+
+- **Date:** 2026-07-23
+- **Status:** PARTIAL
+- Source v70 was merged by normal PR at SHA `0666165b614f430103530728aa45349083db5e78` and synchronized to GitLab main at the same SHA.
+- `PreflightOnly` confirmed stable v65, HEAD `stable_v65`, no future immutable, staging `0`, an empty journal, and `readyToStage=true`.
+- Guarded `StageOnly` created immutable v70 and exactly one owner-only staging deployment; the exact deployment reference is retained only in the protected recovery journal.
+- Release helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax, and whitespace gate passed.
+- The owner menu has not been switched away from production; production v65 is unchanged.
+- Native acceptance, one-second p95, SecureStorage result, hard reload, and cached-thread test have not run, so promotion is forbidden.

@@ -233,7 +233,7 @@
 - **Джерело запиту:** `REQ-0034`
 - **Локальний source v70:** VERIFIED — bridge передає перевірюваний content-free час початку, а MailApp обчислює міждокументний час до придатного інтерфейсу; фокусні тести `113/113`, повний suite `567/567`, перевірка доданих production-рядків на значення секретів `0`, `git diff --check` чистий.
 - **Межа вимірювання:** новий trace починається у bridge-документі, а не в момент натискання кнопки Telegram; це покращує доказовість, але ще не є native button-to-interactive p95.
-- **Залишкова межа:** warm-launch `≤1000 ms` p95, десять native запусків і offline-відкриття приватної пошти залишаються `UNVERIFIED`; production v65 і staging `0` не змінено.
+- **Залишкова межа:** warm-launch `≤1000 ms` p95, десять native запусків і offline-відкриття приватної пошти залишаються `UNVERIFIED`; production v65 незмінний, один owner-only staging v70 активний, promotion заборонено до acceptance.
 - **Доказ:** [VR-016](verification-reports/reports/VR-016/README.md)
 
 ## GT-041 — Дубльований launch/auth pipeline
@@ -426,5 +426,5 @@
 - **Історична межа v69:** immutable v69 протестовано й залишено історичним; staging видалено, journal `abandoned`, owner menu повернуто на production, active staging `0`, production v65 не змінено.
 - **Source-корекція v70:** SecureStorage wrapper зберігає лише content-free status/error class; bridge timestamp дає міждокументний launch trace; replay разом із відсутнім secure credential відкриває fail-closed locked state без restart-loop. Access/refresh tokens, Telegram `initData`, session bearer і вміст пошти не потрапляють у browser telemetry/storage.
 - **Локальний доказ:** фокусні P0-контракти `113/113`, повний Apps Script suite `567/567`, production added-line privacy scan `0`, `git diff --check` чистий.
-- **Залишкова межа:** source v70 ще не merged/deployed; native Windows SecureStorage status, hard reload, десять запусків, mobile/WebView reopen і concurrent launch залишаються `UNVERIFIED`. Browser-level POST resubmission виникає до виконання внутрішнього MailApp JavaScript, тому поточний patch не оголошує його усуненим.
+- **Залишкова межа:** source v70 merged на `0666165`, immutable v70 та один owner-only staging створені; native Windows SecureStorage status, hard reload, десять запусків, mobile/WebView reopen і concurrent launch залишаються `UNVERIFIED`. Browser-level POST resubmission виникає до виконання внутрішнього MailApp JavaScript, тому patch не оголошує його усуненим і production v65 не змінено.
 - **Доказ:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)

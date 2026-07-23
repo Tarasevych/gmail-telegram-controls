@@ -8,9 +8,9 @@
     "status": "VERIFIED"
   },
   "candidate": {
-    "appsScriptImmutable": 65,
-    "status": "VERIFIED",
-    "activeStagingDeployments": 0
+    "appsScriptImmutable": 70,
+    "status": "PARTIAL",
+    "activeStagingDeployments": 1
   },
   "rollback": {
     "appsScriptImmutable": 64,

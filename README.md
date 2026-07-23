@@ -8,7 +8,7 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
 
 Поточний public production: Apps Script immutable v65. HEAD exact v65; staging deployments: `0`; journal `cleaned`.
 Current public production: Apps Script immutable v65. HEAD is exact v65; staging deployments: `0`; journal is `cleaned`.

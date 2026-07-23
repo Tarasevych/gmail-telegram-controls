@@ -2,7 +2,7 @@
 
 [English](../en/CURRENT_STATE.md)
 
-<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
 
 ## Канонічний стан випуску
 
@@ -44,11 +44,12 @@
 
 ## P0 ONE-SECOND boundary — 2026-07-23
 
-- Production і release-state HEAD залишаються immutable v65; staging `0`.
+- Production і release-state stable залишаються immutable v65; owner menu залишається на production.
 - Immutable v66–v69 збережені історично; v69 завершився fail-closed як `abandoned` після native hard-reload/session conflict і не був promoted.
-- Активний контрольований source delta має marker v70; він локально `VERIFIED` тестами `113/113` та `567/567`, privacy scan `0`, але ще не merged/deployed.
+- Source v70 merged normal PR на SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 створено рівно один раз, active owner-only staging `1`.
+- Локальні gates після release assets: helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax і `git diff --check` pass.
 - Source v70 додає content-free SecureStorage classification, fail-closed locked state без restart-loop і перевірюваний bridge-to-usable timing; nonce replay protection не послаблено.
-- Native button-to-interactive p95, десять запусків, offline private Inbox, Windows Desktop recovery і cached-thread acceptance залишаються `UNVERIFIED`/`BLOCKED` поточною дво-origin архітектурою.
+- Native button-to-interactive p95, десять запусків, hard reload, offline private Inbox, Windows Desktop recovery і cached-thread acceptance залишаються `UNVERIFIED`/`BLOCKED`; promotion заборонено до повного staging acceptance.
 - Канонічні докази: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## Межа P0 acceptance v67 від 2026-07-23
