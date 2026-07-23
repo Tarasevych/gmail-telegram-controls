@@ -84,11 +84,11 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Conclusion:** the source correction is locally verified; production remains v63 and native staging/production visual acceptance is still unverified.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
-## VR-013 — v64 helper and GT-037 reconciliation source candidate
+## VR-013 — v64 production acceptance and GT-031/GT-037 closure
 
-- **Status:** PARTIAL
+- **Status:** VERIFIED
 - **Date:** 2026-07-22
-- **Coverage:** exact v57 rollback, frozen v63 history, cumulative v64 hashes, bounded deployment reconciliation, local release contracts and pre-immutable boundary.
+- **Coverage:** exact v63 rollback, cumulative v64 hashes, bounded deployment reconciliation, one staging deployment, native account-context acceptance, live promotion, two production launches, cleanup and explicit runtime limits.
 - **Report:** [reports/VR-013/README.md](reports/VR-013/README.md)
-- **Conclusion:** helper source is locally verified; no v64 immutable or staging deployment exists until a merged helper passes read-only preflight and one guarded StageOnly.
+- **Conclusion:** immutable v64 is production/HEAD with staging `0` and journal `cleaned`; GT-031 and GT-037 are verified, while the remaining P0 scenarios stay partial.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

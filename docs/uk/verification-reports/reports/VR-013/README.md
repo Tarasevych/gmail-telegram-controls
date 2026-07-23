@@ -1,12 +1,12 @@
-# VR-013 — v64 helper і bounded reconciliation GT-037
+# VR-013 — production acceptance v64 і закриття GT-031/GT-037
 
 [English](../../../../en/verification-reports/reports/VR-013/README.md)
 
 - **Дата:** 2026-07-22
-- **Загальний статус:** PARTIAL
+- **Загальний статус:** VERIFIED
 - **Source request:** `REQ-0033`
 - **Verification framework:** `REQ-0004`
-- **Детальний звіт:** [v64 helper source candidate](../../../reports/VERSIE_001_V64_RELEASE_CANDIDATE_2026-07-22.md)
+- **Детальний звіт:** [production acceptance v64](../../../reports/VERSIE_001_V64_RELEASE_AND_GT031_GT037_CLOSURE_2026-07-22.md)
 
 ## Атомарні висновки
 
@@ -16,17 +16,13 @@
 | VR-013-02 | Усі п'ять candidate hashes дорівнюють source commit `da8b2768323db8fd8c1ba886b556bbfd2148d6de`. | VERIFIED | normalized hash contract |
 | VR-013-03 | Promotion і rollback виконують по одному PUT і не більше п'яти read-only reconciliation checks. | VERIFIED | focused contract і parser |
 | VR-013-04 | Contradictory deployment versions fail closed замість наступної mutation. | VERIFIED | helper source contract |
-| VR-013-05 | Cumulative local tests проходять. | VERIFIED | `503/503` |
-| VR-013-06 | v64 immutable і staging існують. | UNVERIFIED | StageOnly ще не запускався |
-| VR-013-07 | Live promotion reconciliation GT-037 проходить. | UNVERIFIED | promotion ще не запускався |
+| VR-013-05 | Фінальний cumulative local suite проходить. | VERIFIED | `505/505` |
+| VR-013-06 | Immutable v64 і рівно один staging deployment створено після preflight. | VERIFIED | post-stage preflight: `staging_verified` |
+| VR-013-07 | Live promotion reconciliation GT-037 просуває v63 до v64 однією mutation. | VERIFIED | promotion result і stable readback |
+| VR-013-08 | Native staging підтверджує disclosure повної адреси, три roots, shared mode і switching без OAuth. | VERIFIED | owner-only Telegram Desktop acceptance |
+| VR-013-09 | Два fresh production launches проходять; cleanup лишає stable/HEAD v64, staging `0` і journal `cleaned`. | VERIFIED | native production acceptance і final preflight |
+| VR-013-10 | Шість post-cleanup executions завершуються; точна внутрішня диспозиція одного короткого overlapping shell відома. | UNVERIFIED | UI durations перевірені; причина lease rejection є inference |
 
 ## Висновок
 
-Source v64 helper локально verified. Overall status лишається PARTIAL до normal merge, read-only preflight, exact staging, owner acceptance і promotion evidence.
-## Виправлення контракту staging bridge
-
-- Статус: `VERIFIED`
-- Перший сукупний bridge-suite виявив, що історичний тест v63 помилково вимагав від змінюваного owner-menu updater назавжди лишатися на v63.
-- Першопричина: доказ незмінності bridge та поточний staging-вказівник були поєднані в одній асерції.
-- Виправлення: v63 надалі перевіряється як збережений immutable-доказ, а змінюваний updater тепер зобов'язаний не активувати повторно історичний launcher v63 після переходу на v64.
-- Доказ: перед публікацією мають пройти focused-контракт bridge v64 і повний сукупний Apps Script suite.
+Release scope v64 має статус `VERIFIED`: immutable v64 є production і HEAD, exact v63 є rollback, staging дорівнює нулю, а GT-031/GT-037 пройшли live acceptance. Пояснення runtime shell overlap, external automatic INBOX delivery після v64 та решта P0 scenarios явно лишаються поза цим closure.

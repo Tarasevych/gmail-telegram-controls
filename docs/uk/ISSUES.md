@@ -139,14 +139,13 @@
 
 ## GT-031 — Ідентичність активного акаунта може обрізатися у вузькому header
 
-- **Статус:** PARTIAL — production-v63 defect спостережено, а source correction локально VERIFIED; native staging і production visual acceptance лишаються UNVERIFIED.
-- **Залишкове спостереження:** header контрольованого альтернативного акаунта обрізав завершення довгого email у вузькому view. Primary root коректно зберіг letter fallback за відсутності profile photo; інший root показав фактичне фото.
-- **Першопричина:** desktop wrapping існував, але fixed narrow topbar зводив subtitle до cropped line без tappable single-account full-address disclosure. Desktop `title` hint і announcement text не були достатнім recovery path для touch device.
-- **Source fix:** зберегти wrapping на ширших views; на вузьких views показати компактне native `<details>` disclosure на основі тієї самої stable-ID context model і чинної full account map. Hidden-state precedence, visible focus, keyboard behavior і shared mode збережені.
-- **Тести:** focused mail-app contract `88/88`; full Apps Script suite `501/501`. v63 helper test тепер зберігає frozen hashes замість порівняння future source з immutable v63.
-- **Release boundary:** production лишається exact immutable v63. Immutable v63 не редагувався; correction потребує окремо gated cumulative v64 candidate після source merge.
-- **Доказ:** [VR-012](verification-reports/reports/VR-012/README.md). Source request: `REQ-0033`.
-
+- **Статус:** VERIFIED — виправлення пройшло native staging і два fresh production launches на immutable v64.
+- **Спостережений residual у v63:** header контрольованого альтернативного акаунта обрізав фінальну частину довгої email-адреси у вузькому view.
+- **Першопричина:** desktop wrapping існував, але fixed narrow topbar стискав subtitle до cropped line і не мав tappable single-account disclosure повної адреси. Desktop `title` hint був недостатнім recovery path для touch-пристрою.
+- **Виправлення:** wider views зберігають wrapping; narrow views використовують compact native `<details>` disclosure на чинній stable-ID context model і full account map. Hidden-state precedence, focus visibility, keyboard behavior і shared mode збережено.
+- **Acceptance:** native staging v64 показав disclosure повної адреси, avatar/fallback behavior, три isolated roots, shared mapping і контрольоване switching без OAuth; два fresh production launches повторили responsive account context.
+- **Тести:** focused mail-app contract `88/88`; final cumulative suite `505/505`.
+- **Доказ:** [VR-013](verification-reports/reports/VR-013/README.md). Source request: `REQ-0033`.
 ## GT-032 — Типографіка відрізняється від читального контексту Gmail
 
 - **Статус:** PARTIAL — live Gmail CSS, source fix і native v63 staging/production presentation VERIFIED; same-scale production typography comparison лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
@@ -183,24 +182,22 @@
 - **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 
-## GT-036 — Новий production client може лишитися stale у відкритому Mini App
+## GT-036 — Новий production client може лишатися stale у відкритому Mini App
 
-- **Статус:** PARTIAL — exact release-ID mechanism наявний у production v63; targeted stale-open-client one-reload/no-loop acceptance лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
-- **Першопричина:** звичайний mail state і client-code version не мали окремого lifecycle; вже відкритий document не отримував production release signal.
-- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard та manual reopen state після однієї невдалої activation attempt.
-- **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не імітується, а routine mail synchronization ніколи не reload-ить document.
+- **Статус:** PARTIAL — exact release-ID mechanism наявний у production v64; targeted stale-open-client one-reload/no-loop acceptance лишається UNVERIFIED.
+- **Першопричина:** ordinary mail state і client-code version не мали окремого lifecycle; уже відкритий документ не мав production release signal.
+- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard і manual reopen state після однієї невдалої activation attempt.
+- **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не симулюється, а routine mail synchronization ніколи не reload-ить документ.
 - **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
-
 ## GT-037 — Promotion helper може повідомити false negative після успішного deployment update
 
-- **Статус:** PARTIAL — deployment v63 безпечно reconciled; bounded helper hardening локально VERIFIED у v64 source candidate, а live promotion acceptance лишається UNVERIFIED.
-- **Спостережена поведінка:** `Promote` просунув stable v57 до v63, після чого immediate read повернув stale state і створив помилку `Stable deployment did not advance to the candidate.`
-- **Першопричина:** helper не має bounded read-after-write reconciliation window. Propagation mechanism виведено з пізнішого authoritative readback, а не заявлено як platform guarantee.
-- **Безпечна обробка:** другий promotion не запускався. Read-only preflight довів stable v63 до cleanup.
-- **Source fix:** v64 helper виконує щонайбільше п'ять read-only deployment checks після одного PUT, приймає лише exact prior version під час convergence і fail closed за будь-якої contradictory version. Rollback використовує той самий bounded contract.
-- **Тести:** focused release contracts `2/2`, PowerShell parser clean, cumulative suite `503/503`.
-- **Release boundary:** production лишається exact immutable v63; v64 helper не є immutable або deployment, доки source PR не merged і `StageOnly` не пройшов preflight.
+- **Статус:** VERIFIED — bounded helper hardening і live promotion acceptance v63-to-v64 пройшли.
+- **Спостережена поведінка у v63:** `Promote` просунув stable v57 до v63, після чого immediate stale read створив помилку `Stable deployment did not advance to the candidate.`
+- **Першопричина:** старий helper не мав bounded read-after-write reconciliation window. Propagation mechanism виведено з authoritative readback, а не заявлено як platform guarantee.
+- **Виправлення:** promotion і rollback виконують один deployment PUT, після чого не більше п'яти read-only checks, приймають лише exact prior version під час convergence і fail closed за будь-якої contradictory version.
+- **Live acceptance:** promotion v64 просунув exact v63 до v64 однією mutation із bounded reconciliation, без duplicate mutation або false negative. Cleanup і final preflight підтвердили stable/HEAD v64, staging `0` і journal `cleaned`.
+- **Тести:** focused release contracts `2/2`; final cumulative suite `505/505`.
 - **Доказ:** [VR-013](verification-reports/reports/VR-013/README.md).
 ## GT-038 — Telegram Web K/A показує blank signed Mini App, тоді як native Desktop працює
 
