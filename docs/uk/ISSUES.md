@@ -218,13 +218,13 @@
 
 ## GT-039 — `SENT+INBOX` mail виключається замість one-time delivery
 
-- **Статус:** PARTIAL — root cause і source correction VERIFIED; production acceptance очікує cumulative v66.
-- **Спостережена поведінка:** один контрольований owner self-message існував як `UNREAD+SENT+INBOX`; automatic worker і два `/check` повідомили про відсутність нових листів, а exact-marker chat search повернув zero cards.
-- **Першопричина:** `gmailNotificationLabelsEligible_` вимагав `INBOX`, але також відхиляв кожен `SENT` label, після чого durable позначав message як seen. Runtime stages завершилися з `errorCode=none`, тому exclusion був silent і deterministic.
-- **Source correction:** зберегти required `INBOX`, відхиляти `SPAM` і `TRASH`, зберегти important-only mode та дозволити чинному stable Gmail message-ID/card reservation dedupe забезпечити exactly-once delivery.
-- **Verification:** focused source suite `161/161`; перший scan доставляє один раз, другий не refetch-ить і не resend-ить; `SENT` без `INBOX` лишається ineligible.
-- **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production лишається v65 до hash-pinned staging v66.
-- **Доказ:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
+- **Статус:** BLOCKED — evidence classification `CONFLICTING`; `blocker_type=owner_decision`.
+- **Production v65:** `INBOX+SENT` пропускається й durable позначається seen; це узгоджено з явним self/alias acceptance у `REQ-0019`.
+- **Current source:** `gmailNotificationLabelsEligible_` дозволяє `INBOX+SENT`; focused suite `161/161` доводить одну доставку та dedupe під час другого scan.
+- **Конфлікт:** `REQ-0009` і `REQ-0019` вимагають не дублювати self/alias copy та прямо фіксують його пропуск. Пізніший `GT-039` під `REQ-0033` змінив source на exactly-once, але сам owner request `REQ-0033` не містить окремого policy-рішення для self/alias mail.
+- **Release boundary:** source commit `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b` збережено як перевірений артефакт, але його notification-policy delta не можна включати до нового cumulative candidate до прямого owner decision.
+- **Потрібне рішення:** вибрати один інваріант: `(A)` self/alias `INBOX+SENT` пропускається, external `INBOX` доставляється один раз; або `(B)` кожен `INBOX`, включно з self/alias `INBOX+SENT`, доставляється один раз.
+- **Доказ:** historical source evidence [VR-015](verification-reports/reports/VR-015/README.md); conflict reconciliation [VR-025](verification-reports/reports/VR-025/README.md). Source request: `REQ-0035`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 
 ## GT-040 — ONE-SECOND продуктивність теплого запуску

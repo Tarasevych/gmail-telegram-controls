@@ -193,3 +193,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-024/README.md](reports/VR-024/README.md)
 - **Conclusion:** the repeated quota-dependent continuation is VERIFIED and corrected in source. Runtime-budget contracts `9/9` and the complete suite `593/593` pass. Live quota recovery, staging, native acceptance, and production promotion remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-025 — `INBOX+SENT` policy conflict
+
+- **Status:** CONFLICTING
+- **Date:** 2026-07-23
+- **Coverage:** V3 `T-03`, owner request history, production v65, current source/tests, `GT-039`, and the release boundary.
+- **Report:** [reports/VR-025/README.md](reports/VR-025/README.md)
+- **Conclusion:** the production skip and current-source exactly-once behavior are both evidenced, but owner policy conflicts; release of this delta is `BLOCKED` until one direct decision.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
