@@ -366,3 +366,12 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **UX:** an ambiguous Google page is not called malformed and never attaches a guessed file; the UI offers link mode or direct-address guidance and shows a licensing warning.
 - **Release boundary:** source/docs contour without live URL fetch, staging, or production.
 - **Related:** `GT-060`, `RCA-013`, `VR-031`, `REQ-0035`.
+
+## B1-41 — E-03 Navigation and actual mailbox context
+
+- **Status:** `PARTIAL`
+- **Result:** list/thread transitions have a canonical hash route and browser history; the context banner accessibly returns to Inbox; the reader does not duplicate account identity without a contextual need.
+- **Isolation:** the route uses a stable connection ID, while the account chip appears in shared mode or on an actual thread/account-context mismatch.
+- **Locally verified:** focused contract `5/5`; full Apps Script suite `617/617`.
+- **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
+- **Related:** `GT-061`, `RCA-014`, `VR-032`, `REQ-0035`.

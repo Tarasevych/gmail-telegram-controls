@@ -1929,7 +1929,7 @@ test('dynamic mail context derives identity and shared membership from stable co
 });
 
 test('dynamic mail context is responsive accessible and keeps full account mappings available', () => {
-  assert.match(uiSource, /id="mailContextAnnouncement" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(uiSource, /id="mailContextAnnouncement" role="link" tabindex="0" aria-live="polite" aria-atomic="true" aria-label="Відкрити Вхідні поточного поштового контексту"/);
   assert.match(uiSource, /id="mailContextDetails" hidden/);
   assert.match(uiSource, /<summary id="mailContextSummary">Акаунти й адреси<\/summary>/);
   assert.match(uiSource, /id="mailContextAccounts" aria-label="Акаунти спільної пошти"/);
@@ -1976,6 +1976,73 @@ test('mail context rerenders through existing bootstrap switch and shared-prefer
   assert.match(switchSource, /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);/);
   assert.match(switchSource, /state\.accountSettings\.unifiedConnectionIds =[\s\S]*renderAccountPanel\(\);/);
   assert.doesNotMatch(switchSource, /location\.reload|location\.replace/);
+});
+
+test('E-03 navigation history and reader account identity stay deterministic and contextual', () => {
+  const routeSource = sourceBetween(
+    '      function parseLocationRoute() {',
+    '      function safeColor(value, fallback) {'
+  );
+  assert.match(routeSource, /function mailboxRouteHash_\(routeValue\)[\s\S]*params\.set\("view", "list"\)[\s\S]*params\.set\("filter", safeMailboxFilter/);
+  assert.match(routeSource, /function ensureMailboxListHistory_\(\)[\s\S]*writeMailboxRoute_\(mailboxCurrentListRoute_\(\), "replace"\)/);
+  assert.match(routeSource, /function navigateMailContextInbox_\(\) \{\s*selectFolder\("INBOX"\);/);
+  assert.match(routeSource, /lastScheduledLocationRoute_[\s\S]*function scheduleLocationRouteHandling_\(\)/);
+  assert.match(uiSource, /writeMailboxRoute_\(mailboxCurrentListRoute_\(\), "push"\)[\s\S]*loadThreads\(true\)/);
+  assert.match(uiSource, /ensureMailboxListHistory_\(\);[\s\S]*view:\s*"thread"[\s\S]*connectionId:\s*thread\.accountId[\s\S]*openThread\(thread\.id, false, thread\.accountId\)/);
+  assert.match(uiSource, /mailContextAnnouncement\.addEventListener\("click", navigateMailContextInbox_\)/);
+  assert.match(uiSource, /mailContextAnnouncement\.addEventListener\("keydown"[\s\S]*event\.key === "Enter"[\s\S]*event\.preventDefault\(\)[\s\S]*navigateMailContextInbox_\(\)/);
+  assert.match(uiSource, /window\.addEventListener\("hashchange", scheduleLocationRouteHandling_\)/);
+  assert.match(uiSource, /window\.addEventListener\("popstate", scheduleLocationRouteHandling_\)/);
+
+  const routeHashSource = extractUiFunction('mailboxRouteHash_');
+  const routeContext = vm.createContext({
+    URLSearchParams,
+    safeRouteId: value => /^[A-Za-z0-9._:-]+$/.test(String(value || ''))
+      ? String(value || '')
+      : '',
+    safeMailboxFilter: value => String(value || 'all'),
+  });
+  vm.runInContext(routeHashSource, routeContext);
+  assert.equal(
+    routeContext.mailboxRouteHash_({ view: 'list', folderId: 'INBOX', filter: 'all' }),
+    'view=list&folder=INBOX&filter=all'
+  );
+  assert.equal(
+    routeContext.mailboxRouteHash_({
+      view: 'list',
+      folderId: 'INBOX',
+      labelId: 'invalid label',
+      filter: 'all',
+    }),
+    '',
+    'an unsafe label route must fail closed instead of falling back to Inbox'
+  );
+
+  const identitySource = extractUiFunction('readerNeedsAccountIdentity_');
+  const context = vm.createContext({
+    state: {
+      unifiedMode: false,
+      account: { id: 'gmail-a', email: 'same@example.invalid' },
+      thread: { accountId: 'gmail-a', accountEmail: 'same@example.invalid' },
+    },
+    safeId: value => String(value || ''),
+    safeText: value => String(value == null ? '' : value),
+  });
+  vm.runInContext(identitySource, context);
+  assert.equal(context.readerNeedsAccountIdentity_(), false, 'single-account reader must not duplicate identity');
+  context.state.unifiedMode = true;
+  assert.equal(context.readerNeedsAccountIdentity_(), true, 'unified reader must identify the source account');
+  context.state.unifiedMode = false;
+  context.state.thread = { accountId: 'gmail-b', accountEmail: 'other@example.invalid' };
+  assert.equal(context.readerNeedsAccountIdentity_(), true, 'a real context mismatch must stay visible');
+
+  const readerSource = sourceBetween(
+    '      function renderThread() {',
+    '      function setAttachmentPreviewIsolation(active) {'
+  );
+  assert.match(readerSource, /if \(readerNeedsAccountIdentity_\(\)\)/);
+  assert.doesNotMatch(readerSource, /Натисніть «Правила»/,
+    'the Rules setup hint belongs to settings and must not consume space in every message reader');
 });
 
 test('the profile avatar exposes real server-backed Gmail connection and switching controls', () => {

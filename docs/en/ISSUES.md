@@ -545,3 +545,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Correction:** deterministic explicit-wrapper resolution, no-fetch Google-search routing to link mode, an identity loop guard, provenance/classification metadata, and a persistent licensing reminder.
 - **Evidence:** [VR-031](verification-reports/reports/VR-031/README.md).
 - **Residual:** DNS-rebinding TOCTOU and native deployment transfer acceptance remain `UNVERIFIED`; staging/production are unchanged.
+
+## GT-061 — Navigation and mailbox-context identity lacked one history contract
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Product task:** `B1-41` / V3 `E-03`
+- **Root cause:** dynamic account context was already derived from stable connection IDs, but list/thread transitions did not write canonical browser history, the banner did not return to Inbox, and the reader unconditionally repeated an account chip even in ordinary single-account mode.
+- **Correction:** canonical list/thread hash routes, `pushState` for user transitions, one scheduler for `hashchange`/`popstate`, an accessible Inbox action on the context banner, and a contextual account chip only for shared mode or a real account mismatch.
+- **Local evidence:** focused contract `5/5`; full Apps Script suite `617/617`.
+- **Boundary:** native Telegram Desktop/WebView acceptance for Back/Forward and `A → B → A` remains `UNVERIFIED`; production v65, staging `0`, and immutable release history are unchanged.
+- **Evidence:** [VR-032](verification-reports/reports/VR-032/README.md).

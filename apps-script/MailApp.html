@@ -333,6 +333,17 @@
       display: grid;
       gap: 1px;
       min-width: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .mail-context-announcement:hover {
+      background: var(--hover);
+    }
+
+    .mail-context-announcement:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      outline-offset: 2px;
     }
 
     .brandbar .mail-context-title {
@@ -4796,7 +4807,7 @@
         <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
       </button>
       <div class="mail-context" id="mailContext">
-        <div class="mail-context-announcement" id="mailContextAnnouncement" role="status" aria-live="polite" aria-atomic="true">
+        <div class="mail-context-announcement" id="mailContextAnnouncement" role="link" tabindex="0" aria-live="polite" aria-atomic="true" aria-label="Відкрити Вхідні поточного поштового контексту">
           <h1 class="mail-context-title" id="mailContextTitle">Завантаження пошти</h1>
           <p class="mail-context-subtitle" id="mailContextSubtitle">Визначаємо активний Gmail-акаунт</p>
         </div>
@@ -6099,6 +6110,68 @@
         return folderExists ? { view: "list", folderId: folderId, filter: routeFilter } : null;
       }
 
+      function mailboxRouteHash_(routeValue) {
+        var route = routeValue || {};
+        var params = new URLSearchParams();
+        if (route.view === "thread") {
+          var threadId = safeRouteId(route.threadId);
+          if (!threadId) return "";
+          params.set("view", "thread");
+          params.set("thread", threadId);
+          var connectionId = safeRouteId(route.connectionId);
+          if (connectionId) params.set("account", connectionId);
+          return params.toString();
+        }
+        if (route.view !== "list") return "";
+        var rawLabelId = route.labelId;
+        var labelId = rawLabelId ? safeRouteId(rawLabelId) : "";
+        if (rawLabelId && !labelId) return "";
+        var folder = labelId
+          ? "label:" + labelId
+          : safeRouteId(route.folderId || "INBOX").toUpperCase();
+        if (!folder) return "";
+        params.set("view", "list");
+        params.set("folder", folder);
+        params.set("filter", safeMailboxFilter(route.filter || "all"));
+        return params.toString();
+      }
+
+      function mailboxCurrentListRoute_() {
+        return {
+          view: "list",
+          folderId: state.currentFolderId || "INBOX",
+          labelId: state.currentLabelId,
+          filter: state.filter
+        };
+      }
+
+      function writeMailboxRoute_(route, mode) {
+        var hash = mailboxRouteHash_(route);
+        if (!hash) return false;
+        var target = location.pathname + location.search + "#" + hash;
+        if (location.pathname + location.search + location.hash === target) return false;
+        try {
+          history[mode === "replace" ? "replaceState" : "pushState"](
+            { mailboxRoute: hash },
+            "",
+            target
+          );
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function ensureMailboxListHistory_() {
+        var current = parseLocationRoute();
+        if (current && current.view === "list") return false;
+        return writeMailboxRoute_(mailboxCurrentListRoute_(), "replace");
+      }
+
+      function navigateMailContextInbox_() {
+        selectFolder("INBOX");
+      }
+
       function applyListRoute(route) {
         if (!route || route.view !== "list") return false;
         p0SaveReaderScroll();
@@ -6144,6 +6217,16 @@
           recoverToListOnFailure: true
         });
         if (routeOpened) openThreadRoutePanel(route);
+      }
+
+      var lastScheduledLocationRoute_ = "";
+      function scheduleLocationRouteHandling_() {
+        var signature = location.pathname + location.search + location.hash;
+        if (signature === lastScheduledLocationRoute_) return;
+        lastScheduledLocationRoute_ = signature;
+        Promise.resolve().then(handleLocationRoute).catch(function (error) {
+          showSnackbar(safeText(error && error.message, "Не вдалося відкрити навігаційний стан."), { error: true });
+        });
       }
 
       function safeColor(value, fallback) {
@@ -9090,6 +9173,7 @@
         closeReader();
         closeDrawer();
         renderNavigation();
+        writeMailboxRoute_(mailboxCurrentListRoute_(), "push");
         loadThreads(true);
       }
 
@@ -11171,7 +11255,15 @@
         indicators.append(star);
         copy.append(indicators);
         row.append(copy);
-        row.addEventListener("click", function () { openThread(thread.id, false, thread.accountId); });
+        row.addEventListener("click", function () {
+          ensureMailboxListHistory_();
+          writeMailboxRoute_({
+            view: "thread",
+            threadId: thread.id,
+            connectionId: thread.accountId
+          }, "push");
+          openThread(thread.id, false, thread.accountId);
+        });
         row.addEventListener("keydown", function (event) { handleThreadRowKeydown(event, row); });
         p0Runtime.metrics.rowCreates += 1;
         return row;
@@ -11723,6 +11815,17 @@
         renderThreadList();
         renderNavigation();
         showSnackbar("Посилання на цю розмову застаріло. Показую список листів.", { error: true });
+      }
+
+      function readerNeedsAccountIdentity_() {
+        if (!state.thread || !state.thread.accountEmail) return false;
+        if (state.unifiedMode) return true;
+        var activeId = safeId(state.account && state.account.id);
+        var threadId = safeId(state.thread.accountId);
+        if (activeId && threadId && activeId !== threadId) return true;
+        var activeEmail = safeText(state.account && state.account.email).trim().toLowerCase();
+        var threadEmail = safeText(state.thread.accountEmail).trim().toLowerCase();
+        return Boolean(activeEmail && threadEmail && activeEmail !== threadEmail);
       }
 
       async function openThread(threadId, force, connectionId) {
@@ -13130,7 +13233,7 @@
         var titleBlock = make("div", {});
         titleBlock.append(make("h2", { text: state.thread.subject }));
         var chips = make("div", { className: "state-labels" });
-        if (state.thread.accountEmail) {
+        if (readerNeedsAccountIdentity_()) {
           chips.append(make("span", {
             className: "state-chip",
             text: "📮 " + state.thread.accountEmail,
@@ -19475,6 +19578,13 @@
         els.skipOnboarding.addEventListener("click", function () {
           completeOnboarding({ openFocus: false });
         });
+        els.mailContextAnnouncement.addEventListener("click", navigateMailContextInbox_);
+        els.mailContextAnnouncement.addEventListener("keydown", function (event) {
+          var activate = event.key === "Enter" || event.key === " " || event.key === "Spacebar";
+          if (!activate || event.repeat) return;
+          event.preventDefault();
+          navigateMailContextInbox_();
+        });
         els.mailContextSummary.addEventListener("keydown", function (event) {
           var activate = event.key === "Enter" || event.key === " " || event.key === "Spacebar";
           if (!activate || event.repeat) return;
@@ -19826,7 +19936,8 @@
           flushComposeAutosave("online");
         });
         window.addEventListener("offline", function () { showSnackbar("Немає з’єднання з інтернетом", { error: true }); });
-        window.addEventListener("hashchange", function () { handleLocationRoute(); });
+        window.addEventListener("hashchange", scheduleLocationRouteHandling_);
+        window.addEventListener("popstate", scheduleLocationRouteHandling_);
         document.addEventListener("visibilitychange", function () {
           if (document.visibilityState === "hidden") bestEffortLifecycleAutosave("visibility");
           else {

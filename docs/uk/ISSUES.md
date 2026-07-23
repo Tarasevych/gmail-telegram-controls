@@ -545,3 +545,14 @@ Status: BLOCKED
 - **Виправлення:** deterministic explicit-wrapper resolver, no-fetch Google search routing до link mode, identity loop guard, provenance/classification metadata та постійне licensing нагадування.
 - **Доказ:** [VR-031](verification-reports/reports/VR-031/README.md).
 - **Залишок:** DNS-rebinding TOCTOU та native deployment transfer acceptance залишаються `UNVERIFIED`; staging/production не змінювалися.
+
+## GT-061 — Навігація та ідентичність поштового контексту не мали єдиного history contract
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Product task:** `B1-41` / V3 `E-03`
+- **Першопричина:** динамічний account context уже будувався зі stable connection IDs, але переходи list/thread не записували canonical browser history, banner не повертав до Inbox, а reader безумовно повторював account chip навіть у звичайному single-account режимі.
+- **Виправлення:** canonical list/thread hash routes, `pushState` для користувацьких переходів, один scheduler для `hashchange`/`popstate`, доступний Inbox action на context banner та contextual account chip лише для shared mode або реальної невідповідності акаунта.
+- **Локальний доказ:** focused contract `5/5`; повний Apps Script suite `617/617`.
+- **Межа:** native Telegram Desktop/WebView acceptance для Back/Forward і `A → B → A` лишається `UNVERIFIED`; production v65, staging `0` та immutable release history не змінювалися.
+- **Доказ:** [VR-032](verification-reports/reports/VR-032/README.md).
