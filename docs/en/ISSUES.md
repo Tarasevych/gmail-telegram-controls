@@ -536,3 +536,12 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Correction:** `scope=root_readonly`, a strict callback envelope, stable Box account ID, and a compatible lookup of historical protected token records.
 - **Evidence:** [VR-030](verification-reports/reports/VR-030/README.md).
 - **Residual:** authenticated Box acceptance, callback, refresh, revoke, and picker remain `UNVERIFIED`; no new OAuth was started.
+
+## GT-060 — Smart, safe URL resolver
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Root cause:** the secure fetch perimeter existed, but intent classification was implicit: a Google search/ambiguous wrapper reached server fetch, redirect loops had only a count bound, and origin/resolution kind plus the licensing warning were not an explicit DTO/UI contract.
+- **Correction:** deterministic explicit-wrapper resolution, no-fetch Google-search routing to link mode, an identity loop guard, provenance/classification metadata, and a persistent licensing reminder.
+- **Evidence:** [VR-031](verification-reports/reports/VR-031/README.md).
+- **Residual:** DNS-rebinding TOCTOU and native deployment transfer acceptance remain `UNVERIFIED`; staging/production are unchanged.

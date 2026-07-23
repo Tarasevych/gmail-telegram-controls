@@ -358,3 +358,11 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Release boundary:** source/docs contour; staging and production are unchanged.
 - **Next evidence step:** authenticated owner-only Box acceptance only in an authorized release contour and without repeated consent unless a real need is confirmed.
 - **Related:** `GT-059`, `VR-030`, `REQ-0035`.
+
+## B1-40 — D-03 Smart, safe URL resolver
+
+- **Status:** `PARTIAL`
+- **Result:** direct files, explicit Google wrappers, search pages, ordinary pages, authenticated/private URLs, and unsafe schemes have separate deterministic outcomes; redirects are bounded and loop-aware.
+- **UX:** an ambiguous Google page is not called malformed and never attaches a guessed file; the UI offers link mode or direct-address guidance and shows a licensing warning.
+- **Release boundary:** source/docs contour without live URL fetch, staging, or production.
+- **Related:** `GT-060`, `RCA-013`, `VR-031`, `REQ-0035`.

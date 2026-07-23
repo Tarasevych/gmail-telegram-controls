@@ -6304,11 +6304,13 @@ function mailboxPublicSourceMetadata_(sourceValue) {
   const head = mailboxPublicFetch_(requestedUrl, 'head', {});
   let response = head.response;
   let finalUrl = head.url;
+  let classification = head.classification;
   let status = Number(response.getResponseCode());
   if (status === 405 || status === 501) {
     const probe = mailboxPublicFetch_(requestedUrl, 'get', { Range: 'bytes=0-0' });
     response = probe.response;
     finalUrl = probe.url;
+    classification = probe.classification;
     status = Number(response.getResponseCode());
     const probeBytes = mailboxResponseBytes_(response);
     if (probeBytes.length > 1 && status !== 206) {
@@ -6337,6 +6339,7 @@ function mailboxPublicSourceMetadata_(sourceValue) {
       throw mailboxError_('SOURCE_TOO_LARGE', 'Зовнішній сервер проігнорував безпечний обмежений запит.');
     }
     finalUrl = probe.url;
+    classification = probe.classification;
     size = mailboxPublicResponseTotalSize_(probeHeaders) || probeBytes.length;
     mimeType = mailboxSafeExternalMimeType_(probeHeaders['content-type'], finalUrl, probeHeaders);
   }
@@ -6350,6 +6353,8 @@ function mailboxPublicSourceMetadata_(sourceValue) {
     metadata: {
       provider: 'publicHttps',
       url: finalUrl,
+      originUrl: requestedUrl,
+      classification: classification || 'direct_file',
       name: mailboxPublicAttachmentName_(headers, finalUrl, mimeType),
       mimeType,
       size,
@@ -6358,6 +6363,7 @@ function mailboxPublicSourceMetadata_(sourceValue) {
       nativeGoogle: false,
       exportAs: [],
       downloadable: true,
+      licensingWarning: 'Переконайтеся, що маєте право використовувати й надсилати цей файл.',
     },
   };
 }
@@ -6399,6 +6405,8 @@ function mailboxPublicSourceBytes_(sourceValue, maxBytes) {
     metadata: {
       provider: 'publicHttps',
       url: fetched.url,
+      originUrl: requestedUrl,
+      classification: fetched.classification || 'direct_file',
       name: mailboxPublicAttachmentName_(headers, fetched.url, mimeType),
       mimeType,
       size: bytes.length,
@@ -6407,6 +6415,7 @@ function mailboxPublicSourceBytes_(sourceValue, maxBytes) {
       nativeGoogle: false,
       exportAs: [],
       downloadable: true,
+      licensingWarning: 'Переконайтеся, що маєте право використовувати й надсилати цей файл.',
     },
     bytes,
   };
@@ -6418,20 +6427,33 @@ function mailboxPublicFetch_(urlValue, methodValue, headersValue) {
   if (['get', 'head'].indexOf(method) === -1) {
     throw mailboxError_('INVALID_SOURCE', 'Непідтримуваний метод HTTPS-джерела.');
   }
+  const visited = new Set();
+  let classification = 'direct_file';
   let redirect = 0;
   while (redirect <= MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_REDIRECTS) {
+    if (visited.has(current)) {
+      throw mailboxError_('SOURCE_REDIRECT', 'HTTPS-джерело утворило цикл перенаправлень.');
+    }
+    visited.add(current);
     // Google image sharing can finish at an HTML /imgres wrapper. Extract only
     // its explicit imgurl target; the extracted URL is still revalidated by the
     // same HTTPS, DNS, redirect, MIME, magic-byte and size boundary as any URL
     // pasted directly by the owner.
-    const googleImageTarget = mailboxGoogleImageRedirectTarget_(current);
-    if (googleImageTarget) {
+    const explicitTarget = mailboxGoogleExplicitRedirectTarget_(current);
+    if (explicitTarget) {
       if (redirect >= MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_REDIRECTS) {
         throw mailboxError_('SOURCE_REDIRECT', 'HTTPS-джерело має забагато перенаправлень.');
       }
-      current = googleImageTarget;
+      current = explicitTarget;
+      classification = 'wrapper_file';
       redirect += 1;
       continue;
+    }
+    if (mailboxIsGoogleSearchResultUrl_(current)) {
+      throw mailboxError_(
+        'SOURCE_AMBIGUOUS',
+        'Це сторінка результатів Google, а не один файл. Вставте її як посилання або скопіюйте адресу самого зображення.'
+      );
     }
     const response = UrlFetchApp.fetch(current, {
       method,
@@ -6441,7 +6463,9 @@ function mailboxPublicFetch_(urlValue, methodValue, headersValue) {
       validateHttpsCertificates: true,
     });
     const status = Number(response.getResponseCode());
-    if ([301, 302, 303, 307, 308].indexOf(status) === -1) return { response, url: current };
+    if ([301, 302, 303, 307, 308].indexOf(status) === -1) {
+      return { response, url: current, classification };
+    }
     if (redirect >= MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_REDIRECTS) {
       throw mailboxError_('SOURCE_REDIRECT', 'HTTPS-джерело має забагато перенаправлень.');
     }
@@ -6456,9 +6480,46 @@ function mailboxPublicFetch_(urlValue, methodValue, headersValue) {
       throw mailboxError_('SOURCE_REDIRECT', 'HTTPS-джерело повернуло некоректне перенаправлення.');
     }
     current = mailboxSafePublicSourceUrl_(redirected, true);
+    if (classification === 'direct_file') classification = 'redirected_file';
     redirect += 1;
   }
   throw mailboxError_('SOURCE_REDIRECT', 'HTTPS-джерело має забагато перенаправлень.');
+}
+
+function mailboxGoogleExplicitRedirectTarget_(urlValue) {
+  const imageTarget = mailboxGoogleImageRedirectTarget_(urlValue);
+  if (imageTarget) return imageTarget;
+  let parsed;
+  try { parsed = new URL(String(urlValue || '')); }
+  catch (error) { return ''; }
+  const host = String(parsed.hostname || '').toLowerCase().replace(/\.$/, '');
+  if (parsed.protocol !== 'https:' || host !== 'www.google.com' || parsed.pathname !== '/url') {
+    return '';
+  }
+  const values = parsed.searchParams.getAll('url')
+    .concat(parsed.searchParams.getAll('q'))
+    .map(value => String(value || '').trim())
+    .filter(value => /^https:\/\//i.test(value));
+  if (values.length !== 1) {
+    throw mailboxError_(
+      'SOURCE_NOT_DOWNLOADABLE',
+      'Google-посилання не містить одного прямого публічного файла для завантаження.'
+    );
+  }
+  if (values[0].length > MAILBOX_CLIENT_CONFIG_.MAX_SOURCE_URL_CHARS) {
+    throw mailboxError_('INVALID_SOURCE_URL', 'Пряме посилання на файл перевищує ліміт Apps Script у 2 КБ.');
+  }
+  return mailboxSafePublicSourceUrl_(values[0], true);
+}
+
+function mailboxIsGoogleSearchResultUrl_(urlValue) {
+  let parsed;
+  try { parsed = new URL(String(urlValue || '')); }
+  catch (error) { return false; }
+  const host = String(parsed.hostname || '').toLowerCase().replace(/\.$/, '');
+  return parsed.protocol === 'https:' &&
+    (host === 'www.google.com' || host === 'images.google.com') &&
+    (parsed.pathname === '/search' || parsed.pathname === '/imghp');
 }
 
 function mailboxGoogleImageRedirectTarget_(urlValue) {

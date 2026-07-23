@@ -22,6 +22,8 @@
 
 | RCA-012 | Box OAuth міг успадкувати ширші app scopes, створити дубль після зміни login/email або прийняти неповний callback envelope | В authorize URL не було explicit scope; reconnect залежав від mutable email; `errorDescription` не мав provider-specific validation | Додано `root_readonly`, stable account ID, legacy protected-record lookup і fail-closed validation | Provider allowlist, stable provider IDs, direct callback source-contract tests | `PARTIAL` | [VR-030](verification-reports/reports/VR-030/README.md) |
 
+| RCA-013 | Валідні Google search/wrapper URL мали неявний outcome; loop визначався лише лімітом; provenance/licensing contract був неповним | Fetch-security і UX classification не були єдиним state machine | Додано explicit-wrapper extraction, no-fetch ambiguous routing, visited-URL loop guard, origin/classification і licensing warning | Pure classifier tests, synthetic redirect matrix, fail-closed MIME/DNS/size boundary | `PARTIAL` | [VR-031](verification-reports/reports/VR-031/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.
