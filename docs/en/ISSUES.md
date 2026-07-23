@@ -289,3 +289,10 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - GT-046 version-aware update: PARTIAL. Source contracts pass; one controlled production reload was not exercised because v67 was not promoted.
 - GT-047 multi-account isolation: UNVERIFIED in native staging acceptance.
 - Disposition: immutable v67 preserved, temporary staging removed, production v65 unchanged, no promotion.
+
+### GT-040/GT-041 acceptance tooling note
+
+- Status: UNVERIFIED
+- Chrome Telegram Web authentication and the owner bot chat are working, but the Mini App child surface could not be retained for DOM or network inspection.
+- Do not use this result to assign a regression to production v65 or immutable v67.
+- Do not repeat staging until content-free launch telemetry or a supported child-target trace can produce a correlated time-to-interactive result.

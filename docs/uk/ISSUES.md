@@ -289,3 +289,10 @@
 - GT-046 version-aware update: PARTIAL. Контракти коду проходять; один контрольований production reload не перевірявся, оскільки v67 не просувався.
 - GT-047 багатоакаунтна ізоляція: UNVERIFIED у нативному staging acceptance.
 - Рішення: immutable v67 збережено, тимчасовий staging видалено, production v65 незмінний, promotion не виконувався.
+
+### Примітка GT-040/GT-041 щодо acceptance tooling
+
+- Статус: UNVERIFIED
+- Chrome-авторизація Telegram Web і чат owner-бота працюють, але child surface Mini App не вдалося утримати для DOM або network inspection.
+- Цей результат не можна використовувати для приписування regression production v65 або immutable v67.
+- Не повторювати staging, доки content-free launch telemetry або підтримуваний child-target trace не надасть корельований результат time-to-interactive.
