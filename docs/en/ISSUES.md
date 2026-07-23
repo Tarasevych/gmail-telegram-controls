@@ -437,3 +437,9 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 Status: PARTIAL
 
 The shared transfer manager now also owns the thread/message-detail fetch lane. Cache hits remain immediately usable while revalidation is queued in the background. Apps Script RPC reports indeterminate phase progress only, exposes no false cancel action, reuses one task for retry, and retains the existing generation guard against stale responses. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. Draft persistence, URL import, server-resumable restart, real RPC abort, and native slow-network/minimize acceptance remain open under GT-051.
+
+## 2026-07-23: GT-051 draft-persistence continuation
+
+Status: PARTIAL
+
+Gmail draft persistence now uses the bounded shared transfer manager while retaining the existing serialized autosave, stable client operation ID, canonical Gmail readback, revision merge, local recovery, and conflict behavior. Apps Script RPC remains honest indeterminate progress with no unsupported cancel action. Retry reuses the exact draft operation/task identity and fails closed when the compose, snapshot, or account context changes. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. URL import, server-resumable restart, real transport abort, and native slow-network/minimize acceptance remain open under GT-051.

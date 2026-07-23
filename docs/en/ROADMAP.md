@@ -267,3 +267,9 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 Status: PARTIAL
 
 The first unfinished B-03 continuation lane is implemented: thread/message-detail retrieval now participates in the bounded shared transfer queue without blocking cache-first rendering. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. The remaining B1-31 work is draft persistence, URL import, server-resumable restart, real abort where transport support exists, and native slow-network/minimize acceptance.
+
+## 2026-07-23: B1-31 draft-persistence increment
+
+Status: PARTIAL
+
+The next B-03 lane is implemented: the existing Gmail draft save RPC now participates in the bounded shared transfer state without replacing compose autosave, idempotency, revision, conflict, or recovery semantics. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. A line-ending-agnostic regression guard also keeps the prior thread-detail evidence portable across LF and CRLF checkouts.

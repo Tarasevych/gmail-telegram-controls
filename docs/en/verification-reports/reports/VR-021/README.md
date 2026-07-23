@@ -47,3 +47,9 @@ The manager does not claim JavaScript continuation after Telegram unloads the We
 Status: PARTIAL
 
 REQ-0035 extends the shared transfer-state implementation to thread/message-detail retrieval. The implementation preserves cache-first rendering, queues the Apps Script RPC as indeterminate progress, omits unsupported cancellation, reuses the task identity for retry, and retains the generation guard against stale paint. Focused contract tests pass 104/104 and the full Apps Script suite passes 577/577. Bilingual, knowledge-hub, verification-report, release-state, diff, and added-line secret checks pass. Native slow-network/minimize acceptance remains outside this increment.
+
+## 2026-07-23: draft-persistence continuation evidence
+
+Status: PARTIAL
+
+REQ-0035 extends the shared transfer-state implementation to the existing Gmail draft persistence RPC. The exact compose snapshot and operation ID remain authoritative; progress is indeterminate, unsupported cancellation is absent, retry reuses the exact task identity, and changed compose/account context fails closed. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. No live Gmail mutation, OAuth action, staging deployment, or production promotion was used for this source increment.

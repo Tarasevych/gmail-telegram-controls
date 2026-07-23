@@ -10,7 +10,7 @@ const source = fs.readFileSync(
 
 function threadTransferHelper() {
   return source.match(
-    /function runManagedThreadDetailFetch\([\s\S]*?\n      }\n\n      async function p0RefreshThread/
+    /function runManagedThreadDetailFetch\([\s\S]*?\r?\n      }\r?\n\r?\n      async function p0RefreshThread/
   );
 }
 
