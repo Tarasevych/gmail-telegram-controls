@@ -36,6 +36,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-019 | Automated analysis was always prominent, misclassified signatures/short replies, and could retain unsupported claims | Disclosure, substantive-content filtering, claim grounding, and persisted user decisions were separate contracts | Added account-scoped analysis visibility, default collapse, explicit trivial outcome, exact evidence gates, proposal acceptance, and explicit triage undo | Keep generated suggestions distinct from persisted decisions; require source fragments for every actionable claim; test multilingual trivial/short content and per-account preferences | `PARTIAL` | [VR-038](verification-reports/reports/VR-038/README.md) |
 
+| RCA-020 | Reading progress could claim a short message was fully read, describe scroll position as comprehension, or save a stale position into another thread | A geometry edge case returned `100%` for non-scrollable content, while the debounced save retained no exact thread/connection identity and the resume control lacked a semantic boundary | Added measurable geometry, honest scroll-position copy, compact omission, exact identity guards, and reduced-motion-aware user resume; background layout restoration never saves progress | Test short/long content, delayed callbacks, exact identity, resize/image anchors, quoted collapse, reduced motion, and absence of timer/auto-scroll semantics | `PARTIAL` | [VR-039](verification-reports/reports/VR-039/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

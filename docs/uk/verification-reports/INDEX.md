@@ -255,3 +255,4 @@ Source request: `REQ-0004`.
 
 | [VR-037](reports/VR-037/README.md) | F-03 Computed typography та регресія вузьких account labels | `PARTIAL` | `REQ-0035`, `GT-032`, `B1-25`, `RCA-018` |
 | [VR-038](reports/VR-038/README.md) | F-04 Достовірний автоматичний аналіз і один реальний next action | `PARTIAL` | `REQ-0035`, `GT-065`, `B1-45`, `RCA-019` |
+| [VR-039](reports/VR-039/README.md) | F-05 Чесний і стабільний reading progress | `PARTIAL` | `REQ-0035`, `GT-050`, `B1-30`, `RCA-020` |

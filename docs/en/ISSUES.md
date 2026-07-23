@@ -384,16 +384,16 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Boundary:** the playbook is not an authority source and changes no permission, runtime, Apps Script, Gmail, Telegram, or release state.
 - **Evidence:** [VR-019](verification-reports/reports/VR-019/README.md)
 
-## GT-050 — Background reader rendering reset scroll position and focus
+## GT-050 — Reader rendering and ambiguous progress could lose the exact reading context
 
 - **Status:** PARTIAL
 - **Source request:** `REQ-0035`
-- **Product task:** `B1-30` / V3 `A-03`
-- **Root cause:** `renderThread()` unconditionally cleared and rebuilt the reader root. Background attention, reconciliation, draft, attachment, or layout updates could therefore replace the active DOM, while competing asynchronous `scrollTop` restores had no stable content anchor and could lose keyboard focus.
-- **Source fix:** identical reader state now skips root replacement. A necessary render captures a stable thread/message/body anchor, its viewport offset, bottom-pinned state, and a memory-only focus identity; one generation-guarded restore applies the new position after layout changes. `ResizeObserver` and image-load handling preserve the anchor without scheduling a reading-progress render loop.
-- **Local evidence:** focused reader contracts `8/8`, related MailApp/launch/reader contracts `101/101`, complete Apps Script suite `540/540`, clean `git diff --check`, and `0` secret-signature matches in the changed files.
-- **Release boundary:** source commit `1d7c6c1`; no Apps Script staging, production promotion, OAuth, Gmail, or Telegram mutation was performed. Native desktop/mobile, long HTML with real remote-image layout changes, and production acceptance remain `UNVERIFIED`.
-- **Evidence:** [VR-020](verification-reports/reports/VR-020/README.md)
+- **Product task:** `B1-30` / V3 `A-03`, `F-05`
+- **Root cause:** `renderThread()` originally rebuilt the reader root, while the later progress layer still treated non-scrollable short content as `100%`, described scroll position as content being read, showed an empty `0%` resume control, always used smooth motion, and allowed a delayed save from a previous thread to target the newly active thread.
+- **Source fix:** identical reader state skips root replacement; necessary renders preserve stable content anchors, viewport offset, bottom pin, and memory-only focus. Progress now comes only from measurable reader geometry, is explicitly labelled as scroll position, is omitted when neither a draft nor a meaningful position exists, honours reduced motion, and binds every delayed save to the exact Gmail connection and thread. `ResizeObserver` and image-load handling retain the anchor without saving progress or starting an auto-scroll loop.
+- **Local evidence:** focused reader contracts `12/12`, complete Apps Script suite `646/646`, clean `git diff --check`, and paired documentation validators.
+- **Release boundary:** source-only cumulative Versie 1 contour; no Apps Script staging, production promotion, OAuth, Gmail, or Telegram mutation was performed. Native desktop/mobile, real long/short/quoted messages, and production acceptance remain `UNVERIFIED`.
+- **Evidence:** [VR-020](verification-reports/reports/VR-020/README.md), [VR-039](verification-reports/reports/VR-039/README.md)
 
 ## GT-051 — Transfer progress used fragmented stores and inconsistent truth boundaries
 

@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-038](reports/VR-038/README.md) фіксує F-04: default-collapsed і optional automated analysis, substantive-content filtering, evidence-gated claims, явне прийняття пропозиції та account-scoped undo. Native populated-reader і production acceptance лишаються окремими gates.
+[VR-039](reports/VR-039/README.md) фіксує F-05: measurable scroll-position progress, exact thread/account debounce guards, compact чесний text, reduced-motion handling і збереження під час background layout changes. Native reader і production acceptance лишаються окремими gates.
