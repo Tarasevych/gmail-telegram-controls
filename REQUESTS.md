@@ -8,6 +8,7 @@
 | ID | Дата | Статус | Коротка тема | Запис |
 |---|---|---|---|---|
 <!-- request-index -->
+| REQ-0034 | 2026-07-23 | recorded | P0 one-second offline-first launch and launch deduplication | [record](requests/2026-07-23/REQ-0034-p0-one-second-offline-launch.md) |
 | REQ-0033 | 2026-07-22 | recorded | P0 навігація, кеш, чернетки й типографіка | [record](requests/2026-07-22/REQ-0033-p0-instant-navigation-cache-drafts-typography.md) |
 | REQ-0031 | 2026-07-22 | recorded | Синхронізація актуального стану документації | [record](requests/2026-07-22/REQ-0031-current-state-documentation-synchronization.md) |
 | REQ-0030 | 2026-07-22 | recorded | Обмежене постійне release-повноваження Versie 1 | [record](requests/2026-07-22/REQ-0030-bounded-standing-versie-1-release-authority.md) |
