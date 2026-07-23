@@ -1,10 +1,10 @@
 # Реєстр знайдених проблем
 
-Оновлено: **2026-07-22**. Статуси: `Відкрита`, `В роботі`, `Заблокована`, `Вирішена локально`, `Перевірена staging`, `Розгорнута production`, `Перевірена production`.
+Оновлено: **2026-07-23**. Статуси: `Відкрита`, `В роботі`, `Заблокована`, `Вирішена локально`, `Перевірена staging`, `Розгорнута production`, `Перевірена production`.
 
 | ID | Статус | З Versie | Проблема | Рішення / наступний доказ |
 |---|---|---:|---|---|
-| GT-001 | Вирішена і перевірена production v57 | 1 | Один лист надходить у Telegram двічі | `INBOX+SENT` self/alias копії повністю пропускаються і фіксуються як seen. Чистий external `INBOX` marker автоматично створив рівно одну картку; після двох `/check` Telegram містив один marker list item |
+| GT-001 | Вирішена і перевірена production v57 | 1 | Один лист надходить у Telegram двічі | Чистий external marker `INBOX` створив рівно одну картку, а durable Gmail message-ID/card reservations запобігли replay; окрему current недоставку `SENT+INBOX` відстежує GT-039 |
 | GT-002 | В роботі | 1 | Google callback відкриває сторінку Диска замість сервісу | Direct Apps Script callback відхилено через офіційно непідтримуваний Google multi-login; впроваджується neutral GitHub callback + credentialless POST; потрібен live acceptance |
 | GT-003 | Перевірена production | 1 | У header показується літера замість Google profile photo | Header використовує реальне Google profile photo з fallback; фото прочитано у staging та production v55 |
 | GT-004 | Вирішена локально | 1 | `Додати Gmail-акаунт` вимагає зайвий клік `Продовжити в Google` | Відкривати authorization URL одразу; показувати fallback лише якщо браузер блокує перехід |
@@ -35,8 +35,16 @@
 | GT-027 | PARTIAL; live UI перевірено у v59, production відкочено | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | v59 staging показав `+ Створити`, доступну manage-action для USER labels, bounded scroll і довгі вкладені назви без overlap; mutating operations не виконувалися. Production повернуто на v57 через GT-030 |
 | GT-028 | PARTIAL; fix live-перевірено у v59, production відкочено | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
 | GT-029 | Вирішена та синхронізована | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
-| GT-030 | BLOCKED; exact rollback до v63 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v63 exact rollback; stable і HEAD v63, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
-| GT-031 | PARTIAL; source candidate | 1 | Головний заголовок і fallback-профіль були жорстко прив’язані до одного імені та не показували фактичний активний або спільний поштовий контекст | REQ-0032 додає похідний від чинних opaque connection IDs блок, повний email, доступне shared mapping і синхронні render-hooks; production лишається v57 до окремого acceptance |
+| GT-030 | VERIFIED у production; dedicated History-substage trace лишається UNVERIFIED | 1 | Попередній 150-секундний admission TTL міг завершитися раніше за legal Apps Script execution | Tokenized seven-minute crash lease запобігає simultaneous Gmail work, зберігає 150-секундний soft stage deadline і пройшов sequential production worker evidence; окремий 15-хвилинний History substage має лише automated-contract evidence |
+| GT-031 | Перевірена production v64 і збережена у v65 | 1 | Ідентичність активного акаунта обрізалася у вузькому header | Stable-ID context view, повний email disclosure, shared mapping, wrapping і compact narrow-screen details пройшли native staging та два fresh production launches |
+| GT-032 | PARTIAL | 1 | Типографіка відрізнялася від Gmail reading context | Gmail-compatible local-first type scales deployed; same-scale production visual comparison лишається UNVERIFIED |
+| GT-033 | PARTIAL | 1 | Внутрішня навігація повторно очищала й завантажувала вже доступні views | Warm list/thread restore, request dedupe, generation guards, keyed rows і saved view state deployed; measured production `A -> B -> A` evidence лишається UNVERIFIED |
+| GT-034 | PARTIAL | 1 | Клієнт не мав bounded account-isolated cache і background revalidation | Memory LRU, bounded IndexedDB records, expiry, stale-while-revalidate та account purge deployed; browser quota/eviction acceptance лишається UNVERIFIED |
+| GT-035 | PARTIAL | 1 | Текст чернетки не мав негайного persistent recovery checkpoint | Account-scoped IndexedDB text recovery доповнює stable Gmail Draft autosave; offline/restart/cross-session acceptance лишається UNVERIFIED |
+| GT-036 | PARTIAL; source deployed у v65 | 1 | Новий production client міг лишатися stale у відкритому Mini App | Canonical release parsing і marker v65 deployed з one-reload guards; майбутній transition v65-to-newer має довести рівно один reload без loop |
+| GT-037 | Перевірена production v64 і збережена у v65 | 1 | Promotion міг повідомити failure після успішного deployment update | Одна mutation плюс bounded read-after-write reconciliation пройшли live promotion, cleanup і final preflight |
+| GT-038 | PARTIAL | 1 | Telegram Web K/A показує blank signed Mini App, тоді як native Desktop працює | Native Desktop staging/production пройшли; web-only root cause лишається UNVERIFIED, а signature/session controls не можна послаблювати |
+| GT-039 | PARTIAL; source fix merged | 1 | Лист із labels `SENT` та `INBOX` мовчки виключається з Telegram | Прибрати `SENT` exclusion лише після required `INBOX` gate; зберегти spam/trash/important boundaries і dedupe за stable Gmail message ID; v66 staging/production acceptance ще потрібен |
 
 ## Production-доказ 2026-07-20
 
@@ -184,11 +192,11 @@
 
 ## GT-036 — Новий production client може лишатися stale у відкритому Mini App
 
-- **Статус:** PARTIAL — початкова source architecture є в production v64, а нове виправлення manifest/marker локально VERIFIED; staging і production one-reload/no-loop acceptance лишаються UNVERIFIED.
+- **Статус:** PARTIAL — manifest/marker correction deployed у production v65 і два fresh launches пройшли; automatic one-reload/no-loop transition лишається UNVERIFIED.
 - **Першопричина:** ordinary mail state і client-code version спочатку не мали окремого lifecycle. Перша реалізація потім пропустила канонічне поле manifest `production.appsScriptImmutable` і зберегла stale marker v60 у production v64, тому не могла довести відповідність новозавантаженого client production-версії.
-- **Source correction:** спочатку читати canonical immutable field, ідентифікувати наступний cumulative source як `Versie-1-v65-p0`, зберегти draft-safe one-reload/session guard behavior і regression-test реального contract `docs/release-state.json`.
+- **Source correction:** спочатку читати canonical immutable field, ідентифікувати immutable v65 як `Versie-1-v65-p0`, зберегти draft-safe one-reload/session guard behavior і regression-test реального contract `docs/release-state.json`.
 - **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не симулюється, а routine mail synchronization ніколи не reload-ить документ.
-- **Release boundary:** production лишається exact immutable v64; immutable/staging v65 не існує до source review, merge, exact helper preflight і окремо gated release cycle.
+- **Release boundary:** production/HEAD є exact immutable v65, staging `0`, journal `cleaned`, а exact v64 лишається rollback. Defective parser v64 не дозволяє прямо довести automatic transition v64-to-v65.
 - **Доказ:** [VR-014](verification-reports/reports/VR-014/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 ## GT-037 — Promotion helper може повідомити false negative після успішного deployment update
@@ -207,3 +215,14 @@
 - **Межа:** не послаблювати signed bootstrap, session validation або account isolation заради web rendering.
 - **Наступний доказ:** зібрати content-free browser/runtime diagnostics того самого release і порівняти supported Telegram Web embedding constraints із native Desktop.
 - **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md).
+
+## GT-039 — `SENT+INBOX` mail виключається замість one-time delivery
+
+- **Статус:** PARTIAL — root cause і source correction VERIFIED; production acceptance очікує cumulative v66.
+- **Спостережена поведінка:** один контрольований owner self-message існував як `UNREAD+SENT+INBOX`; automatic worker і два `/check` повідомили про відсутність нових листів, а exact-marker chat search повернув zero cards.
+- **Першопричина:** `gmailNotificationLabelsEligible_` вимагав `INBOX`, але також відхиляв кожен `SENT` label, після чого durable позначав message як seen. Runtime stages завершилися з `errorCode=none`, тому exclusion був silent і deterministic.
+- **Source correction:** зберегти required `INBOX`, відхиляти `SPAM` і `TRASH`, зберегти important-only mode та дозволити чинному stable Gmail message-ID/card reservation dedupe забезпечити exactly-once delivery.
+- **Verification:** focused source suite `161/161`; перший scan доставляє один раз, другий не refetch-ить і не resend-ить; `SENT` без `INBOX` лишається ineligible.
+- **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production лишається v65 до hash-pinned staging v66.
+- **Доказ:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
+- **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).

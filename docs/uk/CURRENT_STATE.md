@@ -2,41 +2,42 @@
 
 [English](../en/CURRENT_STATE.md)
 
-<!-- release-state: production=v64; candidate=v64; staging=0; status=VERIFIED; as-of=2026-07-22 -->
+<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
 
 ## Канонічний стан випуску
 
 - **Versie:** Versie 1.
-- **Production:** Apps Script immutable v64, `VERIFIED`.
-- **HEAD:** точний cumulative v64.
+- **Production:** Apps Script immutable v65, `VERIFIED`.
+- **HEAD:** точний cumulative v65.
 - **Активні staging deployments:** `0`.
 - **Release journal:** `cleaned`.
-- **Release source boundary:** cumulative source `da8b2768323db8fd8c1ba886b556bbfd2148d6de`; helper merge `bbb6fa39a550c623f1507ccc4791d20bfb150b57`; bridge merge `8b65d7e7653aadac4344e5ad2d4d86f56bb40f4d`.
-- **Rollback:** exact immutable v63 лишається доступним; historical immutable v56, v57, v59 і v62 збережені та не переписані.
+- **Release source boundary:** cumulative source `3373ca4aa403a28f3252ad72fbe65310b318c53c`; helper merge `eb19dc0822c97f86ebd458c379bde1db3794f800`; propagation fix `8201bc25bc12c470276bd14a0bfef6cde46fbd60`; bridge merge `759d9b9f5001e62e2c3a5cbcc1169077e641493b`.
+- **Rollback:** exact immutable v64 лишається доступним; historical immutable v56, v57, v59 і v62 збережені та не переписані.
 - **Telegram menu:** production `📬 Пошта · Versie 1`.
 
-## Перевірений acceptance v64
+## Перевірений acceptance v65
 
-- Source-контракти GT-031 пройшли `88/88`, а pre-release source suite пройшов `501/501`.
-- Release-helper contracts v64 пройшли `2/2`, а cumulative release suite пройшов `503/503`.
-- Виправлений signed bridge contract і cumulative suite пройшли `505/505`; required checks для PR #38 і PR #39 пройшли.
-- Read-only preflight пройшов, рівно один `StageOnly` створив immutable v64 і один owner-only staging deployment, а post-stage preflight повідомив `staging_verified`.
-- Native Telegram Desktop staging показав responsive disclosure повної адреси, avatar/fallback behavior, рівно три isolated Gmail roots, контрольоване перемикання на інший акаунт і назад без OAuth та фактичний shared view трьох акаунтів.
-- Promotion використав одну bounded deployment mutation, два свіжі native production launches завантажили mailbox v64, cleanup видалив staging, а фінальний preflight підтвердив stable/HEAD v64 і journal `cleaned`.
-- Шість post-cleanup рядків `checkNewMail_` завершилися. Один короткий process shell тривалістю 3.164 секунди формально наклався на попередній 65.734-секундний рядок приблизно на 5.7 секунди; lease rejection узгоджується з реалізацією, але лишається inference, бо content-free substage telemetry була недоступна.
+- Source і release-marker contracts пройшли `14/14`; pre-release cumulative suite пройшов `505/505`.
+- Helper contracts v65 пройшли `2/2`, cumulative release suite `507/507`; signed bridge phase пройшла `4/4` і `509/509`.
+- Один `StageOnly` створив immutable v65 та один owner-only staging deployment. Bounded read-after-create propagation fix прийняв цей exact deployment без повторного `deployments.create`.
+- Native Telegram Desktop staging завантажив mailbox і avatar, показав рівно три isolated Gmail roots та перемкнувся на secondary account і назад без OAuth.
+- Один promotion просунув v64 до v65. Два fresh production launches завантажили primary mailbox, cleanup видалив staging, а final preflight підтвердив stable/HEAD v65 і journal `cleaned`.
+- Post-cleanup worker telemetry показала повні успішні stage traces з `errorCode=none`. Process shell тривалістю 64.611 секунди наклався на наступний trigger приблизно на п'ять секунд, але наступне виконання записало лише `gmail_timer_worker_skip: lease_active`; simultaneous worker work було відхилено.
 
 ## Відкриті межі доказів
 
-- `GT-031` і `GT-037` мають статус `VERIFIED` у production v64.
-- `GT-032`–`GT-036` лишаються `PARTIAL` до їхнього scenario-specific P0 acceptance.
+- `GT-031` і `GT-037` лишаються `VERIFIED`; production v65 і release cleanup мають статус `VERIFIED`.
+- `GT-032`–`GT-036` лишаються `PARTIAL`. Automatic reload transition v64-to-v65 неможливо довести, бо сам parser v64 пропускав canonical manifest field.
 - Direct Apps Script Processes API повернув `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`; scope expansion, OAuth cycle або migration default GCP project не виконувалися.
-- External automatic INBOX delivery після v64 лишається `UNVERIFIED`; для цього випуску не надсилали й не змінювали додаткових реальних листів.
+- `GT-039` має статус `PARTIAL`: один контрольований owner self-message мав `UNREAD+SENT+INBOX`, але automatic processing і два `/check` створили нуль Telegram cards. Source inspection знайшов guard `!labels.SENT`; exactly-once source correction пройшов `161/161` focused tests і merged, але ще не deployed.
+- 15-хвилинний History gate verified automated contract; live stage trace не показує due-versus-skip decision, тому dedicated runtime cadence лишається `UNVERIFIED`.
 - `GT-038` лишається `PARTIAL` для Telegram Web; той самий signed release пройшов у native Telegram Desktop.
 
 ## Докази й навігація
 
-- [Детальний звіт про v64 і закриття GT-031/GT-037](reports/VERSIE_001_V64_RELEASE_AND_GT031_GT037_CLOSURE_2026-07-22.md)
-- [Атомарна verification VR-013](verification-reports/reports/VR-013/README.md)
+- [Детальний звіт про v65](reports/VERSIE_001_V65_RELEASE_CANDIDATE_2026-07-23.md)
+- [Verification production client VR-014](verification-reports/reports/VR-014/README.md)
+- [Verification доставки SENT+INBOX VR-015](verification-reports/reports/VR-015/README.md)
 - [Історичний звіт про v63 і закриття GT-030](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md)
 - [Cumulative історія випуску Versie 1](releases/VERSIE-001-2026-07-19.md)
 - [Machine-readable release state](../release-state.json)

@@ -1,10 +1,10 @@
 # Known problem register
 
-Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Staging verified`, `Deployed to production`, `Production verified`.
+Updated: **2026-07-23**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved locally`, `Staging verified`, `Deployed to production`, `Production verified`.
 
 | ID | Status | Since Versie | Problem | Resolution / next evidence |
 |---|---|---:|---|---|
-| GT-001 | Resolved and production verified on v57 | 1 | One mail message reaches Telegram twice | `INBOX+SENT` self/alias copies are skipped entirely and persisted as seen. A clean external `INBOX` marker automatically created exactly one card; after two `/check` runs Telegram contained one marker list item |
+| GT-001 | Resolved and production verified on v57 | 1 | One mail message reaches Telegram twice | A clean external `INBOX` marker created exactly one card and durable Gmail message-ID/card reservations prevented replay; the separate current `SENT+INBOX` non-delivery is tracked as GT-039 |
 | GT-002 | In progress | 1 | Google callback opens a Drive error page instead of the service | Direct Apps Script callback was rejected because Google multi-login is officially unsupported; neutral GitHub callback plus credentialless POST is being implemented; live acceptance remains |
 | GT-003 | Production verified | 1 | Header shows an initial instead of the Google profile photo | Header uses the real Google profile photo with a fallback; the photo was read back on staging and production v55 |
 | GT-004 | Resolved locally | 1 | `Add Gmail account` requires an extra `Continue with Google` click | Open the authorization URL immediately; show fallback only when browser navigation is blocked |
@@ -35,8 +35,16 @@ Updated: **2026-07-22**. Statuses: `Open`, `In progress`, `Blocked`, `Resolved l
 | GT-027 | PARTIAL; live UI verified on v59, production rolled back | 1 | Sidebar and profile manager used different label state/render paths, lacked unified create/manage controls, and broke long names | v59 staging showed `+ Create`, an accessible management action for USER labels, bounded scrolling, and long nested names without overlap; mutating operations were not run. Production returned to v57 because of GT-030 |
 | GT-028 | PARTIAL; fix live-verified on v59, production rolled back | 1 | The launcher retained a one-shot thread route in Telegram WebView history, while a failed automatic open left the reader in an error state instead of returning to the already loaded list | v59 staging and two production launches recovered a stale automatic route to the list without a network/Drive error; a Telegram-persisted route can still produce a content-free recovery notice. Production returned to v57 because of separate GT-030 |
 | GT-029 | Resolved and synchronized | 1 | The root README called v37 current production although verified runtime was on v57, creating conflicting guidance for people and recovery agents | `docs/release-state.json`, paired CURRENT_STATE pages, and Release state CI synchronize canonical mutable state; runtime source audit found no bot read of GitHub Markdown, so this was not a runtime root cause. Source request: `REQ-0031` |
-| GT-030 | BLOCKED; exact rollback to v63 completed after v59 and v62 attempts | 1 | A post-cleanup v59 execution exceeded the 150-second worker-slot target and overlapped the next execution window; simultaneous Gmail work is not proven | v62 retained the same worker code and lacked the required execution trace, so exact v62 -> v63 rollback restored stable/HEAD v63, staging 0 and journal `rolled_back`; two fresh v63 mailbox launches passed. Root cause and a safe cumulative fix remain `UNVERIFIED` |
-| GT-031 | PARTIAL; source candidate | 1 | The main heading and profile fallbacks were hard-wired to one name and did not expose the actual active or shared mail context | REQ-0032 adds a view derived from current opaque connection IDs, full email, an accessible shared mapping, and synchronous render hooks; production remains v57 pending separate acceptance |
+| GT-030 | VERIFIED in production; dedicated History-substage trace remains UNVERIFIED | 1 | The former 150-second admission TTL could expire before a legal Apps Script execution completed | The tokenized seven-minute crash lease prevents simultaneous Gmail work, retains the 150-second soft stage deadline, and passed sequential production worker evidence; the separate 15-minute History substage still has automated-contract evidence only |
+| GT-031 | Production verified on v64 and retained in v65 | 1 | Active account identity clipped on a narrow header | A stable-ID context view, full email disclosure, shared mapping, wrapping, and compact narrow-screen details passed native staging and two fresh production launches |
+| GT-032 | PARTIAL | 1 | Typography differed from the Gmail reading context | Gmail-compatible local-first type scales are deployed; same-scale production visual comparison remains UNVERIFIED |
+| GT-033 | PARTIAL | 1 | Internal navigation repeatedly cleared and reloaded already available views | Warm list/thread restore, request dedupe, generation guards, keyed rows and saved view state are deployed; measured production `A -> B -> A` evidence remains UNVERIFIED |
+| GT-034 | PARTIAL | 1 | The client lacked bounded account-isolated cache and background revalidation | Memory LRU, bounded IndexedDB records, expiry, stale-while-revalidate and account purge are deployed; browser quota/eviction acceptance remains UNVERIFIED |
+| GT-035 | PARTIAL | 1 | Draft text had no immediate persistent recovery checkpoint | Account-scoped IndexedDB text recovery complements stable Gmail Draft autosave; offline/restart/cross-session acceptance remains UNVERIFIED |
+| GT-036 | PARTIAL; source deployed in v65 | 1 | A new production client could remain stale in an open Mini App | Canonical release parsing and marker v65 are deployed with one-reload guards; a future v65-to-newer transition must prove exactly one reload and no loop |
+| GT-037 | Production verified on v64 and retained in v65 | 1 | Promotion could report failure after a successful deployment update | One mutation plus bounded read-after-write reconciliation passed live promotion, cleanup and final preflight |
+| GT-038 | PARTIAL | 1 | Telegram Web K/A shows a blank signed Mini App while native Desktop succeeds | Native Desktop staging/production passed; web-only root cause remains UNVERIFIED and signature/session controls must not be weakened |
+| GT-039 | PARTIAL; source fix merged | 1 | A message labeled both `SENT` and `INBOX` is silently excluded from Telegram | Remove the `SENT` exclusion only after the required `INBOX` gate; preserve spam/trash/important boundaries and dedupe by stable Gmail message ID; v66 staging/production acceptance remains |
 
 ## Production evidence 2026-07-20
 
@@ -184,11 +192,11 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-036 — A new production client can remain stale in an open Mini App
 
-- **Status:** PARTIAL — the original source architecture is in production v64, and the newly found manifest/marker correction is locally VERIFIED; staging and production one-reload/no-loop acceptance remain UNVERIFIED.
+- **Status:** PARTIAL — the manifest/marker correction is deployed in production v65 and two fresh launches passed; automatic one-reload/no-loop transition remains UNVERIFIED.
 - **Root cause:** ordinary mail state and client-code version originally had no separate lifecycle. The first implementation then omitted the canonical `production.appsScriptImmutable` manifest field and retained a stale v60 marker in production v64, so it could not prove that a newly loaded client matched production.
-- **Source correction:** read the canonical immutable field first, identify the next cumulative source as `Versie-1-v65-p0`, retain draft-safe one-reload/session guard behavior, and regression-test the real `docs/release-state.json` contract.
+- **Source correction:** read the canonical immutable field first, identify immutable v65 as `Versie-1-v65-p0`, retain draft-safe one-reload/session guard behavior, and regression-test the real `docs/release-state.json` contract.
 - **Boundary:** the immutable Apps Script HTML remains the app shell. No unsupported Service Worker is simulated, and routine mail synchronization never reloads the document.
-- **Release boundary:** production remains exact immutable v64; immutable/staging v65 does not exist until source review, merge, exact helper preflight and a separately gated release cycle.
+- **Release boundary:** production/HEAD are exact immutable v65, staging is `0`, journal is `cleaned`, and exact v64 remains rollback. The defective v64 parser prevents direct proof of the v64-to-v65 automatic transition.
 - **Evidence:** [VR-014](verification-reports/reports/VR-014/README.md). Source request: `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
 ## GT-037 — Promotion helper can report a false negative after a successful deployment update
@@ -207,3 +215,14 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Boundary:** do not weaken signed bootstrap, session validation or account isolation to make the web client render.
 - **Next evidence:** capture content-free browser/runtime diagnostics for the same release and compare supported Telegram Web embedding constraints with native Desktop.
 - **Evidence:** [VR-011](verification-reports/reports/VR-011/README.md).
+
+## GT-039 — `SENT+INBOX` mail is excluded instead of delivered once
+
+- **Status:** PARTIAL — root cause and source correction are VERIFIED; production acceptance is pending cumulative v66.
+- **Observed behavior:** one controlled owner self-message existed as `UNREAD+SENT+INBOX`; the automatic worker and two `/check` runs reported no new mail, and exact-marker chat search returned zero cards.
+- **Root cause:** `gmailNotificationLabelsEligible_` required `INBOX` but also rejected every `SENT` label, then persisted the message as seen. Runtime stages completed with `errorCode=none`, so the exclusion was silent and deterministic.
+- **Source correction:** retain required `INBOX`, reject `SPAM` and `TRASH`, preserve important-only mode, and let the existing stable Gmail message-ID/card reservation dedupe enforce exactly-once delivery.
+- **Verification:** focused source suite `161/161`; first scan delivers once, second scan does not refetch or resend; `SENT` without `INBOX` remains ineligible.
+- **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production remains v65 until hash-pinned v66 staging passes.
+- **Evidence:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
+- **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).

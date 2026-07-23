@@ -99,5 +99,14 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Date:** 2026-07-22
 - **Coverage:** canonical manifest-field mismatch, stale v60 marker in production-v64 source, exact v65 source marker, and real-manifest one-reload/no-loop regression contract.
 - **Report:** [reports/VR-014/README.md](reports/VR-014/README.md)
-- **Conclusion:** the causal source correction is locally verified; production remains v64 and v65 staging/production acceptance is unverified.
+- **Conclusion:** the source correction is deployed in v65 and fresh launches pass; the defective v64-to-v65 automatic transition remains unprovable.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-015 — SENT+INBOX exactly-once delivery correction
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** controlled production observation, worker telemetry, deterministic source root cause, exactly-once regression contract, and v65/v66 release boundary.
+- **Report:** [reports/VR-015/README.md](reports/VR-015/README.md)
+- **Conclusion:** the production-v65 exclusion is verified and the source correction passed `161/161`; live acceptance requires cumulative v66.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
