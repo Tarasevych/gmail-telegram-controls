@@ -340,3 +340,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - The same merge SHA was fast-forwarded to private GitLab `main`.
 - Production remains v65 and staging remains `0`; immutable history, Telegram menu, OAuth, and Gmail were unchanged.
 - Native Telegram Desktop/mobile acceptance for keyboard resize, safe-area, and varying viewport heights remains `UNVERIFIED`; the overall status is `PARTIAL`.
+
+## 2026-07-23 — E-02 desktop pane evidence / Доказ керованих desktop panes
+
+### Українською
+
+- V3 contour `E-02` реалізовано як source-only `B1-36`, `GT-056`, `VR-027`.
+- Два desktop-only ARIA separators підтримують bounded pointer/keyboard resize; sidebar згортається до піктограм і відновлює попередню ширину.
+- Layout зберігається через чинні `p0CurrentNamespace`, `p0ReadRecord` і `p0WriteRecord`; за відсутності scoped IndexedDB діє memory-only fallback.
+- Не додано `localStorage`/`sessionStorage`, паралельної account model, RPC, reload, OAuth або Gmail mutation; mobile drawer не змінено.
+- Focused Mail App contracts: `90/90`; повний Apps Script suite: `595/595`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff і added-line sensitive-pattern gates пройшли.
+- GitHub PR [#86](https://github.com/Tarasevych/gmail-telegram-controls/pull/86) пройшов `8/8` checks і був злитий normal merge як `c1df786f23d120fbc3c790a20722c47330150608`.
+- Той самий merge SHA fast-forward опубліковано в приватний GitLab `main`.
+- Production лишається v65, staging `0`; immutable history, Telegram menu, OAuth і Gmail не змінювалися.
+- Native Telegram Desktop/WebView drag, keyboard, visual layout та IndexedDB restore після restart лишаються `UNVERIFIED`; загальний статус `PARTIAL`.
+
+### English
+
+- V3 contour `E-02` was implemented as source-only `B1-36`, `GT-056`, and `VR-027`.
+- Two desktop-only ARIA separators support bounded pointer/keyboard resizing; the sidebar collapses to icons and restores its prior width.
+- Layout persists through the existing `p0CurrentNamespace`, `p0ReadRecord`, and `p0WriteRecord`; a memory-only fallback applies when scoped IndexedDB is unavailable.
+- No `localStorage`/`sessionStorage`, parallel account model, RPC, reload, OAuth, or Gmail mutation was added; the mobile drawer is unchanged.
+- Focused Mail App contracts: `90/90`; complete Apps Script suite: `595/595`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and added-line sensitive-pattern gates passed.
+- GitHub PR [#86](https://github.com/Tarasevych/gmail-telegram-controls/pull/86) passed `8/8` checks and was normal-merged as `c1df786f23d120fbc3c790a20722c47330150608`.
+- The same merge SHA was fast-forwarded to private GitLab `main`.
+- Production remains v65 and staging remains `0`; immutable history, Telegram menu, OAuth, and Gmail were unchanged.
+- Native Telegram Desktop/WebView drag, keyboard, visual layout, and IndexedDB restoration after restart remain `UNVERIFIED`; the overall status is `PARTIAL`.
