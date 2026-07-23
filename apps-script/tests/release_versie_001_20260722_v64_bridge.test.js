@@ -20,8 +20,7 @@ test('v64 staging bridge targets only the exact immutable staging deployment', (
   assert.doesNotMatch(bridge, /v63/);
 });
 
-test('owner menu updater separates exact v64 staging from unchanged production', () => {
-  assert.ok(menu.includes('STAGING_URL = "' + stagingLauncher + '"'));
+test('owner menu updater no longer selects historical v64 staging', () => {
   assert.ok(menu.includes('PRODUCTION_URL = "' + productionLauncher + '"'));
-  assert.doesNotMatch(menu, /versie-001-staging-acceptance-20260722-v63.html/);
+  assert.doesNotMatch(menu, /STAGING_URL = "https:\/\/tarasevych\.github\.io\/gmail-telegram-controls\/versie-001-staging-acceptance-20260722-v64\.html"/);
 });

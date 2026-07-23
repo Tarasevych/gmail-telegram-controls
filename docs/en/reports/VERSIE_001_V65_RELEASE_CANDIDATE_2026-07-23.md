@@ -40,3 +40,11 @@ After focused/full tests, documentation and required PR checks pass, merge norma
 - Production and HEAD remained on exact v64; the journal stopped at `staging_create_reserved`, so another create was prohibited.
 - The helper now performs bounded polling: at most five read-back attempts with a one-second delay. It does not repeat `deployments.create` and accepts only exactly one deployment with the exact version and description.
 - Staging acceptance and production promotion remain unverified until their separate gate.
+
+## Staging bridge
+
+- **Status:** `PARTIAL`
+- Immutable v65 and exactly one staging deployment are confirmed by helper read-back.
+- A separate noindex bridge submits only signed Telegram `initData` by form POST to the exact v65 staging deployment; the URL contains no token or private key.
+- The current owner-menu updater separates v65 staging from the unchanged production URL; the historical v64 bridge is not rewritten.
+- Native Telegram acceptance has not run yet, so production promotion remains prohibited.
