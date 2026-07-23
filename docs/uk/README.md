@@ -11,6 +11,8 @@
 - [Проєкт та очікування](PROJECT.md): мета, межі, критерії якості й захист даних.
 - [Дорожня карта](ROADMAP.md): виконано, виконується, заблоковано, далі.
 - [Реєстр проблем](ISSUES.md): короткі `GT-*` записи зі статусами та цільовими Versie.
+- [Реєстр помилок і першопричин](ERROR_RCA_REGISTRY.md): активний причинний індекс, актуальність і правила запобігання.
+- [Запобігання помилкам агента](AGENT_FAILURE_PREVENTION.md): recovery, leases, evidence, CI та immutable-release gates без розширення повноважень.
 - [Первинні джерела Gmail](GMAIL_PRIMARY_SOURCES.md): обов'язковий source gate і межі GitHub, Apps Script та Google Developer Profile.
 - [Двомовна документація](BILINGUAL_DOCUMENTATION.md): обов'язкові українська й англійська пари та CI-перевірка.
 - [Postmortem доставки v42-v55](POSTMORTEM.md): архітектура, підтверджені root causes, межі доказів і стійкі інваріанти.

@@ -139,3 +139,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-018/README.md](reports/VR-018/README.md)
 - **Висновок:** source correction і локальні тести `532/532` VERIFIED; native Telegram download, staging acceptance та deployment лишаються `UNVERIFIED`. Production/HEAD v65 і immutable v68 не змінено.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-019 — Error/RCA registry та agent failure prevention
+
+- **Статус:** VERIFIED
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `T-04`, standalone bilingual causal registry, prevention playbook, navigation, authority boundary і documentation validation.
+- **Звіт:** [reports/VR-019/README.md](reports/VR-019/README.md)
+- **Висновок:** confirmed failures зведено без зміни historical evidence; playbook є quality gate, не authority source. Runtime/release state не змінено.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

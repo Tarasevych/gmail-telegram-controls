@@ -365,3 +365,13 @@
 - **Локальний доказ:** reorder, duplicate names, Unicode inline data, zero-byte attachment, ambiguous-match rejection і legacy parsing перевірено; повний Apps Script suite `532/532`, added-lines secret scan `0`.
 - **Release boundary:** source commit `f2c00d3`; production/HEAD Apps Script лишається v65, staging `0`, immutable v68 не переписано. Native Telegram download і staging acceptance `UNVERIFIED`.
 - **Доказ:** [VR-018](verification-reports/reports/VR-018/README.md)
+
+## GT-049 — Відсутній окремий active RCA registry і prevention playbook
+
+- **Статус:** VERIFIED
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-29` / V3 `T-04`
+- **Проблема:** confirmed root causes були розподілені між postmortem, issues і verification reports, тому новий контур міг повторити відому помилку або прийняти historical status за current.
+- **Виправлення:** створено парні [ERROR_RCA_REGISTRY](ERROR_RCA_REGISTRY.md) та [AGENT_FAILURE_PREVENTION](AGENT_FAILURE_PREVENTION.md) з causal evidence, applicability boundaries, resource leases, identity/dedupe, lock, schema, bilingual, release та cleanup gates.
+- **Межа:** playbook не є authority source і не змінює permissions, runtime, Apps Script, Gmail, Telegram або release state.
+- **Доказ:** [VR-019](verification-reports/reports/VR-019/README.md)

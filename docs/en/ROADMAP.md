@@ -204,3 +204,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release boundary:** production/HEAD v65, staging `0`, immutable v68 historical; this source correction is not deployed and does not change Versie 1.
 - **Evidence:** [GT-048](ISSUES.md), [VR-018](verification-reports/reports/VR-018/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-29 — Active error/RCA registry and agent failure prevention
+
+- **Status:** VERIFIED.
+- **Source request:** `REQ-0035`; V3 task `T-04`.
+- **Implementation:** standalone bilingual error/RCA registry and prevention playbook, linked from primary navigation and connected to `ISSUES`, `ROADMAP`, and a verification report.
+- **Controls:** causal-only records, explicit applicability/status, serialized IDs, one-owner leases, stable identity, lock/I/O isolation, immutable release boundaries, evidence grading, and exact cleanup.
+- **Authority boundary:** the documentation creates or expands no permission.
+- **Evidence:** [GT-049](ISSUES.md), [VR-019](verification-reports/reports/VR-019/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

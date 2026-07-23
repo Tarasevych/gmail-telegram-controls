@@ -365,3 +365,13 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Local evidence:** reorder, duplicate-name, Unicode inline-data, zero-byte, ambiguous-match rejection, and legacy-parser cases pass; the complete Apps Script suite is `532/532` and the added-lines secret scan found `0`.
 - **Release boundary:** source commit `f2c00d3`; Apps Script production/HEAD remains v65, staging is `0`, and immutable v68 was not rewritten. Native Telegram download and staging acceptance are `UNVERIFIED`.
 - **Evidence:** [VR-018](verification-reports/reports/VR-018/README.md)
+
+## GT-049 — Standalone active RCA registry and prevention playbook were missing
+
+- **Status:** VERIFIED
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-29` / V3 `T-04`
+- **Problem:** confirmed root causes were distributed across postmortems, issues, and verification reports, allowing a new contour to repeat a known failure or treat a historical status as current.
+- **Correction:** paired [ERROR_RCA_REGISTRY](ERROR_RCA_REGISTRY.md) and [AGENT_FAILURE_PREVENTION](AGENT_FAILURE_PREVENTION.md) pages now define causal evidence, applicability boundaries, resource leases, identity/dedupe, locks, schemas, bilingual parity, release, and cleanup gates.
+- **Boundary:** the playbook is not an authority source and changes no permission, runtime, Apps Script, Gmail, Telegram, or release state.
+- **Evidence:** [VR-019](verification-reports/reports/VR-019/README.md)

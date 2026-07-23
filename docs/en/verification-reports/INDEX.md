@@ -139,3 +139,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-018/README.md](reports/VR-018/README.md)
 - **Conclusion:** the source correction and local `532/532` suite are VERIFIED; native Telegram download, staging acceptance, and deployment remain `UNVERIFIED`. Production/HEAD v65 and immutable v68 are unchanged.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-019 — Error/RCA registry and agent failure prevention
+
+- **Status:** VERIFIED
+- **Date:** 2026-07-23
+- **Coverage:** V3 `T-04`, a standalone bilingual causal registry, prevention playbook, navigation, authority boundary, and documentation validation.
+- **Report:** [reports/VR-019/README.md](reports/VR-019/README.md)
+- **Conclusion:** confirmed failures are consolidated without changing historical evidence; the playbook is a quality gate, not an authority source. Runtime/release state is unchanged.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
