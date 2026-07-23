@@ -89,7 +89,7 @@ test('RPC layer retains single-flight request deduplication', () => {
 });
 
 test('new code delta uses the next immutable client marker', () => {
-  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 68/);
-  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 67/);
-  assert.match(mailApp, /Versie-1-v68-p0/);
+  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 69/);
+  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 68/);
+  assert.match(mailApp, /Versie-1-v69-p0/);
 });
