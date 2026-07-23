@@ -424,3 +424,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - The same merge SHA was fast-forwarded to private GitLab `main`.
 - No live OAuth, Google consent, Gmail/Drive mutation, staging deployment, or production promotion occurred. Production remains v65 and staging remains `0`.
 - Native callback acceptance remains `UNVERIFIED`; the overall contour status is `PARTIAL`.
+
+## 2026-07-23 — G-01 Spam list policy evidence / Доказ політики Spam list
+
+### Українською
+
+- V3 contour `G-01` реалізовано як source-test/evidence-only `B1-38`, `GT-058`, `VR-029`.
+- Повторна перевірка source не підтвердила product defect: explicit `/mail folder:spam` уже компілює exact system label `SPAM`, використовує `includeSpamTrash=true`, bounded page token і лише read-only Gmail list endpoint.
+- Proactive notification worker лишається окремим time-slice path та через `gmailNotificationLabelsEligible_` приймає current `INBOX`, але відхиляє `SPAM`, `TRASH`, `INBOX+SPAM` і `INBOX+TRASH`.
+- Новий synthetic contract фіксує parser, дві Spam pages, exact label, відсутність mutation endpoint і незалежний proactive eligibility gate; `Code.gs` не змінено.
+- Focused contract: `2/2`; повний Apps Script suite: `612/612`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff і sensitive-pattern gates пройшли.
+- Source-test commit: `53e64a68fe1291e274c1ec2b61995c60f1cf1544`; GitHub PR [#89](https://github.com/Tarasevych/gmail-telegram-controls/pull/89) пройшов `8/8` checks і був злитий normal merge як `d4e56943443332c34d381b8be22314aa9ce1cb73`.
+- Той самий merge SHA fast-forward опубліковано в приватний GitLab `main`.
+- Live Gmail, Telegram, OAuth, staging і production не змінювалися. Production лишається v65, staging `0`.
+- Native owner acceptance для `/mail folder:spam`, next-page callback і empty/error states лишається `UNVERIFIED`; загальний статус `PARTIAL`.
+
+### English
+
+- V3 contour `G-01` was implemented as source-test/evidence-only `B1-38`, `GT-058`, and `VR-029`.
+- Source reinspection confirmed no product defect: explicit `/mail folder:spam` already compiles the exact `SPAM` system label, uses `includeSpamTrash=true`, a bounded page token, and only the read-only Gmail list endpoint.
+- The proactive notification worker remains a separate time-slice path and, through `gmailNotificationLabelsEligible_`, accepts current `INBOX` while rejecting `SPAM`, `TRASH`, `INBOX+SPAM`, and `INBOX+TRASH`.
+- A new synthetic contract pins the parser, two Spam pages, exact label, absence of mutation endpoints, and the independent proactive eligibility gate; `Code.gs` is unchanged.
+- Focused contract: `2/2`; complete Apps Script suite: `612/612`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and sensitive-pattern gates passed.
+- Source-test commit: `53e64a68fe1291e274c1ec2b61995c60f1cf1544`; GitHub PR [#89](https://github.com/Tarasevych/gmail-telegram-controls/pull/89) passed `8/8` checks and was normal-merged as `d4e56943443332c34d381b8be22314aa9ce1cb73`.
+- The same merge SHA was fast-forwarded to private GitLab `main`.
+- Live Gmail, Telegram, OAuth, staging, and production were unchanged. Production remains v65 and staging remains `0`.
+- Native owner acceptance for `/mail folder:spam`, the next-page callback, and empty/error states remains `UNVERIFIED`; the overall status is `PARTIAL`.
