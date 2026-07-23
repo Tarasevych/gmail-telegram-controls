@@ -157,11 +157,11 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Evidence:** [VR-013](verification-reports/reports/VR-013/README.md). Source request: `REQ-0033`.
 ## GT-032 — Typography differs from the Gmail reading context
 
-- **Status:** PARTIAL — live Gmail CSS, the source fix, and native v63 staging/production presentation are VERIFIED; a same-scale production typography comparison remains UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
-- **Date:** 2026-07-22. Source request: `REQ-0033`.
-- **Root cause:** the client mixed undersized 11–13 px interface text, heavy headings, and a 1.65 message line height without one typography scale.
-- **Source fix:** a local-first Gmail-compatible UI stack, a separate reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading and compose rhythm, responsive sizing, and no remote font dependency or layout-blocking font request.
-- **Evidence:** authenticated read-only Gmail inspection at the same browser scale returned the current UI stack and 14 px/20 px mail-list cells; no mail was opened or changed. See [VR-009](verification-reports/reports/VR-009/README.md).
+- **Status:** PARTIAL — live Gmail CSS, the main source scale, native v63 staging/production presentation, and the F-03 local computed-style regression pass are VERIFIED; a same-scale current-production comparison and populated real-thread visual pass remain UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
+- **Date:** 2026-07-22; F-03 clarification 2026-07-23. Source requests: `REQ-0033`, `REQ-0035`.
+- **Root cause:** the client originally mixed undersized 11–13 px interface text, heavy headings, and a 1.65 message line height without one typography scale. The first correction did not cover legacy 10 px compose account/save status, 11 px settings metadata/account controls, or nowrap account-card labels.
+- **Source fix:** a local-first Gmail-compatible UI stack, a separate reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading and compose rhythm, responsive sizing, no remote font request, 12 px secondary metadata/control floors, and wrap-safe account identity labels.
+- **Evidence:** authenticated read-only Gmail inspection at the same browser scale returned the current UI stack and 14 px/20 px mail-list cells; no mail was opened or changed. F-03 used a synthetic local preview and content-free computed-style readback only. See [VR-009](verification-reports/reports/VR-009/README.md) and [VR-037](verification-reports/reports/VR-037/README.md).
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
 
 ## GT-033 — Repeated loading and blocked internal navigation

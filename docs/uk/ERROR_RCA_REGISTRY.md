@@ -32,6 +32,8 @@
 
 | RCA-017 | Reply/Forward повторювалися, а native Gmail handoff залежав від позиційного browser account | Три action builders не мали одного viewport owner; прямий `state.thread.gmailUrl` не зв’язував handoff із stable connection identity; settings metadata не мав capability map | Desktop/mobile surfaces розділено, secondary actions перенесено в progressive menu, додано connection-first `authuser` resolver і capability hub | Один action owner на viewport; усі зовнішні Gmail переходи проходять exact-account resolver; unsupported actions лише пояснюють межу | `PARTIAL` | [VR-036](verification-reports/reports/VR-036/README.md) |
 
+| RCA-018 | Secondary compose/account text лишився замалим, а вузькі account labels обрізалися | Перше typography-виправлення охопило primary list/reader scale, але legacy selectors лишили 10 px compose metadata, 11 px settings/account controls і nowrap account identity rows | Secondary text піднято до floor 12 px, reading scale 14 px збережено, account identity labels отримали безпечне перенесення без remote font | На кожній release-critical surface перевіряти computed styles; тестувати late cascade, narrow viewport, multilingual glyphs і overflow, а не лише root variables | `PARTIAL` | [VR-037](verification-reports/reports/VR-037/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

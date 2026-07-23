@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-036](reports/VR-036/README.md) records F-02: one action surface per viewport, account-correct Gmail handoff, and settings capability classification. Native acceptance remains a separate gate.
+[VR-037](reports/VR-037/README.md) records F-03: computed typography on desktop/mobile, the remaining undersized secondary selectors, and wrap-safe account identity labels. Current-production same-scale acceptance remains a separate gate.

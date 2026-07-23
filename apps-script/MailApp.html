@@ -4902,7 +4902,49 @@
         }
       }
     </style>
-  </head>
+  <style id="typography-regression-f03">
+    /*
+     * Versie 1 / F-03: finish the Gmail-compatible type scale on secondary
+     * account, metadata, and draft surfaces without introducing a remote font.
+     */
+    .compose-header > :nth-child(2),
+    .compose-header-actions {
+      min-width: 0;
+    }
+
+    .compose-account,
+    .compose-save-status {
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .compose-account {
+      overflow-wrap: anywhere;
+    }
+
+    .account-panel-note,
+    .gmail-metadata-muted,
+    .gmail-label-path-help {
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .account-card-copy strong,
+    .account-card-copy span {
+      overflow: visible;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    .account-card-copy span,
+    .account-status,
+    .account-choice {
+      font-size: 12px;
+      line-height: 16px;
+    }
+  </style>
+</head>
 <body>
   <svg class="sr-only" aria-hidden="true" focusable="false">
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
