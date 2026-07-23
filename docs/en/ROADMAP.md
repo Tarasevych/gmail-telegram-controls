@@ -291,3 +291,9 @@ The maximum safe restart contract in the current Apps Script architecture is imp
 Status: PARTIAL
 
 The capability gate is now race-safe: queued local reads can be cancelled before execution, while a running transfer exposes cancel only after its transport registers a concrete abort handle. This verifies real `FileReader.abort` behavior and permanently prevents a false cancel control for current Apps Script RPC lanes. Focused suites pass `170/170` and the full suite passes `591/591`. The remaining B1-31 acceptance lane is native slow-network/minimize behavior; a future real RPC abort requires a separately verified cancellable transport architecture.
+
+## 2026-07-23: B1-31 native-acceptance gate
+
+Status: BLOCKED
+
+Authenticated read-only runtime evidence still shows the shared Apps Script daily URL Fetch quota failing the timer worker in `legacy_recovery` with `errorCode=urlfetch_quota`. Native slow-network/minimize observations would therefore be causally invalid. No new candidate or staging deployment is justified by this readback. Resume this acceptance lane only after a clean quota window; keep production v65 and staging `0` until then.

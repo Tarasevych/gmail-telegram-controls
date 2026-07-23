@@ -37,6 +37,8 @@ The client had no shared transfer truth. Local device files used compose-only `F
 | VR-021-06 | Queued cancel prevents execution; running cancel invokes the registered abort callback; retry keeps the stable transfer ID. | VERIFIED | behavioral contracts |
 | VR-021-07 | Related transfer/MailApp contracts pass `99/99`; the complete Apps Script suite passes `551/551`. | VERIFIED | local Node test traces |
 | VR-021-08 | Thread detail, draft persistence, URL import, and scoped draft restart reconciliation use the complete manager; real RPC abort, byte-resumable upload, and native slow-network behavior remain open. | PARTIAL | local behavioral contracts; native acceptance absent |
+| VR-021-09 | Native slow-network/minimize acceptance can currently distinguish transfer behavior from the shared runtime. | BLOCKED | authenticated Apps Script execution reached `legacy_recovery` and failed with `errorCode=urlfetch_quota` |
+| VR-021-10 | The blocker readback changed production, staging, Gmail, OAuth, or release state. | VERIFIED | no mutation; production v65 and staging `0` retained |
 
 ## Platform and release boundary
 
@@ -71,3 +73,9 @@ REQ-0035 now covers the maximum safe restart behavior available without a new up
 Status: PARTIAL
 
 Official primary-source review confirms that `google.script.run` returns through asynchronous success and failure handlers but documents no cancellation handle. Gmail's resumable protocol is a separate session-URI and chunked-`PUT` transport and is not exposed by the current client RPC. Source inspection verifies that local `FileReader` work registers a concrete abort callback, while every current Apps Script RPC lane declares `canCancel: false`. The capability gate now also rejects cancellation during a running/preparing state until an abort callback exists, closing the short pre-registration race without weakening queued cancellation. Focused tests pass `170/170`, the full suite passes `591/591`, and no runtime service was contacted. Local-reader abort is `VERIFIED`; current RPC abort is platform-unsupported and intentionally absent; native slow-network/minimize behavior remains `UNVERIFIED`.
+
+## 2026-07-23: native-acceptance blocker readback
+
+Status: BLOCKED
+
+An authenticated read-only Apps Script Executions inspection supplied the missing runtime evidence without requesting a broader OAuth scope. The selected failed timer execution reached `legacy_recovery`, reported `errorCode=urlfetch_quota`, and terminated with the Apps Script daily URL Fetch quota exception. Adjacent content-free entries showed the same shared transport boundary during Telegram maintenance, Google OAuth token refresh, and Gmail API access. This confirms an external shared blocker, not a candidate-specific transfer-manager regression. No staging was created, production v65 was not changed, and no menu, Gmail, OAuth, deployment, or release-journal mutation occurred. Native slow-network/minimize acceptance remains blocked until a clean quota window.
