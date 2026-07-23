@@ -121,3 +121,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
 - **VR-016 final local gate:** cumulative `518/518` and every documentation validator passed.
+
+## VR-017 — V3 cache-first launch hardening
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** REQ-0035 recovery boundary, confirmed v67 source defects, the v68 code correction, owner/account cache isolation, local/CI gates, platform limits, and the release gate.
+- **Report:** [reports/VR-017/README.md](reports/VR-017/README.md)
+- **Conclusion:** source/test evidence is verified in local scope; production remains v65, staging is `0`, immutable v67 was not rewritten, and native one-second/offline/draft/switch acceptance has not run.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
