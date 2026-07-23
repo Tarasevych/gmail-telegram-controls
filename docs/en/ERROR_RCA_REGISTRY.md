@@ -20,6 +20,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 | RCA-010 | Parallel branches received the same `GT/B1` IDs | IDs were allocated without serialized live registry/readback | A follow-up renumbered active records without rewriting history | Before allocation: fetch main, check open PRs, check maxima, and hold one registry lease | VERIFIED | [VR-006](verification-reports/reports/VR-006/README.md) |
 | RCA-011 | The Drive callback could accept one-use state issued for another source provider | Source state carried the provider, but the Drive callback did not verify it after consumption; its error envelope was also weaker than Box | Exact `drive` provider binding and a bounded sanitized error envelope are implemented in source; the native provider boundary remains unverified | Every shared OAuth-state consumer must verify provider before token exchange and have a synthetic wrong-provider contract | PARTIAL | [VR-028](verification-reports/reports/VR-028/README.md) |
 
+| RCA-012 | Box OAuth could inherit broader app scopes, duplicate an account after login/email changes, or accept an incomplete callback envelope | The authorize URL omitted an explicit scope; reconnect depended on mutable email; `errorDescription` lacked provider-specific validation | Added `root_readonly`, stable account ID, legacy protected-record lookup, and fail-closed validation | Provider allowlist, stable provider IDs, and direct callback source-contract tests | `PARTIAL` | [VR-030](verification-reports/reports/VR-030/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

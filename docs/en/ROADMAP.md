@@ -350,3 +350,11 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native owner acceptance for the Spam list, next-page callback, and empty/error states in a clean runtime window.
 - **Evidence:** [GT-058](ISSUES.md), [VR-029](verification-reports/reports/VR-029/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-39 — Box OAuth hardening within Versie 1
+
+- **Status:** `PARTIAL`
+- **Contour result:** explicit read-only scope, fail-closed callback envelope, stable provider account ID, and a regression source contract.
+- **Release boundary:** source/docs contour; staging and production are unchanged.
+- **Next evidence step:** authenticated owner-only Box acceptance only in an authorized release contour and without repeated consent unless a real need is confirmed.
+- **Related:** `GT-059`, `VR-030`, `REQ-0035`.

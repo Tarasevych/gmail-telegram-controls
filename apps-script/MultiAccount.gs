@@ -522,6 +522,7 @@ function mailboxBoxSourceConnectStart_(payload, session) {
     redirect_uri: config.redirectUri,
     response_type: 'code',
     state,
+    scope: 'root_readonly',
   };
   return {
     authorizationUrl: 'https://account.box.com/api/oauth2/authorize?' + Object.keys(query)
@@ -537,8 +538,11 @@ function mailboxBoxSourceHandleOAuthCallback_(input) {
   const state = String(input.state || '');
   const code = String(input.code || '');
   const providerError = String(input.error || '');
+  const errorDescription = String(input.errorDescription || '');
   if (!/^[A-Za-z0-9_-]{43}$/.test(state) || Boolean(code) === Boolean(providerError) ||
       code.length > 4096 || /[\u0000-\u001f\u007f]/.test(code) ||
+      errorDescription.length > 500 || /[\u0000-\u001f\u007f]/.test(errorDescription) ||
+      (errorDescription && !providerError) ||
       (providerError && !/^[A-Za-z0-9_.-]{1,128}$/.test(providerError))) {
     throw mailboxError_('BOX_OAUTH_INVALID', 'Відповідь Box недійсна.');
   }
@@ -574,15 +578,30 @@ function mailboxBoxSourcePersistConnection_(state, token, identityValue) {
   try {
     const props = PropertiesService.getScriptProperties();
     const registry = mailboxSourceReadRegistry_(props);
+    const normalizedLogin = mailboxSafeEmail_(account.login);
+    const stableConnectionId = 'source-' + mailboxMultiHashText_(
+      'box:' + state.userId + ':' + accountId
+    ).slice(0, 24);
     let connection = registry.connections.find(item => item.provider === 'box' &&
-      item.ownerUserId === state.userId && item.email === String(account.login || '').toLowerCase());
+      item.ownerUserId === state.userId && item.id === stableConnectionId);
+    if (!connection) {
+      connection = registry.connections.find(item => {
+        if (item.provider !== 'box' || item.ownerUserId !== state.userId) return false;
+        const priorKey = MAILBOX_MULTI_CONFIG_.SOURCE_OAUTH_TOKEN_PREFIX + item.id;
+        let priorRecord = null;
+        try { priorRecord = JSON.parse(String(props.getProperty(priorKey) || 'null')); }
+        catch (error) { priorRecord = null; }
+        return Boolean(priorRecord && priorRecord.provider === 'box' && priorRecord.account &&
+          String(priorRecord.account.id) === accountId);
+      });
+    }
     const now = Date.now();
     let priorRefreshToken = '';
     if (!connection) {
       connection = {
-        id: 'source-' + mailboxMultiHashText_('box:' + state.userId + ':' + accountId).slice(0, 24),
+        id: stableConnectionId,
         provider: 'box', ownerUserId: state.userId,
-        email: String(account.login || '').toLowerCase(),
+        email: normalizedLogin,
         displayName: mailboxSafeText_(account.name, 160) || String(account.login || '') || 'Box',
         avatarUrl: '', status: 'active', connectedAt: now, tokenGeneration: 1,
       };
@@ -597,7 +616,8 @@ function mailboxBoxSourcePersistConnection_(state, token, identityValue) {
           mailboxBoxSafeToken_(priorRecord.refreshToken)) {
         priorRefreshToken = priorRecord.refreshToken;
       }
-      connection.displayName = mailboxSafeText_(account.name, 160) || connection.displayName;
+      connection.email = normalizedLogin;
+      connection.displayName = mailboxSafeText_(account.name, 160) || normalizedLogin || connection.displayName;
       connection.status = 'active';
       connection.tokenGeneration += 1;
     }

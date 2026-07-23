@@ -350,3 +350,11 @@ Status: BLOCKED
 - **Ще потрібно:** native owner acceptance для Spam list, next-page callback і empty/error states у чистому runtime window.
 - **Доказ:** [GT-058](ISSUES.md), [VR-029](verification-reports/reports/VR-029/README.md).
 - **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).
+
+## B1-39 — Посилення Box OAuth у межах Versie 1
+
+- **Статус:** `PARTIAL`
+- **Результат цього контуру:** explicit read-only scope, fail-closed callback envelope, стабільний provider account ID і регресійний source contract.
+- **Межа релізу:** source/docs contour; staging і production не змінюються.
+- **Наступний доказовий крок:** authenticated owner-only Box acceptance лише в дозволеному release contour і без повторного consent без підтвердженої потреби.
+- **Пов’язано:** `GT-059`, `VR-030`, `REQ-0035`.

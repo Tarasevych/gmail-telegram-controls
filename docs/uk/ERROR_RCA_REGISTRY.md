@@ -20,6 +20,8 @@
 | RCA-010 | Паралельні branches отримали однакові `GT/B1` IDs | ID резервували без live registry/readback serialization | Follow-up перенумерував активні записи без переписування історії | Перед ID allocation: fetch main, open-PR check, maxima check, один registry lease | VERIFIED | [VR-006](verification-reports/reports/VR-006/README.md) |
 | RCA-011 | Drive callback міг прийняти one-use state іншого source provider | Source-state містив provider, але Drive callback не перевіряв його після consume; error envelope також був слабший за Box | Exact `drive` provider binding і bounded sanitized error envelope додано у source; native provider boundary ще не перевірено | Кожний shared OAuth-state consumer зобов’язаний перевіряти provider до token exchange і мати synthetic wrong-provider contract | PARTIAL | [VR-028](verification-reports/reports/VR-028/README.md) |
 
+| RCA-012 | Box OAuth міг успадкувати ширші app scopes, створити дубль після зміни login/email або прийняти неповний callback envelope | В authorize URL не було explicit scope; reconnect залежав від mutable email; `errorDescription` не мав provider-specific validation | Додано `root_readonly`, stable account ID, legacy protected-record lookup і fail-closed validation | Provider allowlist, stable provider IDs, direct callback source-contract tests | `PARTIAL` | [VR-030](verification-reports/reports/VR-030/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

@@ -238,3 +238,5 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-029/README.md](reports/VR-029/README.md)
 - **Висновок:** source уже мав правильне розділення; missing direct regression evidence додано без product-code mutation. Focused `2/2` і full `612/612` VERIFIED; native owner acceptance лишається `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+| [VR-030](reports/VR-030/README.md) | Box OAuth: мінімальні права, строгий callback та стабільна ідентичність | `PARTIAL` | `REQ-0035`, `GT-059`, `B1-39`, `RCA-012` |

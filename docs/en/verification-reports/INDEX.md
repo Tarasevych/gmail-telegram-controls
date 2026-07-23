@@ -238,3 +238,5 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-029/README.md](reports/VR-029/README.md)
 - **Conclusion:** source already had the correct separation; missing direct regression evidence was added without a product-code mutation. Focused `2/2` and full `612/612` are VERIFIED; native owner acceptance remains `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+| [VR-030](reports/VR-030/README.md) | Box OAuth least privilege, strict callback, and stable identity | `PARTIAL` | `REQ-0035`, `GT-059`, `B1-39`, `RCA-012` |
