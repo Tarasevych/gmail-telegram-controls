@@ -6,12 +6,13 @@ param(
   [switch]$StageOnly,
   [switch]$Promote,
   [switch]$CleanupStaging,
+  [switch]$AbandonStaging,
   [switch]$Rollback
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $Rollback | Where-Object { $_ }).Count -ne 1) {
+if (@($PreflightOnly, $StageOnly, $Promote, $CleanupStaging, $AbandonStaging, $Rollback | Where-Object { $_ }).Count -ne 1) {
   throw 'Choose exactly one mode.'
 }
 
@@ -298,6 +299,45 @@ try {
     Wait-DeploymentVersion $stableUri $CandidateVersion @($RollbackVersion)
     Write-Journal 'promoted' ([string]$staging[0].deploymentId)
     [ordered]@{ok=$true;mode='promote';oldVersion=$RollbackVersion;newVersion=$CandidateVersion;deploymentId=$StableDeploymentId} | ConvertTo-Json
+    return
+  }
+
+  if ($AbandonStaging) {
+    if ($stableVersion -ne $RollbackVersion) {
+      throw 'Abandon requires production to remain on the exact rollback version.'
+    }
+    if (-not $immutable -or $staging.Count -ne 1) {
+      throw 'Abandon requires the exact immutable candidate and one guarded staging deployment.'
+    }
+    if (-not $journal -or [string]$journal.state -ne 'staging_verified') {
+      throw 'Abandon requires a staging_verified journal.'
+    }
+    $journalDeploymentId = [string]$journal.stagingDeploymentId
+    $guardedDeploymentId = [string]$staging[0].deploymentId
+    if (-not $journalDeploymentId -or $journalDeploymentId -ne $guardedDeploymentId) {
+      throw 'Abandon deployment does not match the journal.'
+    }
+    if ([int]$staging[0].deploymentConfig.versionNumber -ne $CandidateVersion) {
+      throw 'Abandon deployment does not reference the exact candidate version.'
+    }
+    Write-Journal 'abandon_delete_reserved' $journalDeploymentId
+    Invoke-GoogleJson DELETE "$base/deployments/$journalDeploymentId" | Out-Null
+    $remainingDeployment = @(
+      (Invoke-GoogleJson GET "$base/deployments").deployments |
+        Where-Object { [string]$_.deploymentId -eq $journalDeploymentId }
+    )
+    if ($remainingDeployment.Count -ne 0) {
+      throw 'Abandoned staging deployment is still present after delete.'
+    }
+    Write-Journal 'abandoned' $journalDeploymentId
+    [ordered]@{
+      ok=$true
+      mode='abandon'
+      stableVersion=$RollbackVersion
+      immutableVersion=$CandidateVersion
+      stagingDeploymentId=$journalDeploymentId
+      stagingRemoved=$true
+    } | ConvertTo-Json
     return
   }
 
