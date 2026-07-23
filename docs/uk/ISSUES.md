@@ -384,16 +384,16 @@
 - **Межа:** playbook не є authority source і не змінює permissions, runtime, Apps Script, Gmail, Telegram або release state.
 - **Доказ:** [VR-019](verification-reports/reports/VR-019/README.md)
 
-## GT-050 — Фоновий render читача скидав позицію та фокус
+## GT-050 — Render читача та неоднозначний прогрес могли втратити точний контекст читання
 
 - **Статус:** PARTIAL
 - **Source request:** `REQ-0035`
-- **Product task:** `B1-30` / V3 `A-03`
-- **Root cause:** `renderThread()` безумовно очищував і перебудовував root читача. Фонові attention, reconciliation, draft, attachment або layout updates могли замінити активний DOM, а конкурентні асинхронні відновлення `scrollTop` не мали стабільного content anchor і могли втратити keyboard focus.
-- **Source fix:** для ідентичного стану читача root більше не замінюється. Перед необхідним render зберігаються stable thread/message/body anchor, його viewport offset, bottom-pinned state і memory-only focus identity; після layout changes позицію відновлює один generation-guarded pipeline. `ResizeObserver` та image-load handling утримують anchor без reading-progress render loop.
-- **Локальний доказ:** focused reader contracts `8/8`, пов'язані MailApp/launch/reader contracts `101/101`, повний Apps Script suite `540/540`, чистий `git diff --check` і `0` secret-signature matches у змінених файлах.
-- **Release boundary:** source commit `1d7c6c1`; Apps Script staging, production promotion, OAuth, Gmail або Telegram mutation не виконувалися. Native desktop/mobile, long HTML із реальними remote-image layout changes і production acceptance лишаються `UNVERIFIED`.
-- **Доказ:** [VR-020](verification-reports/reports/VR-020/README.md)
+- **Product task:** `B1-30` / V3 `A-03`, `F-05`
+- **Root cause:** `renderThread()` спочатку перебудовував reader root, а пізніший progress layer усе ще трактував короткий non-scrollable content як `100%`, називав позицію прокрутки прочитаним змістом, показував порожній resume control із `0%`, завжди використовував smooth motion і дозволяв відкладеному save попереднього листа записатися до нового active thread.
+- **Source fix:** ідентичний reader state не замінює root; необхідні renders зберігають stable content anchors, viewport offset, bottom pin і memory-only focus. Progress тепер походить лише з вимірюваної reader geometry, явно називається позицією прокрутки, не показується без чернетки або змістовної позиції, враховує reduced motion і прив’язує кожен delayed save до exact Gmail connection та thread. `ResizeObserver` і image-load handling утримують anchor без save progress або auto-scroll loop.
+- **Локальний доказ:** focused reader contracts `12/12`, повний Apps Script suite `646/646`, clean `git diff --check` і парні documentation validators.
+- **Release boundary:** source-only cumulative Versie 1 contour; Apps Script staging, production promotion, OAuth, Gmail або Telegram mutation не виконувалися. Native desktop/mobile, реальні long/short/quoted messages і production acceptance лишаються `UNVERIFIED`.
+- **Доказ:** [VR-020](verification-reports/reports/VR-020/README.md), [VR-039](verification-reports/reports/VR-039/README.md)
 
 ## GT-051 — Transfer progress використовував розрізнені stores і неузгоджені межі правдивості
 

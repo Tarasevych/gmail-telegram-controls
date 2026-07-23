@@ -186,3 +186,62 @@ test('user Home End and Page navigation remains available', () => {
   assert.match(keyboard, /key === "Home" \? 0 : scroll\.scrollHeight/);
   assert.match(keyboard, /event\.preventDefault\(\)/);
 });
+
+test('reading progress is derived from real scroll geometry and short content stays unmeasured', () => {
+  const context = vm.createContext({
+    els: { readerContentHost: { querySelector: () => null } },
+    Math,
+    Number,
+  });
+  vm.runInContext([
+    functionSource('readerProgressSnapshot'),
+    functionSource('currentReaderProgress'),
+  ].join('\n'), context);
+
+  const longReader = { scrollTop: 250, scrollHeight: 1500, clientHeight: 500 };
+  const longSnapshot = context.readerProgressSnapshot(longReader);
+  assert.equal(longSnapshot.measurable, true);
+  assert.equal(longSnapshot.progress, 25);
+  assert.equal(context.currentReaderProgress(longReader), 25);
+
+  const shortSnapshot = context.readerProgressSnapshot({
+    scrollTop: 0,
+    scrollHeight: 480,
+    clientHeight: 480,
+  });
+  assert.equal(shortSnapshot.measurable, false);
+  assert.equal(shortSnapshot.progress, 0, 'a short message must not claim 100% read');
+});
+
+test('reading-progress debounce is scoped to the exact thread and Gmail connection', () => {
+  const scheduler = functionSource('scheduleReadingProgress');
+  assert.match(scheduler, /scheduledThreadId = safeId\(state\.thread && state\.thread\.id\)/);
+  assert.match(scheduler, /scheduledConnectionId = safeId\(state\.selectedConnectionId\)/);
+  assert.match(scheduler, /safeId\(state\.thread\.id\) !== scheduledThreadId/);
+  assert.match(scheduler, /safeId\(state\.selectedConnectionId\) !== scheduledConnectionId/);
+  assert.match(scheduler, /scroll\.isConnected === false/);
+  assert.match(scheduler, /readerProgressSnapshot\(scroll\)/);
+  assert.match(scheduler, /if \(!snapshot\.measurable\) return/);
+  assert.doesNotMatch(scheduler, /Date\.now|setInterval/);
+});
+
+test('resume rail explains scroll position and stays compact when no position exists', () => {
+  const rail = functionSource('buildResumeRail');
+  assert.match(rail, /Позиція прокрутки у відкритій розмові:/);
+  assert.match(rail, /а не оцінку прочитаного/);
+  assert.match(rail, /\(!resume\.draftId && !hasReadingPosition\)\) return null/);
+  assert.match(rail, /safeId\(resume\.threadId\) !== safeId\(state\.thread && state\.thread\.id\)/);
+  assert.match(rail, /if \(hasReadingPosition\)/);
+});
+
+test('resume is user initiated, reduced-motion aware, and background layout cannot save progress', () => {
+  const rail = functionSource('buildResumeRail');
+  const restore = functionSource('p0RestoreReaderView');
+  const trackedRestore = functionSource('p0ScheduleTrackedReaderRestore');
+  assert.match(rail, /prefers-reduced-motion: reduce/);
+  assert.match(rail, /behavior: reduceMotion \? "auto" : "smooth"/);
+  assert.match(rail, /addEventListener\("click"/);
+  assert.doesNotMatch(restore, /scrollTo\(/);
+  assert.doesNotMatch(trackedRestore, /scheduleReadingProgress/);
+  assert.match(source, /var history = make\("details", \{ className: "quoted-history" \}\)/);
+});

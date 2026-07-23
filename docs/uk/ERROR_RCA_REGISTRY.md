@@ -36,6 +36,8 @@
 
 | RCA-019 | Автоматичний аналіз завжди був помітним, помилково класифікував signatures/короткі відповіді та міг лишати непідтверджені claims | Disclosure, substantive-content filtering, claim grounding і persisted user decisions були окремими contracts | Додано account-scoped visibility аналізу, default collapse, явний trivial outcome, exact evidence gates, прийняття пропозиції та explicit triage undo | Відокремлювати generated suggestions від persisted decisions; вимагати source fragments для кожного actionable claim; тестувати multilingual trivial/short content і per-account preferences | `PARTIAL` | [VR-038](verification-reports/reports/VR-038/README.md) |
 
+| RCA-020 | Reading progress міг заявити, що короткий лист повністю прочитано, назвати scroll position розумінням змісту або записати stale position до іншого thread | Geometry edge case повертав `100%` для non-scrollable content, а debounced save не зберігав exact thread/connection identity і resume control не мав semantic boundary | Додано measurable geometry, чесний scroll-position text, compact omission, exact identity guards і user resume з урахуванням reduced motion; background layout restoration не зберігає progress | Тестувати short/long content, delayed callbacks, exact identity, resize/image anchors, quoted collapse, reduced motion і відсутність timer/auto-scroll semantics | `PARTIAL` | [VR-039](verification-reports/reports/VR-039/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

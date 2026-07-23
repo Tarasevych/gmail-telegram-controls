@@ -12446,12 +12446,24 @@
         p0ScheduleUiStateSave();
       }
 
-      function currentReaderProgress(scroll) {
+      function readerProgressSnapshot(scroll) {
         var node = scroll || els.readerContentHost.querySelector(".reader-scroll");
-        if (!node) return 0;
-        var available = Math.max(0, node.scrollHeight - node.clientHeight);
-        if (!available) return 100;
-        return Math.max(0, Math.min(100, Math.round((node.scrollTop / available) * 100)));
+        if (!node) return { measurable: false, progress: 0, top: 0, available: 0 };
+        var scrollHeight = Math.max(0, Number(node.scrollHeight || 0));
+        var clientHeight = Math.max(0, Number(node.clientHeight || 0));
+        var available = Math.max(0, scrollHeight - clientHeight);
+        var top = Math.max(0, Math.min(available, Number(node.scrollTop || 0)));
+        var measurable = clientHeight > 0 && available > 1;
+        return {
+          measurable: measurable,
+          progress: measurable ? Math.max(0, Math.min(100, Math.round((top / available) * 100))) : 0,
+          top: top,
+          available: available
+        };
+      }
+
+      function currentReaderProgress(scroll) {
+        return readerProgressSnapshot(scroll).progress;
       }
 
       function attentionViewPayload() {
@@ -12651,9 +12663,17 @@
 
       function scheduleReadingProgress(scroll) {
         window.clearTimeout(state.attentionSaveTimer);
+        var scheduledThreadId = safeId(state.thread && state.thread.id);
+        var scheduledConnectionId = safeId(state.selectedConnectionId);
+        if (!scroll || !scheduledThreadId || !scheduledConnectionId) return;
         state.attentionSaveTimer = window.setTimeout(function () {
-          if (!state.thread) return;
-          var progress = currentReaderProgress(scroll);
+          if (!state.thread ||
+              safeId(state.thread.id) !== scheduledThreadId ||
+              safeId(state.selectedConnectionId) !== scheduledConnectionId ||
+              scroll.isConnected === false) return;
+          var snapshot = readerProgressSnapshot(scroll);
+          if (!snapshot.measurable) return;
+          var progress = snapshot.progress;
           if (Math.abs(progress - Number(state.thread.attention && state.thread.attention.readingProgress || 0)) < 5) return;
           updateAttention({ readingProgress: progress }, { silent: true });
         }, 700);
@@ -13381,27 +13401,43 @@
 
       function buildResumeRail() {
         var resume = state.resumeRail || {};
-        if (!resume.threadId) return null;
+        var progress = Math.max(0, Math.min(100, Math.floor(Number(resume.readingProgress || 0))));
+        var hasReadingPosition = progress > 0;
+        if (!resume.threadId ||
+            safeId(resume.threadId) !== safeId(state.thread && state.thread.id) ||
+            (!resume.draftId && !hasReadingPosition)) return null;
+        var progressText = hasReadingPosition
+          ? "Позиція прокрутки у відкритій розмові: " + progress + "%"
+          : "";
+        var detailText = resume.draftId
+          ? "Чернетка збережена" + (progressText ? " · " + progressText : "")
+          : progressText;
         var rail = make("button", {
           className: "resume-rail",
           type: "button",
-          attrs: { "aria-label": "Продовжити з місця, де зупинились" }
+          attrs: {
+            "aria-label": "Продовжити з місця, де зупинились. " + detailText,
+            title: "Відсоток показує позицію прокрутки у відкритій розмові, а не оцінку прочитаного."
+          }
         });
         rail.append(svgIcon("snooze", 20));
         var copy = make("span", { className: "resume-rail-copy" });
         copy.append(make("strong", { text: "Продовжити з місця, де зупинились" }));
-        copy.append(make("span", {
-          text: resume.draftId ? "Чернетка збережена" : "Прочитано " + resume.readingProgress + "%"
-        }));
+        copy.append(make("span", { text: detailText }));
         rail.append(copy);
-        rail.append(make("span", { className: "resume-rail-progress", attrs: { "aria-hidden": "true" } },
-          make("span", { attrs: { style: "width:" + resume.readingProgress + "%" } })
-        ));
+        if (hasReadingPosition) {
+          rail.append(make("span", {
+            className: "resume-rail-progress",
+            attrs: { "aria-hidden": "true" }
+          }, make("span", { attrs: { style: "width:" + progress + "%" } })));
+        }
         rail.addEventListener("click", function () {
           var scroll = els.readerContentHost.querySelector(".reader-scroll");
           if (!scroll) return;
-          var top = Math.round((Math.max(0, scroll.scrollHeight - scroll.clientHeight) * resume.readingProgress) / 100);
-          scroll.scrollTo({ top: top, left: 0, behavior: "smooth" });
+          var top = Math.round((Math.max(0, scroll.scrollHeight - scroll.clientHeight) * progress) / 100);
+          var reduceMotion = typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          scroll.scrollTo({ top: top, left: 0, behavior: reduceMotion ? "auto" : "smooth" });
         });
         return rail;
       }
