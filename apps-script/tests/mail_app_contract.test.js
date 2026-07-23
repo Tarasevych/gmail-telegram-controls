@@ -1324,7 +1324,7 @@ test('Box disconnect uses a custom confirmation and revokes provider access with
 
   const disconnectSource = sourceBetween(
     '      async function disconnectBox() {',
-    '      function attachmentJobElapsed(job) {'
+    '      var TRANSFER_STATES = {'
   );
   assert.match(disconnectSource, /op: "sourceDisconnect"[\s\S]*provider: "box"[\s\S]*sourceConnectionId: state\.activeBoxSourceConnectionId/);
   assert.match(disconnectSource, /state\.activeBoxSourceConnectionId = ""[\s\S]*loadBoxStatus/);
@@ -1678,6 +1678,10 @@ test('a stale attachment preview response cannot overwrite a newer preview after
     formatSize(value) { return String(value); },
     sourceReferenceFromMetadata(metadata) { return metadata.source; },
     rpc() { return pending.shift().promise; },
+    createManagedTransfer(options) { return { id: options.kind, transferState: 'queued' }; },
+    enqueueManagedTransfer(task, runner) {
+      return runner(task, { setPhase(phase) { task.transferState = phase; } });
+    },
     sourcePreviewData(response) { return response; },
     renderAttachmentPreviewData(data) { rendered.push(data.name); },
     attachmentPreviewFallback() {},

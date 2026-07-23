@@ -157,3 +157,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-020/README.md](reports/VR-020/README.md)
 - **Висновок:** source correction і повний suite `540/540` VERIFIED; native desktop/mobile, real remote-image layout, staging acceptance і deployment лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-021 — Foundation єдиного чесного transfer manager
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `B-03`, fragmented transfer state, canonical lifecycle/store, bounded scheduling, truthful byte/indeterminate progress, cancellation/retry capability boundaries, local integration evidence і release limits.
+- **Звіт:** [reports/VR-021/README.md](reports/VR-021/README.md)
+- **Висновок:** shared source foundation і повний suite `551/551` VERIFIED; remaining lanes, native slow-network acceptance, resumable restart, staging і deployment лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

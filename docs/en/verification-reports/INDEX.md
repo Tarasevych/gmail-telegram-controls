@@ -157,3 +157,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-020/README.md](reports/VR-020/README.md)
 - **Conclusion:** the source correction and complete `540/540` suite are VERIFIED; native desktop/mobile, real remote-image layout, staging acceptance, and deployment remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-021 — Honest shared transfer-manager foundation
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `B-03`, fragmented transfer state, the canonical lifecycle/store, bounded scheduling, truthful byte/indeterminate progress, cancellation/retry capability boundaries, local integration evidence, and release limits.
+- **Report:** [reports/VR-021/README.md](reports/VR-021/README.md)
+- **Conclusion:** the shared source foundation and complete `551/551` suite are VERIFIED; remaining lanes, native slow-network acceptance, resumable restart, staging, and deployment remain `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

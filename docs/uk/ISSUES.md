@@ -386,3 +386,15 @@
 - **Локальний доказ:** focused reader contracts `8/8`, пов'язані MailApp/launch/reader contracts `101/101`, повний Apps Script suite `540/540`, чистий `git diff --check` і `0` secret-signature matches у змінених файлах.
 - **Release boundary:** source commit `1d7c6c1`; Apps Script staging, production promotion, OAuth, Gmail або Telegram mutation не виконувалися. Native desktop/mobile, long HTML із реальними remote-image layout changes і production acceptance лишаються `UNVERIFIED`.
 - **Доказ:** [VR-020](verification-reports/reports/VR-020/README.md)
+
+## GT-051 — Transfer progress використовував розрізнені stores і неузгоджені межі правдивості
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-31` / V3 `B-03`
+- **Root cause:** локальні device files мали compose-only map `FileReader` jobs і byte progress, а incoming attachment та provider previews використовували окремі blocking copy, spinner і snackbar. Local reads запускалися без спільного concurrency gate, а Apps Script RPC lanes не надають trustworthy transport-byte callbacks або real abort.
+- **Source fix:** один underlying transfer store тепер веде compose і global task domains через canonical lifecycle, bounded scheduler із трьох runners, capability-aware cancel/retry/pause/resume controls, honest aggregate status і movable accessible global chip. Actual `FileReader` callbacks визначають bytes, percent, smoothed speed та ETA; Apps Script RPC лишається явно indeterminate. Compose local reads, incoming attachment fetch і Drive/Box/public provider preview використовують спільний foundation.
+- **Локальний доказ:** transfer-manager і MailApp contracts `99/99`, повний Apps Script suite `551/551`, чистий `git diff --check` і `0` secret-signature matches у змінених файлах.
+- **Залишкова межа:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort і native slow-network/minimize acceptance `UNVERIFIED` або ще не інтегровані. Synthetic percentage чи closed-WebView continuation не заявляються.
+- **Release boundary:** source commit `58933f0`; immutable, staging, production, OAuth, Gmail, Telegram, Drive або Box mutation не виконувалися.
+- **Доказ:** [VR-021](verification-reports/reports/VR-021/README.md)
