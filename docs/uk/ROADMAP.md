@@ -385,3 +385,12 @@ Status: BLOCKED
 - **Локально перевірено:** focused contract `4/4`; повний Apps Script suite `623/623`.
 - **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
 - **Пов’язано:** `GT-062`, `RCA-015`, `VR-034`, `REQ-0035`.
+
+## B1-43 — F-01 Fidelity і privacy поштового reader
+
+- **Статус:** `PARTIAL`
+- **Результат:** валідні RTL/language hints переживають server sanitization; plain і HTML content мають content-derived direction; remote images не можуть обійти attachment-token/MIME boundary або створити tracking request.
+- **Fixture evidence:** newsletter, invoice/table, plain fallback, RTL/Unicode, malformed HTML, quoted history, CID boundary та scroll/focus contracts покрито focused suite `6/6`; повний suite `629/629`.
+- **Межа релізу:** source/docs contour; реальні листи не читалися й не змінювалися, production v65, staging `0` та immutable history не змінюються.
+- **Ще потрібно:** native desktop/mobile comparison для representative owner-approved fixtures після відновлення shared quota.
+- **Пов’язано:** `GT-063`, `RCA-016`, `VR-035`, `REQ-0035`.

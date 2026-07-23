@@ -1853,7 +1853,8 @@ test('inline CID images resolve only authenticated attachment tokens into short-
     '      function fitSandboxedMailFrame(frame, fallbackHeight) {'
   );
   assert.match(sandboxSource, /data-attachment-token/);
-  assert.match(sandboxSource, /img-src https: data: blob:/);
+  assert.match(sandboxSource, /img-src blob:/);
+  assert.doesNotMatch(sandboxSource, /img-src https:|img-src[^;]*data:/);
   assert.match(sandboxSource, /table\{max-width:100%\}/);
   assert.doesNotMatch(sandboxSource, /table\{display:block/);
   assert.doesNotMatch(sandboxSource, /th,td\{padding:/);
