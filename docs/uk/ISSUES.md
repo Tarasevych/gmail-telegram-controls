@@ -616,3 +616,15 @@ Status: BLOCKED
 - **Локальний доказ:** focused C-02 contracts `5/5`; повний Apps Script suite `656/656`; synthetic browser acceptance перевіряє close/minimize/restore і відсутність overlap без реальної Gmail mutation, а executable pointer-contract окремо перевіряє drag bounds.
 - **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth, Telegram menu та release journal не змінюються. Native slow-network, app-restart і current-production acceptance лишаються `UNVERIFIED`.
 - **Доказ:** [VR-041](verification-reports/reports/VR-041/README.md).
+
+## GT-067 - P0-A launch ownership і proof state не були canonical між документами
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує `GT-040-GT-047`, `GT-051`, `GT-053` і `GT-054`, не замінюючи та не дублюючи їх.
+- **Product task:** `B1-47` / P0-A cross-document launch serialization і canonical launch-proof ledger.
+- **Підтверджена першопричина:** launch ownership не був single-flight між документами, а історичні server issuance та redemption використовували розділені state paths замість одного canonical claim ledger.
+- **Source correction:** launch спочатку використовує `navigator.locks`, а потім expiring content-free IndexedDB lease як fallback. Звичайний validated launch лишається без overlay. Release reload очікує mutation quiescence та використовує точний content-free ключ `sessionStorage` `p0-release-reload`.
+- **Server correction:** issuance і redemption тепер використовують один `ScriptLock`-backed ledger із canonical claim, HMAC-scoped owner і route bindings, deterministic 60-second nonce lifetime, 11-minute tombstones та максимумом 100 записів. Ledger не зберігає secrets або identifiers.
+- **Source evidence:** focused P0-A contracts `37/37`; повний Apps Script suite `668/668` за `24.229s`; implementation baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Release boundary:** runtime deployment або mailbox mutation не виконувалися. Native Telegram target-device p95 `<=1000 ms`, десять реальних launches, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging і production лишаються `UNVERIFIED` або `BLOCKED` через shared Apps Script URL Fetch quota та `T-03`.
+- **Доказ:** [VR-042](verification-reports/reports/VR-042/README.md).

@@ -62,3 +62,13 @@
 - Дубльовану видиму послідовність запуску/підключення виправлено у v67 та якісно підтверджено під час коректних запусків у Telegram Desktop.
 - P95 однієї секунди, offline unlock приватної пошти, відновлення чернеток і двостороннє багатоакаунтне перемикання не мають статусу VERIFIED; тому v67 не просувався.
 - VR-016 є авторитетним доказовим записом цієї acceptance-межі.
+
+## REQ-0037 P0-A source contour - 2026-07-24
+
+- **Статус:** `PARTIAL`; лише source evidence.
+- Cross-document launch ownership тепер використовує `navigator.locks` і expiring content-free IndexedDB lease fallback. Звичайний validated launch лишається без overlay; release reload очікує mutation quiescence і використовує лише `p0-release-reload` у `sessionStorage`.
+- Server issuance/redemption тепер використовують один `ScriptLock`-backed canonical claim ledger з HMAC owner/route scopes, deterministic 60-second nonce lifetime, 11-minute tombstones, максимумом 100 записів і без secrets або identifiers.
+- Підтверджена історична першопричина: issuance та redemption були розділені між state paths.
+- Source evidence: focused `37/37`; повний Apps Script suite `668/668` за `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- Production і staging не змінювалися; mailbox mutation не виконувалася. Native p95, ten-launch acceptance, offline private device-bound unlock, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging і production лишаються unverified або blocked через shared URL Fetch quota та `T-03`.
+- Записи: чинні `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; нові `GT-067`, `B1-47`, `RCA-023`, `VR-042`.

@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-041](reports/VR-041/README.md) records C-02: safe close intent, same-session attachment handoff, canonical-save settlement, focus/selection restore, and a truthful closed-WebView boundary. Native slow-network, restart, and production acceptance remain separate gates.
+[VR-042](reports/VR-042/README.md) records P0-A source verification and synthetic local E2 evidence for cross-document launch single-flight and the canonical launch-proof ledger. Focused contracts pass `37/37`, the complete Apps Script suite passes `668/668` in `24.229s`, and ten local warm reloads observed a `153 ms` maximum/p95-by-10; native target-device, offline, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging, and production gates remain `UNVERIFIED` or `BLOCKED`. No screenshot evidence is claimed.

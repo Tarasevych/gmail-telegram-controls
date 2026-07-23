@@ -62,3 +62,13 @@
 - The duplicate visible launch/connection sequence is fixed in v67 and was qualitatively confirmed in correct Telegram Desktop launches.
 - The one-second p95, offline private-mail unlock, draft recovery, and bidirectional multi-account switch are not VERIFIED; v67 was therefore not promoted.
 - VR-016 is the authoritative evidence record for this acceptance boundary.
+
+## REQ-0037 P0-A source contour - 2026-07-24
+
+- **Status:** `PARTIAL`; source evidence only.
+- Cross-document launch ownership now uses `navigator.locks` and an expiring content-free IndexedDB lease fallback. Ordinary validated launch remains overlay-free; release reload waits for mutation quiescence and uses only `p0-release-reload` in `sessionStorage`.
+- Server issuance/redemption now share one `ScriptLock`-backed canonical claim ledger with HMAC owner/route scopes, a deterministic 60-second nonce lifetime, 11-minute tombstones, a maximum of 100 records, and no secrets or identifiers.
+- Confirmed historical root cause: issuance and redemption were split across state paths.
+- Source evidence: focused `37/37`; full Apps Script suite `668/668` in `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- Production and staging were not changed; no mailbox mutation occurred. Native p95, ten-launch acceptance, offline private device-bound unlock, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging, and production remain unverified or blocked by shared URL Fetch quota and `T-03`.
+- Records: existing `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; new `GT-067`, `B1-47`, `RCA-023`, `VR-042`.

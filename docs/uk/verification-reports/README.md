@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-041](reports/VR-041/README.md) фіксує C-02: safe close intent, same-session attachment handoff, canonical-save settlement, focus/selection restore та чесну closed-WebView boundary. Native slow-network, restart і production acceptance лишаються окремими gates.
+[VR-042](reports/VR-042/README.md) фіксує P0-A source verification і synthetic local E2 evidence для cross-document launch single-flight та canonical launch-proof ledger. Focused contracts пройшли `37/37`, повний Apps Script suite пройшов `668/668` за `24.229s`, а десять local warm reloads показали maximum/p95-by-10 `153 ms`; native target-device, offline, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging і production gates лишаються `UNVERIFIED` або `BLOCKED`. Screenshot evidence не заявляється.

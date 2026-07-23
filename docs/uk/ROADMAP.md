@@ -427,3 +427,14 @@ Status: BLOCKED
 - **Локально перевірено:** focused `5/5`, повний Apps Script suite `656/656`, synthetic browser close/minimize/restore і simultaneous-chip layout та окремий executable pointer-contract для drag bounds.
 - **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail/OAuth/Telegram runtime не змінюються. Native slow-network/restart acceptance лишається `UNVERIFIED`.
 - **Пов’язано:** `GT-066`, `RCA-022`, `VR-041`, `REQ-0035`.
+
+## B1-47 - P0-A cross-document launch single-flight і canonical proof ledger
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** source тепер серіалізує launch ownership між документами через `navigator.locks` з expiring content-free IndexedDB lease fallback. Звичайні validated launches лишаються без overlay, а release reload є mutation-quiescent із точним session key `p0-release-reload`.
+- **Server boundary:** launch issuance і redemption використовують один `ScriptLock`-backed canonical ledger з HMAC owner/route scopes, deterministic 60-second nonce lifetime, 11-minute tombstones, межею 100 записів і без збережених secrets або identifiers.
+- **Локально перевірено:** focused `37/37`; повний Apps Script suite `668/668` за `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
+- **Ще потрібно:** native Telegram target-device p95 `<=1000 ms`, десять real-launch acceptance runs, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging і production. Вони лишаються `UNVERIFIED` або `BLOCKED` через shared Apps Script URL Fetch quota та `T-03`.
+- **Release boundary:** лише source/docs contour; без deployment, staging, production, Gmail або mailbox mutation.
+- **Пов’язано:** чинні `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; нові `GT-067`, `RCA-023`, `VR-042`.

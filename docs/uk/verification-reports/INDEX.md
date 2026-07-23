@@ -258,3 +258,4 @@ Source request: `REQ-0004`.
 | [VR-039](reports/VR-039/README.md) | F-05 Чесний і стабільний reading progress | `PARTIAL` | `REQ-0035`, `GT-050`, `B1-30`, `RCA-020` |
 | [VR-040](reports/VR-040/README.md) | C-01 Gmail-style autosave state machine | `PARTIAL` | `REQ-0035`, `GT-045`, `B1-25`, `RCA-021` |
 | [VR-041](reports/VR-041/README.md) | C-02 Безпечне закриття, мінімізація та attachment handoff composer | `PARTIAL` | `REQ-0035`, `GT-066`, `B1-46`, `RCA-022` |
+| [VR-042](reports/VR-042/README.md) | P0-A cross-document launch single-flight і canonical launch-proof ledger | `PARTIAL` | `REQ-0037`, `GT-067`, `B1-47`, `RCA-023`; продовжує `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054` |
