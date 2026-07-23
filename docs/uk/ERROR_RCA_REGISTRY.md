@@ -30,6 +30,8 @@
 
 | RCA-016 | RTL-листи втрачали явний напрямок, а client fallback теоретично міг завантажити remote image після sanitizer regression | `dir/lang` не входили до allowlist; iframe CSP і secondary sanitizer покладалися на server sanitizer як єдину remote-image межу | Додано bounded directional attributes, content-derived direction і attachment-token-only image rendering з `blob:` CSP | Для untrusted mail HTML потрібні незалежні server/client fail-closed boundaries та fixture corpus для direction, active content і tracking | `PARTIAL` | [VR-035](verification-reports/reports/VR-035/README.md) |
 
+| RCA-017 | Reply/Forward повторювалися, а native Gmail handoff залежав від позиційного browser account | Три action builders не мали одного viewport owner; прямий `state.thread.gmailUrl` не зв’язував handoff із stable connection identity; settings metadata не мав capability map | Desktop/mobile surfaces розділено, secondary actions перенесено в progressive menu, додано connection-first `authuser` resolver і capability hub | Один action owner на viewport; усі зовнішні Gmail переходи проходять exact-account resolver; unsupported actions лише пояснюють межу | `PARTIAL` | [VR-036](verification-reports/reports/VR-036/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

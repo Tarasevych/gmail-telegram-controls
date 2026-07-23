@@ -3454,8 +3454,8 @@ test('Focus View exposes bounded triage next action Resume Rail and exactly thre
   assert.match(attentionAssist, /Метод: /);
   assert.match(attentionAssist, /Перейти до повідомлення-джерела/);
   assert.match(attentionAssist, /details\.quoted-history/);
-  assert.match(attentionAssist, /openSafeUrl\(state\.thread\.gmailUrl, false\)/,
-    'an evidence fragment outside the rendered window must still reach the original Gmail thread');
+  assert.match(attentionAssist, /openCurrentThreadInGmail\(\)/,
+    'an evidence fragment outside the rendered window must still reach the original Gmail thread through the account-correct handoff');
   assert.doesNotMatch(attentionAssist, /message\.bodyText|messages\.slice\(-3\)/,
     'the UI must render only server-bound evidence and never invent citations from message bodies');
   assert.match(uiSource, /className: "next-action-input"/);

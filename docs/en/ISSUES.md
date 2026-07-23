@@ -579,3 +579,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Local evidence:** focused F-01 corpus `6/6`; full Apps Script suite `629/629`.
 - **Boundary:** native Telegram Desktop/mobile fidelity with real newsletter/invoice/RTL/CID fixtures remains `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
 - **Evidence:** [VR-035](verification-reports/reports/VR-035/README.md).
+
+## GT-064 — Message actions were duplicated and Gmail handoff could open the wrong browser account
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Product task:** `B1-44` / V3 `F-02`
+- **Root cause:** the desktop toolbar, conversation footer, and mobile action bar independently created Reply/Forward; the mobile bar was visible on desktop. Four handoff sites opened a server-provided `gmailUrl` directly, which could contain positional `/u/0`, while the metadata panel did not distinguish Mini App/API capabilities from native Gmail-only settings.
+- **Correction:** one primary action surface per viewport; a compact desktop toolbar and progressive `More`; an exact connection-first resolver builds `authuser=<email>` or fails closed; a settings capability hub classifies supported actions, account-correct Gmail handoff, and honestly unsupported operations.
+- **Local evidence:** focused message-capability contract `6/6`; focused Mail App group `98/98`; full Apps Script suite `635/635`.
+- **Boundary:** no RPC, OAuth scope, raw MIME transfer, or Gmail mutation was added. Browser settings fragments and native popup/deep-link behavior remain `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
+- **Evidence:** [VR-036](verification-reports/reports/VR-036/README.md).

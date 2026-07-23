@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-035](reports/VR-035/README.md) фіксує F-01 reader fidelity, RTL/language preservation і fail-closed remote-image privacy. Native acceptance лишається окремим gate.
+[VR-036](reports/VR-036/README.md) фіксує F-02: одну action surface на viewport, account-correct Gmail handoff і capability-класифікацію settings. Native acceptance лишається окремим gate.

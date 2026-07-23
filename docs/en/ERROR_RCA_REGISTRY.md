@@ -30,6 +30,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-016 | RTL messages lost explicit direction, while a client fallback could theoretically load a remote image after a sanitizer regression | `dir/lang` were outside the allowlist; the iframe CSP and secondary sanitizer treated the server sanitizer as the only remote-image boundary | Added bounded directional attributes, content-derived direction, and attachment-token-only image rendering with a `blob:` CSP | Untrusted mail HTML needs independent fail-closed server/client boundaries and a fixture corpus for direction, active content, and tracking | `PARTIAL` | [VR-035](verification-reports/reports/VR-035/README.md) |
 
+| RCA-017 | Reply/Forward repeated while native Gmail handoff depended on a positional browser account | Three action builders lacked one viewport owner; direct `state.thread.gmailUrl` did not bind handoff to stable connection identity; settings metadata lacked a capability map | Desktop/mobile surfaces are separated, secondary actions moved to a progressive menu, and a connection-first `authuser` resolver plus capability hub were added | One action owner per viewport; every external Gmail transition uses the exact-account resolver; unsupported actions only explain the boundary | `PARTIAL` | [VR-036](verification-reports/reports/VR-036/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.
