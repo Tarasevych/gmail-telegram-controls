@@ -16,6 +16,9 @@ test('v67 staging bridge targets only the exact immutable staging deployment', (
   assert.match(bridge, /mailbox_bootstrap/);
   assert.match(bridge, /init_data/);
   assert.match(bridge, /form.method = 'post'/);
+  assert.match(bridge, /data-mailbox-handoff/);
+  assert.match(bridge, /__gtMailboxHandoff\.submitted/);
+  assert.match(bridge, /if \(window\.__gtMailboxHandoff\.submitted\) return/);
   assert.match(bridge, /noindex,nofollow,noarchive/);
   assert.doesNotMatch(bridge, /v65/);
 });

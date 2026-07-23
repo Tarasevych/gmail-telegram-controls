@@ -7,8 +7,18 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; form-action https://script.google.com https://script.googleusercontent.com; base-uri 'none'; object-src 'none'">
   <title>Gmail Versie 1 staging v67</title>
+  <script>
+    document.documentElement.setAttribute('data-mailbox-handoff', 'pending');
+    window.__gtMailboxHandoff = { submitted: false };
+    window.setTimeout(function revealFailedHandoff() {
+      if (!window.__gtMailboxHandoff.submitted) {
+        document.documentElement.removeAttribute('data-mailbox-handoff');
+      }
+    }, 1200);
+  </script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    html[data-mailbox-handoff="pending"] #card { visibility: hidden; }
     :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f7fb; color: #172033; }
     main { max-width: 420px; margin: 24px; padding: 28px; border-radius: 22px; background: #fff; box-shadow: 0 12px 40px #1720331f; text-align: center; }
@@ -75,7 +85,15 @@
       addField('init_data', tg.initData);
       addField('route', route.toString().slice(0, 512));
       document.body.appendChild(form);
-      form.submit();
+      if (window.__gtMailboxHandoff.submitted) return;
+      window.__gtMailboxHandoff.submitted = true;
+      try {
+        form.submit();
+      } catch (_error) {
+        window.__gtMailboxHandoff.submitted = false;
+        document.documentElement.removeAttribute('data-mailbox-handoff');
+        fail('Не вдалося передати захищений запуск. Спробуйте ще раз.');
+      }
     })();
   </script>
 </body>
