@@ -463,3 +463,14 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Records / Записи:** `GT-059`, `B1-39`, `RCA-012`, `VR-030`.
 - **Boundary / Межа:** no live Box/Google OAuth, Gmail or Telegram mutation, staging, production promotion, token read, or secret-property read / без live Box/Google OAuth, змін Gmail чи Telegram, staging, production promotion, читання токенів або secret properties.
 - **Primary references / Первинні джерела:** [Box authorize endpoint](https://developer.box.com/reference/get-authorize), [Box scopes](https://developer.box.com/guides/api-calls/permissions-and-errors/scopes).
+## D-03 smart safe URL resolver evidence / Доказ D-03 smart safe URL resolver
+
+- **Status / Статус:** `VERIFIED` for source/tests/docs; overall D-03 remains `PARTIAL` because DNS-to-UrlFetch pinning and native deployment acceptance are `UNVERIFIED` / `VERIFIED` для source/tests/docs; загальний D-03 залишається `PARTIAL`, бо DNS-to-UrlFetch pinning і native deployment acceptance — `UNVERIFIED`.
+- **Source commit / Коміт джерела:** `5cfd54c03ddfb2b5af635bf74c767670c1c5cb4f`.
+- **Normal merge / Звичайне злиття:** PR `#91`, merge `accd8ffa1dc0684622a1dcf4635106e0b669c508`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `accd8ffa1dc0684622a1dcf4635106e0b669c508`.
+- **Implemented / Реалізовано:** direct/signed URL preservation; deterministic single-target Google wrappers; no-fetch Google search/ambiguous routing to link mode; visited-URL loop guard; origin/resolution classification and licensing warning.
+- **Tests / Тести:** focused `8/8`; full Apps Script suite `616/616`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, release-state, and diff gates passed.
+- **Records / Записи:** `GT-060`, `B1-40`, `RCA-013`, `VR-031`.
+- **Boundary / Межа:** synthetic responses only; no live URL fetch, OAuth, Gmail/Telegram mutation, staging, production promotion, token read, or secret-property read / лише synthetic responses; без live URL fetch, OAuth, змін Gmail/Telegram, staging, production promotion, читання токенів або secret properties.
+- **Primary references / Первинні джерела:** [UrlFetchApp](https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app), [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas), [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html), [OWASP SSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).
