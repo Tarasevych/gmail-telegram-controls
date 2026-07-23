@@ -174,3 +174,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Verified: focused contracts `102/102`, CRLF regression `5/5`, full Apps Script suite `580/580`, and documentation/privacy gates passed.
 - No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
 - Remaining: URL import, server-resumable restart, real transport abort, and native slow-network/minimize acceptance.
+
+## Оновлення доказів B-03: transfer-state для public HTTPS import
+
+- Дата: 2026-07-23
+- Статус інкремента: PARTIAL
+- Source commit: `0a0f911`
+- GitHub PR: `#79`
+- Normal merge у `main`: `2df9aae9d7ab00163d55a481dd88aae36b817e3e`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Реалізовано: повний public-HTTPS metadata-and-attach submit працює як один bounded shared transfer-task; паралельний submit має один RPC та одне вкладення; URL не потрапляє до task label/ID/telemetry/evidence; retry account/session-bound і fail-closed.
+- Security boundary: чинні server-side SSRF, DNS/IP, redirect, MIME і byte bounds не змінено.
+- Перевірено: focused contracts `111/111`, повний Apps Script suite `584/584`, документаційні та privacy gates пройшли; live external URL не використовувався.
+- GitHub Actions reconciliation: початковий Release state run `30014949722` мав conclusion success і всі успішні steps, але CheckRun `89232391443` лишився stale in-progress. Без нового push повторено лише цей workflow; replacement job `89233872636` завершився success, після чого PR став CLEAN. Branch protection не обходився.
+- Залишається: server-resumable restart, справжній транспортний abort і native slow-network/minimize acceptance.
+
+## B-03 evidence update: public HTTPS import transfer state
+
+- Date: 2026-07-23
+- Increment status: PARTIAL
+- Source commit: `0a0f911`
+- GitHub PR: `#79`
+- Normal merge into `main`: `2df9aae9d7ab00163d55a481dd88aae36b817e3e`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- Implemented: the complete public-HTTPS metadata-and-attach submit runs as one bounded shared transfer task; parallel submit has one RPC and one attachment; the URL never enters task labels, IDs, telemetry, or evidence; retry is account/session-bound and fail-closed.
+- Security boundary: existing server-side SSRF, DNS/IP, redirect, MIME, and byte bounds remain unchanged.
+- Verified: focused contracts `111/111`, full Apps Script suite `584/584`, and documentation/privacy gates passed; no live external URL was used.
+- GitHub Actions reconciliation: initial Release state run `30014949722` had a success conclusion and all successful steps, but CheckRun `89232391443` remained stale in-progress. Only that workflow was rerun without a new push; replacement job `89233872636` completed successfully and the PR became CLEAN. Branch protection was not bypassed.
+- Remaining: server-resumable restart, real transport abort, and native slow-network/minimize acceptance.
