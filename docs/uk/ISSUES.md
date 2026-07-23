@@ -590,3 +590,14 @@ Status: BLOCKED
 - **Локальний доказ:** focused message-capability contract `6/6`; focused Mail App group `98/98`; повний Apps Script suite `635/635`.
 - **Межа:** не додано RPC, OAuth scope, raw MIME transfer або Gmail mutation. Browser settings fragments і native popup/deep-link behavior лишаються `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
 - **Доказ:** [VR-036](verification-reports/reports/VR-036/README.md).
+
+## GT-065 — Автоматичний аналіз був надмірно відкритим і міг показувати непідтверджені або тривіальні твердження
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-45` / V3 `F-04`
+- **Підтверджена першопричина:** analysis card був розгорнутий за замовчуванням без незалежного вимикача; length-only boilerplate rule відкидав частину коротких змістовних відповідей, але лишав поширені mobile signatures; дати, суми, дії та urgency могли пережити normalization без exact supporting source fragment; автоматична пропозиція наступного кроку вставлялася в те саме поле, що й збережене рішення користувача.
+- **Виправлення:** account-scoped preference `collapsed|expanded|hidden`, default-collapsed disclosure, multilingual signature filtering без blanket short-text rejection, claim-level evidence gate, явне прийняття пропозиції та доступне persisted скасування triage.
+- **Межа безпеки:** аналіз лишається локальною евристикою плюс чинний Apps Script Language service. Зовнішній AI endpoint, raw mail transfer, Gmail mutation, OAuth, staging, production або release-state change не додаються.
+- **Залишається:** native acceptance на populated thread, real multilingual/attachment corpus і current-production evidence лишаються `UNVERIFIED`; загальний статус тому `PARTIAL`.
+- **Доказ:** [VR-038](verification-reports/reports/VR-038/README.md).

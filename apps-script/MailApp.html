@@ -1583,6 +1583,36 @@
       background: color-mix(in srgb, var(--primary) 3%, var(--bg));
     }
 
+    .ai-summary-disclosure {
+      margin: 0;
+    }
+
+    .ai-summary-toggle {
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+      border-radius: var(--radius-control);
+      background: color-mix(in srgb, var(--primary) 3%, var(--bg));
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .ai-summary-disclosure[open] > .ai-summary-toggle {
+      border-radius: var(--radius-control) var(--radius-control) 0 0;
+    }
+
+    .ai-summary-disclosure[open] > .thread-summary-card {
+      border-top: 0;
+      border-radius: 0 0 var(--radius-control) var(--radius-control);
+    }
+
+    .ai-summary-toggle .ai-summary-header {
+      display: inline-flex;
+      width: calc(100% - 24px);
+      margin: 0;
+      vertical-align: middle;
+    }
+
     .ai-summary-header {
       display: flex;
       align-items: center;
@@ -1659,6 +1689,22 @@
       font: 500 13px/1.4 inherit;
     }
 
+    .next-action-suggestion {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .next-action-suggestion-copy {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .triage-control {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1675,6 +1721,11 @@
       color: var(--text);
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .triage-undo-button {
+      grid-column: 1 / -1;
+      justify-self: start;
     }
 
     .triage-button {
@@ -5809,9 +5860,9 @@
         pendingAttentionUpdate: null,
         resumeRail: null,
         attentionPreferences: {
-          sessionPreset: "five_minutes", reminderMode: "soft", densityMode: "auto", maxThreads: 3,
+          sessionPreset: "five_minutes", reminderMode: "soft", densityMode: "auto", analysisMode: "collapsed", maxThreads: 3,
           digestWindows: [540, 1080], timezone: "UTC", onboardingCompletedAt: 0,
-          revision: 0, sessionPresets: [], reminderModes: [], densityModes: [], quietHours: { startMinute: 1320, endMinute: 480, label: "22:00–08:00" }
+          revision: 0, sessionPresets: [], reminderModes: [], densityModes: [], analysisModes: [], quietHours: { startMinute: 1320, endMinute: 480, label: "22:00–08:00" }
         },
         onboardingOpen: false,
         onboardingStep: 1,
@@ -5891,7 +5942,7 @@
           rescue: { active: false, preset: "five_minutes", threadIds: [], completedIds: [], scannedCount: 0, startedAt: 0, updatedAt: 0 },
           presence: { active: false, durationMinutes: 0, startedAt: 0, endsAt: 0, updatedAt: 0 },
           preferences: {
-            sessionPreset: "five_minutes", reminderMode: "soft", densityMode: "auto", digestWindows: [540, 1080],
+            sessionPreset: "five_minutes", reminderMode: "soft", densityMode: "auto", analysisMode: "collapsed", digestWindows: [540, 1080],
             timezone: "UTC", onboardingCompletedAt: 0, updatedAt: 0
           }
         },
@@ -7132,6 +7183,7 @@
               sessionPreset: safeText(attentionPreferences.sessionPreset),
               reminderMode: safeText(attentionPreferences.reminderMode),
               densityMode: safeText(attentionPreferences.densityMode),
+              analysisMode: safeText(attentionPreferences.analysisMode),
               digestWindows: Array.isArray(attentionPreferences.digestWindows)
                 ? attentionPreferences.digestWindows.slice(0, 2).map(function (item) { return Math.floor(Number(item || 0)); })
                 : undefined,
@@ -9503,6 +9555,8 @@
           ? safeText(input.reminderMode) : "soft";
         var densityMode = ["auto", "minimal", "standard", "analytical"].indexOf(safeText(input.densityMode)) !== -1
           ? safeText(input.densityMode) : "auto";
+        var analysisMode = ["collapsed", "expanded", "hidden"].indexOf(safeText(input.analysisMode)) !== -1
+          ? safeText(input.analysisMode) : "collapsed";
         var defaultLimits = { low: 1, five_minutes: 3, three_threads: 3, untimed: 10 };
         var digestWindows = Array.from(new Set((Array.isArray(input.digestWindows) ? input.digestWindows : [540, 1080])
           .map(function (item) { return Math.max(0, Math.min(1439, Math.floor(Number(item || 0)))); })))
@@ -9515,6 +9569,7 @@
           sessionPreset: sessionPreset,
           reminderMode: reminderMode,
           densityMode: densityMode,
+          analysisMode: analysisMode,
           digestWindows: digestWindows.length ? digestWindows : [540, 1080],
           timezone: timezone,
           onboardingCompletedAt: Math.max(0, Number(input.onboardingCompletedAt || 0)),
@@ -9533,6 +9588,9 @@
             return { key: safeText(item && item.key), label: safeText(item && item.label) };
           }) : [],
           densityModes: Array.isArray(input.densityModes) ? input.densityModes.slice(0, 4).map(function (item) {
+            return { key: safeText(item && item.key), label: safeText(item && item.label) };
+          }) : [],
+          analysisModes: Array.isArray(input.analysisModes) ? input.analysisModes.slice(0, 3).map(function (item) {
             return { key: safeText(item && item.key), label: safeText(item && item.label) };
           }) : []
         };
@@ -11582,6 +11640,23 @@
         });
         densityField.append(densitySelect);
         controls.append(densityField);
+
+        var analysisField = make("label", { className: "focus-session-field" });
+        analysisField.append(make("span", { text: "Автоматичний аналіз" }));
+        var analysisSelect = make("select", { attrs: { "aria-label": "Відображення автоматичного аналізу" } });
+        [
+          ["collapsed", "Згорнуто"], ["expanded", "Розгорнуто"], ["hidden", "Приховано"]
+        ].forEach(function (item) {
+          var option = make("option", { attrs: { value: item[0] }, text: item[1] });
+          option.selected = preferences.analysisMode === item[0];
+          analysisSelect.append(option);
+        });
+        analysisSelect.disabled = state.attentionPreferencesBusy || state.attentionBusy;
+        analysisSelect.addEventListener("change", function () {
+          updateAttentionPreferences({ analysisMode: analysisSelect.value });
+        });
+        analysisField.append(analysisSelect);
+        controls.append(analysisField);
         if (state.backlogRescue.active) {
           controls.append(make("span", {
             className: "focus-session-field",
@@ -12490,6 +12565,7 @@
             sessionPreset: optimistic.sessionPreset,
             reminderMode: optimistic.reminderMode,
             densityMode: optimistic.densityMode,
+            analysisMode: optimistic.analysisMode,
             digestWindows: optimistic.digestWindows,
             timezone: optimistic.timezone,
             completeOnboarding: Boolean(changes && changes.completeOnboarding),
@@ -13523,13 +13599,17 @@
 
       function buildAttentionAssist() {
         var host = make("section", { className: "attention-assist", attrs: { "aria-label": "Розумний фокус листа" } });
+        var preferences = normalizeAttentionPreferences(state.attentionPreferences);
+        var analysisMode = preferences.analysisMode;
         var densityMode = effectiveDensityMode();
         var minimalDensity = densityMode === "minimal";
         var analyticalDensity = densityMode === "analytical";
         var resumeRail = buildResumeRail();
         if (resumeRail) host.append(resumeRail);
 
-        if (state.thread.summary) {
+        if (state.thread.summary && analysisMode !== "hidden") {
+          var summaryDisclosure = make("details", { className: "ai-summary-disclosure" });
+          summaryDisclosure.open = analysisMode === "expanded";
           var summary = make("section", { className: "thread-summary-card ai-summary" });
           var summaryHeader = make("div", { className: "ai-summary-header" });
           var analysis = state.thread.analysis || {};
@@ -13540,7 +13620,9 @@
             text: "Впевненість: " + safeText(confidence.label, "обмежена"),
             attrs: { title: safeText(confidence.reason, "Завжди звіряйте важливі деталі з оригіналом.") }
           }));
-          summary.append(summaryHeader);
+          var summaryToggle = make("summary", { className: "ai-summary-toggle" });
+          summaryToggle.append(summaryHeader);
+          summaryDisclosure.append(summaryToggle);
           summary.append(make("p", { text: state.thread.summary }));
           var detailHost = minimalDensity
             ? make("details", { className: "density-details" })
@@ -13614,7 +13696,8 @@
             detailHost.append(sources);
           }
           if (minimalDensity) summary.append(detailHost);
-          host.append(summary);
+          summaryDisclosure.append(summary);
+          host.append(summaryDisclosure);
         }
 
         var handoff = state.thread.handoff || {};
@@ -13643,6 +13726,7 @@
         }
 
         var attention = state.thread.attention || normalizeAttention({}, state.thread.id);
+        var suggestedAction = attention.nextAction ? "" : safeText(state.thread.action).trim();
         var next = make("label", { className: "next-action-field" });
         next.append(make("span", { text: "Наступний крок" }));
         var nextInput = make("input", {
@@ -13650,7 +13734,7 @@
           attrs: {
             type: "text",
             maxlength: "320",
-            value: attention.nextAction || state.thread.action || "",
+            value: attention.nextAction || "",
             placeholder: "Один найменший реальний крок"
           }
         });
@@ -13671,6 +13755,26 @@
           if (event.key === "Enter") { event.preventDefault(); nextInput.blur(); }
         });
         next.append(nextInput);
+        if (suggestedAction) {
+          var suggestion = make("span", { className: "next-action-suggestion" });
+          suggestion.append(make("span", {
+            className: "next-action-suggestion-copy",
+            text: "Автоматична пропозиція: " + suggestedAction
+          }));
+          var useSuggestion = make("button", {
+            className: "outline-button",
+            type: "button",
+            text: "Використати пропозицію",
+            attrs: { "aria-label": "Використати автоматичну пропозицію як наступний крок" }
+          });
+          useSuggestion.addEventListener("click", function () {
+            nextInput.value = suggestedAction;
+            saveNextAction();
+            nextInput.focus();
+          });
+          suggestion.append(useSuggestion);
+          next.append(suggestion);
+        }
         host.append(next);
 
         var triage = make("fieldset", { className: "triage-control" });
@@ -13692,10 +13796,34 @@
             Array.prototype.slice.call(triage.querySelectorAll(".triage-button")).forEach(function (control) {
               control.setAttribute("aria-pressed", control === button && nextTriage === item[0] ? "true" : "false");
             });
-            updateAttention({ triage: nextTriage }, { silent: true, previousTriage: priorTriage });
+            updateAttention({ triage: nextTriage }, { silent: true, previousTriage: priorTriage })
+              .then(function (saved) {
+                showSnackbar(saved ? (nextTriage === "none" ? "Вибір скасовано." : "Рішення збережено.") : "Не вдалося зберегти рішення.", { error: !saved });
+              });
           });
           triage.append(button);
         });
+        if (attention.triage !== "none") {
+          var undoTriage = make("button", {
+            className: "outline-button triage-undo-button",
+            type: "button",
+            text: "Скасувати вибір",
+            attrs: { "aria-label": "Скасувати поточне рішення для листа" }
+          });
+          undoTriage.disabled = state.attentionBusy;
+          undoTriage.addEventListener("click", function () {
+            var priorTriage = attention.triage;
+            attention.triage = "none";
+            Array.prototype.slice.call(triage.querySelectorAll(".triage-button")).forEach(function (control) {
+              control.setAttribute("aria-pressed", "false");
+            });
+            updateAttention({ triage: "none" }, { silent: true, previousTriage: priorTriage })
+              .then(function (saved) {
+                showSnackbar(saved ? "Вибір скасовано." : "Не вдалося скасувати вибір.", { error: !saved });
+              });
+          });
+          triage.append(undoTriage);
+        }
         if (minimalDensity) {
           var moreDecisions = make("details", { className: "density-details" });
           moreDecisions.append(make("summary", { text: "Інші рішення для листа" }));
@@ -13823,6 +13951,22 @@
         });
         densityReaderField.append(densityReaderSelect);
         titleBlock.append(densityReaderField);
+        var analysisReaderField = make("label", { className: "density-reader-control" });
+        analysisReaderField.append(make("span", { text: "AI-аналіз" }));
+        var analysisReaderSelect = make("select", { attrs: { "aria-label": "Відображення автоматичного аналізу листа" } });
+        [
+          ["collapsed", "Згорнуто"], ["expanded", "Розгорнуто"], ["hidden", "Приховано"]
+        ].forEach(function (item) {
+          var option = make("option", { attrs: { value: item[0] }, text: item[1] });
+          option.selected = normalizeAttentionPreferences(state.attentionPreferences).analysisMode === item[0];
+          analysisReaderSelect.append(option);
+        });
+        analysisReaderSelect.disabled = state.attentionPreferencesBusy || state.attentionBusy;
+        analysisReaderSelect.addEventListener("change", function () {
+          updateAttentionPreferences({ analysisMode: analysisReaderSelect.value });
+        });
+        analysisReaderField.append(analysisReaderSelect);
+        titleBlock.append(analysisReaderField);
         titleRow.append(titleBlock);
         var star = make("button", {
           className: "icon-button",

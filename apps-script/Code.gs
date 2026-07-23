@@ -12553,6 +12553,24 @@ function telegramRequest_(method, payload) {
 
 /** Whole-message local analysis: every sentence competes for the summary. */
 function analyzeMessage_(subject, body) {
+  const bodySource = cleanBodyForAnalysis_(body || '');
+  const bodySentences = splitSentences_(bodySource)
+    .filter(sentence => !isBoilerplateSentence_(sentence));
+  if (!bodySentences.length) {
+    return {
+      essence: 'Немає змістовного підсумку.',
+      action: '',
+      importance: {
+        icon: '🟢',
+        level: 'звичайна',
+        reason: 'не знайдено змістовного тексту для автоматичної оцінки',
+      },
+      deadlines: [],
+      amounts: [],
+      otpCodes: [],
+      substantive: false,
+    };
+  }
   const source = cleanBodyForAnalysis_((subject ? subject + '. ' : '') + (body || ''));
   const sentences = splitSentences_(source).filter(sentence => !isBoilerplateSentence_(sentence));
   const subjectWords = new Set(
@@ -12591,6 +12609,7 @@ function analyzeMessage_(subject, body) {
     deadlines: deadlines.slice(0, 3),
     amounts: amounts.slice(0, 3),
     otpCodes,
+    substantive: true,
   };
 }
 
@@ -12631,7 +12650,10 @@ function isActionSentence_(sentence) {
 
 function isBoilerplateSentence_(sentence) {
   const lower = String(sentence || '').toLowerCase();
-  return sentence.length < 8 ||
+  const compact = lower.replace(/\s+/g, ' ').trim();
+  return !compact ||
+    /^(?:sent from my (?:iphone|ipad|android)|get outlook for (?:ios|android)|надіслано з мого (?:iphone|ipad|android)|відправлено з (?:iphone|ipad|android)|verzonden vanaf mijn (?:iphone|ipad|android)|envoy[ée] de mon (?:iphone|ipad|android)|gesendet von meinem (?:iphone|ipad|android))[.!]*$/i.test(compact) ||
+    /^(?:regards|kind regards|best regards|thanks|thank you|з повагою|дякую|met vriendelijke groet|cordialement)[,!.]*$/i.test(compact) ||
     /(unsubscribe|відписат|privacy policy|політик.*конфіденц|all rights reserved|copyright|do not reply|не відповідайте|view in browser|social media|facebook|instagram|linkedin)/i.test(lower) ||
     (/https?:\/\//i.test(lower) && lower.replace(/https?:\/\/\S+/gi, '').trim().length < 15);
 }

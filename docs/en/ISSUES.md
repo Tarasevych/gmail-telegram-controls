@@ -590,3 +590,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Local evidence:** focused message-capability contract `6/6`; focused Mail App group `98/98`; full Apps Script suite `635/635`.
 - **Boundary:** no RPC, OAuth scope, raw MIME transfer, or Gmail mutation was added. Browser settings fragments and native popup/deep-link behavior remain `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
 - **Evidence:** [VR-036](verification-reports/reports/VR-036/README.md).
+
+## GT-065 — Automated analysis was overexposed and could present unsupported or trivial claims
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-45` / V3 `F-04`
+- **Confirmed root cause:** the analysis card was expanded by default with no independent off switch; a length-only boilerplate rule discarded some short meaningful replies but retained common mobile signatures; dates, amounts, actions, and urgency could survive normalization without an exact supporting source fragment; and an automated next-action proposal was inserted into the same field as a persisted user decision.
+- **Correction:** account-scoped `collapsed|expanded|hidden` analysis preference, default-collapsed disclosure, multilingual signature filtering without a blanket short-text rejection, claim-level evidence gating, explicit proposal acceptance, and an accessible persisted triage undo.
+- **Safety boundary:** analysis remains local heuristic plus the existing Apps Script Language service. No external AI endpoint, raw mail transfer, Gmail mutation, OAuth, staging, production, or release-state change is introduced.
+- **Remaining:** native populated-thread acceptance, real multilingual/attachment corpus acceptance, and current-production evidence remain `UNVERIFIED`; overall status is therefore `PARTIAL`.
+- **Evidence:** [VR-038](verification-reports/reports/VR-038/README.md).

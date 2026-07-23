@@ -3558,6 +3558,27 @@ test('adaptive density follows energy preserves evidence and keeps minimal mode 
     'secondary mail management must stay behind the single Other actions disclosure');
 });
 
+test('AI analysis is account-scoped collapsed by default optional and never masquerades a suggestion as saved', () => {
+  assert.match(uiSource, /analysisMode: "collapsed"/);
+  assert.match(uiSource, /\["collapsed", "expanded", "hidden"\]/);
+  assert.match(uiSource, /updateAttentionPreferences\(\{ analysisMode: analysisSelect\.value \}\)/);
+  assert.match(uiSource, /updateAttentionPreferences\(\{ analysisMode: analysisReaderSelect\.value \}\)/);
+  const assistSource = sourceBetween(
+    '      function buildAttentionAssist() {',
+    '      function p0ReaderRenderSignature() {'
+  );
+  assert.match(assistSource, /state\.thread\.summary && analysisMode !== "hidden"/);
+  assert.match(assistSource, /summaryDisclosure\.open = analysisMode === "expanded"/);
+  assert.match(assistSource, /value: attention\.nextAction \|\| ""/,
+    'an automated next action must not appear as already persisted');
+  assert.match(assistSource, /Автоматична пропозиція: /);
+  assert.match(assistSource, /Використати автоматичну пропозицію як наступний крок/);
+  assert.match(assistSource, /Скасувати поточне рішення для листа/);
+  assert.match(assistSource, /updateAttention\(\{ triage: "none" \}/);
+  assert.match(uiSource, /connectionId: connectionId[\s\S]*analysisMode: optimistic\.analysisMode/,
+    'analysis visibility must persist through the exact selected Gmail connection');
+});
+
 test('co-processing presence is explicit private restorable and never mutates mail', () => {
   assert.match(uiSource, /op === "coProcessingSession"/);
   assert.match(uiSource, /function normalizeCoProcessing\(value\)/);

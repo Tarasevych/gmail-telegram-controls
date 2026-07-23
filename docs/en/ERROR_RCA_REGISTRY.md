@@ -34,6 +34,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-018 | Secondary compose and account text remained undersized, while narrow account labels clipped | The first typography correction covered the primary list/reader scale but legacy selectors still set 10 px compose metadata, 11 px settings/account controls, and nowrap account identity rows | Raised secondary text to a 12 px floor, retained the 14 px reading scale, and enabled wrap-safe account identity labels without adding a remote font | Verify computed styles on every release-critical surface; test the late cascade, narrow viewport, multilingual glyphs, and overflow rather than checking root variables alone | `PARTIAL` | [VR-037](verification-reports/reports/VR-037/README.md) |
 
+| RCA-019 | Automated analysis was always prominent, misclassified signatures/short replies, and could retain unsupported claims | Disclosure, substantive-content filtering, claim grounding, and persisted user decisions were separate contracts | Added account-scoped analysis visibility, default collapse, explicit trivial outcome, exact evidence gates, proposal acceptance, and explicit triage undo | Keep generated suggestions distinct from persisted decisions; require source fragments for every actionable claim; test multilingual trivial/short content and per-account preferences | `PARTIAL` | [VR-038](verification-reports/reports/VR-038/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

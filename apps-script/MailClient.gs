@@ -2940,33 +2940,58 @@ function mailboxThreadAnalysis_(threadId, subject, items) {
 function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
   const raw = value || {};
   const source = cleanBodyForAnalysis_((subject ? subject + '. ' : '') + (body || ''));
-  const fallback = source
+  const substantive = raw.substantive !== false && Boolean(cleanBodyForAnalysis_(body || ''));
+  const fallback = substantive
     ? 'Відкрийте розмову нижче, щоб переглянути повний зміст листування.'
-    : 'У цій розмові немає доступного тексту для підсумку.';
-  const candidateSummary = makePreview_(raw.essence || raw.summaryUk || '', CONFIG.MAX_SUMMARY_CHARS);
-  const summaryUk = mailboxAnalysisTextUk_(source, candidateSummary, fallback);
-  const candidateAction = makePreview_(raw.action || '', CONFIG.MAX_ACTION_CHARS);
-  const action = candidateAction
+    : 'Немає змістовного підсумку.';
+  const candidateSummary = substantive
+    ? makePreview_(raw.essence || raw.summaryUk || '', CONFIG.MAX_SUMMARY_CHARS)
+    : '';
+  const summaryUk = substantive
+    ? mailboxAnalysisTextUk_(source, candidateSummary, fallback)
+    : fallback;
+  const candidateAction = substantive ? makePreview_(raw.action || '', CONFIG.MAX_ACTION_CHARS) : '';
+  const ungroundedAction = candidateAction
     ? mailboxAnalysisTextUk_(source, candidateAction, '')
     : '';
   const importanceValue = raw.importance || {};
-  const importance = {
+  const ungroundedImportance = {
     icon: mailboxSafeText_(importanceValue.icon, 8) || '🟢',
     level: mailboxSafeText_(importanceValue.level, 40) || 'звичайна',
     reason: mailboxSafeText_(importanceValue.reason, 240) || 'не знайдено термінових дій або ризиків',
   };
-  const deadlines = (Array.isArray(raw.deadlines) ? raw.deadlines : [])
+  const ungroundedDeadlines = (substantive && Array.isArray(raw.deadlines) ? raw.deadlines : [])
     .slice(0, 3).map(value => mailboxSafeText_(value, 160)).filter(Boolean);
-  const amounts = (Array.isArray(raw.amounts) ? raw.amounts : [])
+  const ungroundedAmounts = (substantive && Array.isArray(raw.amounts) ? raw.amounts : [])
     .slice(0, 3).map(value => mailboxSafeText_(value, 120)).filter(Boolean);
-  const sourceFragments = mailboxAnalysisSourceFragments_(items, {
+  const sourceFragments = substantive ? mailboxAnalysisSourceFragments_(items, {
     summaryUk,
-    action,
-    importance,
-    deadlines,
-    amounts,
-  });
+    action: ungroundedAction,
+    importance: ungroundedImportance,
+    deadlines: ungroundedDeadlines,
+    amounts: ungroundedAmounts,
+  }) : [];
   const actionSource = mailboxAnalysisActionSource_(sourceFragments);
+  const action = actionSource ? ungroundedAction : '';
+  const claimHasEvidence = (kind, value) => sourceFragments.some(fragment => {
+    if (!Array.isArray(fragment && fragment.supports) || fragment.supports.indexOf(kind) === -1) return false;
+    const quote = cleanBodyForAnalysis_(fragment.quote).toLowerCase();
+    const claim = cleanBodyForAnalysis_(value).toLowerCase();
+    return Boolean(claim && quote.indexOf(claim) !== -1);
+  });
+  const deadlines = ungroundedDeadlines.filter(value => claimHasEvidence('deadline', value));
+  const amounts = ungroundedAmounts.filter(value => claimHasEvidence('amount', value));
+  const hasRiskEvidence = sourceFragments.some(fragment =>
+    Array.isArray(fragment && fragment.supports) && fragment.supports.indexOf('risk') !== -1
+  );
+  const hasGroundedImportance = Boolean(action || deadlines.length || amounts.length || hasRiskEvidence);
+  const importance = substantive && hasGroundedImportance ? ungroundedImportance : {
+    icon: '🟢',
+    level: 'звичайна',
+    reason: substantive
+      ? 'не знайдено підтверджених термінових дій або ризиків'
+      : 'не знайдено змістовного тексту для автоматичної оцінки',
+  };
   const taskTitleUk = mailboxTaskTitleUkFromSource_(actionSource);
   const hasGeneratedSummary = Boolean(candidateSummary && summaryUk !== fallback);
   const confidence = sourceFragments.length && hasGeneratedSummary
@@ -3001,6 +3026,7 @@ function mailboxNormalizeThreadAnalysis_(value, subject, body, items) {
     risk,
     confidence,
     sourceFragments,
+    substantive,
   };
 }
 
@@ -4542,6 +4568,11 @@ const MAILBOX_ATTENTION_DENSITY_MODES_ = Object.freeze({
   standard: 'Стандарт',
   analytical: 'Детально',
 });
+const MAILBOX_ATTENTION_ANALYSIS_MODES_ = Object.freeze({
+  collapsed: 'Згорнуто',
+  expanded: 'Розгорнуто',
+  hidden: 'Приховано',
+});
 const MAILBOX_CO_PROCESSING_DURATIONS_ = Object.freeze([10, 25]);
 const MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_ = Object.freeze([540, 1080]);
 
@@ -4589,6 +4620,8 @@ function mailboxAttentionPreferencesNormalize_(value) {
       Object.keys(MAILBOX_ATTENTION_REMINDER_MODES_), 'soft'),
     densityMode: mailboxEnum_(input.densityMode,
       Object.keys(MAILBOX_ATTENTION_DENSITY_MODES_), 'auto'),
+    analysisMode: mailboxEnum_(input.analysisMode,
+      Object.keys(MAILBOX_ATTENTION_ANALYSIS_MODES_), 'collapsed'),
     digestWindows: digestWindows.length ? digestWindows : MAILBOX_ATTENTION_DEFAULT_DIGEST_WINDOWS_.slice(),
     timezone,
     onboardingCompletedAt: mailboxSafeTimestamp_(input.onboardingCompletedAt),
@@ -4614,6 +4647,10 @@ function mailboxAttentionPreferencesDto_(registry) {
     densityModes: Object.keys(MAILBOX_ATTENTION_DENSITY_MODES_).map(key => ({
       key,
       label: MAILBOX_ATTENTION_DENSITY_MODES_[key],
+    })),
+    analysisModes: Object.keys(MAILBOX_ATTENTION_ANALYSIS_MODES_).map(key => ({
+      key,
+      label: MAILBOX_ATTENTION_ANALYSIS_MODES_[key],
     })),
     quietHours: { startMinute: 22 * 60, endMinute: 8 * 60, label: '22:00–08:00' },
   });
@@ -4894,7 +4931,7 @@ function mailboxAttentionUpdate_(payload, session) {
 
 function mailboxAttentionPreferences_(payload, session) {
   mailboxAssertAllowedKeys_(payload, [
-    'sessionPreset', 'reminderMode', 'densityMode', 'digestWindows', 'timezone', 'completeOnboarding', 'expectedRevision',
+    'sessionPreset', 'reminderMode', 'densityMode', 'analysisMode', 'digestWindows', 'timezone', 'completeOnboarding', 'expectedRevision',
   ]);
   if (payload.sessionPreset !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_SESSION_PRESETS_, String(payload.sessionPreset || ''))) {
@@ -4907,6 +4944,10 @@ function mailboxAttentionPreferences_(payload, session) {
   if (payload.densityMode !== undefined &&
       !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_DENSITY_MODES_, String(payload.densityMode || ''))) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректна щільність відображення листа.');
+  }
+  if (payload.analysisMode !== undefined &&
+      !Object.prototype.hasOwnProperty.call(MAILBOX_ATTENTION_ANALYSIS_MODES_, String(payload.analysisMode || ''))) {
+    throw mailboxError_('INVALID_ATTENTION', 'Некоректний режим автоматичного аналізу.');
   }
   if (payload.digestWindows !== undefined && !Array.isArray(payload.digestWindows)) {
     throw mailboxError_('INVALID_ATTENTION', 'Некоректні часові вікна дайджесту.');
@@ -4929,6 +4970,7 @@ function mailboxAttentionPreferences_(payload, session) {
       sessionPreset: payload.sessionPreset === undefined ? previous.sessionPreset : payload.sessionPreset,
       reminderMode: payload.reminderMode === undefined ? previous.reminderMode : payload.reminderMode,
       densityMode: payload.densityMode === undefined ? previous.densityMode : payload.densityMode,
+      analysisMode: payload.analysisMode === undefined ? previous.analysisMode : payload.analysisMode,
       digestWindows: payload.digestWindows === undefined ? previous.digestWindows : payload.digestWindows,
       timezone: payload.timezone === undefined ? previous.timezone : payload.timezone,
       onboardingCompletedAt: payload.completeOnboarding === true
@@ -4938,6 +4980,7 @@ function mailboxAttentionPreferences_(payload, session) {
     });
     if (previous.sessionPreset === next.sessionPreset && previous.reminderMode === next.reminderMode &&
         previous.densityMode === next.densityMode &&
+        previous.analysisMode === next.analysisMode &&
         previous.timezone === next.timezone &&
         previous.onboardingCompletedAt === next.onboardingCompletedAt &&
         JSON.stringify(previous.digestWindows) === JSON.stringify(next.digestWindows)) {
