@@ -7120,6 +7120,16 @@
           var disconnect = input.payload || input;
           return { op: "disconnectGmail", payload: { connectionId: safeId(disconnect.connectionId) } };
         }
+        if (op === "historyDelta") {
+          return {
+            op: "historyDelta",
+            connectionId: safeId(input.connectionId),
+            payload: {
+              startHistoryId: safeText(input.startHistoryId),
+              maxResults: Math.min(500, Math.max(1, Math.floor(Number(input.maxResults) || 200)))
+            }
+          };
+        }
         if (op === "metadata") {
           return { op: "metadata", connectionId: safeId(input.connectionId), payload: {} };
         }
@@ -7855,6 +7865,7 @@
       function normalizeAccounts(values, primaryValue) {
         var primary = primaryValue || {};
         var primaryEmail = safeText(primary.email || primary.emailAddress).toLowerCase();
+        var primaryId = safeId(primary.id || primaryEmail);
         var source = Array.isArray(values) && values.length ? values : [primary];
         var seen = new Set();
         var hasExplicitCurrent = source.some(function (value) { return Boolean(value && (value.current || value.isCurrent)); });
@@ -7866,6 +7877,9 @@
           if (!email || !id || seen.has(id) || item.connected === false) return null;
           seen.add(id);
           var name = safeText(item.name || item.displayName);
+          var candidateHistoryId = safeText(
+            item.historyId || ((id === primaryId || email.toLowerCase() === primaryEmail) ? primary.historyId : "")
+          );
           var fallbackCurrent = !hasExplicitCurrent && !fallbackCurrentUsed && email.toLowerCase() === primaryEmail;
           if (fallbackCurrent) fallbackCurrentUsed = true;
           return {
@@ -7875,6 +7889,7 @@
             email: email,
             initial: avatarInitial(name, email),
             avatarUrl: safeUrl(item.avatarUrl, false),
+            historyId: /^\d{1,64}$/.test(candidateHistoryId) ? candidateHistoryId : "",
             connected: true,
             canDisconnect: item.canDisconnect === true,
             current: Boolean(item.current || item.isCurrent || fallbackCurrent || (!hasExplicitCurrent && !primaryEmail && index === 0))
@@ -8085,6 +8100,7 @@
           email: safeText(account.email || account.emailAddress),
           initial: avatarInitial(account.name || account.displayName, account.email || account.emailAddress),
           avatarUrl: safeUrl(account.avatarUrl, false),
+          historyId: /^\d{1,64}$/.test(safeText(account.historyId)) ? safeText(account.historyId) : "",
           connected: true,
           current: true
         };
@@ -9752,6 +9768,7 @@
         backgroundTimer: 0,
         releaseTimer: 0,
         syncStatusTimer: 0,
+        historyPromise: null,
         started: false,
         metrics: {
           rpcTotal: 0,
@@ -9772,7 +9789,11 @@
           duplicateBootCalls: 0,
           readerRenderSkips: 0,
           readerAnchorRestores: 0,
-          readerFocusRestores: 0
+          readerFocusRestores: 0,
+          historyChecks: 0,
+          historyNoopChecks: 0,
+          historyListRefreshes: 0,
+          historyFullResyncs: 0
         }
       };
 
@@ -10017,6 +10038,59 @@
         return selected.length > 1
           ? prefix + "u:" + selected.join(",")
           : (selected[0] ? prefix + "a:" + selected[0] : "");
+      }
+
+      function p0HistoryCursorKey(connectionId) {
+        var namespace = p0AccountNamespace(connectionId);
+        return namespace ? namespace + ":gmail-history" : "";
+      }
+
+      function p0HistoryCursorValue(value) {
+        var source = value && typeof value === "object" ? value : {};
+        var connectionId = safeId(source.connectionId);
+        var historyId = safeText(source.historyId);
+        if (!connectionId || !/^\d{1,64}$/.test(historyId)) return null;
+        return {
+          connectionId: connectionId,
+          historyId: historyId,
+          updatedAt: Math.max(0, Number(source.updatedAt || 0))
+        };
+      }
+
+      async function p0ReadHistoryCursor(connectionId) {
+        var id = safeId(connectionId);
+        var key = p0HistoryCursorKey(id);
+        if (!id || !key) return null;
+        var record = p0PeekRecord("history", key) || await p0ReadRecord("history", key);
+        var cursor = p0HistoryCursorValue(record && record.value);
+        return cursor && cursor.connectionId === id ? cursor : null;
+      }
+
+      function p0RememberHistoryCursor(connectionId, historyId) {
+        var id = safeId(connectionId);
+        var cursor = safeText(historyId);
+        var namespace = p0AccountNamespace(id);
+        var key = p0HistoryCursorKey(id);
+        if (!id || !namespace || !key || !/^\d{1,64}$/.test(cursor)) {
+          return Promise.resolve(false);
+        }
+        return p0WriteRecord("history", key, namespace, {
+          connectionId: id,
+          historyId: cursor,
+          updatedAt: Date.now()
+        }, 24 * 60 * 60 * 1000);
+      }
+
+      function p0HistoryConnectionIds() {
+        var active = new Set(state.accounts.map(function (account) {
+          return safeId(account && account.id);
+        }).filter(Boolean));
+        var requested = state.unifiedMode
+          ? (state.accountSettings.unifiedConnectionIds || [])
+          : [state.account && state.account.id];
+        return Array.from(new Set(requested.map(safeId).filter(function (id) {
+          return Boolean(id && active.has(id));
+        })));
       }
 
       function p0ListCacheKey(view) {
@@ -10421,6 +10495,12 @@
       async function p0HydratePersistentState() {
         p0Runtime.cacheScope = p0SafeCacheScope(state.cacheScope);
         p0Runtime.allowedAccountIds = state.accounts.map(function (account) { return safeId(account.id); }).filter(Boolean);
+        await Promise.all(state.accounts.map(async function (account) {
+          var historyId = safeText(account && account.historyId);
+          if (!/^\d{1,64}$/.test(historyId)) return false;
+          var existing = await p0ReadHistoryCursor(account.id);
+          return existing ? true : p0RememberHistoryCursor(account.id, historyId);
+        }));
         await p0HydrateDesktopPaneLayout();
         var all = await p0DbGetAll();
         var now = Date.now();
@@ -10724,7 +10804,7 @@
 
       function p0RpcDedupeKey(payload) {
         var op = safeText(payload && payload.op);
-        if (["bootstrap", "listThreads", "getThread", "attentionState", "clientRelease"].indexOf(op) === -1) return "";
+        if (["bootstrap", "listThreads", "getThread", "historyDelta", "attentionState", "clientRelease"].indexOf(op) === -1) return "";
         return op + ":" + p0StableStringify(payload);
       }
 
@@ -11020,12 +11100,102 @@
         }
       }
 
+      async function p0HistoryDeltaForConnection(connectionId) {
+        var id = safeId(connectionId);
+        if (!id) return null;
+        var cursor = await p0ReadHistoryCursor(id);
+        var response = await callRpc({
+          op: "historyDelta",
+          connectionId: id,
+          startHistoryId: cursor ? cursor.historyId : "",
+          maxResults: 200
+        });
+        var result = response && response.data && typeof response.data === "object"
+          ? response.data
+          : response;
+        var nextHistoryId = safeText(result && result.historyId);
+        if (!result || !/^\d{1,64}$/.test(nextHistoryId)) {
+          throw new Error("INVALID_HISTORY_RESPONSE");
+        }
+        return {
+          connectionId: id,
+          historyId: nextHistoryId,
+          changed: result.changed === true,
+          requiresFullSync: result.requiresFullSync === true,
+          reason: safeText(result.reason),
+          changedThreadIds: Array.isArray(result.changedThreadIds)
+            ? result.changedThreadIds.map(safeId).filter(Boolean)
+            : []
+        };
+      }
+
+      async function p0RunHistoryReconcile() {
+        var connectionIds = p0HistoryConnectionIds();
+        if (!connectionIds.length) return false;
+        var results = [];
+        try {
+          for (var index = 0; index < connectionIds.length; index += 1) {
+            var result = await p0HistoryDeltaForConnection(connectionIds[index]);
+            if (result) results.push(result);
+          }
+        } catch (error) {
+          p0SetSyncStatus("Фонову перевірку відкладено", { persistent: false });
+          return false;
+        }
+
+        p0Runtime.metrics.historyChecks += results.length;
+        var requiresList = results.some(function (result) {
+          return result.changed || result.requiresFullSync;
+        });
+        if (!requiresList) {
+          p0Runtime.metrics.historyNoopChecks += results.length;
+          await Promise.all(results.map(function (result) {
+            return p0RememberHistoryCursor(result.connectionId, result.historyId);
+          }));
+          p0SetSyncStatus("Пошта актуальна", { persistent: false });
+          p0PublishDiagnostics();
+          return true;
+        }
+
+        if (results.some(function (result) { return result.requiresFullSync; })) {
+          p0Runtime.metrics.historyFullResyncs += 1;
+        }
+        p0Runtime.metrics.historyListRefreshes += 1;
+        var refreshed = await loadThreads(true, { background: true });
+        if (refreshed === false) return false;
+        var changedThreadIds = new Set();
+        results.forEach(function (result) {
+          result.changedThreadIds.forEach(function (threadId) {
+            changedThreadIds.add(result.connectionId + ":" + threadId);
+          });
+        });
+        if (state.selectedThreadId && state.selectedConnectionId &&
+            changedThreadIds.has(state.selectedConnectionId + ":" + state.selectedThreadId)) {
+          await openThread(
+            state.selectedThreadId,
+            true,
+            state.selectedConnectionId,
+            { background: true }
+          );
+        }
+        await Promise.all(results.map(function (result) {
+          return p0RememberHistoryCursor(result.connectionId, result.historyId);
+        }));
+        p0PublishDiagnostics();
+        return true;
+      }
+
+      function p0ReconcileHistory() {
+        if (p0Runtime.historyPromise) return p0Runtime.historyPromise;
+        p0Runtime.historyPromise = Promise.resolve()
+          .then(p0RunHistoryReconcile)
+          .finally(function () { p0Runtime.historyPromise = null; });
+        return p0Runtime.historyPromise;
+      }
+
       function p0RevalidateVisible() {
         if (!state.routeReady || state.needsGoogleConnection || document.visibilityState === "hidden") return;
-        loadThreads(true, { background: true });
-        if (state.selectedThreadId && state.selectedConnectionId) {
-          openThread(state.selectedThreadId, true, state.selectedConnectionId, { background: true });
-        }
+        p0ReconcileHistory();
       }
 
       function p0RequestPersistentStorage() {

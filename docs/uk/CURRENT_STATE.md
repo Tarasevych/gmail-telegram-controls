@@ -72,3 +72,13 @@
 - Source evidence: focused `37/37`; повний Apps Script suite `668/668` за `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
 - Production і staging не змінювалися; mailbox mutation не виконувалася. Native p95, ten-launch acceptance, offline private device-bound unlock, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging і production лишаються unverified або blocked через shared URL Fetch quota та `T-03`.
 - Записи: чинні `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; нові `GT-067`, `B1-47`, `RCA-023`, `VR-042`.
+
+## REQ-0037 P0-B History contour - 2026-07-24
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Безумовний full-list background poll замінено на exact-connection Gmail History delta. No-change cycle не виконує повторний list/thread RPC.
+- History cursor зберігається як decimal opaque string у чинному Telegram-owner + Gmail-connection IndexedDB namespace; secrets, OAuth tokens і Telegram signatures туди не записуються.
+- Missing/stale cursor, 404 і bounded page overflow fail-closed переводять цикл у повну reconciliation. Складний query/shared view при реальній зміні поки також використовує bounded full list.
+- Source evidence: focused `30/30`; повний Apps Script suite `673/673` за `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- Runtime, staging і production не змінювалися; Gmail/Telegram mutation або OAuth не виконувалися. Live request metrics, native multi-account acceptance та entity-level query membership лишаються `UNVERIFIED`; release gate лишається `BLOCKED` shared URL Fetch quota і `T-03`.
+- Записи: `GT-068`, `B1-48`, `RCA-024`, `VR-043`.

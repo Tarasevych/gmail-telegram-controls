@@ -43,6 +43,8 @@
 
 | RCA-023 | Concurrent launch documents могли дублювати bootstrap ownership, а launch-proof issuance і redemption могли розходитися | Історичні issuance і redemption використовували розділені state paths замість одного canonical locked claim ledger; document launch ownership також не мав cross-document single-flight | Додано `navigator.locks` з expiring content-free IndexedDB lease fallback та один `ScriptLock`-backed canonical ledger з HMAC owner/route scopes, deterministic 60-second nonce lifetime, 11-minute tombstones, межею 100 записів і без secrets або identifiers | Тримати issue/redeem в одній canonical claim transaction; тестувати cross-document contention, expiry/tombstone bounds, route/owner scope rejection, overlay-free ordinary launch і mutation-quiescent release reload | `PARTIAL` | [VR-042](verification-reports/reports/VR-042/README.md) |
 
+| RCA-024 | Кожен background revalidation повторно завантажував список і вибраний ланцюжок навіть без Gmail-змін | `p0RevalidateVisible()` напряму викликав full `loadThreads()`; bootstrap `historyId` втрачався в client normalization, а окремий Telegram-card History state не був безпечним Mini App cursor | Додано exact-connection read-only History delta, account-scoped IndexedDB cursor, one-promise reconciliation і fail-closed full sync при missing/stale cursor або bounded page overflow | Не ділити cursors між runtime lanes чи акаунтами; зберігати History ID як opaque string; тестувати no-change RPC suppression, 404 reset, pagination bound і unified-account isolation | `PARTIAL` | [VR-043](verification-reports/reports/VR-043/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.
