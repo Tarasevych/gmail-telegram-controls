@@ -11700,6 +11700,7 @@
       function attachmentTypeInfo(attachment) {
         var mimeType = safeText(attachment && attachment.mimeType).toLowerCase();
         var name = safeText(attachment && attachment.name).toLowerCase();
+        if (mimeType === "image/svg+xml" || /\.svgz?$/.test(name)) return { icon: "📝", label: "SVG-код", preview: "text" };
         if (mimeType.indexOf("image/") === 0) return { icon: "🖼️", label: "Зображення", preview: "image" };
         if (mimeType === "application/pdf" || /\.pdf$/.test(name)) return { icon: "📄", label: "PDF", preview: "pdf" };
         if (mimeType.indexOf("text/") === 0 || /(?:json|javascript|xml|yaml|toml)$/.test(mimeType) || /\.(?:txt|md|log|csv|json|xml|ya?ml|toml|ini|css|js|ts|py|ps1|sh|html?)$/.test(name)) {
@@ -12700,49 +12701,118 @@
           (typeof navigator.pdfViewerEnabled !== "boolean" || navigator.pdfViewerEnabled));
       }
 
+      var ZIP_PREVIEW_LIMITS = {
+        archiveBytes: 8 * 1024 * 1024,
+        entries: 200,
+        entryBytes: 50 * 1024 * 1024,
+        totalBytes: 100 * 1024 * 1024,
+        ratio: 100
+      };
+
+      function safeZipPreviewPath(value) {
+        var path = safeText(value).replace(/\\/g, "/");
+        if (!path || /\u0000/.test(path) || path.charAt(0) === "/" || /^[A-Za-z]:/.test(path)) return "";
+        var segments = path.split("/");
+        if (segments.some(function (segment) { return segment === ".."; })) return "";
+        return path;
+      }
+
       function zipArchiveEntries(buffer) {
         var bytes = new Uint8Array(buffer || new ArrayBuffer(0));
         var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         var lower = Math.max(0, bytes.length - 65557);
         var eocd = -1;
         for (var offset = bytes.length - 22; offset >= lower; offset -= 1) {
-          if (view.getUint32(offset, true) === 0x06054b50) { eocd = offset; break; }
+          if (view.getUint32(offset, true) !== 0x06054b50 || offset + 22 > bytes.length) continue;
+          var commentLength = view.getUint16(offset + 20, true);
+          if (offset + 22 + commentLength === bytes.length) { eocd = offset; break; }
         }
         if (eocd < 0) throw new Error("Не знайдено каталог ZIP-архіву.");
+        var diskNumber = view.getUint16(eocd + 4, true);
+        var centralDisk = view.getUint16(eocd + 6, true);
+        var diskEntries = view.getUint16(eocd + 8, true);
         var total = view.getUint16(eocd + 10, true);
         var centralSize = view.getUint32(eocd + 12, true);
         var centralOffset = view.getUint32(eocd + 16, true);
+        if (diskNumber || centralDisk || diskEntries !== total) {
+          throw new Error("Багатотомний ZIP можна завантажити, але його preview заблоковано.");
+        }
         if (total === 0xffff || centralSize === 0xffffffff || centralOffset === 0xffffffff) {
           throw new Error("ZIP64 можна завантажити, але його список поки не показується.");
         }
-        if (centralOffset + centralSize > bytes.length) throw new Error("Каталог ZIP виходить за межі файла.");
+        if (total > ZIP_PREVIEW_LIMITS.entries) {
+          throw new Error("ZIP містить забагато записів для безпечного preview.");
+        }
+        if (centralOffset + centralSize > eocd || centralOffset > bytes.length) {
+          throw new Error("Каталог ZIP виходить за межі файла.");
+        }
         var entries = [];
+        var aggregateSize = 0;
         var cursor = centralOffset;
+        var centralEnd = centralOffset + centralSize;
         var decoder = typeof TextDecoder === "function" ? new TextDecoder("utf-8", { fatal: false }) : null;
-        while (cursor + 46 <= bytes.length && entries.length < Math.min(total, 200)) {
-          if (view.getUint32(cursor, true) !== 0x02014b50) break;
+        while (entries.length < total) {
+          if (cursor + 46 > centralEnd || view.getUint32(cursor, true) !== 0x02014b50) {
+            throw new Error("ZIP містить пошкоджений запис каталогу.");
+          }
+          var madeBy = view.getUint16(cursor + 4, true);
           var flags = view.getUint16(cursor + 8, true);
           var compressedSize = view.getUint32(cursor + 20, true);
           var size = view.getUint32(cursor + 24, true);
           var nameLength = view.getUint16(cursor + 28, true);
           var extraLength = view.getUint16(cursor + 30, true);
-          var commentLength = view.getUint16(cursor + 32, true);
-          var next = cursor + 46 + nameLength + extraLength + commentLength;
-          if (!nameLength || next > bytes.length) throw new Error("ZIP містить пошкоджений запис каталогу.");
+          var entryCommentLength = view.getUint16(cursor + 32, true);
+          var externalAttributes = view.getUint32(cursor + 38, true);
+          var next = cursor + 46 + nameLength + extraLength + entryCommentLength;
+          if (!nameLength || next > centralEnd || compressedSize === 0xffffffff || size === 0xffffffff) {
+            throw new Error("ZIP містить пошкоджений або ZIP64 запис каталогу.");
+          }
           var nameBytes = bytes.slice(cursor + 46, cursor + 46 + nameLength);
           var name = decoder ? decoder.decode(nameBytes) : Array.prototype.map.call(nameBytes, function (value) {
             return String.fromCharCode(value);
           }).join("");
+          name = safeZipPreviewPath(name);
+          if (!name) throw new Error("ZIP містить небезпечний шлях і не буде показаний.");
+          if (flags & 1 || flags & 64) throw new Error("Зашифрований ZIP можна лише завантажити.");
+          var hostSystem = (madeBy >>> 8) & 0xff;
+          var unixMode = (externalAttributes >>> 16) & 0xffff;
+          if (hostSystem === 3 && (unixMode & 0xf000) === 0xa000) {
+            throw new Error("ZIP містить symbolic link і не буде показаний.");
+          }
+          if (size > ZIP_PREVIEW_LIMITS.entryBytes) {
+            throw new Error("Окремий ZIP-запис завеликий для безпечного preview.");
+          }
+          aggregateSize += size;
+          if (aggregateSize > ZIP_PREVIEW_LIMITS.totalBytes) {
+            throw new Error("Сумарний розмір ZIP завеликий для безпечного preview.");
+          }
+          if (size > 1024 * 1024 && (!compressedSize || size / compressedSize > ZIP_PREVIEW_LIMITS.ratio)) {
+            throw new Error("ZIP має небезпечне співвідношення стиснення.");
+          }
           entries.push({
-            name: safeText(name, "(без назви)").slice(0, 1024),
+            name: name.slice(0, 1024),
             size: size,
             compressedSize: compressedSize,
-            encrypted: Boolean(flags & 1)
+            directory: name.endsWith("/")
           });
           cursor = next;
         }
-        if (!entries.length && total) throw new Error("Не вдалося прочитати записи ZIP-каталогу.");
-        return { entries: entries, total: total, truncated: total > entries.length };
+        if (cursor !== centralEnd) throw new Error("ZIP має неузгоджений розмір каталогу.");
+        return { entries: entries, total: total, totalSize: aggregateSize };
+      }
+
+      function attachmentBlobArrayBuffer(blob) {
+        if (blob && typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
+        return new Promise(function (resolve, reject) {
+          if (typeof FileReader !== "function") {
+            reject(new Error("Цей WebView не підтримує безпечне читання ZIP."));
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = function () { resolve(reader.result); };
+          reader.onerror = function () { reject(reader.error || new Error("Не вдалося прочитати ZIP.")); };
+          reader.readAsArrayBuffer(blob);
+        });
       }
 
       function renderTextAttachmentPreview(data) {
@@ -12762,23 +12832,27 @@
       }
 
       function renderZipAttachmentPreview(data) {
+        if (Number(data && data.size || 0) > ZIP_PREVIEW_LIMITS.archiveBytes) {
+          attachmentPreviewFallback("ZIP завеликий для безпечного preview. Файл можна завантажити без розпакування.");
+          return;
+        }
         els.attachmentPreviewBody.append(make("div", { className: "spinner", attrs: { "aria-hidden": "true" } }));
-        data.blob.arrayBuffer().then(function (buffer) {
+        attachmentBlobArrayBuffer(data.blob).then(function (buffer) {
           if (state.attachmentPreviewData !== data || els.attachmentPreviewLayer.hidden) return;
           var listing = zipArchiveEntries(buffer);
           clear(els.attachmentPreviewBody);
+          els.attachmentPreviewBody.append(make("p", {
+            text: "Записів: " + listing.total + " · сумарно: " + formatSize(listing.totalSize) + " · лише metadata, без розпакування"
+          }));
           var list = make("ol", {
             className: "attachment-archive-preview",
             attrs: { "aria-label": "Вміст ZIP-архіву" }
           });
           listing.entries.forEach(function (entry) {
             list.append(make("li", {
-              text: entry.name + (entry.name.endsWith("/") ? "" : " · " + formatSize(entry.size)) + (entry.encrypted ? " · зашифровано" : "")
+              text: entry.name + (entry.directory ? "" : " · " + formatSize(entry.size))
             }));
           });
-          if (listing.truncated) {
-            list.append(make("li", { text: "… показано перші " + listing.entries.length + " із " + listing.total + " записів" }));
-          }
           els.attachmentPreviewBody.append(list);
         }).catch(function (error) {
           if (state.attachmentPreviewData !== data || els.attachmentPreviewLayer.hidden) return;
@@ -12810,7 +12884,8 @@
             attrs: {
               src: state.attachmentPreviewUrl + "#page=1&view=FitH&toolbar=0&navpanes=0",
               title: "Перша сторінка PDF: " + data.name,
-              referrerpolicy: "no-referrer"
+              referrerpolicy: "no-referrer",
+              sandbox: ""
             }
           });
           frame.addEventListener("error", function () {
