@@ -26,6 +26,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-014 | Back/Forward lacked canonical list/thread state, the banner did not return to Inbox, and the reader duplicated account identity | Dynamic account context, route state, and reader presentation were separate mechanisms without a shared history contract | Added canonical hash routes, user-transition `pushState`, deduplicated `hashchange`/`popstate`, an Inbox action, and a contextual account chip | One route serializer, one history scheduler, stable connection IDs, and a regression contract for single/shared/mismatch states | `PARTIAL` | [VR-032](verification-reports/reports/VR-032/README.md) |
 
+| RCA-015 | Checkbox selection was absent, `Space` opened a thread, and double-click could repeat route/open | Single-reader selection state was incorrectly treated as the complete list interaction model; click activation had no single-flight guard | Added namespaced stable-key selection, an explicit keyboard contract, a bounded account-scoped bulk pipeline, and focus restoration | Do not reuse `row.click()` for different intents; selection, activation, and Gmail mutation need separate invariants and a regression matrix | `PARTIAL` | [VR-034](verification-reports/reports/VR-034/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

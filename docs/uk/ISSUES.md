@@ -557,3 +557,14 @@ Status: BLOCKED
 - **Локальний доказ:** focused contract `5/5`; повний Apps Script suite `617/617`.
 - **Межа:** native Telegram Desktop/WebView acceptance для Back/Forward і `A → B → A` лишається `UNVERIFIED`; production v65, staging `0` та immutable release history не змінювалися.
 - **Доказ:** [VR-032](verification-reports/reports/VR-032/README.md).
+
+## GT-062 — Список листів не мав безпечного мультивибору й deterministic activation
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Product task:** `B1-42` / V3 `E-05`
+- **Першопричина:** list contract підтримував лише один `selectedThreadId`; `Enter` і `Space` обидва викликали `row.click()`, кожен click напряму запускав route/open, а account/filter-scoped selection model і bulk-toolbar були відсутні.
+- **Виправлення:** checkbox-based selection за stable `accountId:threadId`, namespace за поточним mailbox view, `Enter=open`, `Space=select`, 650-мс single-flight activation, compact bounded sequential bulk actions та відновлення focus anchor після keyed reconciliation.
+- **Локальний доказ:** focused E-05 contract `4/4`; повний Apps Script suite `623/623`.
+- **Межа:** native mouse/touch/keyboard acceptance для 0/1/50/500 rows і deployed multi-account bulk actions лишається `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
+- **Доказ:** [VR-034](verification-reports/reports/VR-034/README.md).

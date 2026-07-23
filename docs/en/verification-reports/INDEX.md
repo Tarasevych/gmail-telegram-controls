@@ -246,3 +246,5 @@ A historical report is not rewritten after publication to hide an error. A new i
 | [VR-032](reports/VR-032/README.md) | E-03 navigation and actual mailbox context | `PARTIAL` | `REQ-0035`, `GT-061`, `B1-41`, `RCA-014` |
 
 | [VR-033](reports/VR-033/README.md) | E-04 Gmail label-management regression audit | `CONFLICTING` | `REQ-0035`, `GT-027`, `B1-21`, `VR-005` |
+
+| [VR-034](reports/VR-034/README.md) | E-05 list semantics, multi-selection, and deterministic activation | `PARTIAL` | `REQ-0035`, `GT-062`, `B1-42`, `RCA-015` |
