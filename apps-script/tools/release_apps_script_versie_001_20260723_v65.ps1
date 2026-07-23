@@ -258,11 +258,14 @@ try {
         Invoke-GoogleJson POST "$base/deployments" @{
           versionNumber=$CandidateVersion;manifestFileName='appsscript';description=$StagingDescription
         } | Out-Null
-        $deployments = @(Get-All "$base/deployments" 'deployments')
-        $staging = @($deployments | Where-Object {
-          [int]$_.deploymentConfig.versionNumber -eq $CandidateVersion -and
-          [string]$_.deploymentConfig.description -eq $StagingDescription
-        })
+        for ($attempt = 0; $attempt -lt 5 -and $staging.Count -ne 1; $attempt++) {
+          if ($attempt -gt 0) { Start-Sleep -Seconds 1 }
+          $deployments = @(Get-All "$base/deployments" 'deployments')
+          $staging = @($deployments | Where-Object {
+            [int]$_.deploymentConfig.versionNumber -eq $CandidateVersion -and
+            [string]$_.deploymentConfig.description -eq $StagingDescription
+          })
+        }
       }
       if ($staging.Count -ne 1) { throw 'Versie 1 staging was not verified exactly once.' }
       if ($legacyStaging.Count -eq 1) {

@@ -32,3 +32,11 @@
 ## Наступний gate
 
 Після focused/full tests, documentation і required PR checks виконати normal merge та read-only `PreflightOnly`. Рівно один `StageOnly` дозволено лише якщо stable/HEAD v64, rollback hashes, future-version guard, staging count і journal boundary пройшли.
+
+## Follow-up: затримка видимості deployment
+
+- **Статус:** `PARTIAL`
+- Перший `StageOnly` створив immutable v65 і рівно один staging, але негайне читання Apps Script Deployments API ще не побачило щойно створений deployment.
+- Production і HEAD залишилися на exact v64; journal зупинився на `staging_create_reserved`, тому повторне створення було заборонене.
+- Helper доповнено обмеженим polling: не більше п'яти read-back спроб з паузою одну секунду. Він не повторює `deployments.create` і приймає лише рівно один deployment з exact version та description.
+- Staging acceptance і production promotion залишаються непідтвердженими до окремої перевірки.
