@@ -486,3 +486,15 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - **Records / Записи:** `GT-061`, `B1-41`, `RCA-014`, `VR-032`.
 - **Boundary / Межа:** no Gmail/Telegram mutation, OAuth, staging, production promotion, release-helper mutation, token read, or secret-property read / без змін Gmail/Telegram, OAuth, staging, production promotion, release-helper mutation, читання токенів або secret properties.
 - **Release state / Стан релізу:** production remains v65, staging remains `0`, and immutable release history is unchanged / production лишається v65, staging `0`, immutable release history не змінено.
+
+## E-04 Gmail label-management regression evidence / Доказ E-04 регресії керування Gmail-мітками
+
+- **Status / Статус:** source/tests/docs are `VERIFIED`; overall E-04 is `CONFLICTING` because the current owner report of missing pencils has not been independently reproduced against production / source/tests/docs `VERIFIED`; загальний E-04 — `CONFLICTING`, бо поточну owner-скаргу про відсутні pencils ще не відтворено незалежно в production.
+- **Source-test commit / Коміт source-tests:** `c421a38856214a346f94224fcbfc4f115d4cd26b`.
+- **Normal merge / Звичайне злиття:** PR [#93](https://github.com/Tarasevych/gmail-telegram-controls/pull/93), merge `c83df92b321008d3c7c55db50c5ebb2f7ed1e405`.
+- **Remote parity / Паритет remote:** GitHub `main` = GitLab `main` = `c83df92b321008d3c7c55db50c5ebb2f7ed1e405`.
+- **Evidence / Доказ:** provider `label.type`, not name or visibility, controls USER label editing; fixtures cover `INBOX/...`, `[Imap]/...`, localized/system-like names, `labelHide`, SYSTEM denial, permissions, shared surfaces, and account-scoped metadata.
+- **Tests / Тести:** focused `7/7`; full Apps Script suite `619/619`; GitHub checks `8/8`; bilingual documentation, knowledge hub, verification report, release-state, diff, and staged sensitive-data gates passed.
+- **Records / Записи:** existing `GT-027`, existing `B1-21`, historical `VR-005`, new `VR-033`; no new GT/B1 was invented.
+- **Boundary / Межа:** no product-code change and no real Gmail label create/rename/delete, OAuth, Telegram mutation, staging, production promotion, token read, or secret-property read / без зміни product code і без реальних Gmail label create/rename/delete, OAuth, змін Telegram, staging, production promotion, читання токенів або secret properties.
+- **Release state / Стан релізу:** production remains v65, staging remains `0`, immutable history is unchanged; native read-only acceptance waits for a clean quota window / production лишається v65, staging `0`, immutable history незмінна; native read-only acceptance очікує clean quota window.
