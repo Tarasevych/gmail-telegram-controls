@@ -2,17 +2,17 @@
 
 [English](../en/CURRENT_STATE.md)
 
-<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
 
 ## Канонічний стан випуску
 
 - **Versie:** Versie 1.
 - **Production:** Apps Script immutable v65, `VERIFIED`.
-- **HEAD:** точний cumulative v65.
+- **Accepted release HEAD:** точний cumulative v65.
 - **Активні staging deployments:** `0`.
-- **Release journal:** `cleaned`.
-- **Release source boundary:** cumulative source `3373ca4aa403a28f3252ad72fbe65310b318c53c`; helper merge `eb19dc0822c97f86ebd458c379bde1db3794f800`; propagation fix `8201bc25bc12c470276bd14a0bfef6cde46fbd60`; bridge merge `759d9b9f5001e62e2c3a5cbcc1169077e641493b`.
-- **Rollback:** exact immutable v64 лишається доступним; historical immutable v56, v57, v59 і v62 збережені та не переписані.
+- **Останній release journal:** v70 terminal `abandoned`; журнал прийнятого production v65 історично лишається `cleaned`.
+- **Release source boundary:** прийнятий cumulative v65 source `3373ca4aa403a28f3252ad72fbe65310b318c53c`; source merge v70 `0666165b614f430103530728aa45349083db5e78`; release-asset merge v70 `70cc87ebf2a9c06b000e042e1e676838cf27d6b2`.
+- **Rollback:** exact immutable v64 лишається доступним; historical immutable v56, v57, v59, v62, v66-v70 збережені та не переписані.
 - **Telegram menu:** production `📬 Пошта · Versie 1`.
 
 ## Перевірений acceptance v65
@@ -46,10 +46,13 @@
 
 - Production і release-state stable залишаються immutable v65; owner menu залишається на production.
 - Immutable v66–v69 збережені історично; v69 завершився fail-closed як `abandoned` після native hard-reload/session conflict і не був promoted.
-- Source v70 merged normal PR на SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 створено рівно один раз, active owner-only staging `1`.
+- Source v70 merged normal PR на SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 створено рівно один раз, один раз перевірено та збережено історично.
 - Локальні gates після release assets: helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax і `git diff --check` pass.
 - Source v70 додає content-free SecureStorage classification, fail-closed locked state без restart-loop і перевірюваний bridge-to-usable timing; nonce replay protection не послаблено.
-- Native button-to-interactive p95, десять запусків, hard reload, offline private Inbox, Windows Desktop recovery і cached-thread acceptance залишаються `UNVERIFIED`/`BLOCKED`; promotion заборонено до повного staging acceptance.
+- Native v70 відкрив mailbox без нового OAuth cycle або повторного connection screen, відновив cached thread і показав avatar та три isolated Gmail roots. Перемикання на secondary root повернуло generic mail-operation error.
+- Fresh production v65 launch повернув той самий generic error ще до mailbox. Його executions `doPost`, `mailboxRedeemLaunch` і `mailboxRpc` завершилися, а сусідній timer trace впав у `legacy_recovery` з `errorCode=urlfetch_quota` та Apps Script daily `urlfetch` quota exception. Отже candidate-specific regression v70 не доведена.
+- Production promotion не виконано. Menu повернуто на production, exact staging deployment v70 видалено journal-bound helper, active staging `0`, journal v70 terminal `abandoned`.
+- Native button-to-interactive p95, десять запусків, hard reload, offline private Inbox, exact Windows SecureStorage recovery і bidirectional account switching залишаються `UNVERIFIED`/`BLOCKED`; повторний A/B відкладено до відновлення зовнішньої добової квоти.
 - Канонічні докази: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## Межа P0 acceptance v67 від 2026-07-23

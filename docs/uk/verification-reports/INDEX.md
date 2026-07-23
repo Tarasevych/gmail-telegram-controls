@@ -180,7 +180,7 @@ Source request: `REQ-0004`.
 
 - **Статус:** PARTIAL
 - **Дата:** 2026-07-23
-- **Покриття:** `REQ-0036`, втрата memory-only refresh state, replay уже спожитого launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, локальні regression/full-suite evidence, native v65/v69 A/B, hard reload і terminal release cleanup.
+- **Покриття:** `REQ-0036`, втрата memory-only refresh state, replay уже спожитого launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, локальні regression/full-suite evidence, native A/B v65/v69 і v65/v70, hard reload, shared quota evidence і terminal release cleanup.
 - **Звіт:** [reports/VR-023/README.md](reports/VR-023/README.md)
-- **Висновок:** source fix і повний suite `561/561` VERIFIED, але native Windows Desktop hard reload у v69 завершився `UNTRUSTED_NONCE_REPLAY`; candidate abandoned, staging видалено, production лишилася на v65. Desktop session continuity `CONFLICTING`; mobile і native concurrency `UNVERIFIED`.
+- **Висновок:** source/session correction локально VERIFIED. Hard reload v69 завершився `UNTRUSTED_NONCE_REPLAY`; v70 пізніше один раз відкрив native mailbox, але secondary switching і fresh v65 launch отримали той самий generic error, тоді як execution telemetry підтвердила `urlfetch_quota`. v70 не promoted, exact staging видалено, production лишилася v65. One-second, offline, Desktop recovery, mobile і concurrency acceptance залишаються `PARTIAL`/`UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

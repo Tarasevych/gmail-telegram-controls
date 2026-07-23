@@ -251,12 +251,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-33 — Persistent app session after reload without repeated OAuth
 
-- **Status:** PARTIAL.
+- **Status:** PARTIAL; native completion is BLOCKED by the shared daily `URLFETCH` quota incident.
 - **Source request:** `REQ-0036`; related P0 contour `REQ-0034`.
 - **Locally VERIFIED in source v70:** single-flight recovery remains intact; Telegram `SecureStorage` now exposes only a content-free diagnostic status; replay without a usable secure credential ends in an explicit locked state without a restart loop; a bridge timestamp enables cross-document timing. Focused tests `113/113`, full suite `567/567`, privacy scan `0`.
 - **Native v69 result:** production v65 loaded the mailbox twice; staging v69 loaded the mailbox after a bounded repeat, but a hard reload in Telegram Desktop resubmitted the POST and ended with `UNTRUSTED_NONCE_REPLAY`.
-- **Completed:** source v70 merged/CI; immutable v70 and exactly one owner-only staging were created; release/bridge gates pass `572/572` and `4/4`.
+- **Completed:** source v70 merged/CI; immutable v70 and exactly one owner-only staging were created; release/bridge gates passed `572/572` and `4/4`. Staging opened the mailbox without a repeated connection screen, restored a cached thread, and exposed three isolated roots.
 - **Platform boundary:** browser-level POST resubmission occurs before inner JavaScript. Without a supported device-bound unlock or single-origin app shell, private offline Inbox and automatic Desktop recovery remain `BLOCKED`/`UNVERIFIED`; unprotected web storage is not used.
-- **Still required:** ten native launches; exact SecureStorage status; hard reload; cached thread; mobile/WebView reopen; concurrent launch; measurable p95. Production v65 and the menu are unchanged; active v70 staging is `1`; promotion is forbidden pending complete acceptance.
+- **Shared blocker and disposition:** secondary switching on v70 and a fresh production v65 launch returned the same generic error; Apps Script telemetry confirmed daily `urlfetch` quota exhaustion in `legacy_recovery`. v70 was not promoted, the menu is production, exact staging was removed, active staging is `0`, and the journal is `abandoned`.
+- **Still required after quota recovery:** one bounded v65/causal-candidate A/B, ten native launches, exact SecureStorage status, hard reload, mobile/WebView reopen, concurrent launch, bidirectional account switching, and measurable p95. Cached-thread restoration is qualitatively observed but not a formal performance result.
 - **Evidence:** [GT-053](ISSUES.md), [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

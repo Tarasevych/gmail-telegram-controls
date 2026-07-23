@@ -180,7 +180,7 @@ A historical report is not rewritten after publication to hide an error. A new i
 
 - **Status:** PARTIAL
 - **Date:** 2026-07-23
-- **Coverage:** `REQ-0036`, loss of memory-only refresh state, replay of an already-consumed launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, local regression/full-suite evidence, native v65/v69 A/B, hard reload, and terminal release cleanup.
+- **Coverage:** `REQ-0036`, loss of memory-only refresh state, replay of an already-consumed launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, local regression/full-suite evidence, native v65/v69 and v65/v70 A/B, hard reload, shared quota evidence, and terminal release cleanup.
 - **Report:** [reports/VR-023/README.md](reports/VR-023/README.md)
-- **Conclusion:** the source fix and complete `561/561` suite are VERIFIED, but native Windows Desktop hard reload on v69 ended with `UNTRUSTED_NONCE_REPLAY`; the candidate was abandoned, staging was removed, and production remains v65. Desktop session continuity is `CONFLICTING`; mobile and native concurrency are `UNVERIFIED`.
+- **Conclusion:** the source/session correction is locally VERIFIED. v69 hard reload ended with `UNTRUSTED_NONCE_REPLAY`; v70 later opened the native mailbox once, but secondary switching and a fresh v65 launch hit the same generic error while execution telemetry confirmed `urlfetch_quota`. v70 was not promoted, exact staging was removed, and production remains v65. One-second, offline, Desktop recovery, mobile, and concurrency acceptance remain `PARTIAL`/`UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

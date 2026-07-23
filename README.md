@@ -8,11 +8,11 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
 
-Поточний public production: Apps Script immutable v65. HEAD exact v65; staging deployments: `0`; journal `cleaned`.
-Current public production: Apps Script immutable v65. HEAD is exact v65; staging deployments: `0`; journal is `cleaned`.
-- Поточний production працює на перевіреному Apps Script immutable v65. GT-031 і GT-037 закрито live acceptance; виправлення GT-039 підготовлено для наступного cumulative staging candidate v66, але ще не прийнято у staging або production.
+Поточний public production: Apps Script immutable v65. Accepted release HEAD exact v65; staging deployments: `0`; latest v70 journal `abandoned`.
+Current public production: Apps Script immutable v65. Accepted release HEAD is exact v65; staging deployments: `0`; the latest v70 journal is `abandoned`.
+- Поточний production працює на перевіреному Apps Script immutable v65. Історичний immutable v70 не просувався: shared daily `urlfetch` quota blocker відтворився також на v65, exact staging видалено, menu повернуто на production.
 - Канонічний актуальний стан: [Українською](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Датовані release/postmortem статті є історичними доказами, а не current-state джерелом.
 - Продуктові випуски рухаються лише послідовно: Versie 1, Versie 2, Versie 3 тощо.
 - Номери Apps Script immutable є технічними deployment ID, а не назвами продуктових версій.
@@ -38,7 +38,7 @@ Top-level Telegram Mini App for `@TarasevychGmailNotifierBot`.
 ## Current project line
 
 - Active development version: **Versie 1 · 2026-07-19**.
-- Current production runs verified Apps Script immutable v65. GT-031 and GT-037 are closed by live acceptance; the GT-039 fix is prepared for the next cumulative staging candidate v66 but has not yet been accepted in staging or production.
+- Current production runs verified Apps Script immutable v65. Historical immutable v70 was not promoted: the shared daily `urlfetch` quota blocker also reproduced on v65, exact staging was removed, and the menu was restored to production.
 - Canonical current state: [Українська](docs/uk/CURRENT_STATE.md) | [English](docs/en/CURRENT_STATE.md). Dated release and postmortem articles are historical evidence, not the current-state source.
 - Product builds now advance only sequentially: Versie 1, Versie 2, Versie 3, and so on.
 - Apps Script immutable numbers are technical deployment IDs, not product version names.

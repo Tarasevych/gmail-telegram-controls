@@ -87,3 +87,22 @@ The source correction is locally VERIFIED, but v69 native acceptance failed. The
 - The exact staging reference is not published; it is retained in the protected journal. The menu remains on production pending a published bridge and native acceptance.
 - Local release gates: `572/572`, bridge `4/4`, syntax/whitespace pass.
 - v69 evidence was not rewritten. v70 was not promoted; native hard reload and SecureStorage behavior remain `UNVERIFIED`.
+
+## v70 native A/B and terminal disposition
+
+- **Date:** 2026-07-23
+- **Status:** PARTIAL / BLOCKED
+- The published owner-only bridge opened the v70 mailbox without a new OAuth cycle or a repeated full-screen connection sequence. The avatar, three isolated Gmail roots, and an already cached thread were visible.
+- A controlled switch to a secondary Gmail root returned the generic mail-operation error. No retry loop or consent flow was started.
+- The menu was restored to production and a fresh v65 launch returned the same generic error before mailbox load. Apps Script recorded completed `doPost`, `mailboxRedeemLaunch`, and `mailboxRpc` calls.
+- The adjacent `checkNewMail_` execution supplied the causal shared-runtime evidence: content-free telemetry reached `legacy_recovery`, then failed with `errorCode=urlfetch_quota`; Apps Script reported that the daily `urlfetch` service quota had been exceeded.
+- The evidence does not establish a v70-specific regression. It also does not verify the one-second SLO, hard-reload recovery, exact SecureStorage behavior, or bidirectional account switching.
+- Production promotion was not performed. The exact v70 staging deployment was removed by the journal-bound fail-closed helper, active staging is `0`, the owner menu is production, immutable v70 is retained historically, and the v70 journal is terminal `abandoned`.
+
+| ID | Claim | Status | Evidence |
+|---|---|---|---|
+| VR-023-12 | v70 can open the native mailbox without another OAuth cycle or a duplicate connection screen. | PARTIAL | one clean native staging launch; ten-launch p95 not run |
+| VR-023-13 | The generic native mailbox failure is unique to v70. | CONFLICTING | the same error occurred on a fresh v65 production launch |
+| VR-023-14 | A shared Apps Script daily `urlfetch` quota blocker was active during the A/B window. | VERIFIED | execution trace with `legacy_recovery` and `errorCode=urlfetch_quota` |
+| VR-023-15 | v70 was left in a safe terminal release state without changing production. | VERIFIED | production menu readback, exact staging removal, journal `abandoned`, production v65 |
+| VR-023-16 | v70 satisfies the one-second warm-launch SLO and persistent offline Inbox requirement. | UNVERIFIED | formal p95/offline acceptance did not run |
