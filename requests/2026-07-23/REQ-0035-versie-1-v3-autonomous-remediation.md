@@ -202,3 +202,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Verified: focused contracts `111/111`, full Apps Script suite `584/584`, and documentation/privacy gates passed; no live external URL was used.
 - GitHub Actions reconciliation: initial Release state run `30014949722` had a success conclusion and all successful steps, but CheckRun `89232391443` remained stale in-progress. Only that workflow was rerun without a new push; replacement job `89233872636` completed successfully and the PR became CLEAN. Branch protection was not bypassed.
 - Remaining: server-resumable restart, real transport abort, and native slow-network/minimize acceptance.
+
+## Оновлення доказів B-03: відновлення збереження чернетки після restart
+
+- Дата: 2026-07-23
+- Статус інкремента: PARTIAL
+- Source commit: `07954ee2e2184efa8548660105b6a7c4bef0cc86`
+- GitHub PR: `#80`
+- Normal merge у `main`: `dc5d98b87d35b66aa7d403b3c4d1442767f595ee`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Реалізовано: account-scoped content-free status RPC звіряє збереження Gmail-чернетки за тим самим operation ID після restart; клієнт не повторно надсилає MIME, вкладення, URL або токени, має не більше трьох автоматичних перевірок і fail-closed блокує відновлення, якщо тимчасові байти вкладення втрачено.
+- Перевірена межа: чинний Apps Script transport підтримує ідемпотентне відновлення результату операції, але не byte-resumable або background upload. Capability flags `resumableUpload` і `backgroundUpload` залишено `false`; несправжній abort не додано.
+- Перевірено: focused contracts `169/169`, повний Apps Script suite `590/590`, bilingual/knowledge/verification/release-state/diff checks пройшли, added-line sensitive-pattern scan `0`.
+- Live Gmail mutation, OAuth, staging і production promotion не виконувалися.
+- Залишається: справжній abort лише для транспорту, який його підтримує, та native slow-network/minimize acceptance; byte-resumable upload потребує окремого підтвердженого transport design.
+
+## B-03 evidence update: draft-save recovery after restart
+
+- Date: 2026-07-23
+- Increment status: PARTIAL
+- Source commit: `07954ee2e2184efa8548660105b6a7c4bef0cc86`
+- GitHub PR: `#80`
+- Normal merge into `main`: `dc5d98b87d35b66aa7d403b3c4d1442767f595ee`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- Implemented: an account-scoped, content-free status RPC reconciles the Gmail draft save under the same operation ID after restart; the client never resends MIME, attachments, URLs, or tokens, performs at most three automatic checks, and fails closed when transient attachment bytes were lost.
+- Verified boundary: the current Apps Script transport supports idempotent operation-outcome recovery, not byte-resumable or background upload. The `resumableUpload` and `backgroundUpload` capability flags remain `false`; no fake abort was added.
+- Verified: focused contracts `169/169`, full Apps Script suite `590/590`, bilingual/knowledge/verification/release-state/diff checks passed, and the added-line sensitive-pattern scan found `0` matches.
+- No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
+- Remaining: real abort only for a transport that supports it and native slow-network/minimize acceptance; byte-resumable upload requires a separate verified transport design.
