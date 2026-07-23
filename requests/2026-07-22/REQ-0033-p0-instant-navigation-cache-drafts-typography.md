@@ -114,3 +114,27 @@
 - GT-030 is now `VERIFIED`. GT-031 through GT-036 remain `PARTIAL`; GT-037 tracks the promotion read-after-write false negative, and GT-038 tracks the blank Telegram Web K/A embed while native Desktop succeeds.
 - External automatic INBOX after v63, a dedicated History runtime substage, measured cold/warm and `A -> B -> A`, cache quota/LRU, offline/cross-session draft, and one-reload/no-loop acceptance remain unproven.
 - The request therefore returns from `blocked` to active `recorded`, rather than being marked `completed`. Next Versie authorization remains `no`.
+
+## Continuation evidence — immutable v64 — 2026-07-22
+
+### Українською
+
+- PR #37 merged cumulative source correction GT-031; PR #38 merged exact helper v64 із direct rollback v63 і bounded reconciliation GT-037; PR #39 merged signed staging bridge v64.
+- Local gates пройшли послідовно: focused GT-031 `88/88`, source `501/501`, release `503/503` і final bridge/cumulative `505/505`. Required GitHub checks пройшли.
+- Рівно один `StageOnly` після read-only preflight створив immutable v64 і один owner-only staging deployment. Native Telegram Desktop підтвердив narrow full-address disclosure, avatar/fallback behavior, три isolated Gmail roots, фактичний shared view та controlled switching без OAuth.
+- Одна bounded promotion просунула exact v63 до v64. Два fresh native production launches пройшли; cleanup видалив staging; final preflight підтвердив stable/HEAD v64, staging `0` і journal `cleaned`.
+- Шість post-cleanup `checkNewMail_` executions завершилися. Один короткий process shell формально наклався на попередній приблизно на 5.7 секунди; lease-rejection explanation лишається inference, бо content-free substage telemetry була недоступна.
+- PR #40 опублікував paired UK/EN canonical state, final release report і VR-013; merge commit `5af0fc1fec6d8adcccc5d2834fca4867e69f45ee`. GitHub і private GitLab `main` ідентичні.
+- GT-031 і GT-037 тепер `VERIFIED`. GT-032–GT-036 і GT-038, measured cold/warm та `A -> B -> A`, cache quota/LRU, offline/cross-session draft, conflict handling і stale-open-client one-reload/no-loop acceptance лишаються `PARTIAL` або `UNVERIFIED`.
+- Запит лишається активним `recorded`, а не `completed`. Next Versie authorization лишається `no`; candidate v65 не створено.
+
+### English
+
+- PR #37 merged the cumulative GT-031 source correction; PR #38 merged the exact v64 helper with direct v63 rollback and bounded GT-037 reconciliation; PR #39 merged the signed v64 staging bridge.
+- Local gates passed in sequence: focused GT-031 `88/88`, source `501/501`, release `503/503`, and final bridge/cumulative `505/505`. Required GitHub checks passed.
+- Exactly one `StageOnly` after read-only preflight created immutable v64 and one owner-only staging deployment. Native Telegram Desktop verified the narrow full-address disclosure, avatar/fallback behavior, three isolated Gmail roots, the actual shared view, and controlled switching without OAuth.
+- One bounded promotion advanced exact v63 to v64. Two fresh native production launches passed; cleanup removed staging; final preflight confirmed stable/HEAD v64, staging `0`, and journal `cleaned`.
+- Six post-cleanup `checkNewMail_` executions completed. One short process shell formally overlapped its predecessor by about 5.7 seconds; the lease-rejection explanation remains an inference because content-free substage telemetry was unavailable.
+- PR #40 published paired UK/EN canonical state, the final release report, and VR-013; merge commit `5af0fc1fec6d8adcccc5d2834fca4867e69f45ee`. GitHub and private GitLab `main` are identical.
+- GT-031 and GT-037 are now `VERIFIED`. GT-032 through GT-036 and GT-038, measured cold/warm and `A -> B -> A`, cache quota/LRU, offline/cross-session drafts, conflict handling, and stale-open-client one-reload/no-loop acceptance remain `PARTIAL` or `UNVERIFIED`.
+- The request remains active `recorded`, not `completed`. Next Versie authorization remains `no`, and no v65 candidate was created.
