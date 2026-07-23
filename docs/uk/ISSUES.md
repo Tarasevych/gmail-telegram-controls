@@ -112,16 +112,17 @@
 
 ## GT-027 — Узгоджене керування Gmail-мітками
 
-- **Статус:** PARTIAL — інтегровано в immutable v58/v59; live UI прийнято у v59, але production повернуто на v57 через GT-030.
+  - **Статус:** CONFLICTING — current source і synthetic contracts зберігають controls для USER-міток, але актуальна owner-скарга про відсутні pencils ще не має незалежного native readback.
 - **Дата:** 2026-07-22
 - **Запит:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Першопричина:** VERIFIED — профільний список резервував ширину для кількох постійно видимих дій, sidebar не мав create/manage controls, а два представлення залежали від різних зрізів стану. Під час acceptance також виявлено спливання click до глобального close-handler і стискання implicit CSS-grid rows до 44 px.
 - **Виправлення:** VERIFIED локально у [коміті 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): спільний state/render path, `+` біля заголовка, одна доступна pencil-action для кожної USER-мітки, progressive disclosure, bounded scroll, нормалізація вкладеного повного шляху, захист SYSTEM-міток, permission/retry states і синхронне оновлення обох поверхонь.
 - **Перевірка:** VERIFIED локально — фінальний UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 і 1280×820 з 48 synthetic labels не мають горизонтальних або вертикальних перекриттів.
 - **Live verification:** VERIFIED у v59 staging — profile panel показав `+ Створити`, доступну manage-action для кожної USER-мітки, окремі SYSTEM labels, bounded scroll і довгі вкладені назви без overlap. Create/rename/delete навмисно не запускалися, щоб не мутувати випадкові Gmail labels.
-- **Release boundary:** PARTIAL — v59 було просунуто після UI acceptance, але exact rollback повернув production на v63 через окремий runtime blocker GT-030.
-- **Production:** UNVERIFIED — label changes не є частиною чинного production v57.
-- **Звіт:** [VR-005](verification-reports/reports/VR-005/README.md)
+  - **Release boundary:** чинний production — v65, staging `0`; E-04 не створює candidate і не змінює immutable history.
+  - **E-04 follow-up 2026-07-23:** authoritative `label.type` regression matrix охоплює USER-мітки `INBOX/...`, `[Imap]/...`, localized/system-like names, `labelHide`, кілька account-scoped metadata paths і SYSTEM protection без Gmail mutation.
+  - **Current evidence:** focused `7/7`, full Apps Script `619/619`; source defect не підтверджено. Native current-production pencils/two-surface acceptance лишається `UNVERIFIED` через shared URLFetch quota blocker, тому конфлікт не закрито.
+  - **Звіти:** історичний [VR-005](verification-reports/reports/VR-005/README.md), current regression [VR-033](verification-reports/reports/VR-033/README.md)
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md)
 
 ## GT-028 — Застарілий automatic thread route у Telegram Mini App

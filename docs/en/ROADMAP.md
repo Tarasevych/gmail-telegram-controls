@@ -121,12 +121,13 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 ## B1-21 — Unified accessible Gmail label management
 
-- **Status:** PARTIAL — integrated into immutable v58/v59; v59 staging acceptance is pending.
+  - **Status:** CONFLICTING — source regression is VERIFIED, while the current native owner report has not been independently reproduced.
 - **Date:** 2026-07-22
 - **Scope:** one USER/SYSTEM label model for the sidebar and profile panel; create, rename, guarded delete, full-path nesting, accessibility, responsive layout, loading/error/retry, and account isolation.
 - **Implemented:** VERIFIED locally in [4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91).
-- **Evidence:** [GT-027](ISSUES.md), [VR-005](verification-reports/reports/VR-005/README.md).
-- **Remaining:** BLOCKED until GT-028 is cleared and staging acceptance is repeated; production verification follows only after a pass.
+  - **Evidence:** [GT-027](ISSUES.md), historical [VR-005](verification-reports/reports/VR-005/README.md), E-04 [VR-033](verification-reports/reports/VR-033/README.md).
+  - **E-04 source gate:** `label.type`, not a name prefix or visibility, controls pencils/CRUD; focused `7/7`, full `619/619`.
+  - **Remaining:** read-only native acceptance in a clean quota window against current production v65; no create/rename/delete action on real labels during acceptance.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md)
 
 ## B1-22 — Recovery from a stale automatic thread route

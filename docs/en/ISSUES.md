@@ -112,16 +112,17 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-027 — Unified Gmail label management
 
-- **Status:** PARTIAL — integrated into immutable v58/v59; the live UI was accepted on v59, but production returned to v57 because of GT-030.
+  - **Status:** CONFLICTING — current source and synthetic contracts preserve controls for USER labels, but the current owner report of missing pencils has no independent native readback yet.
 - **Date:** 2026-07-22
 - **Request:** [REQ-0026](https://github.com/Tarasevych/gmail-telegram-controls/blob/%D0%97%D0%B0%D0%BF%D0%B8%D1%82%D0%B8/requests/2026-07-22/REQ-0026-unified-gmail-label-management.md)
 - **Root cause:** VERIFIED — the profile list reserved label width for several permanently visible actions, the sidebar had no create/manage controls, and the two surfaces depended on different state slices. Acceptance also exposed click bubbling into the global close handler and implicit CSS grid rows shrinking to 44 px.
 - **Fix:** VERIFIED locally in [commit 4ac0b90](https://github.com/Tarasevych/gmail-telegram-controls/commit/4ac0b90fbdbe7c9032789da1734bb986795fab91): shared state/render path, a `+` beside the heading, one accessible pencil action for every USER label, progressive disclosure, bounded scrolling, nested full-path normalization, SYSTEM-label protection, permission/retry states, and synchronous refresh of both surfaces.
 - **Verification:** VERIFIED locally — final UI contract `84/84`; cumulative v58 suite `460/460`; 390×760 and 1280×820 with 48 synthetic labels had no horizontal or vertical overlap.
 - **Live verification:** VERIFIED on v59 staging — the profile panel exposed `+ Create`, an accessible management action for every USER label, separate SYSTEM labels, bounded scrolling, and long nested names without overlap. Create/rename/delete were intentionally not run to avoid mutating arbitrary Gmail labels.
-- **Release boundary:** PARTIAL — v59 was promoted after UI acceptance, but an exact rollback returned production to v63 because of the separate GT-030 runtime blocker.
-- **Production:** UNVERIFIED — the label changes are not part of current production v57.
-- **Report:** [VR-005](verification-reports/reports/VR-005/README.md)
+  - **Release boundary:** current production is v65 and staging is `0`; E-04 creates no candidate and changes no immutable history.
+  - **E-04 follow-up 2026-07-23:** the authoritative `label.type` regression matrix covers USER labels named `INBOX/...`, `[Imap]/...`, localized/system-like names, `labelHide`, multiple account-scoped metadata paths, and SYSTEM protection without a Gmail mutation.
+  - **Current evidence:** focused `7/7`, full Apps Script `619/619`; no source defect is confirmed. Native current-production pencils/two-surface acceptance remains `UNVERIFIED` because of the shared URL Fetch quota blocker, so the conflict remains open.
+  - **Reports:** historical [VR-005](verification-reports/reports/VR-005/README.md), current regression [VR-033](verification-reports/reports/VR-033/README.md)
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md)
 
 ## GT-028 — Stale automatic thread route in the Telegram Mini App

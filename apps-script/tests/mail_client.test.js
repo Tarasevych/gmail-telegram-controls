@@ -7311,6 +7311,77 @@ test('Gmail metadata is connection-scoped and user labels use optimistic guarded
   })).code, 'INVALID_LABEL');
 });
 
+test('label administration trusts Gmail type for system-like hidden and localized names', () => {
+  const harness = makeContext();
+  const token = openOwnerSession(harness);
+  const labels = [
+    {
+      id: 'Label_inbox_child', name: 'INBOX/Проєкт', type: 'user',
+      messageListVisibility: 'hide', labelListVisibility: 'labelHide',
+      color: { backgroundColor: '#16a766', textColor: '#ffffff' },
+    },
+    {
+      id: 'Label_imap_archive', name: '[Imap]/Archive', type: 'user',
+      messageListVisibility: 'show', labelListVisibility: 'labelShowIfUnread',
+    },
+    {
+      id: 'Label_localized', name: 'Вхідні/Команда', type: 'user',
+      messageListVisibility: 'show', labelListVisibility: 'labelShow',
+    },
+    { id: 'INBOX', name: 'Inbox', type: 'system' },
+    { id: 'Label_system_named_project', name: 'Проєкт', type: 'system' },
+  ];
+  const calls = [];
+  harness.setGmail((requestPath, options) => {
+    const method = String(options.method || 'get').toLowerCase();
+    calls.push({ requestPath, method, body: options.body });
+    if (requestPath === '/labels' && method === 'get') return { labels };
+    if (requestPath === '/profile') return { emailAddress: 'owner@example.com', historyId: '321' };
+    if (requestPath === '/settings/sendAs') {
+      return { sendAs: [{ sendAsEmail: 'owner@example.com', isPrimary: true, isDefault: true }] };
+    }
+    if (requestPath.startsWith('/settings/')) return {};
+    if (requestPath === '/labels/Label_inbox_child' && method === 'patch') {
+      return { ...labels[0], ...options.body };
+    }
+    throw new Error(`Unexpected Gmail label regression request: ${requestPath}`);
+  });
+
+  const metadata = resultData(rpc(harness, token, 'metadata', {}));
+  ['Label_inbox_child', 'Label_imap_archive', 'Label_localized'].forEach(id => {
+    const label = metadata.labels.find(item => item.id === id);
+    assert.equal(label.type, 'user');
+    assert.equal(label.canEdit, true);
+    assert.equal(label.canApply, true);
+  });
+  const hidden = metadata.labels.find(item => item.id === 'Label_inbox_child');
+  assert.equal(hidden.messageListVisibility, 'hide');
+  assert.equal(hidden.labelListVisibility, 'labelHide');
+  assert.equal(metadata.labels.find(item => item.id === 'INBOX').canEdit, false);
+  assert.equal(metadata.labels.find(item => item.id === 'Label_system_named_project').canEdit, false);
+
+  const updated = resultData(rpc(harness, token, 'labelAdmin', {
+    action: 'update',
+    labelId: hidden.id,
+    expectedVersion: hidden.version,
+    name: 'INBOX/Оновлений проєкт',
+  }));
+  assert.equal(updated.label.name, 'INBOX/Оновлений проєкт');
+  assert.ok(calls.some(call =>
+    call.requestPath === '/labels/Label_inbox_child' &&
+    call.method === 'patch' &&
+    call.body.name === 'INBOX/Оновлений проєкт'
+  ));
+
+  const system = metadata.labels.find(item => item.id === 'Label_system_named_project');
+  assert.equal(resultFailed(rpc(harness, token, 'labelAdmin', {
+    action: 'update',
+    labelId: system.id,
+    expectedVersion: system.version,
+    name: 'Не можна',
+  })).code, 'INVALID_LABEL');
+});
+
 test('Gmail label administration reports a dedicated permission state without exposing provider details', () => {
   const harness = makeContext();
   const token = openOwnerSession(harness);
