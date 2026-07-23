@@ -285,3 +285,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Реалізовано максимальний безпечний restart-контракт у чинній Apps Script архітектурі. Content-free operation descriptor переживає restart WebView і виконує account-scoped read-only/idempotent reconciliation результату Gmail-чернетки без повторного надсилання MIME або bytes вкладень. Для missing чи never-dispatched операції нове збереження дозволяється лише коли transient bytes вкладень не втрачено; інакше task стає `blocked` до явного повторного вибору. Автоматичні pending-перевірки зупиняються після трьох спроб. Шість нових restart-контрактів і повний Apps Script suite `590/590` пройшли. Офіційний Gmail resumable upload існує, але чинний `google.script.run` transport не дає streaming bytes або abort/progress handle, тому byte-resumable upload лишається окремим `UNVERIFIED` architecture decision.
+
+## 2026-07-23: інкремент B1-31 для capability gate справжнього abort
+
+Status: PARTIAL
+
+Capability gate тепер захищений від race: локальні reads у черзі можна скасувати до виконання, а запущена передача показує cancel лише після реєстрації конкретного abort handle транспортом. Це підтверджує справжню поведінку `FileReader.abort` і назавжди забороняє несправжній cancel для чинних Apps Script RPC lanes. Focused suites пройшли `170/170`, а повний suite — `591/591`. У B1-31 лишається native acceptance для повільної мережі/згортання; майбутній справжній RPC abort потребує окремо перевіреної cancellable transport architecture.

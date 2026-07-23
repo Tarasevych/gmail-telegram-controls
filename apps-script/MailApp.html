@@ -18215,9 +18215,15 @@
         return promise;
       }
 
+      function managedTransferCanCancel(task) {
+        if (!task || !transferTaskIsActive(task)) return false;
+        if (transferCanonicalState(task) === "queued") return task.canCancel === true;
+        return typeof task.abort === "function";
+      }
+
       function cancelManagedTransfer(taskId) {
         var task = transferTaskStore().get(safeClientOperationId(taskId));
-        if (!task || !task.canCancel || !transferTaskIsActive(task)) return false;
+        if (!managedTransferCanCancel(task)) return false;
         task.cancelled = true;
         task.transferState = "cancelled";
         task.finishedAt = Date.now();
@@ -18357,7 +18363,7 @@
             make("div", { text: transferTaskProgressText(task) })
           );
           var actions = make("div", {});
-          if (transferTaskIsActive(task) && task.canCancel) {
+          if (managedTransferCanCancel(task)) {
             var cancel = make("button", {
               type: "button",
               text: "×",
