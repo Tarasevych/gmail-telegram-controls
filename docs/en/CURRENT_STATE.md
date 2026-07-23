@@ -2,17 +2,17 @@
 
 [Українською](../uk/CURRENT_STATE.md)
 
-<!-- release-state: production=v65; candidate=v70; staging=1; status=PARTIAL; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
 
 ## Canonical release state
 
 - **Versie:** Versie 1.
 - **Production:** Apps Script immutable v65, `VERIFIED`.
-- **HEAD:** exact cumulative v65.
+- **Accepted release HEAD:** exact cumulative v65.
 - **Active staging deployments:** `0`.
-- **Release journal:** `cleaned`.
-- **Release source boundary:** cumulative source `3373ca4aa403a28f3252ad72fbe65310b318c53c`; helper merge `eb19dc0822c97f86ebd458c379bde1db3794f800`; propagation fix `8201bc25bc12c470276bd14a0bfef6cde46fbd60`; bridge merge `759d9b9f5001e62e2c3a5cbcc1169077e641493b`.
-- **Rollback:** exact immutable v64 remains available; historical immutable v56, v57, v59 and v62 are preserved and were not rewritten.
+- **Latest release journal:** v70 is terminal `abandoned`; the accepted v65 production journal remains historical `cleaned`.
+- **Release source boundary:** accepted cumulative v65 source `3373ca4aa403a28f3252ad72fbe65310b318c53c`; v70 source merge `0666165b614f430103530728aa45349083db5e78`; v70 release-asset merge `70cc87ebf2a9c06b000e042e1e676838cf27d6b2`.
+- **Rollback:** exact immutable v64 remains available; historical immutable v56, v57, v59, v62, v66-v70 are preserved and were not rewritten.
 - **Telegram menu:** production `📬 Пошта · Versie 1`.
 
 ## Verified v65 acceptance
@@ -46,10 +46,13 @@
 
 - Production and release-state stable remain immutable v65; the owner menu remains on production.
 - Immutable v66–v69 are preserved historically; v69 ended fail closed as `abandoned` after the native hard-reload/session conflict and was not promoted.
-- Source v70 was merged by normal PR at SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 was created exactly once and active owner-only staging is `1`.
+- Source v70 was merged by normal PR at SHA `0666165b614f430103530728aa45349083db5e78`; immutable v70 was created exactly once, tested once, and retained historically.
 - Local gates after release assets: helper `3/3`, bridge contracts `4/4`, cumulative suite `572/572`, Python menu syntax and `git diff --check` pass.
 - Source v70 adds content-free SecureStorage classification, a fail-closed locked state without a restart loop, and validated bridge-to-usable timing; nonce replay protection is not weakened.
-- Native button-to-interactive p95, ten launches, hard reload, offline private Inbox, Windows Desktop recovery, and cached-thread acceptance remain `UNVERIFIED`/`BLOCKED`; promotion is forbidden pending complete staging acceptance.
+- Native v70 opened the mailbox without another OAuth cycle or a repeated connection screen, restored a cached thread, and exposed the avatar plus three isolated Gmail roots. Switching to a secondary root returned the generic mail-operation error.
+- A fresh production v65 launch returned the same generic error before the mailbox. Its `doPost`, `mailboxRedeemLaunch`, and `mailboxRpc` executions completed, while the adjacent timer trace failed in `legacy_recovery` with `errorCode=urlfetch_quota` and the Apps Script daily `urlfetch` quota exception. A candidate-specific v70 regression is therefore not established.
+- Production promotion was not performed. The menu was restored to production, the exact v70 staging deployment was removed by the journal-bound helper, active staging is `0`, and the v70 journal is terminal `abandoned`.
+- Native button-to-interactive p95, ten launches, hard reload, offline private Inbox, exact Windows SecureStorage recovery, and bidirectional account switching remain `UNVERIFIED`/`BLOCKED`; repeat A/B is deferred until the external daily quota recovers.
 - Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## 2026-07-23 P0 v67 acceptance boundary
