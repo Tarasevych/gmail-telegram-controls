@@ -57,6 +57,16 @@
 - `PARTIAL`: створено `GT-067`, `B1-47`, `RCA-023` і парний `VR-042`; native 10-launch acceptance, cached-message/A-B-A timing, device-bound private unlock, native cache-hit/request metrics, staging і production лишаються `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: Gmail, Telegram, OAuth, staging, deployment і production не змінювалися; production лишається `v65`, active staging `0`; shared URL Fetch quota та `T-03` blockers не обійдені.
 
+### Оновлення доказів P0-B — 2026-07-24
+
+- `PARTIAL`: source implementation `28b438e68e1b327308761c246e074558b7ccd53d` і paired evidence `d9ece3ea385a47f212ef9a799a4c8b9223058243` злиті normal merge через product PR `#108` як `fa58011b65afdbc3302fd863fce4724217fb0be9`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: 45-секундний background revalidation більше не викликає full list/thread RPC безумовно. Exact Gmail connection спочатку читає bounded History delta; no-change cycle лише просуває account-scoped cursor.
+- `VERIFIED`: Gmail History ID зберігається як opaque decimal string у чинному Telegram-owner + Gmail-connection IndexedDB namespace. Missing/stale cursor, Gmail 404 і більш ніж три History pages fail-closed вимагають full reconciliation; secrets і browser-stored OAuth/Telegram credentials не додані.
+- `VERIFIED`: focused History/P0/Advanced Gmail gate `30/30`; повний Apps Script suite `673/673` за `25.763 s`; product PR checks `8/8`; bilingual `100` пар; knowledge-hub, verification-report, release-state та diff gates успішні.
+- `PARTIAL`: створено `GT-068`, `B1-48`, `RCA-024` і парний `VR-043`. Gmail History не визначає membership довільного query/shared aggregate, тому після реальної зміни цей source contour поки виконує один bounded full-list refresh.
+- `UNVERIFIED`: live cache-hit/request reduction, entity-level query reconciliation, native multi-account/shared acceptance, staging і production.
+- `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -106,3 +116,13 @@
 - `BLOCKED`: this synthetic result is not native Telegram target-device p95. A forced fresh offline document reload ended with `ERR_INTERNET_DISCONNECTED`, so the current direct HTML deployment does not guarantee an offline app shell without a confirmed Service Worker or separate same-origin hosting path.
 - `PARTIAL`: `GT-067`, `B1-47`, `RCA-023`, and paired `VR-042` were created; native ten-launch acceptance, cached-message/A-B-A timing, device-bound private unlock, native cache-hit/request metrics, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: Gmail, Telegram, OAuth, staging, deployment, and production were not changed; production remains `v65`, active staging `0`; the shared URL Fetch quota and `T-03` blockers were not bypassed.
+
+### P0-B evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `28b438e68e1b327308761c246e074558b7ccd53d` and paired evidence `d9ece3ea385a47f212ef9a799a4c8b9223058243` were normally merged through product PR `#108` as `fa58011b65afdbc3302fd863fce4724217fb0be9`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: the 45-second background revalidation no longer calls full list/thread RPC unconditionally. The exact Gmail connection reads a bounded History delta first; a no-change cycle advances only its account-scoped cursor.
+- `VERIFIED`: Gmail History ID is retained as an opaque decimal string in the existing Telegram-owner + Gmail-connection IndexedDB namespace. A missing/stale cursor, Gmail 404, or more than three History pages fails closed to full reconciliation; no secrets or browser-stored OAuth/Telegram credentials were added.
+- `VERIFIED`: focused History/P0/Advanced Gmail gate `30/30`; complete Apps Script suite `673/673` in `25.763 s`; product PR checks `8/8`; `100` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
+- `PARTIAL`: `GT-068`, `B1-48`, `RCA-024`, and paired `VR-043` were created. Gmail History does not establish membership in an arbitrary query/shared aggregate, so this source contour still performs one bounded full-list refresh after a real change.
+- `UNVERIFIED`: live cache-hit/request reduction, entity-level query reconciliation, native multi-account/shared acceptance, staging, and production.
+- `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
