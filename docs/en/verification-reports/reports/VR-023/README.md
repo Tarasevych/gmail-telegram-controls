@@ -9,7 +9,8 @@
 - **Product task:** `B1-33` / P0 session continuity
 - **Issue:** `GT-053`
 - **Source commit:** `975785a`
-- **Release boundary:** source only; no immutable, staging, production, OAuth, Gmail, or Telegram mutation
+- **Immutable candidate:** Apps Script v69
+- **Release boundary:** v69 was staged, tested, and abandoned fail closed; the exact staging deployment was removed, the journal is terminal `abandoned`, the owner menu is production, active staging is `0`, and verified production v65 is unchanged; OAuth and Gmail state were not changed
 
 ## Confirmed root cause
 
@@ -21,7 +22,18 @@ Gmail OAuth refresh is stored and handled by the separate multi-account model an
 
 **Before:** reload → empty `state.session` and `state.refreshToken` → repeated launch proof → replay or expired error → repeated connection screen.
 
-**After:** reload → bounded Telegram `SecureStorage.getItem` → `mailboxRenewSession` → atomic refresh-family rotation → persist the new app refresh credential → normal mailbox bootstrap. If the secure credential is absent or terminal-invalid, the client uses the existing fail-closed launch flow. A transient network failure neither removes the credential nor claims OAuth is required.
+**Source candidate:** reload → bounded Telegram `SecureStorage.getItem` → `mailboxRenewSession` → atomic refresh-family rotation → persist the new app refresh credential → normal mailbox bootstrap. If the secure credential is absent or terminal-invalid, the client uses the existing fail-closed launch flow. A transient network failure neither removes the credential nor claims OAuth is required.
+
+**Observed native Desktop pipeline:** v69 hard reload → native form-resubmission prompt → repeated POST Apps Script document → reuse of an already-consumed Telegram launch proof → `UNTRUSTED_NONCE_REPLAY`. On the tested Windows Telegram Desktop, `SecureStorage` did not return a usable recovery credential before the embedded launch error was handled. The wrapper did not retain the platform error code, so the exact storage rejection is not proven.
+
+## Native A/B and release disposition
+
+1. The owner menu was first restored to production.
+2. Two fresh production v65 launches loaded the profile, avatar, and mailbox.
+3. After one controlled switch to staging, the first v69 launch showed a generic mail-operation error; a bounded repeat loaded the mailbox in approximately `20 s`. This manual observation is enough to reject the one-second SLO, but it is not a formal p95 benchmark.
+4. A v69 hard reload reproduced POST resubmission and `UNTRUSTED_NONCE_REPLAY`; no new OAuth consent was started.
+5. Production promotion was not performed. The owner menu was restored to production, v69 was abandoned with the exact journal-bound helper, staging was removed, and active staging is `0`.
+6. The exact stage of the first generic server error remains `UNVERIFIED`: the existing protected CLI token lacked the Apps Script Processes read scope, and no new authorization scope was requested.
 
 ## Security boundaries
 
@@ -41,13 +53,18 @@ Gmail OAuth refresh is stored and handled by the separate multi-account model an
 | VR-023-03 | Ten concurrent renewal requests carrying the same refresh token receive one exact rotation result inside the bounded replay window. | VERIFIED | behavioral test |
 | VR-023-04 | The old refresh token is rejected after the replay window; explicit revocation also blocks replay. | VERIFIED | behavioral and source contract |
 | VR-023-05 | Focused auth/session suites and the complete Apps Script suite `561/561` pass; the diff is clean; credential signatures are `0`. | VERIFIED | local test and static traces |
-| VR-023-06 | Telegram Desktop/mobile survives F5 or WebView reopen without another connection screen or OAuth. | UNVERIFIED | native acceptance has not run |
+| VR-023-06 | Telegram Desktop survives a hard reload without another connection screen or OAuth. | CONFLICTING | native v69 reload ended in form resubmission and `UNTRUSTED_NONCE_REPLAY`; OAuth did not start |
 | VR-023-07 | Two real concurrent native launches safely receive one rotation family without a user-visible race. | UNVERIFIED | native concurrency acceptance has not run |
+| VR-023-08 | Production v65 remained the working baseline and v69 was not promoted after failed acceptance. | VERIFIED | two production launches, menu readback, and release journal |
+| VR-023-09 | Immutable v69 remains historical, the exact staging deployment was removed, active staging is `0`, and the journal is terminal `abandoned`. | VERIFIED | release helper and repeated preflight |
+| VR-023-10 | The tested Windows Desktop supplied a usable `SecureStorage` recovery credential. | CONFLICTING | native reload did not restore the session; the exact platform error code was not retained |
+| VR-023-11 | Staging v69 meets the warm-launch SLO of `≤1000 ms`. | CONFLICTING | approximately `20 s` in manual native observation; formal p95 is not yet measured |
 
 ## Official platform boundaries
 
-- [Telegram Mini Apps](https://core.telegram.org/bots/webapps) documents `SecureStorage` as per-user, per-bot device storage for tokens and authentication state, with `getItem`, `setItem`, `removeItem`, and at most ten items.
+- [Telegram Mini Apps](https://core.telegram.org/bots/webapps) documents `SecureStorage` as per-user, per-bot device storage for tokens and authentication state, with `getItem`, `setItem`, `removeItem`, and at most ten items. This describes a capability, not guaranteed support by every client.
+- [Telegram's low-level Mini App storage API](https://core.telegram.org/api/bots/webapps#secure-storage) separately defines an unsupported-platform result. The current wrapper must preserve a content-free error code before the Windows Desktop result can be classified exactly.
 - [Apps Script HTML Service restrictions](https://developers.google.com/apps-script/guides/html/restrictions) confirm the IFRAME sandbox deployment model.
 - [Apps Script Content Service](https://developers.google.com/apps-script/guides/content) redirects through a one-time `googleusercontent.com` URL; the verified current architecture has no documented custom HttpOnly response-cookie contract, so this source fix does not claim one.
 
-The source correction is ready for a controlled staging contour, but native behavior and deployment are not marked VERIFIED without authenticated readback.
+The source correction is locally VERIFIED, but v69 native acceptance failed. The next contour must first add content-free storage telemetry and produce a safe Desktop recovery architecture decision; storing the credential in unprotected JavaScript storage is not an acceptable fix.

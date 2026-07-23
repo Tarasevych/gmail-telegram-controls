@@ -253,10 +253,10 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 
 - **Status:** PARTIAL.
 - **Source request:** `REQ-0036`; P0 session continuity.
-- **Locally VERIFIED:** boot-first app-refresh recovery through Telegram `SecureStorage`; memory-only bearer; single-flight client recovery; bounded idempotent server rotation for racing tabs; content-free failure classification; terminal-only secure cleanup; explicit revocation boundary.
-- **Gates:** focused auth/session contracts pass, the complete Apps Script suite passes `561/561`, the diff check is clean, and added lines contain `0` credential signatures.
-- **Still required:** native Telegram Desktop/mobile hard reload and WebView reopen, two concurrent launch attempts, absence of a repeated connection screen, staging acceptance, and separately authorized production promotion.
-- **Platform boundary:** automatic `restoreItem` is not used because Telegram may request user confirmation; browsers without Telegram `SecureStorage` fall back to the existing fail-closed launch flow.
-- **Release boundary:** source commit `975785a`; no immutable, staging, production, OAuth, Gmail, or Telegram state changed.
+- **Locally VERIFIED:** boot-first app-refresh recovery through Telegram `SecureStorage`; memory-only bearer; single-flight client recovery; bounded idempotent server rotation for racing tabs; content-free failure classification; terminal-only secure cleanup; explicit revocation boundary; complete Apps Script suite `561/561`.
+- **Native result:** production v65 loaded the mailbox twice; staging v69 loaded the mailbox after a bounded repeat, but a hard reload in Telegram Desktop resubmitted the POST document and ended with `UNTRUSTED_NONCE_REPLAY`. Approximately `20 s` to usable staging UI also misses the one-second SLO; this is a manual observation, not a p95 benchmark.
+- **Still required:** design a safe fallback for Telegram Desktop without usable `SecureStorage`, or confirm another platform-supported recovery model; preserve fail-closed replay protection; add storage error telemetry; test mobile/WebView reopen, two concurrent native launches, and measurable one-second acceptance.
+- **Platform boundary:** automatic `restoreItem` is not used because Telegram may request user confirmation. The tested Windows Desktop supplied no usable secure recovery, and the app wrapper did not retain the exact platform error code. Unprotected web-storage credentials are not an acceptable fallback.
+- **Release boundary:** source commit `975785a` was included in immutable v69. The candidate was abandoned, the exact staging deployment was removed, the journal is terminal `abandoned`, the owner menu is production, and active staging is `0`; verified production v65 was unchanged.
 - **Evidence:** [GT-053](ISSUES.md), [VR-023](verification-reports/reports/VR-023/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

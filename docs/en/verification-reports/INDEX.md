@@ -180,7 +180,7 @@ A historical report is not rewritten after publication to hide an error. A new i
 
 - **Status:** PARTIAL
 - **Date:** 2026-07-23
-- **Coverage:** `REQ-0036`, loss of memory-only refresh state, replay of an already-consumed launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, local regression/full-suite evidence, and the release boundary.
+- **Coverage:** `REQ-0036`, loss of memory-only refresh state, replay of an already-consumed launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, local regression/full-suite evidence, native v65/v69 A/B, hard reload, and terminal release cleanup.
 - **Report:** [reports/VR-023/README.md](reports/VR-023/README.md)
-- **Conclusion:** the source fix and complete `561/561` suite are VERIFIED; native Telegram hard-reload, multi-tab, staging, and production acceptance remain `UNVERIFIED`.
+- **Conclusion:** the source fix and complete `561/561` suite are VERIFIED, but native Windows Desktop hard reload on v69 ended with `UNTRUSTED_NONCE_REPLAY`; the candidate was abandoned, staging was removed, and production remains v65. Desktop session continuity is `CONFLICTING`; mobile and native concurrency are `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)

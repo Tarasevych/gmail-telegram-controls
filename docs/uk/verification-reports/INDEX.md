@@ -180,7 +180,7 @@ Source request: `REQ-0004`.
 
 - **Статус:** PARTIAL
 - **Дата:** 2026-07-23
-- **Покриття:** `REQ-0036`, втрата memory-only refresh state, replay уже спожитого launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, локальні regression/full-suite evidence та release boundary.
+- **Покриття:** `REQ-0036`, втрата memory-only refresh state, replay уже спожитого launch proof, Telegram `SecureStorage`, single-flight recovery, bounded idempotent refresh rotation, локальні regression/full-suite evidence, native v65/v69 A/B, hard reload і terminal release cleanup.
 - **Звіт:** [reports/VR-023/README.md](reports/VR-023/README.md)
-- **Висновок:** source fix і повний suite `561/561` VERIFIED; native Telegram hard-reload, multi-tab, staging та production acceptance лишаються `UNVERIFIED`.
+- **Висновок:** source fix і повний suite `561/561` VERIFIED, але native Windows Desktop hard reload у v69 завершився `UNTRUSTED_NONCE_REPLAY`; candidate abandoned, staging видалено, production лишилася на v65. Desktop session continuity `CONFLICTING`; mobile і native concurrency `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
