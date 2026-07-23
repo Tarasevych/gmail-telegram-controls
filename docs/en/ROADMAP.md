@@ -154,8 +154,8 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Status:** PARTIAL
 - **Production boundary:** cumulative source is deployed as immutable v64; staging is `0`, journal is `cleaned`, and exact v63 is rollback.
 - **Verified:** dynamic active context and narrow full-address disclosure, three isolated roots, switching without OAuth, shared mapping, production app-shell load, GT-030 worker gate, GT-037 bounded promotion and exact release cleanup.
-- **Current terminal release step:** GT-031 and GT-037 passed native staging and production acceptance; no v65 candidate exists.
-- **Still required:** measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; same-scale production typography comparison; and stale-open-client exactly-one-reload/no-loop acceptance.
+- **Current source step:** GT-036 now reads the canonical release-state field and carries an exact v65 source marker; the real-manifest one-reload/no-loop regression contract is locally verified. No immutable or staging v65 exists yet.
+- **Still required:** source PR and bounded v65 staging/production acceptance for GT-036; measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; and same-scale production typography comparison.
 - **Related issues:** GT-032 through GT-036 and GT-038 remain open/partial; GT-031 and GT-037 are verified.
 - **Rule:** continue within Versie 1. Create another immutable only for a separately tested cumulative code change after a clean preflight boundary.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-011](verification-reports/reports/VR-011/README.md), [VR-012](verification-reports/reports/VR-012/README.md), and [VR-013](verification-reports/reports/VR-013/README.md).
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-013](verification-reports/reports/VR-013/README.md), and [VR-014](verification-reports/reports/VR-014/README.md).

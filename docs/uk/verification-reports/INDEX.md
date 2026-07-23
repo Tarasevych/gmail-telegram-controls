@@ -92,3 +92,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-013/README.md](reports/VR-013/README.md)
 - **Висновок:** immutable v64 є production/HEAD зі staging `0` і journal `cleaned`; GT-031 і GT-037 verified, а решта P0 scenarios лишається partial.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-014 — виправлення визначення production client release для GT-036
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-22
+- **Покриття:** mismatch canonical manifest field, stale marker v60 у production-v64 source, exact source marker v65 і real-manifest one-reload/no-loop regression contract.
+- **Звіт:** [reports/VR-014/README.md](reports/VR-014/README.md)
+- **Висновок:** causal source correction локально verified; production лишається v64, а staging/production acceptance v65 unverified.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

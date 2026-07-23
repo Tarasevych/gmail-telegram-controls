@@ -184,11 +184,12 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-036 — A new production client can remain stale in an open Mini App
 
-- **Status:** PARTIAL — the exact release-ID mechanism is present in production v64; targeted stale-open-client one-reload/no-loop acceptance remains UNVERIFIED.
-- **Root cause:** ordinary mail state and client-code version had no separate lifecycle; an already open document had no production release signal.
-- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard, and a manual reopen state after one failed activation attempt.
+- **Status:** PARTIAL — the original source architecture is in production v64, and the newly found manifest/marker correction is locally VERIFIED; staging and production one-reload/no-loop acceptance remain UNVERIFIED.
+- **Root cause:** ordinary mail state and client-code version originally had no separate lifecycle. The first implementation then omitted the canonical `production.appsScriptImmutable` manifest field and retained a stale v60 marker in production v64, so it could not prove that a newly loaded client matched production.
+- **Source correction:** read the canonical immutable field first, identify the next cumulative source as `Versie-1-v65-p0`, retain draft-safe one-reload/session guard behavior, and regression-test the real `docs/release-state.json` contract.
 - **Boundary:** the immutable Apps Script HTML remains the app shell. No unsupported Service Worker is simulated, and routine mail synchronization never reloads the document.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Release boundary:** production remains exact immutable v64; immutable/staging v65 does not exist until source review, merge, exact helper preflight and a separately gated release cycle.
+- **Evidence:** [VR-014](verification-reports/reports/VR-014/README.md). Source request: `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
 ## GT-037 — Promotion helper can report a false negative after a successful deployment update
 

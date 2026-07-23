@@ -8820,8 +8820,8 @@
       }
 
       var P0_CACHE_SCHEMA = 1;
-      var P0_CLIENT_RELEASE_VERSION = 60;
-      var P0_CLIENT_RELEASE_ID = "Versie-1-v60-p0";
+      var P0_CLIENT_RELEASE_VERSION = 65;
+      var P0_CLIENT_RELEASE_ID = "Versie-1-v65-p0";
       var P0_RELEASE_MANIFEST_URL = "https://raw.githubusercontent.com/Tarasevych/gmail-telegram-controls/main/docs/release-state.json";
       var P0_CACHE_MAX_RECORDS = 120;
       var P0_CACHE_MAX_BYTES = 4 * 1024 * 1024;
@@ -9440,7 +9440,8 @@
       function p0ExtractReleaseVersion(manifest) {
         var production = manifest && manifest.production || {};
         var candidates = [
-          production.immutableVersion, production.appsScriptVersion, production.version,
+          production.appsScriptImmutable, production.immutableVersion,
+          production.appsScriptVersion, production.version,
           manifest && manifest.stableVersion, manifest && manifest.productionVersion
         ];
         for (var index = 0; index < candidates.length; index += 1) {

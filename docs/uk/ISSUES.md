@@ -184,11 +184,12 @@
 
 ## GT-036 — Новий production client може лишатися stale у відкритому Mini App
 
-- **Статус:** PARTIAL — exact release-ID mechanism наявний у production v64; targeted stale-open-client one-reload/no-loop acceptance лишається UNVERIFIED.
-- **Першопричина:** ordinary mail state і client-code version не мали окремого lifecycle; уже відкритий документ не мав production release signal.
-- **Source fix:** exact client release ID, versioned cache schema, public content-free production manifest check, draft-safe single reload guard і manual reopen state після однієї невдалої activation attempt.
+- **Статус:** PARTIAL — початкова source architecture є в production v64, а нове виправлення manifest/marker локально VERIFIED; staging і production one-reload/no-loop acceptance лишаються UNVERIFIED.
+- **Першопричина:** ordinary mail state і client-code version спочатку не мали окремого lifecycle. Перша реалізація потім пропустила канонічне поле manifest `production.appsScriptImmutable` і зберегла stale marker v60 у production v64, тому не могла довести відповідність новозавантаженого client production-версії.
+- **Source correction:** спочатку читати canonical immutable field, ідентифікувати наступний cumulative source як `Versie-1-v65-p0`, зберегти draft-safe one-reload/session guard behavior і regression-test реального contract `docs/release-state.json`.
 - **Межа:** immutable Apps Script HTML лишається app shell. Unsupported Service Worker не симулюється, а routine mail synchronization ніколи не reload-ить документ.
-- **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
+- **Release boundary:** production лишається exact immutable v64; immutable/staging v65 не існує до source review, merge, exact helper preflight і окремо gated release cycle.
+- **Доказ:** [VR-014](verification-reports/reports/VR-014/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 ## GT-037 — Promotion helper може повідомити false negative після успішного deployment update
 
