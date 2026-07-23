@@ -339,3 +339,14 @@ Status: BLOCKED
 - **Ще потрібно:** native provider redirect, deployed callback, provider refresh/revocation і Mini App acceptance. До такого evidence статус лишається `PARTIAL`.
 - **Доказ:** [GT-057](ISSUES.md), [VR-028](verification-reports/reports/VR-028/README.md).
 - **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).
+
+## B1-38 — Безпечне розділення Spam list і proactive notification policy
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Завершено у source evidence:** explicit `/mail folder:spam` перевірено як read-only exact-`SPAM` list із bounded pagination; proactive scan окремо утримує current-`INBOX` delivery gate. Product source не змінювався.
+- **Локально перевірено:** focused synthetic contract `2/2`, повний Apps Script suite `612/612` та documentation/release/privacy gates.
+- **Release boundary:** source-test/documentation only; production v65 і staging `0` не змінюються, runtime Gmail/Telegram/OAuth mutation не виконується.
+- **Ще потрібно:** native owner acceptance для Spam list, next-page callback і empty/error states у чистому runtime window.
+- **Доказ:** [GT-058](ISSUES.md), [VR-029](verification-reports/reports/VR-029/README.md).
+- **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).

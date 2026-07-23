@@ -229,3 +229,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-028/README.md](reports/VR-028/README.md)
 - **Висновок:** source defect підтверджено й мінімально виправлено; focused synthetic matrix є локальним evidence. Native Google/deployed callback і user-visible acceptance лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-029 — Розділення read-only Spam list і proactive policy
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `G-01`, `/mail folder:spam`, exact system label `SPAM`, bounded pagination, read-only endpoint boundary, окремий time-slice notification scan і current-`INBOX` delivery gate.
+- **Звіт:** [reports/VR-029/README.md](reports/VR-029/README.md)
+- **Висновок:** source уже мав правильне розділення; missing direct regression evidence додано без product-code mutation. Focused `2/2` і full `612/612` VERIFIED; native owner acceptance лишається `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

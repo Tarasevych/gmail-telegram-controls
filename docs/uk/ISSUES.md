@@ -514,3 +514,16 @@ Status: BLOCKED
 - **Safety boundary:** використано лише `.invalid` identities та in-memory provider responses. Реальний Google OAuth, consent, account selection, secrets, Gmail, Telegram, staging, production і release helpers не запускалися й не змінювалися.
 - **Залишається:** native Google provider redirect, deployed callback, real refresh/revocation і user-visible Mini App acceptance лишаються `UNVERIFIED`; загальний статус тому `PARTIAL`.
 - **Доказ:** [VR-028](verification-reports/reports/VR-028/README.md)
+
+## GT-058 — Read-only Spam list не мав прямого regression contract окремо від proactive policy
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-38` / V3 `G-01`
+- **Перевірений стан:** product source уже дозволяє explicit `/mail folder:spam`, компілює exact system label `SPAM`, вмикає `includeSpamTrash=true` і пагінує через bounded Gmail page token. Proactive notification scan є окремим time-slice path і застосовує current-`INBOX` gate після metadata read.
+- **Проблема доказів:** наявні тести не фіксували цю policy boundary прямо, тому майбутня зміна могла помилково заборонити owner read-only Spam або почати створювати proactive Spam cards.
+- **Корекція:** додано synthetic contract для parser, exact `SPAM` label, двох сторінок, read-only endpoint boundary та окремого current-`INBOX` proactive gate. `Code.gs` не змінено, бо source defect не підтверджено.
+- **Локальний доказ:** focused contract `2/2`; повний Apps Script suite `612/612`.
+- **Safety boundary:** fixtures синтетичні; live Gmail, Telegram, OAuth, staging, production і release state не змінювалися.
+- **Залишається:** owner-native `/mail folder:spam` і pagination acceptance лишаються `UNVERIFIED`; quota-blocked runtime не використовується як доказ.
+- **Доказ:** [VR-029](verification-reports/reports/VR-029/README.md)

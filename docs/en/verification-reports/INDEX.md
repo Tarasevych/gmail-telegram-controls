@@ -229,3 +229,12 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-028/README.md](reports/VR-028/README.md)
 - **Conclusion:** a source defect is confirmed and minimally corrected; the focused synthetic matrix provides local evidence. Native Google/deployed callback and user-visible acceptance remain `UNVERIFIED`.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-029 — Separation of the read-only Spam list and proactive policy
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `G-01`, `/mail folder:spam`, exact `SPAM` system label, bounded pagination, the read-only endpoint boundary, a separate time-slice notification scan, and the current-`INBOX` delivery gate.
+- **Report:** [reports/VR-029/README.md](reports/VR-029/README.md)
+- **Conclusion:** source already had the correct separation; missing direct regression evidence was added without a product-code mutation. Focused `2/2` and full `612/612` are VERIFIED; native owner acceptance remains `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
