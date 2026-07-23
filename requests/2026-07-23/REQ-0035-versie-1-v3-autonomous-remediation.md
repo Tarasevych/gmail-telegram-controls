@@ -148,3 +148,29 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - Implemented: account-bound single-flight thread-detail retrieval, the bounded shared transfer manager, honest indeterminate progress, no fake RPC cancellation, stable retry task identity, and a fail-closed generation guard.
 - Verified: focused contracts `104/104`, full Apps Script suite `577/577`, bilingual/knowledge/verification/release-state/diff checks passed, and added-line secret scan `0`.
 - Remaining: draft persistence, URL import, server-resumable restart, real abort only for transports that support it, and native slow-network/minimize acceptance.
+
+## Оновлення доказів B-03: transfer-state для Gmail-чернеток
+
+- Дата: 2026-07-23
+- Статус інкремента: PARTIAL
+- Source commit: `cb398c7`
+- GitHub PR: `#78`
+- Normal merge у `main`: `c198dece03a85b6b59af6387a8ae4042046c921f`
+- GitHub і GitLab `main`: синхронізовано на тому самому commit.
+- Реалізовано: чинний serialized Gmail draft-save RPC включено до bounded shared transfer-state без зміни snapshot, idempotency, revision merge, canonical readback, local recovery або conflict semantics; retry використовує той самий operation/task ID і працює fail-closed після зміни compose/account context.
+- Перевірено: focused contracts `102/102`, CRLF regression `5/5`, повний Apps Script suite `580/580`, документаційні та privacy gates пройшли.
+- Live Gmail mutation, OAuth, staging і production promotion не виконувалися.
+- Залишається: URL import, server-resumable restart, справжній транспортний abort і native slow-network/minimize acceptance.
+
+## B-03 evidence update: Gmail draft transfer state
+
+- Date: 2026-07-23
+- Increment status: PARTIAL
+- Source commit: `cb398c7`
+- GitHub PR: `#78`
+- Normal merge into `main`: `c198dece03a85b6b59af6387a8ae4042046c921f`
+- GitHub and GitLab `main`: synchronized at the same commit.
+- Implemented: the existing serialized Gmail draft-save RPC now participates in the bounded shared transfer state without changing snapshot, idempotency, revision merge, canonical readback, local recovery, or conflict semantics; retry reuses the same operation/task ID and fails closed after compose/account context changes.
+- Verified: focused contracts `102/102`, CRLF regression `5/5`, full Apps Script suite `580/580`, and documentation/privacy gates passed.
+- No live Gmail mutation, OAuth action, staging deployment, or production promotion was performed.
+- Remaining: URL import, server-resumable restart, real transport abort, and native slow-network/minimize acceptance.
