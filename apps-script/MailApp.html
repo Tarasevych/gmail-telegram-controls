@@ -17212,6 +17212,86 @@
         return attachment;
       }
 
+      function runManagedPublicHttpsImport(sourceValue, options) {
+        var opts = options || {};
+        var source = normalizeAttachmentSource(sourceValue);
+        if (!source || source.provider !== "publicHttps") {
+          throw new Error("Вкажіть повне публічне посилання https://.");
+        }
+        var composeAtStart = opts.composeAtStart || state.compose;
+        var sessionId = safeClientOperationId(opts.sessionId || state.composeSessionId);
+        var connectionId = safeId(opts.connectionId || (composeAtStart && composeAtStart.connectionId));
+        if (!composeAtStart || !sessionId || !connectionId) {
+          throw new Error("Редактор або Gmail-акаунт уже змінився.");
+        }
+
+        p0Runtime.publicHttpsTransfers = p0Runtime.publicHttpsTransfers || new Map();
+        var key = sessionId + "\n" + source.url;
+        var inFlight = opts.transferTask ? null : p0Runtime.publicHttpsTransfers.get(key);
+        var task = opts.transferTask || (inFlight && inFlight.task) || createManagedTransfer({
+          kind: "url-import",
+          label: "Перевіряю HTTPS-файл",
+          canCancel: false,
+          canPause: false,
+          canRetry: true,
+          byteProgress: false
+        });
+
+        task.retry = function () {
+          if (state.compose !== composeAtStart ||
+              safeClientOperationId(state.composeSessionId) !== sessionId ||
+              safeId(state.compose && state.compose.connectionId) !== connectionId) {
+            task.canRetry = false;
+            task.transferState = "cancelled";
+            task.finishedAt = Date.now();
+            renderTransferManager();
+            scheduleTransferPrune();
+            return Promise.resolve(false);
+          }
+          return runManagedPublicHttpsImport(source, {
+            transferTask: task,
+            composeAtStart: composeAtStart,
+            sessionId: sessionId,
+            connectionId: connectionId
+          }).promise;
+        };
+
+        if (inFlight && inFlight.promise) return inFlight;
+
+        var promise = enqueueManagedTransfer(task, function (_managedTask, controls) {
+          controls.setPhase("transferring");
+          els.composePublicSourceStatus.textContent = "Перевіряю метадані без повного завантаження файла…";
+          return rpc({ op: "sourceMetadata", source: source }).then(function (response) {
+            controls.setPhase("processing");
+            var metadata = normalizeSourceMetadata(response, source);
+            if (!metadata) throw new Error("Сервер не підтвердив публічне HTTPS-джерело.");
+            if (state.compose !== composeAtStart ||
+                safeClientOperationId(state.composeSessionId) !== sessionId ||
+                safeId(state.compose && state.compose.connectionId) !== connectionId) {
+              throw new Error("Редактор або Gmail-акаунт змінився до завершення перевірки.");
+            }
+            addComposeSourceAttachment(metadata, false);
+            els.composePublicSourceStatus.textContent = "Файл перевірено й додано до чернетки.";
+            return metadata;
+          }).catch(function (error) {
+            els.composePublicSourceStatus.textContent = safeText(error.message, "Не вдалося додати HTTPS-файл.");
+            throw error;
+          });
+        });
+        var transfer = { task: task, promise: promise };
+        p0Runtime.publicHttpsTransfers.set(key, transfer);
+        promise.then(function () {
+          if (p0Runtime.publicHttpsTransfers.get(key) === transfer) {
+            p0Runtime.publicHttpsTransfers.delete(key);
+          }
+        }, function () {
+          if (p0Runtime.publicHttpsTransfers.get(key) === transfer) {
+            p0Runtime.publicHttpsTransfers.delete(key);
+          }
+        });
+        return transfer;
+      }
+
       function sourcePreviewData(response, metadata) {
         var data = response || {};
         var encoded = typeof data.dataBase64Url === "string" ? data.dataBase64Url : "";
@@ -19125,14 +19205,10 @@
             els.composePublicSourceStatus.textContent = "Вкажіть повне публічне посилання https://.";
             return;
           }
-          els.composePublicSourceStatus.textContent = "Перевіряю метадані без повного завантаження файла…";
           try {
-            var metadata = normalizeSourceMetadata(await rpc({ op: "sourceMetadata", source: source }), source);
-            if (!metadata) throw new Error("Сервер не підтвердив публічне HTTPS-джерело.");
-            addComposeSourceAttachment(metadata, false);
-            els.composePublicSourceStatus.textContent = "Файл перевірено й додано до чернетки.";
+            await runManagedPublicHttpsImport(source).promise;
           } catch (error) {
-            els.composePublicSourceStatus.textContent = safeText(error.message, "Не вдалося додати HTTPS-файл.");
+            /* The managed task owns the visible failure and retry state. */
           }
         });
         els.closeAttachmentPreview.addEventListener("click", function () { closeAttachmentPreview(true); });

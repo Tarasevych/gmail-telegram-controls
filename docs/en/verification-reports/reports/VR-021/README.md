@@ -53,3 +53,9 @@ REQ-0035 extends the shared transfer-state implementation to thread/message-deta
 Status: PARTIAL
 
 REQ-0035 extends the shared transfer-state implementation to the existing Gmail draft persistence RPC. The exact compose snapshot and operation ID remain authoritative; progress is indeterminate, unsupported cancellation is absent, retry reuses the exact task identity, and changed compose/account context fails closed. Focused contracts pass 102/102 and the full Apps Script suite passes 580/580. No live Gmail mutation, OAuth action, staging deployment, or production promotion was used for this source increment.
+
+## 2026-07-23: public-HTTPS import continuation evidence
+
+Status: PARTIAL
+
+REQ-0035 extends shared transfer-state coverage to the complete public-HTTPS source submit. Runtime tests verify one RPC and one attachment for parallel submits, generic content-free task identity, honest indeterminate progress, and account/session fail-closed retry. The existing server SSRF and content-bound contracts remain covered by the full suite. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584. No live external URL, Gmail mutation, OAuth action, staging deployment, or production promotion was used.
