@@ -29,7 +29,7 @@
 - `GT-031` і `GT-037` лишаються `VERIFIED`; production v65 і release cleanup мають статус `VERIFIED`.
 - `GT-032`–`GT-036` лишаються `PARTIAL`. Automatic reload transition v64-to-v65 неможливо довести, бо сам parser v64 пропускав canonical manifest field.
 - Direct Apps Script Processes API повернув `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`; scope expansion, OAuth cycle або migration default GCP project не виконувалися.
-- `GT-039` має статус `PARTIAL`: один контрольований owner self-message мав `UNREAD+SENT+INBOX`, але automatic processing і два `/check` створили нуль Telegram cards. Source inspection знайшов guard `!labels.SENT`; exactly-once source correction пройшов `161/161` focused tests і merged, але ще не deployed.
+- `GT-039` має статус `BLOCKED`: production v65 пропускає `INBOX+SENT`, тоді як current source доставляє його один раз. `REQ-0009`/`REQ-0019` і пізніший `GT-039` задають суперечливі self/alias semantics; до прямого owner decision цей source delta не входить до production candidate. Доказ: `VR-025`.
 - 15-хвилинний History gate verified automated contract; live stage trace не показує due-versus-skip decision, тому dedicated runtime cadence лишається `UNVERIFIED`.
 - `GT-038` лишається `PARTIAL` для Telegram Web; той самий signed release пройшов у native Telegram Desktop.
 

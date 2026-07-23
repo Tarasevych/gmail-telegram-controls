@@ -154,11 +154,11 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Status:** PARTIAL
 - **Production boundary:** cumulative source is deployed as immutable v65; staging is `0`, journal is `cleaned`, and exact v64 is rollback.
 - **Verified:** dynamic active context and narrow full-address disclosure, three isolated roots, switching without OAuth, shared mapping, production app-shell load, GT-030 worker gate, GT-037 bounded promotion and exact release cleanup.
-- **Current source step:** v65 staging, two production launches and cleanup passed. GT-039 exposed the inherited `SENT+INBOX` exclusion; its message-ID dedupe correction is merged and the next cumulative source marker is v66.
-- **Still required:** hash-pinned v66 staging/production acceptance for GT-039 and future one-reload/no-loop evidence for GT-036; measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; and same-scale production typography comparison.
-- **Related issues:** GT-032 through GT-036, GT-038 and GT-039 remain open/partial; GT-031 and GT-037 are verified.
+- **Current source step:** source and production have different `INBOX+SENT` semantics for `GT-039`; `VR-025` classifies them as `CONFLICTING` and the release contour as `BLOCKED` pending an owner decision. An automatic v66 marker is no longer the valid next action.
+- **Still required:** a direct owner decision for self/alias `INBOX+SENT`; future one-reload/no-loop evidence for GT-036; measured cold/warm and `A -> B -> A` traces; scroll/focus restoration; incremental arrival evidence; quota/LRU eviction; offline/restart/cross-session draft recovery; conflict handling; and same-scale production typography comparison.
+- **Related issues:** GT-032 through GT-036 and GT-038 remain open/partial; GT-039 is blocked; GT-031 and GT-037 are verified.
 - **Rule:** continue within Versie 1. Create another immutable only for a separately tested cumulative code change after a clean preflight boundary.
-- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-013](verification-reports/reports/VR-013/README.md), [VR-014](verification-reports/reports/VR-014/README.md), and [VR-015](verification-reports/reports/VR-015/README.md).
+- **Evidence:** [VR-009](verification-reports/reports/VR-009/README.md), [VR-013](verification-reports/reports/VR-013/README.md), [VR-014](verification-reports/reports/VR-014/README.md), [VR-015](verification-reports/reports/VR-015/README.md), and [VR-025](verification-reports/reports/VR-025/README.md). Source request: `REQ-0035`.
 
 ## B1-26 — P0 ONE-SECOND launch
 

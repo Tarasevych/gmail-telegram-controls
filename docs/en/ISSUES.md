@@ -218,13 +218,13 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 ## GT-039 — `SENT+INBOX` mail is excluded instead of delivered once
 
-- **Status:** PARTIAL — root cause and source correction are VERIFIED; production acceptance is pending cumulative v66.
-- **Observed behavior:** one controlled owner self-message existed as `UNREAD+SENT+INBOX`; the automatic worker and two `/check` runs reported no new mail, and exact-marker chat search returned zero cards.
-- **Root cause:** `gmailNotificationLabelsEligible_` required `INBOX` but also rejected every `SENT` label, then persisted the message as seen. Runtime stages completed with `errorCode=none`, so the exclusion was silent and deterministic.
-- **Source correction:** retain required `INBOX`, reject `SPAM` and `TRASH`, preserve important-only mode, and let the existing stable Gmail message-ID/card reservation dedupe enforce exactly-once delivery.
-- **Verification:** focused source suite `161/161`; first scan delivers once, second scan does not refetch or resend; `SENT` without `INBOX` remains ineligible.
-- **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production remains v65 until hash-pinned v66 staging passes.
-- **Evidence:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
+- **Status:** BLOCKED — evidence classification `CONFLICTING`; `blocker_type=owner_decision`.
+- **Production v65:** `INBOX+SENT` is skipped and durably marked seen; this matches the explicit self/alias acceptance in `REQ-0019`.
+- **Current source:** `gmailNotificationLabelsEligible_` allows `INBOX+SENT`; the focused `161/161` suite proves one delivery and dedupe on the second scan.
+- **Conflict:** `REQ-0009` and `REQ-0019` require self/alias copies not to duplicate and explicitly record their exclusion. The later `GT-039` under `REQ-0033` changed source to exactly-once, but owner request `REQ-0033` contains no separate policy decision for self/alias mail.
+- **Release boundary:** source commit `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b` remains preserved as a verified artifact, but its notification-policy delta cannot enter a new cumulative candidate before a direct owner decision.
+- **Required decision:** choose one invariant: `(A)` skip self/alias `INBOX+SENT` and deliver external `INBOX` once; or `(B)` deliver every `INBOX`, including self/alias `INBOX+SENT`, once.
+- **Evidence:** historical source evidence [VR-015](verification-reports/reports/VR-015/README.md); conflict reconciliation [VR-025](verification-reports/reports/VR-025/README.md). Source request: `REQ-0035`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
 
 ## GT-040 — ONE-SECOND warm-launch performance

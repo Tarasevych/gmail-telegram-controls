@@ -193,3 +193,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-024/README.md](reports/VR-024/README.md)
 - **Висновок:** повторне quota-dependent continuation VERIFIED і виправлене у source. Runtime-budget contracts `9/9` і повний suite `593/593` проходять. Live quota recovery, staging, native acceptance та production promotion лишаються `UNVERIFIED`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-025 — Конфлікт політики `INBOX+SENT`
+
+- **Статус:** CONFLICTING
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `T-03`, owner request history, production v65, current source/tests, `GT-039` і release boundary.
+- **Звіт:** [reports/VR-025/README.md](reports/VR-025/README.md)
+- **Висновок:** production skip і current-source exactly-once обидва доказові, але owner policy суперечлива; release цього delta `BLOCKED` до одного прямого рішення.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
