@@ -297,3 +297,14 @@ The capability gate is now race-safe: queued local reads can be cancelled before
 Status: BLOCKED
 
 Authenticated read-only runtime evidence still shows the shared Apps Script daily URL Fetch quota failing the timer worker in `legacy_recovery` with `errorCode=urlfetch_quota`. Native slow-network/minimize observations would therefore be causally invalid. No new candidate or staging deployment is justified by this readback. Resume this acceptance lane only after a clean quota window; keep production v65 and staging `0` until then.
+
+## B1-34 — Fail-fast URL Fetch quota circuit
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Completed in source:** a content-free 15-minute probe circuit, immediate timer-pipeline stop after a classified daily URL Fetch exception, transport propagation from Gmail/Telegram/Google refresh, quota-blocked telemetry, and lease release.
+- **Verified locally:** runtime-budget contracts `9/9`, complete Apps Script suite `593/593`, and all documentation/release/privacy gates.
+- **Release boundary:** source-only cumulative Versie 1 work. Production remains v65, staging remains `0`, immutable v70 is unchanged, and no new OAuth, Gmail, Telegram, menu, deployment, or release-journal mutation was performed.
+- **Still required:** clean-quota readback, one controlled staging candidate only when causally justified, native acceptance, and production promotion only after successful staging acceptance.
+- **Evidence:** [GT-054](ISSUES.md), [VR-024](verification-reports/reports/VR-024/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

@@ -585,6 +585,47 @@ function gmailTimerWorkerTelemetry_(lease, status, stage, errorCode) {
   }
 }
 
+function gmailUrlFetchQuotaCircuitRead_(propertiesValue) {
+  var properties = propertiesValue || PropertiesService.getScriptProperties();
+  try {
+    var parsed = JSON.parse(properties.getProperty(GMAIL_URLFETCH_QUOTA_CIRCUIT_KEY_) || '{}');
+    if (!parsed || Number(parsed.v || 0) !== 1) return { until: 0 };
+    return { until: Math.max(0, Number(parsed.u || 0)) };
+  } catch (error) {
+    return { until: 0 };
+  }
+}
+
+function gmailUrlFetchQuotaCircuitActive_() {
+  try {
+    var properties = PropertiesService.getScriptProperties();
+    var circuit = gmailUrlFetchQuotaCircuitRead_(properties);
+    if (circuit.until > Date.now()) return true;
+    if (circuit.until > 0) properties.deleteProperty(GMAIL_URLFETCH_QUOTA_CIRCUIT_KEY_);
+  } catch (error) {
+    console.error('URLFetch quota circuit state unavailable.');
+  }
+  return false;
+}
+
+function gmailUrlFetchQuotaCircuitTrip_(error) {
+  if (gmailRuntimeFailureCode_(error) !== 'urlfetch_quota') return false;
+  try {
+    PropertiesService.getScriptProperties().setProperty(
+      GMAIL_URLFETCH_QUOTA_CIRCUIT_KEY_,
+      JSON.stringify({ v: 1, u: Date.now() + GMAIL_URLFETCH_QUOTA_PROBE_MS_ })
+    );
+    console.log(JSON.stringify({
+      event: 'urlfetch_quota_circuit',
+      status: 'open',
+      retryAfterMs: GMAIL_URLFETCH_QUOTA_PROBE_MS_,
+    }));
+  } catch (storageError) {
+    console.error('URLFetch quota circuit could not be persisted.');
+  }
+  return true;
+}
+
 function claimGmailTimerWorkerLease_() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(250)) {
@@ -657,93 +698,123 @@ function checkNewMail_() {
   var workerStatus = 'completed';
   var workerErrorCode = 'none';
   var legacyResult = null;
+  function quotaBlockedResult() {
+    workerStatus = 'quota_blocked';
+    workerErrorCode = 'urlfetch_quota';
+    workerLease.stage = 'quota_circuit';
+    return emptyMailCheckResult_();
+  }
   function startStage(stage) {
+    if (gmailUrlFetchQuotaCircuitActive_()) {
+      quotaBlockedResult();
+      return false;
+    }
     if (gmailTimerWorkerStartStage_(workerLease, stage)) return true;
     workerStatus = 'budget_exhausted';
     return false;
   }
+  function runBestEffort(label, operation) {
+    if (gmailUrlFetchQuotaCircuitActive_()) {
+      quotaBlockedResult();
+      return false;
+    }
+    try {
+      operation();
+    } catch (error) {
+      console.error(label + error);
+      if (gmailUrlFetchQuotaCircuitTrip_(error)) {
+        quotaBlockedResult();
+        return false;
+      }
+    }
+    if (gmailUrlFetchQuotaCircuitActive_()) {
+      quotaBlockedResult();
+      return false;
+    }
+    return true;
+  }
   try {
+  if (gmailUrlFetchQuotaCircuitActive_()) return quotaBlockedResult();
   if (!startStage('realtime')) return emptyMailCheckResult_();
   runRealtimeMailChecks_('timer', 5);
+  if (gmailUrlFetchQuotaCircuitActive_()) return quotaBlockedResult();
   if (!startStage('telegram_maintenance')) return emptyMailCheckResult_();
   // Webhook failures and half-finished Telegram card moves are durable. The
   // minute trigger provides a bounded retry path without repeating Gmail work.
-  try { retryFailedTelegramUpdates_(3); } catch (error) {
-    console.error('Telegram update retry failed: ' + error);
-  }
-  try { retryPendingTelegramMailCardActions_(5); } catch (error) {
-    console.error('Telegram Mini App reconciliation retry failed: ' + error);
-  }
-  try { reconcileTelegramMailCards_(5); } catch (error) {
-    console.error('Telegram card reconciliation failed: ' + error);
-  }
-  try { processTelegramFocusReconciliations_(5); } catch (error) {
-    console.error('Telegram focus reconciliation failed: ' + error);
-  }
-  try {
+  if (!runBestEffort('Telegram update retry failed: ', function() {
+    retryFailedTelegramUpdates_(3);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Telegram Mini App reconciliation retry failed: ', function() {
+    retryPendingTelegramMailCardActions_(5);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Telegram card reconciliation failed: ', function() {
+    reconcileTelegramMailCards_(5);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Telegram focus reconciliation failed: ', function() {
+    processTelegramFocusReconciliations_(5);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Per-account Gmail metadata reconciliation failed: ', function() {
     if (typeof mailboxProcessMetadataReconciliations_ === 'function') {
       mailboxProcessMetadataReconciliations_(1);
     }
-  } catch (error) {
-    console.error('Per-account Gmail metadata reconciliation failed: ' + error);
-  }
+  })) return emptyMailCheckResult_();
   if (!startStage('gmail_history')) return emptyMailCheckResult_();
-  try {
+  if (!runBestEffort('Gmail History synchronization failed: ', function() {
     if (claimGmailTimerSlot_('history_sync', GMAIL_HISTORY_SYNC_SLOT_MS_)) {
       syncTelegramMailCardsFromAllGmailHistory_(CONFIG.GMAIL_HISTORY_SYNC_CARD_LIMIT);
     }
-  } catch (error) {
-    console.error('Gmail History synchronization failed: ' + error);
-  }
+  })) return emptyMailCheckResult_();
   // Gmail History is authoritative for ordinary changes. The rotating metadata
   // sweep is deliberately sparse and exists only to heal a missed/expired
   // history edge without exhausting consumer Apps Script quotas.
-  try { syncTelegramMailCardsFromGmailFallbackIfDue_(CONFIG.TELEGRAM_MAIL_STATE_SYNC_BATCH); } catch (error) {
-    console.error('Gmail to Telegram state synchronization failed: ' + error);
-  }
+  if (!runBestEffort('Gmail to Telegram state synchronization failed: ', function() {
+    syncTelegramMailCardsFromGmailFallbackIfDue_(CONFIG.TELEGRAM_MAIL_STATE_SYNC_BATCH);
+  })) return emptyMailCheckResult_();
   if (!startStage('retention_scheduling')) return emptyMailCheckResult_();
-  try { purgeOldTelegramMailCards_(5); } catch (error) {
-    console.error('Telegram mail-card retention cleanup failed: ' + error);
-  }
+  if (!runBestEffort('Telegram mail-card retention cleanup failed: ', function() {
+    purgeOldTelegramMailCards_(5);
+  })) return emptyMailCheckResult_();
   // Bot-managed snooze is processed independently. Every retry reads current
   // Gmail labels first, so a timer retry never blindly repeats a mailbox
   // mutation or replays unrelated mail actions.
-  try { processDueBotManagedSnoozes_(10); } catch (error) {
-    console.error('Bot-managed snooze processing failed: ' + error);
-  }
-  try {
+  if (!runBestEffort('Bot-managed snooze processing failed: ', function() {
+    processDueBotManagedSnoozes_(10);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Scheduled draft send processing failed: ', function() {
     if (typeof mailboxProcessDueScheduledSends_ === 'function') {
       mailboxProcessDueScheduledSends_(3);
     }
-  } catch (error) {
-    console.error('Scheduled draft send processing failed: ' + error);
-  }
-  try { processCompassionateMailReminders_(2); } catch (error) {
-    console.error('Compassionate reminder processing failed: ' + error);
-  }
-  try {
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Compassionate reminder processing failed: ', function() {
+    processCompassionateMailReminders_(2);
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Private functional-metrics retention cleanup failed: ', function() {
     if (typeof mailboxProcessExpiredFunctionalMetrics_ === 'function') {
       mailboxProcessExpiredFunctionalMetrics_();
     }
-  } catch (error) {
-    console.error('Private functional-metrics retention cleanup failed: ' + error);
-  }
-  try {
+  })) return emptyMailCheckResult_();
+  if (!runBestEffort('Gmail OAuth revocation cleanup failed: ', function() {
     if (typeof mailboxProcessGoogleRevocations_ === 'function') mailboxProcessGoogleRevocations_(1);
-  } catch (error) {
-    console.error('Gmail OAuth revocation cleanup failed: ' + error);
-  }
+  })) return emptyMailCheckResult_();
   if (!startStage('legacy_recovery')) return emptyMailCheckResult_();
   legacyResult = (() => { return runMailCheck_('timer'); })();
+  if (gmailUrlFetchQuotaCircuitActive_()) return quotaBlockedResult();
   if (!startStage('multi_account')) return legacyResult;
   try { legacyResult.multiAccount = runMultiAccountMailChecks_(3); } catch (error) {
+    if (gmailUrlFetchQuotaCircuitTrip_(error) || gmailUrlFetchQuotaCircuitActive_()) {
+      return quotaBlockedResult();
+    }
     console.error('Multi-account Gmail notification scan failed: ' + error);
     legacyResult.multiAccount = { failed: 1, processed: 0 };
   }
   return legacyResult;
   } catch (error) {
-    workerStatus = 'failed';
     workerErrorCode = gmailRuntimeFailureCode_(error);
+    if (workerErrorCode === 'urlfetch_quota' || gmailUrlFetchQuotaCircuitActive_()) {
+      gmailUrlFetchQuotaCircuitTrip_(error);
+      return quotaBlockedResult();
+    }
+    workerStatus = 'failed';
     throw error;
   } finally {
     finishGmailTimerWorkerLease_(workerLease, workerStatus, workerErrorCode);
@@ -766,6 +837,8 @@ var GMAIL_TIMER_WORKER_SLOT_MS_ = 150 * 1000;
 // crash margin, then release early in finally after normal completion.
 var GMAIL_TIMER_WORKER_LEASE_MS_ = 7 * 60 * 1000;
 var GMAIL_TIMER_WORKER_TELEMETRY_KEY_ = 'GMAIL_TIMER_WORKER_TELEMETRY_V1';
+var GMAIL_URLFETCH_QUOTA_CIRCUIT_KEY_ = 'GMAIL_URLFETCH_QUOTA_CIRCUIT_V1';
+var GMAIL_URLFETCH_QUOTA_PROBE_MS_ = 15 * 60 * 1000;
 var GMAIL_HISTORY_SYNC_SLOT_MS_ = 15 * 60 * 1000;
 
 function emptyMailCheckResult_() {
@@ -1096,6 +1169,7 @@ function recordGmailRuntimeFailure_(stage, error) {
     var state = gmailRuntimeReadState_(props);
     var safeStage = String(stage || 'runtime').replace(/[^a-z0-9_]/g, '').slice(0, 40);
     var failureCode = gmailRuntimeFailureCode_(error);
+    if (failureCode === 'urlfetch_quota') gmailUrlFetchQuotaCircuitTrip_(error);
     var fingerprint = gmailRuntimeFingerprint_(error);
     state.lastFailureAt = Date.now();
     state.lastFailureStage = safeStage;
@@ -12322,6 +12396,7 @@ function gmailApiRequest_(path, options) {
       request
     );
   } catch (fetchError) {
+    gmailUrlFetchQuotaCircuitTrip_(fetchError);
     // A transport failure after a POST was dispatched cannot prove whether
     // Gmail applied it. Preserve that ambiguity for the read-only recovery
     // worker instead of cancelling the Telegram reconciliation reservation.
@@ -12444,6 +12519,7 @@ function telegramRequest_(method, payload) {
       }
     );
   } catch (transportError) {
+    gmailUrlFetchQuotaCircuitTrip_(transportError);
     throw telegramRequestError_(
       'Telegram transport error: ' + String(transportError && transportError.message || transportError),
       0,

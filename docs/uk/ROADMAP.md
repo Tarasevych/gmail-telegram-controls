@@ -297,3 +297,14 @@ Capability gate тепер захищений від race: локальні read
 Status: BLOCKED
 
 Автентифікований read-only runtime evidence досі показує, що спільна добова квота Apps Script URL Fetch зупиняє timer worker у `legacy_recovery` з `errorCode=urlfetch_quota`. Через це спостереження native slow-network/minimize не мали б достовірного причинного значення. Цей readback не обґрунтовує новий candidate або staging deployment. Цю acceptance lane можна продовжити лише у чистому quota window; до того production лишається v65, а staging — `0`.
+
+## B1-34 — Fail-fast circuit URL Fetch quota
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Завершено у source:** content-free 15-хвилинний probe circuit, негайна зупинка timer pipeline після класифікованого exception добової URL Fetch quota, передавання signal із Gmail/Telegram/Google refresh transports, quota-blocked telemetry та звільнення lease.
+- **Локально перевірено:** runtime-budget contracts `9/9`, повний Apps Script suite `593/593` та всі documentation/release/privacy gates.
+- **Release boundary:** лише source-only cumulative робота Versie 1. Production лишається v65, staging `0`, immutable v70 незмінний; нові OAuth, Gmail, Telegram, menu, deployment або release-journal mutation не виконувалися.
+- **Ще потрібно:** clean-quota readback, один controlled staging candidate лише за причинного обґрунтування, native acceptance і production promotion лише після успішного staging acceptance.
+- **Доказ:** [GT-054](ISSUES.md), [VR-024](verification-reports/reports/VR-024/README.md).
+- **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).

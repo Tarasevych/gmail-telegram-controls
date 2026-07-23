@@ -51,10 +51,64 @@ function createWorkerLeaseHarness() {
     GMAIL_TIMER_WORKER_SLOT_MS_: 150 * 1000,
     GMAIL_TIMER_WORKER_LEASE_MS_: 7 * 60 * 1000,
     GMAIL_TIMER_WORKER_TELEMETRY_KEY_: 'GMAIL_TIMER_WORKER_TELEMETRY_V1',
+    GMAIL_URLFETCH_QUOTA_CIRCUIT_KEY_: 'GMAIL_URLFETCH_QUOTA_CIRCUIT_V1',
+    GMAIL_URLFETCH_QUOTA_PROBE_MS_: 15 * 60 * 1000,
+    gmailRuntimeFailureCode_: error => /urlfetch|service invoked too many times for one day/i
+      .test(String(error && error.message || error || '')) ? 'urlfetch_quota' : 'runtime_error',
   };
   vm.runInNewContext(source.slice(helperStart, helperEnd), context);
   return { context, store, setNow: value => { now = value; } };
 }
+
+test('URLFetch quota circuit is content-free and permits one bounded probe after expiry', () => {
+  const harness = createWorkerLeaseHarness();
+  assert.equal(harness.context.gmailUrlFetchQuotaCircuitActive_(), false);
+  assert.equal(harness.context.gmailUrlFetchQuotaCircuitTrip_(
+    new Error('Service invoked too many times for one day: urlfetch.')
+  ), true);
+  assert.equal(harness.context.gmailUrlFetchQuotaCircuitActive_(), true);
+
+  const record = JSON.parse(harness.store.GMAIL_URLFETCH_QUOTA_CIRCUIT_V1);
+  assert.deepEqual(Object.keys(record).sort(), ['u', 'v']);
+  assert.equal(record.v, 1);
+  assert.equal(record.u, 1000 + 15 * 60 * 1000);
+  assert.doesNotMatch(JSON.stringify(record), /email|message|thread|token|initData|account/i);
+
+  harness.setNow(record.u + 1);
+  assert.equal(harness.context.gmailUrlFetchQuotaCircuitActive_(), false);
+  assert.equal(harness.store.GMAIL_URLFETCH_QUOTA_CIRCUIT_V1, undefined);
+});
+
+test('open URLFetch quota circuit skips the complete timer pipeline and releases its lease', () => {
+  const workerStart = source.indexOf('function checkNewMail_()');
+  const workerEnd = source.indexOf('\nvar GMAIL_NOTIFICATION_REALTIME_STATE_PREFIX_', workerStart);
+  const workerSource = source.slice(workerStart, workerEnd);
+  let realtimeCalls = 0;
+  let finish = null;
+  const context = {
+    claimGmailTimerWorkerLease_: () => ({
+      token: 'lease_token', startedAt: 1, deadlineAt: 150001, leaseUntil: 420001, stage: 'claimed',
+    }),
+    gmailUrlFetchQuotaCircuitActive_: () => true,
+    gmailUrlFetchQuotaCircuitTrip_: () => true,
+    gmailTimerWorkerStartStage_: () => true,
+    gmailRuntimeFailureCode_: () => 'runtime_error',
+    runRealtimeMailChecks_: () => { realtimeCalls += 1; },
+    emptyMailCheckResult_: () => ({ delivered: 0 }),
+    finishGmailTimerWorkerLease_: (lease, status, errorCode) => {
+      finish = { stage: lease.stage, status, errorCode };
+    },
+    console: { error: () => {} },
+  };
+  vm.runInNewContext(workerSource, context);
+  assert.deepEqual(context.checkNewMail_(), { delivered: 0 });
+  assert.equal(realtimeCalls, 0);
+  assert.deepEqual(finish, {
+    stage: 'quota_circuit', status: 'quota_blocked', errorCode: 'urlfetch_quota',
+  });
+  assert.match(workerSource, /function runBestEffort\(/);
+  assert.ok((workerSource.match(/runBestEffort\(/g) || []).length >= 10);
+});
 
 test('worker lease prevents re-entry after the 150-second target and releases after completion', () => {
   const harness = createWorkerLeaseHarness();
@@ -117,4 +171,7 @@ test('URLFetch daily quota has a distinct runtime error code', () => {
   assert.notEqual(classifierStart, -1);
   assert.ok(quotaCode > classifierStart);
   assert.ok(storageCode > quotaCode);
+  assert.match(source, /var GMAIL_URLFETCH_QUOTA_PROBE_MS_ = 15 \* 60 \* 1000;/);
+  assert.match(source, /gmailUrlFetchQuotaCircuitTrip_\(fetchError\)/);
+  assert.match(source, /gmailUrlFetchQuotaCircuitTrip_\(transportError\)/);
 });
