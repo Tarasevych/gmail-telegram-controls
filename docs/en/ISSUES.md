@@ -461,3 +461,9 @@ The client now persists only an account-scoped, content-free draft operation des
 Status: PARTIAL
 
 The transfer manager now exposes and accepts running cancellation only after the active transport registers a concrete abort callback. A queued local read remains cancellable before its runner starts, but the brief `preparing` phase cannot claim cancellation until `FileReader.abort` is available. Apps Script RPC lanes remain non-cancellable because the official `google.script.run` contract exposes asynchronous success/failure handlers and no abort handle. The new race-regression contract and focused transfer suites pass `170/170`; the full Apps Script suite passes `591/591`. Real local-reader abort is `VERIFIED`; real RPC abort is unsupported in the current transport rather than simulated. Native slow-network/minimize acceptance remains open.
+
+## 2026-07-23: GT-051 native-acceptance blocker readback
+
+Status: BLOCKED
+
+An authenticated, read-only Apps Script Executions inspection confirmed that the shared daily URL Fetch quota was still exhausted during the proposed native acceptance window. A failed `checkNewMail_` execution reached `legacy_recovery` and terminated with `errorCode=urlfetch_quota`; adjacent content-free logs showed the same quota boundary affecting Telegram maintenance, Google OAuth token refresh, and Gmail API transport. This does not establish a transfer-manager regression. Production remains v65, active staging remains `0`, and no menu, Gmail, OAuth, deployment, or release-journal mutation was performed. Native slow-network/minimize acceptance must wait for a clean quota window.

@@ -291,3 +291,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Capability gate тепер захищений від race: локальні reads у черзі можна скасувати до виконання, а запущена передача показує cancel лише після реєстрації конкретного abort handle транспортом. Це підтверджує справжню поведінку `FileReader.abort` і назавжди забороняє несправжній cancel для чинних Apps Script RPC lanes. Focused suites пройшли `170/170`, а повний suite — `591/591`. У B1-31 лишається native acceptance для повільної мережі/згортання; майбутній справжній RPC abort потребує окремо перевіреної cancellable transport architecture.
+
+## 2026-07-23: gate native acceptance для B1-31
+
+Status: BLOCKED
+
+Автентифікований read-only runtime evidence досі показує, що спільна добова квота Apps Script URL Fetch зупиняє timer worker у `legacy_recovery` з `errorCode=urlfetch_quota`. Через це спостереження native slow-network/minimize не мали б достовірного причинного значення. Цей readback не обґрунтовує новий candidate або staging deployment. Цю acceptance lane можна продовжити лише у чистому quota window; до того production лишається v65, а staging — `0`.

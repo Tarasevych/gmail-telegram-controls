@@ -37,6 +37,8 @@
 | VR-021-06 | Queued cancel не допускає execution; running cancel викликає registered abort callback; retry зберігає stable transfer ID. | VERIFIED | behavioral contracts |
 | VR-021-07 | Пов'язані transfer/MailApp contracts проходять `99/99`; повний Apps Script suite проходить `551/551`. | VERIFIED | local Node test traces |
 | VR-021-08 | Thread detail, draft persistence, URL import і scoped restart reconciliation чернетки використовують повний manager; реальний RPC abort, byte-resumable upload і native slow-network behavior лишаються відкритими. | PARTIAL | локальні behavioral contracts; native acceptance відсутній |
+| VR-021-09 | Native acceptance для повільної мережі/згортання зараз може відрізнити transfer behavior від shared runtime. | BLOCKED | автентифікований Apps Script execution дійшов до `legacy_recovery` і впав з `errorCode=urlfetch_quota` |
+| VR-021-10 | Readback blocker змінив production, staging, Gmail, OAuth або release state. | VERIFIED | mutation не виконувалась; production v65 і staging `0` збережено |
 
 ## Platform та release boundary
 
@@ -71,3 +73,9 @@ REQ-0035 тепер охоплює максимальну безпечну resta
 Status: PARTIAL
 
 Перевірка офіційних первинних джерел підтверджує, що `google.script.run` повертає результат через asynchronous success/failure handlers, але не документує cancellation handle. Gmail resumable protocol є окремим transport через session URI та chunked `PUT` і не надається чинним client RPC. Source inspection підтверджує, що локальна робота `FileReader` реєструє конкретний abort callback, тоді як усі чинні Apps Script RPC lanes мають `canCancel: false`. Capability gate тепер також відхиляє скасування running/preparing state до появи abort callback, закриваючи короткий race перед реєстрацією без послаблення queued cancellation. Focused tests пройшли `170/170`, повний suite — `591/591`; runtime service не викликався. Abort локального reader має статус `VERIFIED`; RPC abort у чинному transport не підтримується платформою і навмисно відсутній; native behavior для повільної мережі/згортання лишається `UNVERIFIED`.
+
+## 2026-07-23: readback blocker native acceptance
+
+Status: BLOCKED
+
+Автентифікована read-only перевірка Apps Script Executions надала відсутній runtime evidence без запиту ширшого OAuth scope. Обране невдале timer execution дійшло до `legacy_recovery`, повідомило `errorCode=urlfetch_quota` і завершилося винятком добової квоти Apps Script URL Fetch. Сусідні content-free entries показали ту саму shared transport boundary під час Telegram maintenance, оновлення Google OAuth token і доступу Gmail API. Це підтверджує зовнішній shared blocker, а не candidate-specific regression transfer manager. Staging не створювався, production v65 не змінювався; menu, Gmail, OAuth, deployment або release journal не мутувалися. Native acceptance для повільної мережі/згортання лишається заблокованим до чистого quota window.

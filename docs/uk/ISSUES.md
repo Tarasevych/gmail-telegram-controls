@@ -461,3 +461,9 @@ Status: PARTIAL
 Status: PARTIAL
 
 Менеджер передач тепер показує і приймає скасування запущеної операції лише після реєстрації конкретного abort callback активним транспортом. Локальне читання в черзі можна скасувати до старту runner, але коротка фаза `preparing` не заявляє cancel, доки не доступний `FileReader.abort`. Apps Script RPC лишаються без cancel, оскільки офіційний контракт `google.script.run` надає asynchronous success/failure handlers і не має abort handle. Новий race-regression contract і focused transfer suites пройшли `170/170`; повний Apps Script suite пройшов `591/591`. Справжній abort локального reader має статус `VERIFIED`; справжній RPC abort не підтримується чинним транспортом і не імітується. Native acceptance для повільної мережі/згортання лишається відкритим.
+
+## 2026-07-23: readback blocker native acceptance для GT-051
+
+Status: BLOCKED
+
+Автентифікована read-only перевірка Apps Script Executions підтвердила, що спільна добова квота URL Fetch усе ще була вичерпана у запропонованому вікні native acceptance. Невдале виконання `checkNewMail_` дійшло до `legacy_recovery` і завершилося з `errorCode=urlfetch_quota`; сусідні content-free logs показали ту саму межу квоти для Telegram maintenance, оновлення Google OAuth token і Gmail API transport. Це не встановлює regression transfer manager. Production лишається v65, active staging лишається `0`; menu, Gmail, OAuth, deployment або release journal не змінювалися. Native acceptance для повільної мережі/згортання має чекати чистого quota window.
