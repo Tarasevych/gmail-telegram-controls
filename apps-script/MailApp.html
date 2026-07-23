@@ -5315,6 +5315,7 @@
       var embeddedLaunchRoute = decodeEmbeddedBase64Url_("<?= mailboxLaunchRouteB64 ?>", 512);
       var embeddedLaunchError = decodeEmbeddedBase64Url_("<?= mailboxLaunchErrorB64 ?>", 500);
       var embeddedLaunchErrorCode = decodeEmbeddedBase64Url_("<?= mailboxLaunchErrorCodeB64 ?>", 64);
+      var embeddedLaunchStartedAt = Number("<?= mailboxLaunchStartedAt ?>") || 0;
       var embeddedCapacityRecoveryToken = embeddedToken_("<?= mailboxCapacityRecoveryToken ?>");
       var app = document.getElementById("app");
       var bootState = document.getElementById("bootState");
@@ -6106,6 +6107,36 @@
         return code;
       }
 
+      function telegramSecureStorageErrorCode(error, fallback) {
+        var raw = "";
+        if (typeof error === "string") raw = error;
+        else raw = safeText(error && (error.code || error.message));
+        raw = raw.toUpperCase();
+        if (raw.indexOf("UNSUPPORTED") !== -1) return "UNSUPPORTED";
+        if (raw.indexOf("NOT_FOUND") !== -1 || raw.indexOf("MISSING") !== -1) {
+          return "MISSING";
+        }
+        return safeText(fallback, "ERROR").toUpperCase();
+      }
+
+      function recordTelegramSecureStorageDiagnostic(code) {
+        var allowed = new Set([
+          "API_UNAVAILABLE", "TIMEOUT", "UNSUPPORTED", "ERROR", "MISSING",
+          "RESTORABLE", "FOUND", "STORED", "REMOVED", "INVALID_TOKEN"
+        ]);
+        var normalized = safeText(code).toUpperCase();
+        if (!allowed.has(normalized)) normalized = "ERROR";
+        var trace = window.__gtSecureStorageDiagnostics ||
+          (window.__gtSecureStorageDiagnostics = { counts: {}, lastCode: "" });
+        trace.lastCode = normalized;
+        trace.counts[normalized] = Number(trace.counts[normalized] || 0) + 1;
+        if (window.__gtLaunchTrace) window.__gtLaunchTrace.secureStorageStatus = normalized;
+        if (typeof p0Runtime !== "undefined" && p0Runtime && p0Runtime.metrics) {
+          p0Runtime.metrics.secureStorageStatus = normalized;
+        }
+        return normalized;
+      }
+
       function telegramSecureStorageAvailable() {
         return Boolean(
           tg && tg.SecureStorage &&
@@ -6117,33 +6148,60 @@
 
       function telegramSecureSessionGet() {
         if (!telegramSecureStorageAvailable()) {
-          return Promise.resolve({ available: false, token: "", canRestore: false });
+          recordTelegramSecureStorageDiagnostic("API_UNAVAILABLE");
+          return Promise.resolve({
+            available: false, token: "", canRestore: false, status: "API_UNAVAILABLE"
+          });
         }
         return new Promise(function (resolve) {
           var settled = false;
           var timer = window.setTimeout(function () {
             if (settled) return;
             settled = true;
-            resolve({ available: true, token: "", canRestore: false, timedOut: true });
+            recordTelegramSecureStorageDiagnostic("TIMEOUT");
+            resolve({
+              available: true, token: "", canRestore: false, timedOut: true, status: "TIMEOUT"
+            });
           }, 750);
           try {
             tg.SecureStorage.getItem(TELEGRAM_SECURE_SESSION_KEY, function (error, value, canRestore) {
               if (settled) return;
               settled = true;
               window.clearTimeout(timer);
+              if (error) {
+                var failedStatus = telegramSecureStorageErrorCode(error, "ERROR");
+                recordTelegramSecureStorageDiagnostic(failedStatus);
+                resolve({
+                  available: true, token: "", canRestore: false, status: failedStatus
+                });
+                return;
+              }
               var token = safeText(value);
-              if (!/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(token)) token = "";
+              if (token && !/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(token)) {
+                recordTelegramSecureStorageDiagnostic("INVALID_TOKEN");
+                resolve({
+                  available: true, token: "", canRestore: false, status: "INVALID_TOKEN"
+                });
+                return;
+              }
+              var status = token ? "FOUND" : (canRestore === true ? "RESTORABLE" : "MISSING");
+              recordTelegramSecureStorageDiagnostic(status);
               resolve({
                 available: true,
-                token: error ? "" : token,
-                canRestore: !error && !token && canRestore === true
+                token: token,
+                canRestore: !token && canRestore === true,
+                status: status
               });
             });
           } catch (error) {
             if (settled) return;
             settled = true;
             window.clearTimeout(timer);
-            resolve({ available: true, token: "", canRestore: false });
+            var failedStatus = telegramSecureStorageErrorCode(error, "ERROR");
+            recordTelegramSecureStorageDiagnostic(failedStatus);
+            resolve({
+              available: true, token: "", canRestore: false, status: failedStatus
+            });
           }
         });
       }
@@ -6152,6 +6210,9 @@
         var token = safeText(refreshToken);
         if (!telegramSecureStorageAvailable() ||
             !/^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(token)) {
+          recordTelegramSecureStorageDiagnostic(
+            telegramSecureStorageAvailable() ? "INVALID_TOKEN" : "API_UNAVAILABLE"
+          );
           return Promise.resolve(false);
         }
         return new Promise(function (resolve) {
@@ -6159,6 +6220,7 @@
           var timer = window.setTimeout(function () {
             if (settled) return;
             settled = true;
+            recordTelegramSecureStorageDiagnostic("TIMEOUT");
             resolve(false);
           }, 750);
           try {
@@ -6166,24 +6228,39 @@
               if (settled) return;
               settled = true;
               window.clearTimeout(timer);
-              resolve(!error && stored !== false);
+              if (error || stored === false) {
+                recordTelegramSecureStorageDiagnostic(
+                  telegramSecureStorageErrorCode(error, "ERROR")
+                );
+                resolve(false);
+                return;
+              }
+              recordTelegramSecureStorageDiagnostic("STORED");
+              resolve(true);
             });
           } catch (error) {
             if (settled) return;
             settled = true;
             window.clearTimeout(timer);
+            recordTelegramSecureStorageDiagnostic(
+              telegramSecureStorageErrorCode(error, "ERROR")
+            );
             resolve(false);
           }
         });
       }
 
       function telegramSecureSessionRemove() {
-        if (!telegramSecureStorageAvailable()) return Promise.resolve(false);
+        if (!telegramSecureStorageAvailable()) {
+          recordTelegramSecureStorageDiagnostic("API_UNAVAILABLE");
+          return Promise.resolve(false);
+        }
         return new Promise(function (resolve) {
           var settled = false;
           var timer = window.setTimeout(function () {
             if (settled) return;
             settled = true;
+            recordTelegramSecureStorageDiagnostic("TIMEOUT");
             resolve(false);
           }, 750);
           try {
@@ -6191,12 +6268,23 @@
               if (settled) return;
               settled = true;
               window.clearTimeout(timer);
-              resolve(!error && removed !== false);
+              if (error || removed === false) {
+                recordTelegramSecureStorageDiagnostic(
+                  telegramSecureStorageErrorCode(error, "ERROR")
+                );
+                resolve(false);
+                return;
+              }
+              recordTelegramSecureStorageDiagnostic("REMOVED");
+              resolve(true);
             });
           } catch (error) {
             if (settled) return;
             settled = true;
             window.clearTimeout(timer);
+            recordTelegramSecureStorageDiagnostic(
+              telegramSecureStorageErrorCode(error, "ERROR")
+            );
             resolve(false);
           }
         });
@@ -7049,6 +7137,7 @@
         content.append(make("h2", { text: opts.signedOut
           ? "Ви вийшли з пошти" : opts.sessionExpired
           ? "Сеанс пошти завершився"
+          : opts.sessionLocked ? "Офлайн-дані заблоковано"
           : opts.sessionCapacity ? "Забагато відкритих сеансів" : "Не вдалося відкрити пошту" }));
         content.append(make("p", { text: safeText(message, "Спробуйте відкрити Mini App ще раз.") }));
         if (opts.sessionCapacity && opts.recoveryToken) {
@@ -7066,10 +7155,11 @@
         var retry = make("button", {
           className: opts.sessionCapacity && opts.recoveryToken ? "outline-button" : "primary-button",
           type: "button",
-          text: opts.sessionCapacity || opts.signedOut ? "Закрити й відкрити пошту з меню" : "Перезапустити Mini App"
+          text: opts.sessionCapacity || opts.signedOut || opts.sessionLocked
+            ? "Закрити й відкрити пошту з меню" : "Перезапустити Mini App"
         });
         retry.addEventListener("click", function () {
-          if (opts.sessionCapacity || opts.signedOut) {
+          if (opts.sessionCapacity || opts.signedOut || opts.sessionLocked) {
             if (tg && typeof tg.close === "function") tg.close();
             else if (typeof window.close === "function") window.close();
             return;
@@ -9003,9 +9093,9 @@
       }
 
       var P0_CACHE_SCHEMA = 2;
-      var P0_PREVIOUS_IMMUTABLE_VERSION = 68;
-      var P0_CLIENT_RELEASE_VERSION = 69;
-      var P0_CLIENT_RELEASE_ID = "Versie-1-v69-p0";
+      var P0_PREVIOUS_IMMUTABLE_VERSION = 69;
+      var P0_CLIENT_RELEASE_VERSION = 70;
+      var P0_CLIENT_RELEASE_ID = "Versie-1-v70-p0";
       var P0_RELEASE_MANIFEST_URL = "https://raw.githubusercontent.com/Tarasevych/gmail-telegram-controls/main/docs/release-state.json";
       var P0_CACHE_MAX_RECORDS = 480;
       var P0_CACHE_MAX_BYTES = 16 * 1024 * 1024;
@@ -10038,7 +10128,19 @@
           metrics: p0Runtime.metrics,
           memoryEntries: p0Runtime.memory.size,
           inflightReads: p0Runtime.inflight.size,
-          currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey))
+          currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey)),
+          secureStorage: p0Clone(window.__gtSecureStorageDiagnostics || {
+            counts: {}, lastCode: "UNTESTED"
+          }),
+          launch: {
+            bootCalls: Number(window.__gtLaunchTrace && window.__gtLaunchTrace.bootCalls || 0),
+            duplicateBootCalls: Number(
+              window.__gtLaunchTrace && window.__gtLaunchTrace.duplicateBootCalls || 0
+            ),
+            crossDocumentUsableMs: Number(
+              window.__gtLaunchTrace && window.__gtLaunchTrace.crossDocumentUsableMs || 0
+            )
+          }
         };
       }
 
@@ -10056,7 +10158,19 @@
             metrics: p0Runtime.metrics,
             memoryEntries: p0Runtime.memory.size,
             inflightReads: p0Runtime.inflight.size,
-            currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey))
+            currentViewCached: Boolean(p0PeekRecord("list", p0Runtime.currentListKey)),
+            secureStorage: p0Clone(window.__gtSecureStorageDiagnostics || {
+              counts: {}, lastCode: "UNTESTED"
+            }),
+            launch: {
+              bootCalls: Number(window.__gtLaunchTrace && window.__gtLaunchTrace.bootCalls || 0),
+              duplicateBootCalls: Number(
+                window.__gtLaunchTrace && window.__gtLaunchTrace.duplicateBootCalls || 0
+              ),
+              crossDocumentUsableMs: Number(
+                window.__gtLaunchTrace && window.__gtLaunchTrace.crossDocumentUsableMs || 0
+              )
+            }
           });
         };
         p0PublishDiagnostics();
@@ -19092,10 +19206,13 @@
         var force = Boolean(options && options.force);
         var launchTrace = window.__gtLaunchTrace || (window.__gtLaunchTrace = {
           startedAt: typeof performance !== "undefined" ? performance.now() : Date.now(),
+          startedAtEpochMs: embeddedLaunchStartedAt || Date.now(),
           bootCalls: 0,
           duplicateBootCalls: 0,
           sessionReadyAt: 0,
           interactiveAt: 0,
+          crossDocumentUsableMs: 0,
+          secureStorageStatus: "UNTESTED",
           storageWarmup: null
         });
         launchTrace.bootCalls += 1;
@@ -19211,10 +19328,20 @@
           }
           await loadThreads(true, { returnAfterCache: true });
           launchTrace.interactiveAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-          p0Runtime.metrics.warmLaunchUsableMs = Math.max(
+          var localUsableMs = Math.max(
             0,
             launchTrace.interactiveAt - launchTrace.startedAt
           );
+          var crossDocumentUsableMs = Math.max(
+            0,
+            Date.now() - Number(launchTrace.startedAtEpochMs || 0)
+          );
+          launchTrace.crossDocumentUsableMs =
+            crossDocumentUsableMs > 0 && crossDocumentUsableMs <= 2 * 60 * 1000
+              ? crossDocumentUsableMs
+              : 0;
+          p0Runtime.metrics.warmLaunchUsableMs =
+            launchTrace.crossDocumentUsableMs || localUsableMs;
           state.routeReady = true;
           p0StartBackgroundWork();
           var restoredLocalThread = Boolean(
@@ -19264,10 +19391,24 @@
           }
         } catch (error) {
           renderMailContext({ status: "error" });
+          var reasonCode = recordMailboxSessionDiagnostic(error);
+          var secureStorageCode = safeText(
+            window.__gtSecureStorageDiagnostics &&
+            window.__gtSecureStorageDiagnostics.lastCode
+          ).toUpperCase();
+          var sessionLocked = reasonCode === "UNTRUSTED_NONCE_REPLAY" &&
+            new Set([
+              "API_UNAVAILABLE", "TIMEOUT", "UNSUPPORTED", "ERROR",
+              "MISSING", "RESTORABLE", "INVALID_TOKEN"
+            ]).has(secureStorageCode);
           var capacity = safeText(error && error.code).toUpperCase() === "SESSION_CAPACITY";
-          showBootError(safeText(error.message, "Спробуйте відкрити Mini App ще раз."), {
+          showBootError(sessionLocked
+            ? "Захищене сховище цього Telegram-клієнта не відновило сесію. " +
+              "Локальна пошта лишилася заблокованою; закрийте вікно й відкрийте пошту з меню."
+            : safeText(error.message, "Спробуйте відкрити Mini App ще раз."), {
             sessionCapacity: capacity,
-            recoveryToken: capacity ? safeText(error && error.recoveryToken) : ""
+            recoveryToken: capacity ? safeText(error && error.recoveryToken) : "",
+            sessionLocked: sessionLocked
           });
         }
       }

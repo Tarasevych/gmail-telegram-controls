@@ -1883,6 +1883,7 @@ test('mailbox POST validates Telegram before rendering a short-lived session', (
     assert.deepEqual(JSON.parse(JSON.stringify(result.rendered)), {
       launchNonce: 'n'.repeat(43),
       route: 'view=thread&thread=19f5f8958d96673c&message=19f5f8958d96673d',
+      launchStartedAt: 0,
     });
   } finally {
     Object.assign(context, originals);
@@ -1949,6 +1950,8 @@ test('mailbox bridge strips Telegram launch metadata and preserves initData exac
   assert.ok(submitted.form, 'mailbox form must submit');
   assert.equal(submitted.form.method, 'post');
   const fields = Object.fromEntries(submitted.form.fields.map(input => [input.name, input.value]));
+  assert.match(fields.launch_started_ms, /^\d{13}$/);
+  delete fields.launch_started_ms;
   assert.deepEqual(fields, {
     mailbox_bootstrap: '1',
     init_data: rawInitData,

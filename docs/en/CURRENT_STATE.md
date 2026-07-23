@@ -44,11 +44,12 @@
 
 ## P0 ONE-SECOND boundary — 2026-07-23
 
-- Production and HEAD remain immutable v65; staging is `0`.
-- Immutable v66 is preserved historically but was not promoted because bidirectional account-switch acceptance failed.
-- The active source delta carries marker v67; no deployment exists yet.
-- Duplicate-launch root cause and local source correction are VERIFIED; native latency/offline acceptance is PARTIAL/UNVERIFIED.
-- Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md).
+- Production and release-state HEAD remain immutable v65; staging is `0`.
+- Immutable v66–v69 are preserved historically; v69 ended fail closed as `abandoned` after the native hard-reload/session conflict and was not promoted.
+- The active controlled source delta carries marker v70; it is locally `VERIFIED` by `113/113` and `567/567` tests plus privacy scan `0`, but is not merged or deployed.
+- Source v70 adds content-free SecureStorage classification, a fail-closed locked state without a restart loop, and validated bridge-to-usable timing; nonce replay protection is not weakened.
+- Native button-to-interactive p95, ten launches, offline private Inbox, Windows Desktop recovery, and cached-thread acceptance remain `UNVERIFIED`/`BLOCKED` by the current two-origin architecture.
+- Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## 2026-07-23 P0 v67 acceptance boundary
 

@@ -68,3 +68,13 @@ Gmail OAuth refresh is stored and handled by the separate multi-account model an
 - [Apps Script Content Service](https://developers.google.com/apps-script/guides/content) redirects through a one-time `googleusercontent.com` URL; the verified current architecture has no documented custom HttpOnly response-cookie contract, so this source fix does not claim one.
 
 The source correction is locally VERIFIED, but v69 native acceptance failed. The next contour must first add content-free storage telemetry and produce a safe Desktop recovery architecture decision; storing the credential in unprotected JavaScript storage is not an acceptable fix.
+
+## Follow-up source decision v70
+
+- **Date:** 2026-07-23
+- **Status:** PARTIAL
+- v69 remains unchanged historical immutable evidence and is not rewritten.
+- Local cumulative source v70 preserves replay protection and adds a content-free SecureStorage status, cross-document launch timing, and a fail-closed locked state without a restart loop.
+- Local gates: P0 `113/113`, full suite `567/567`, privacy scan `0`, and clean `git diff --check`.
+- v70 is not merged and has no immutable version or staging deployment; production v65 and active staging `0` are unchanged.
+- Native hard reload, exact SecureStorage result, and one-second p95 remain `UNVERIFIED`; browser-level POST resubmission is not claimed fixed.

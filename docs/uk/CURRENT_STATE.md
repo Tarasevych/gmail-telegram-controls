@@ -44,11 +44,12 @@
 
 ## P0 ONE-SECOND boundary — 2026-07-23
 
-- Production і HEAD лишаються immutable v65; staging `0`.
-- Immutable v66 збережений історично, але не promoted через невдалий bidirectional account-switch gate.
-- Активний source delta має marker v67; deployment ще не створений.
-- Duplicate launch root cause і local source correction мають статус VERIFIED; native latency/offline acceptance — PARTIAL/UNVERIFIED.
-- Канонічний доказ: [VR-016](verification-reports/reports/VR-016/README.md).
+- Production і release-state HEAD залишаються immutable v65; staging `0`.
+- Immutable v66–v69 збережені історично; v69 завершився fail-closed як `abandoned` після native hard-reload/session conflict і не був promoted.
+- Активний контрольований source delta має marker v70; він локально `VERIFIED` тестами `113/113` та `567/567`, privacy scan `0`, але ще не merged/deployed.
+- Source v70 додає content-free SecureStorage classification, fail-closed locked state без restart-loop і перевірюваний bridge-to-usable timing; nonce replay protection не послаблено.
+- Native button-to-interactive p95, десять запусків, offline private Inbox, Windows Desktop recovery і cached-thread acceptance залишаються `UNVERIFIED`/`BLOCKED` поточною дво-origin архітектурою.
+- Канонічні докази: [VR-016](verification-reports/reports/VR-016/README.md), [VR-023](verification-reports/reports/VR-023/README.md).
 
 ## Межа P0 acceptance v67 від 2026-07-23
 

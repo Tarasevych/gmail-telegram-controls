@@ -11,7 +11,10 @@
       try {
         if (new URLSearchParams(window.location.search).get('action') !== 'mailbox') return;
         document.documentElement.setAttribute('data-mailbox-handoff', 'pending');
-        window.__gtMailboxHandoff = { submitted: false };
+        window.__gtMailboxHandoff = {
+          submitted: false,
+          startedAtEpochMs: Date.now()
+        };
         window.setTimeout(function revealFailedHandoff() {
           if (!window.__gtMailboxHandoff || !window.__gtMailboxHandoff.submitted) {
             document.documentElement.removeAttribute('data-mailbox-handoff');
@@ -199,7 +202,10 @@
 
       if (action === 'mailbox') {
         if (started) return;
-        const handoffState = window.__gtMailboxHandoff || (window.__gtMailboxHandoff = { submitted: false });
+        const handoffState = window.__gtMailboxHandoff || (window.__gtMailboxHandoff = {
+          submitted: false,
+          startedAtEpochMs: Date.now()
+        });
         if (!tg.initData || tg.initData.length > 16384) {
           finish({ ok: false, message: 'Telegram не передав захищену команду. Закрийте вікно та відкрийте пошту ще раз.' });
           return;
@@ -245,6 +251,7 @@
         addField('mailbox_bootstrap', '1');
         addField('init_data', initData);
         addField('route', routeValue);
+        addField('launch_started_ms', String(Number(handoffState.startedAtEpochMs || Date.now())));
         document.body.appendChild(form);
         handoffState.submitted = true;
         try {

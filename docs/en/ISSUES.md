@@ -231,22 +231,26 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 - **Status:** PARTIAL
 - **Source request:** `REQ-0034`
+- **Local source v70:** VERIFIED — the bridge supplies a validated content-free launch start time and MailApp measures cross-document time to usable UI; focused tests `113/113`, full suite `567/567`, added-production-line secret-value scan `0`, and clean `git diff --check`.
+- **Measurement boundary:** the new trace begins in the bridge document, not at the Telegram button press; it improves evidence but is not yet a native button-to-interactive p95.
+- **Remaining boundary:** warm-launch `≤1000 ms` p95, ten native launches, and offline private-mail opening remain `UNVERIFIED`; production v65 and staging `0` are unchanged.
 - **Evidence:** [VR-016](verification-reports/reports/VR-016/README.md)
-- Prior local trace: cold `898 ms`, B `431 ms`, cached A `409 ms`.
-- Production p95 from Telegram button to a real interactive cached Inbox remains `UNVERIFIED`; ten native staging launches are required.
 
 ## GT-041 — Duplicate launch/auth pipeline
 
 - **Status:** PARTIAL
-- **Root cause:** the bridge handoff, static MailApp overlay and repeated `setBootLoading()` displayed the same connection screen.
-- **Source fix:** hidden credentialless handoff, single-flight form submission, a shared in-flight `boot()` Promise and no boot overlay during an ordinary validated launch.
-- **Evidence:** launch contract `5/5`; native staging acceptance remains `UNVERIFIED`.
+- **Root cause:** the bridge handoff, static MailApp overlay, and repeated `setBootLoading()` displayed the same connection screen; a hard reload of the POST document is additionally outside the inner iframe's control.
+- **Source correction:** hidden credentialless handoff, single-flight form submission, a shared in-flight `boot()` Promise, and no boot overlay during an ordinary validated launch. Source v70 preserves that idempotency and adds a content-free launch trace.
+- **Local evidence:** launch/client/app contracts `113/113`; complete Apps Script suite `567/567`.
+- **Remaining boundary:** zero repeated screens and zero duplicate auth/bootstrap requests across ten native launches remain `UNVERIFIED`; a browser-level form-resubmission prompt cannot be removed by code in the already loaded MailApp document.
 
 ## GT-042 — Offline persistent cache
 
 - **Status:** PARTIAL
-- The existing bounded/versioned IndexedDB cache, LRU and account namespaces are locally verified.
-- Private reads remain behind server bootstrap/allowlist. A true offline private Inbox before bootstrap is `BLOCKED` without a separate device-bound unlock contract.
+- The bounded/versioned IndexedDB cache, LRU, normalized entities, and account/owner namespaces are locally `VERIFIED`.
+- Source v70 does not weaken the allowlist: private records are read only after Telegram/Gmail connection IDs are confirmed.
+- A true offline private Inbox before server bootstrap remains `BLOCKED` without a supported device-bound unlock or first-party single-origin app shell.
+- Service Worker/Background Sync support is not claimed for the current two-origin Apps Script IFRAME contour without factual evidence.
 
 ## GT-043 — Background prefetch and incremental sync
 
@@ -258,7 +262,9 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 
 - **Status:** PARTIAL
 - Cache namespaces fail closed by Telegram/Gmail connection IDs; storage warmup reads no private records.
-- Device-bound unlock for private cache display before server bootstrap is not implemented and requires a separate security decision.
+- Source v70 classifies only content-free Telegram `SecureStorage` states (`UNSUPPORTED`, `TIMEOUT`, `ERROR`, `MISSING`, `FOUND`, and other allowed codes) and never writes a credential value to telemetry.
+- When a one-time launch proof is replayed and no supported secure recovery credential exists, the client enters an explicit locked state instead of a recursive restart loop; replay protection is not weakened.
+- Automatic device-bound unlock on the tested Telegram Desktop remains `BLOCKED`/`UNVERIFIED` pending native acceptance or a separate architecture decision.
 
 ## GT-045 — Drafts
 
@@ -414,12 +420,11 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 ## GT-053 — Hard reload lost the app session and reused an already-consumed launch proof
 
 - **Status:** PARTIAL
-- **Source request:** `REQ-0036`
+- **Source request:** `REQ-0036`; related P0 contour `REQ-0034`
 - **Product task:** `B1-33` / P0 session continuity
-- **Root cause:** the bearer session and rotating app-refresh family already existed on the server, but the client kept both credentials only in RAM. After F5 or a hard reload, the new document had no refresh credential and replayed either the one-time Telegram `initData` claim or a launch nonce that had already been deleted. The server correctly rejected the replay, but the UI turned that safe refusal into another connection screen.
-- **Source fix:** only the app refresh credential is persisted through Telegram `SecureStorage`; the session bearer remains memory-only. Boot attempts single-flight secure recovery first, the server rotates the refresh family, and a bounded `60 s` idempotency cache returns the same confirmed rotation result to racing tabs. Explicit revocation or a mismatch with the current family blocks replay. A terminal refresh failure removes the secure item; a transient network failure is not mislabeled as authentication loss.
-- **Local evidence:** the focused `mail_client`, `mail_actions`, `mail_app_contract`, and `mail_launch_p0` suites pass; the complete Apps Script suite passes `561/561`; `git diff --check` is clean; added lines contain `0` credential signatures. A behavioral test confirms ten identical renewal requests receive one result and the old token fails after the replay window is removed.
-- **Native evidence:** the controlled A/B confirmed that production v65 loads in two fresh launches and staging v69 can load the mailbox after a bounded repeat. However, a hard reload in Telegram Desktop first opened the native form-resubmission prompt and then failed with `UNTRUSTED_NONCE_REPLAY`. The POST document therefore resubmitted an already-consumed Telegram launch proof, while `SecureStorage` on the tested Windows Desktop did not provide a usable recovery credential. The wrapper did not retain the platform error code, so the exact storage rejection remains `UNVERIFIED`.
-- **Remaining boundary:** the source correction is VERIFIED, but native Desktop session continuity is `CONFLICTING` with the local contracts. A separate safe Desktop fallback or a confirmed platform solution is required; mobile/WebView reopen and concurrent native launches remain `UNVERIFIED`. The source does not claim persistence without usable Telegram `SecureStorage`, and it never writes Gmail OAuth tokens, Telegram `initData`, mail content, or the session bearer to JavaScript web storage.
-- **Release boundary:** source commit `975785a` was included in immutable v69. Staging v69 was tested and abandoned fail closed; the exact staging deployment was removed, the journal is in terminal state `abandoned`, the owner menu was restored to production, active staging is `0`, and production remains verified v65. OAuth and Gmail state were not changed.
-- **Evidence:** [VR-023](verification-reports/reports/VR-023/README.md)
+- **Verified root cause:** the bearer session and rotating app-refresh family exist on the server, but a hard reload can resubmit the POST document with an already-consumed Telegram launch proof. The server correctly returns `UNTRUSTED_NONCE_REPLAY`. On the tested Windows Telegram Desktop, `SecureStorage` supplied no usable recovery credential, while the v69 wrapper discarded the exact platform result.
+- **Historical v69 boundary:** immutable v69 was tested and retained historically; staging was removed, the journal is `abandoned`, the owner menu was restored to production, active staging is `0`, and production v65 was unchanged.
+- **Source correction v70:** the SecureStorage wrapper retains only a content-free status/error class; a bridge timestamp provides a cross-document launch trace; replay plus a missing secure credential opens a fail-closed locked state without a restart loop. Access/refresh tokens, Telegram `initData`, the session bearer, and mail content are not written to browser telemetry/storage.
+- **Local evidence:** focused P0 contracts `113/113`, full Apps Script suite `567/567`, production added-line privacy scan `0`, and clean `git diff --check`.
+- **Remaining boundary:** source v70 is not merged or deployed; native Windows SecureStorage status, hard reload, ten launches, mobile/WebView reopen, and concurrent launch remain `UNVERIFIED`. Browser-level POST resubmission occurs before inner MailApp JavaScript executes, so the current patch does not claim to remove it.
+- **Evidence:** [VR-023](verification-reports/reports/VR-023/README.md), [VR-016](verification-reports/reports/VR-016/README.md)

@@ -5,6 +5,7 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..', '..');
 const bridge = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const code = fs.readFileSync(path.join(root, 'apps-script', 'Code.gs'), 'utf8');
 const mailApp = fs.readFileSync(path.join(root, 'apps-script', 'MailApp.html'), 'utf8');
 
 function functionSource(source, name) {
@@ -26,7 +27,20 @@ test('mailbox bridge performs one hidden single-flight handoff', () => {
   assert.match(bridge, /data-mailbox-handoff/);
   assert.match(bridge, /__gtMailboxHandoff/);
   assert.match(bridge, /if \(started\) return/);
+  assert.match(bridge, /startedAtEpochMs: Date\.now\(\)/);
+  assert.match(bridge, /addField\('launch_started_ms'/);
   assert.doesNotMatch(bridge, /Захищено підключаю Gmail до вашого Telegram/);
+});
+
+test('cross-document launch timing is bounded and contains no identity data', () => {
+  assert.match(code, /requestedLaunchStartedAt >= now - 2 \* 60 \* 1000/);
+  assert.match(code, /template\.mailboxLaunchStartedAt/);
+  assert.match(mailApp, /crossDocumentUsableMs/);
+  assert.match(mailApp, /warmLaunchUsableMs =\s*launchTrace\.crossDocumentUsableMs \|\| localUsableMs/);
+  assert.doesNotMatch(
+    bridge.match(/addField\('launch_started_ms'[\s\S]{0,120}/)[0],
+    /email|user|chat|token|init_data/
+  );
 });
 
 test('ordinary validated launch does not recreate the connection overlay', () => {
@@ -88,8 +102,26 @@ test('RPC layer retains single-flight request deduplication', () => {
   assert.match(rpc, /dedupe/);
 });
 
+test('SecureStorage failures are classified without credentials and replay stays fail closed', () => {
+  const getSecure = functionSource(mailApp, 'telegramSecureSessionGet');
+  const classify = functionSource(mailApp, 'telegramSecureStorageErrorCode');
+  const record = functionSource(mailApp, 'recordTelegramSecureStorageDiagnostic');
+  const pipeline = functionSource(mailApp, 'runBootPipeline');
+  const errorView = functionSource(mailApp, 'showBootError');
+
+  assert.match(classify, /UNSUPPORTED/);
+  assert.match(getSecure, /status: "TIMEOUT"/);
+  assert.match(getSecure, /status: failedStatus/);
+  assert.match(record, /__gtSecureStorageDiagnostics/);
+  assert.doesNotMatch(record, /refreshToken|sessionToken|initData|email|userId/);
+  assert.match(pipeline, /reasonCode === "UNTRUSTED_NONCE_REPLAY"/);
+  assert.match(pipeline, /sessionLocked: sessionLocked/);
+  assert.match(errorView, /Офлайн-дані заблоковано/);
+  assert.doesNotMatch(pipeline, /localStorage|sessionStorage|DeviceStorage/);
+});
+
 test('new code delta uses the next immutable client marker', () => {
-  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 69/);
-  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 68/);
-  assert.match(mailApp, /Versie-1-v69-p0/);
+  assert.match(mailApp, /P0_CLIENT_RELEASE_VERSION = 70/);
+  assert.match(mailApp, /P0_PREVIOUS_IMMUTABLE_VERSION = 69/);
+  assert.match(mailApp, /Versie-1-v70-p0/);
 });
