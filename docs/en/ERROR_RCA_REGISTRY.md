@@ -32,6 +32,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-017 | Reply/Forward repeated while native Gmail handoff depended on a positional browser account | Three action builders lacked one viewport owner; direct `state.thread.gmailUrl` did not bind handoff to stable connection identity; settings metadata lacked a capability map | Desktop/mobile surfaces are separated, secondary actions moved to a progressive menu, and a connection-first `authuser` resolver plus capability hub were added | One action owner per viewport; every external Gmail transition uses the exact-account resolver; unsupported actions only explain the boundary | `PARTIAL` | [VR-036](verification-reports/reports/VR-036/README.md) |
 
+| RCA-018 | Secondary compose and account text remained undersized, while narrow account labels clipped | The first typography correction covered the primary list/reader scale but legacy selectors still set 10 px compose metadata, 11 px settings/account controls, and nowrap account identity rows | Raised secondary text to a 12 px floor, retained the 14 px reading scale, and enabled wrap-safe account identity labels without adding a remote font | Verify computed styles on every release-critical surface; test the late cascade, narrow viewport, multilingual glyphs, and overflow rather than checking root variables alone | `PARTIAL` | [VR-037](verification-reports/reports/VR-037/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

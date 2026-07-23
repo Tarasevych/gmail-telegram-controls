@@ -252,3 +252,5 @@ A historical report is not rewritten after publication to hide an error. A new i
 | [VR-035](reports/VR-035/README.md) | F-01 reader fidelity, RTL, and remote-image privacy | `PARTIAL` | `REQ-0035`, `GT-063`, `B1-43`, `RCA-016` |
 
 | [VR-036](reports/VR-036/README.md) | F-02 consistent message actions and account-correct Gmail handoff | `PARTIAL` | `REQ-0035`, `GT-064`, `B1-44`, `RCA-017` |
+
+| [VR-037](reports/VR-037/README.md) | F-03 computed typography and narrow account-label regression | `PARTIAL` | `REQ-0035`, `GT-032`, `B1-25`, `RCA-018` |

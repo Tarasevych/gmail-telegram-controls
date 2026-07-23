@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-036](reports/VR-036/README.md) фіксує F-02: одну action surface на viewport, account-correct Gmail handoff і capability-класифікацію settings. Native acceptance лишається окремим gate.
+[VR-037](reports/VR-037/README.md) фіксує F-03: computed typography на desktop/mobile, залишкові undersized secondary selectors і wrap-safe account identity labels. Same-scale acceptance у current production лишається окремим gate.

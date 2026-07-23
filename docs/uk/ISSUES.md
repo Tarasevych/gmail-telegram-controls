@@ -157,11 +157,11 @@
 - **Доказ:** [VR-013](verification-reports/reports/VR-013/README.md). Source request: `REQ-0033`.
 ## GT-032 — Типографіка відрізняється від читального контексту Gmail
 
-- **Статус:** PARTIAL — live Gmail CSS, source fix і native v63 staging/production presentation VERIFIED; same-scale production typography comparison лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
-- **Дата:** 2026-07-22. Source request: `REQ-0033`.
-- **Першопричина:** клієнт змішував замалий 11–13 px interface text, важкі заголовки та message line-height 1.65 без єдиної типографічної шкали.
-- **Source fix:** local-first Gmail-compatible UI stack, окремий reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading і compose rhythm, responsive sizing та відсутність remote font dependency або layout-blocking font request.
-- **Доказ:** authenticated read-only Gmail inspection в однаковому масштабі повернув чинний UI stack і 14 px/20 px mail-list cells; жодного листа не відкрито й не змінено. Див. [VR-009](verification-reports/reports/VR-009/README.md).
+- **Статус:** PARTIAL — live Gmail CSS, основна source scale, native v63 staging/production presentation і локальний F-03 computed-style regression pass VERIFIED; same-scale порівняння з current production та visual pass на заповненому реальному thread лишаються UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
+- **Дата:** 2026-07-22; уточнення F-03 від 2026-07-23. Source requests: `REQ-0033`, `REQ-0035`.
+- **Першопричина:** спочатку клієнт змішував замалий 11–13 px interface text, важкі заголовки та message line-height 1.65 без єдиної типографічної шкали. Перше виправлення не охопило legacy 10 px compose account/save status, 11 px settings metadata/account controls і nowrap account-card labels.
+- **Source fix:** local-first Gmail-compatible UI stack, окремий reading stack, 14 px/20 px list rhythm, 14 px/1.5 reading і compose rhythm, responsive sizing, відсутність remote font request, 12 px floor для secondary metadata/controls і wrap-safe account identity labels.
+- **Доказ:** authenticated read-only Gmail inspection в однаковому масштабі повернув чинний UI stack і 14 px/20 px mail-list cells; жодного листа не відкрито й не змінено. F-03 використовував лише synthetic local preview і content-free computed-style readback. Див. [VR-009](verification-reports/reports/VR-009/README.md) та [VR-037](verification-reports/reports/VR-037/README.md).
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
 
 ## GT-033 — Повторне завантаження та блокування внутрішньої навігації
