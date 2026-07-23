@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-040](reports/VR-040/README.md) records C-01: canonical-ack autosave states, an offline queue, bounded retry, stable operation reuse, and an explicit conflict boundary. Native Gmail-draft, restart/offline, and production acceptance remain separate gates.
+[VR-041](reports/VR-041/README.md) records C-02: safe close intent, same-session attachment handoff, canonical-save settlement, focus/selection restore, and a truthful closed-WebView boundary. Native slow-network, restart, and production acceptance remain separate gates.

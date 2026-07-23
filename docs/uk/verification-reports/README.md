@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-040](reports/VR-040/README.md) фіксує C-01: canonical-ack autosave states, offline queue, bounded retry, stable operation reuse і explicit conflict boundary. Native Gmail draft, restart/offline і production acceptance лишаються окремими gates.
+[VR-041](reports/VR-041/README.md) фіксує C-02: safe close intent, same-session attachment handoff, canonical-save settlement, focus/selection restore та чесну closed-WebView boundary. Native slow-network, restart і production acceptance лишаються окремими gates.
