@@ -490,3 +490,14 @@ Status: BLOCKED
 - **Safety boundary:** bridge не запускає повторний bootstrap, render, RPC, reload, OAuth або Gmail mutation.
 - **Verification:** автоматизований VM-контракт і повний Apps Script suite мають пройти до публікації; native Telegram Desktop/mobile acceptance лишається `UNVERIFIED`.
 - **Доказ:** [VR-026](verification-reports/reports/VR-026/README.md)
+
+## GT-056 — Desktop panes не мали resize/collapse/persistence
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-36`
+- **Root cause:** grid використовував фіксовані `--rail-w` і `--list-w` без доступних resize controls, collapse-to-icons та scoped restore.
+- **Source correction:** desktop-only ARIA separators підтримують pointer і keyboard resize у bounded межах; sidebar можна згорнути до піктограм і відновити; layout зберігається через чинний account-scoped P0 IndexedDB namespace з memory-only fallback.
+- **Safety boundary:** немає `localStorage`/`sessionStorage`, нового account state, RPC, reload, OAuth або Gmail mutation; mobile drawer не змінено.
+- **Verification:** focused Mail App suite `90/90`; повний suite та documentation/release/privacy gates є publication gates. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
+- **Доказ:** [VR-027](verification-reports/reports/VR-027/README.md)

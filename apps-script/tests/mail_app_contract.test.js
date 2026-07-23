@@ -3787,3 +3787,87 @@ test("Telegram viewport bridge applies stable metrics without relaunching the ap
   assert.match(uiSource, /height:\s*var\(--app-viewport-stable-height,\s*100dvh\)/);
   assert.doesNotMatch(bridgeSource, /location\.reload|google\.script\.run|\bboot\(|\brender\(/);
 });
+
+test("desktop pane layout is bounded accessible account-scoped and mobile-safe", () => {
+  const start = uiSource.indexOf("/* DESKTOP_PANE_LAYOUT_START */");
+  const end = uiSource.indexOf("/* DESKTOP_PANE_LAYOUT_END */");
+  assert.ok(start >= 0 && end > start, "desktop pane layout bridge must be present");
+  const layoutSource = uiSource.slice(start, end);
+
+  assert.match(uiSource, /id="sidebarSeparator"[^>]*role="separator"[^>]*tabindex="0"/);
+  assert.match(uiSource, /id="listSeparator"[^>]*role="separator"[^>]*tabindex="0"/);
+  assert.match(uiSource, /id="sidebarCollapseButton"[^>]*aria-controls="sidebar"[^>]*aria-expanded="true"/);
+  assert.match(uiSource, /@media \(min-width: 901px\)[\s\S]*\.pane-separator/);
+  assert.match(uiSource, /@media \(max-width: 900px\)[\s\S]*\.app-shell[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(layoutSource, /p0CurrentNamespace/);
+  assert.match(layoutSource, /p0ReadRecord\(\s*"layout"/);
+  assert.match(layoutSource, /p0WriteRecord\(\s*"layout"/);
+  assert.doesNotMatch(layoutSource, /localStorage|sessionStorage|google\.script\.run|\brpc\(|location\.reload|OAuth|Gmail/);
+
+  const sandbox = {
+    window: {
+      innerWidth: 1440,
+      matchMedia: () => ({ matches: true }),
+      setTimeout: () => 1,
+      clearTimeout() {},
+      addEventListener() {},
+    },
+    document: {
+      documentElement: { clientWidth: 1440 },
+      getElementById: () => null,
+    },
+    Number,
+    Math,
+    Promise,
+    String,
+  };
+  vm.runInNewContext(
+    `${layoutSource}
+      this.paneApi = {
+        normalize: normalizeDesktopPaneLayout,
+        delta: desktopPaneLayoutAfterDelta,
+        key: desktopPaneLayoutAfterKey,
+        bounds: desktopPaneBounds
+      };`,
+    sandbox,
+  );
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(sandbox.paneApi.normalize({
+      railWidth: 9999,
+      listWidth: 9999,
+      sidebarCollapsed: false,
+    }, 1440))),
+    { railWidth: 320, listWidth: 560, sidebarCollapsed: false },
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(sandbox.paneApi.normalize({
+      railWidth: 10,
+      listWidth: 10,
+      sidebarCollapsed: false,
+    }, 901))),
+    { railWidth: 176, listWidth: 300, sidebarCollapsed: false },
+  );
+
+  const collapsed = sandbox.paneApi.key(
+    { railWidth: 240, listWidth: 420, sidebarCollapsed: false },
+    "sidebar",
+    " ",
+    false,
+    1440,
+  );
+  assert.equal(collapsed.sidebarCollapsed, true);
+  assert.equal(collapsed.railWidth, 240, "collapse must retain the prior expanded width");
+  const restored = sandbox.paneApi.key(collapsed, "sidebar", "ArrowRight", false, 1440);
+  assert.equal(restored.sidebarCollapsed, false);
+  assert.ok(restored.railWidth >= 176 && restored.railWidth <= 320);
+
+  const listHome = sandbox.paneApi.key(restored, "list", "Home", false, 1440);
+  const listEnd = sandbox.paneApi.key(restored, "list", "End", false, 1440);
+  assert.equal(listHome.listWidth, 300);
+  assert.equal(listEnd.listWidth, 560);
+  assert.equal(sandbox.paneApi.key(restored, "list", "Escape", false, 1440), null);
+  assert.match(layoutSource, /addEventListener\("pointerdown",\s*desktopPaneStartDrag\)/);
+  assert.match(layoutSource, /addEventListener\("keydown",\s*desktopPaneSeparatorKeydown\)/);
+  assert.match(layoutSource, /aria-valuetext/);
+});

@@ -159,6 +159,16 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release boundary:** source-only cumulative Versie 1; production v65, staging, menu, OAuth, and Gmail are unchanged.
 - **Still required:** native Telegram Desktop/mobile acceptance with keyboard resize, safe-area, and a narrow viewport after the shared quota blocker and release-policy conflict are cleared.
 - **Evidence:** [GT-055](ISSUES.md), [VR-026](verification-reports/reports/VR-026/README.md).
+
+## B1-36 — Adjustable desktop panes
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Completed in source:** accessible pointer/keyboard separators, bounded rail/list widths, collapse-to-icons with restoration, and persistence through the existing account-scoped P0 cache.
+- **Verified locally:** focused Mail App suite `90/90`; the complete suite and documentation/release/privacy gates run before publication.
+- **Release boundary:** source-only cumulative Versie 1; production v65, staging, immutable history, menu, OAuth, and Gmail are unchanged.
+- **Still required:** native Telegram Desktop/WebView acceptance for drag, keyboard, visual layout, and restoration after restart.
+- **Evidence:** [GT-056](ISSUES.md), [VR-027](verification-reports/reports/VR-027/README.md).
 ## B1-25 — P0 fast navigation, bounded cache, drafts, typography and client updates
 
 - **Status:** PARTIAL

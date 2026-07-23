@@ -37,6 +37,7 @@
       --topbar-h: 74px;
       --rail-w: 220px;
       --list-w: clamp(360px, 30vw, 400px);
+      --rail-collapsed-w: 68px;
       --ease: 190ms cubic-bezier(.2, .75, .25, 1);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-synthesis: none;
@@ -157,6 +158,153 @@
     height: var(--app-viewport-stable-height, 100dvh);
       overflow: hidden;
       background: var(--bg);
+    }
+
+    .pane-separator,
+    .pane-collapse-button {
+      display: none;
+    }
+
+    @media (min-width: 901px) {
+      .pane-separator {
+        position: absolute;
+        top: var(--topbar-h);
+        bottom: 0;
+        display: block;
+        width: 12px;
+        margin-left: -6px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: col-resize;
+        touch-action: none;
+        z-index: 14;
+      }
+
+      .pane-separator::before {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 5px;
+        width: 2px;
+        background: transparent;
+        content: "";
+        transition: background var(--ease), width var(--ease), left var(--ease);
+      }
+
+      .pane-separator:hover::before,
+      .pane-separator:focus-visible::before,
+      .pane-separator.is-dragging::before {
+        left: 4px;
+        width: 4px;
+        background: var(--primary);
+      }
+
+      #sidebarSeparator {
+        left: var(--rail-w);
+      }
+
+      #listSeparator {
+        left: calc(var(--rail-w) + var(--list-w));
+      }
+
+      .pane-collapse-button {
+        position: sticky;
+        top: 0;
+        display: grid;
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        margin: 8px 10px 0 auto;
+        place-items: center;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        z-index: 2;
+      }
+
+      .pane-collapse-button:hover {
+        border-color: var(--border);
+        background: var(--hover);
+        color: var(--text);
+      }
+
+      .pane-collapse-button .icon {
+        transform: rotate(90deg);
+        transition: transform var(--ease);
+      }
+
+      .app-shell.sidebar-collapsed .pane-collapse-button {
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      .app-shell.sidebar-collapsed .pane-collapse-button .icon {
+        transform: rotate(-90deg);
+      }
+
+      .app-shell.sidebar-collapsed .sidebar {
+        overflow-x: hidden;
+      }
+
+      .app-shell.sidebar-collapsed .sidebar-compose {
+        width: 44px;
+        min-width: 44px;
+        margin-right: auto;
+        margin-left: auto;
+        padding-right: 0;
+        padding-left: 0;
+        justify-content: center;
+      }
+
+      .app-shell.sidebar-collapsed .sidebar-compose-label,
+      .app-shell.sidebar-collapsed .nav-heading > span,
+      .app-shell.sidebar-collapsed .nav-item .nav-label,
+      .app-shell.sidebar-collapsed .nav-item .nav-count {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+
+      .app-shell.sidebar-collapsed .nav-section {
+        padding-right: 6px;
+        padding-left: 6px;
+      }
+
+      .app-shell.sidebar-collapsed .nav-heading {
+        justify-content: center;
+        padding-right: 0;
+        padding-left: 0;
+      }
+
+      .app-shell.sidebar-collapsed .nav-heading-action,
+      .app-shell.sidebar-collapsed .label-manage-button {
+        display: none;
+      }
+
+      .app-shell.sidebar-collapsed .nav-item,
+      .app-shell.sidebar-collapsed .nav-label-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .app-shell.sidebar-collapsed .nav-item {
+        min-height: 44px;
+        padding-right: 0;
+        padding-left: 0;
+        justify-items: center;
+      }
+
+      .app-shell.sidebar-collapsed .nav-item .icon,
+      .app-shell.sidebar-collapsed .nav-item .label-color-dot {
+        margin: 0;
+      }
     }
 
     .brandbar {
@@ -4706,9 +4854,12 @@
     </div>
 
     <aside class="sidebar" id="sidebar" aria-label="Папки й мітки">
+      <button class="pane-collapse-button" id="sidebarCollapseButton" type="button" aria-label="Згорнути панель папок до піктограм" aria-controls="sidebar" aria-expanded="true" title="Згорнути панель папок">
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
       <button class="primary-button sidebar-compose" id="sidebarComposeButton" type="button">
         <svg class="icon" aria-hidden="true"><use href="#i-compose"></use></svg>
-        Новий лист
+        <span class="sidebar-compose-label">Новий лист</span>
       </button>
       <nav class="nav-section" id="folderNav" aria-label="Поштові папки"></nav>
       <section class="nav-section" id="categorySection" aria-labelledby="categoriesHeading" hidden>
@@ -4724,6 +4875,8 @@
       </section>
     </aside>
     <button class="drawer-scrim" id="drawerScrim" type="button" aria-label="Закрити меню папок"></button>
+    <div class="pane-separator" id="sidebarSeparator" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Змінити ширину панелі папок" aria-controls="sidebar" aria-valuemin="68" aria-valuemax="320" aria-valuenow="220"></div>
+    <div class="pane-separator" id="listSeparator" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Змінити ширину списку листів" aria-controls="listPane" aria-valuemin="300" aria-valuemax="560" aria-valuenow="400"></div>
 
     <section class="list-pane" id="listPane" aria-label="Вхідні">
       <header class="list-toolbar">
@@ -9845,6 +9998,7 @@
       async function p0HydratePersistentState() {
         p0Runtime.cacheScope = p0SafeCacheScope(state.cacheScope);
         p0Runtime.allowedAccountIds = state.accounts.map(function (account) { return safeId(account.id); }).filter(Boolean);
+        await p0HydrateDesktopPaneLayout();
         var all = await p0DbGetAll();
         var now = Date.now();
         var usable = [];
@@ -21007,11 +21161,403 @@
         });
       }
 
+      /* DESKTOP_PANE_LAYOUT_START */
+      var DESKTOP_PANE_LAYOUT_SCHEMA = 1;
+      var DESKTOP_PANE_COLLAPSED_WIDTH = 68;
+      var DESKTOP_PANE_RAIL_MIN = 176;
+      var DESKTOP_PANE_RAIL_MAX = 320;
+      var DESKTOP_PANE_LIST_MIN = 300;
+      var DESKTOP_PANE_LIST_MAX = 560;
+      var DESKTOP_PANE_READER_MIN = 360;
+      var desktopPaneLayoutState = {
+        railWidth: 220,
+        listWidth: 400,
+        sidebarCollapsed: false
+      };
+      var desktopPaneLayoutRuntime = {
+        bound: false,
+        drag: null,
+        namespace: "",
+        hydrateGeneration: 0,
+        persistTimer: 0
+      };
+
+      function desktopPaneClamp(value, minimum, maximum) {
+        var number = Number(value);
+        if (!Number.isFinite(number)) number = minimum;
+        return Math.min(maximum, Math.max(minimum, Math.round(number)));
+      }
+
+      function desktopPaneViewportWidth() {
+        return Math.max(
+          0,
+          Number(window.innerWidth || 0),
+          Number(document.documentElement && document.documentElement.clientWidth || 0)
+        );
+      }
+
+      function desktopPaneIsDesktop() {
+        return Boolean(
+          window.matchMedia &&
+          window.matchMedia("(min-width: 901px)").matches
+        );
+      }
+
+      function desktopPaneBounds(viewportWidth, sidebarCollapsed, railWidth) {
+        var width = Math.max(901, Number(viewportWidth) || 901);
+        var railMax = Math.max(
+          DESKTOP_PANE_RAIL_MIN,
+          Math.min(
+            DESKTOP_PANE_RAIL_MAX,
+            width - DESKTOP_PANE_LIST_MIN - DESKTOP_PANE_READER_MIN
+          )
+        );
+        var normalizedRail = desktopPaneClamp(
+          railWidth,
+          DESKTOP_PANE_RAIL_MIN,
+          railMax
+        );
+        var visibleRail = sidebarCollapsed
+          ? DESKTOP_PANE_COLLAPSED_WIDTH
+          : normalizedRail;
+        var listMax = Math.max(
+          DESKTOP_PANE_LIST_MIN,
+          Math.min(
+            DESKTOP_PANE_LIST_MAX,
+            width - visibleRail - DESKTOP_PANE_READER_MIN
+          )
+        );
+        return {
+          railMin: DESKTOP_PANE_RAIL_MIN,
+          railMax: railMax,
+          listMin: DESKTOP_PANE_LIST_MIN,
+          listMax: listMax,
+          visibleRail: visibleRail
+        };
+      }
+
+      function normalizeDesktopPaneLayout(value, viewportWidth) {
+        var source = value && typeof value === "object" ? value : {};
+        var sidebarCollapsed = source.sidebarCollapsed === true;
+        var initialBounds = desktopPaneBounds(
+          viewportWidth,
+          sidebarCollapsed,
+          source.railWidth
+        );
+        var railWidth = desktopPaneClamp(
+          source.railWidth == null ? 220 : source.railWidth,
+          initialBounds.railMin,
+          initialBounds.railMax
+        );
+        var bounds = desktopPaneBounds(viewportWidth, sidebarCollapsed, railWidth);
+        return {
+          railWidth: railWidth,
+          listWidth: desktopPaneClamp(
+            source.listWidth == null ? 400 : source.listWidth,
+            bounds.listMin,
+            bounds.listMax
+          ),
+          sidebarCollapsed: sidebarCollapsed
+        };
+      }
+
+      function desktopPaneLayoutAfterDelta(layout, pane, delta, viewportWidth) {
+        var next = normalizeDesktopPaneLayout(layout, viewportWidth);
+        var amount = Number(delta) || 0;
+        if (pane === "sidebar") {
+          if (next.sidebarCollapsed && amount <= 0) return next;
+          if (next.sidebarCollapsed) {
+            next.sidebarCollapsed = false;
+            next.railWidth = DESKTOP_PANE_RAIL_MIN + amount;
+          } else {
+            next.railWidth += amount;
+          }
+        } else if (pane === "list") {
+          next.listWidth += amount;
+        }
+        return normalizeDesktopPaneLayout(next, viewportWidth);
+      }
+
+      function desktopPaneLayoutAfterKey(layout, pane, key, shiftKey, viewportWidth) {
+        var next = normalizeDesktopPaneLayout(layout, viewportWidth);
+        var step = shiftKey ? 24 : 8;
+        if (pane === "sidebar" && (key === "Enter" || key === " ")) {
+          next.sidebarCollapsed = !next.sidebarCollapsed;
+          return normalizeDesktopPaneLayout(next, viewportWidth);
+        }
+        if (key === "ArrowLeft") {
+          return desktopPaneLayoutAfterDelta(next, pane, -step, viewportWidth);
+        }
+        if (key === "ArrowRight") {
+          return desktopPaneLayoutAfterDelta(next, pane, step, viewportWidth);
+        }
+        if (key === "Home") {
+          if (pane === "sidebar") next.sidebarCollapsed = true;
+          else if (pane === "list") next.listWidth = DESKTOP_PANE_LIST_MIN;
+          return normalizeDesktopPaneLayout(next, viewportWidth);
+        }
+        if (key === "End") {
+          var bounds = desktopPaneBounds(
+            viewportWidth,
+            false,
+            DESKTOP_PANE_RAIL_MAX
+          );
+          if (pane === "sidebar") {
+            next.sidebarCollapsed = false;
+            next.railWidth = bounds.railMax;
+          } else if (pane === "list") {
+            next.listWidth = desktopPaneBounds(
+              viewportWidth,
+              next.sidebarCollapsed,
+              next.railWidth
+            ).listMax;
+          }
+          return normalizeDesktopPaneLayout(next, viewportWidth);
+        }
+        return null;
+      }
+
+      function desktopPaneSetAriaValue(node, minimum, maximum, current, text) {
+        if (!node) return;
+        node.setAttribute("aria-valuemin", String(minimum));
+        node.setAttribute("aria-valuemax", String(maximum));
+        node.setAttribute("aria-valuenow", String(current));
+        node.setAttribute("aria-valuetext", text);
+      }
+
+      function applyDesktopPaneLayout(value) {
+        var viewportWidth = desktopPaneViewportWidth();
+        var normalized = normalizeDesktopPaneLayout(value, viewportWidth);
+        desktopPaneLayoutState = normalized;
+        var appNode = document.getElementById("app");
+        var sidebarSeparator = document.getElementById("sidebarSeparator");
+        var listSeparator = document.getElementById("listSeparator");
+        var collapseButton = document.getElementById("sidebarCollapseButton");
+        var desktop = desktopPaneIsDesktop();
+        if (sidebarSeparator) sidebarSeparator.tabIndex = desktop ? 0 : -1;
+        if (listSeparator) listSeparator.tabIndex = desktop ? 0 : -1;
+        if (!appNode || !desktop) return normalized;
+
+        var bounds = desktopPaneBounds(
+          viewportWidth,
+          normalized.sidebarCollapsed,
+          normalized.railWidth
+        );
+        var visibleRail = normalized.sidebarCollapsed
+          ? DESKTOP_PANE_COLLAPSED_WIDTH
+          : normalized.railWidth;
+        appNode.style.setProperty("--rail-w", visibleRail + "px");
+        appNode.style.setProperty("--list-w", normalized.listWidth + "px");
+        appNode.classList.toggle("sidebar-collapsed", normalized.sidebarCollapsed);
+        desktopPaneSetAriaValue(
+          sidebarSeparator,
+          DESKTOP_PANE_COLLAPSED_WIDTH,
+          bounds.railMax,
+          visibleRail,
+          normalized.sidebarCollapsed
+            ? "Згорнуто до піктограм, " + visibleRail + " пікселів"
+            : "Ширина панелі папок " + visibleRail + " пікселів"
+        );
+        desktopPaneSetAriaValue(
+          listSeparator,
+          bounds.listMin,
+          bounds.listMax,
+          normalized.listWidth,
+          "Ширина списку листів " + normalized.listWidth + " пікселів"
+        );
+        if (collapseButton) {
+          var expanded = !normalized.sidebarCollapsed;
+          collapseButton.setAttribute("aria-expanded", expanded ? "true" : "false");
+          collapseButton.setAttribute(
+            "aria-label",
+            expanded
+              ? "Згорнути панель папок до піктограм"
+              : "Розгорнути панель папок"
+          );
+          collapseButton.setAttribute(
+            "title",
+            expanded ? "Згорнути панель папок" : "Розгорнути панель папок"
+          );
+        }
+        return normalized;
+      }
+
+      function desktopPaneStorageKey(namespace) {
+        var scope = String(namespace || "");
+        return scope ? scope + ":desktop-pane-layout:" + DESKTOP_PANE_LAYOUT_SCHEMA : "";
+      }
+
+      async function p0HydrateDesktopPaneLayout() {
+        var generation = ++desktopPaneLayoutRuntime.hydrateGeneration;
+        var namespace = typeof p0CurrentNamespace === "function"
+          ? String(p0CurrentNamespace() || "")
+          : "";
+        desktopPaneLayoutRuntime.namespace = namespace;
+        if (!namespace || typeof p0ReadRecord !== "function") {
+          applyDesktopPaneLayout(desktopPaneLayoutState);
+          return false;
+        }
+        try {
+          var stored = await p0ReadRecord(
+            "layout",
+            desktopPaneStorageKey(namespace)
+          );
+          if (generation !== desktopPaneLayoutRuntime.hydrateGeneration ||
+              namespace !== desktopPaneLayoutRuntime.namespace) return false;
+          var value = stored && stored.value && typeof stored.value === "object"
+            ? stored.value
+            : stored;
+          if (value && Number(value.schema) === DESKTOP_PANE_LAYOUT_SCHEMA) {
+            applyDesktopPaneLayout(value);
+            return true;
+          }
+        } catch (error) {
+          // IndexedDB is optional. Keep the bounded in-memory layout only.
+        }
+        applyDesktopPaneLayout(desktopPaneLayoutState);
+        return false;
+      }
+
+      function p0PersistDesktopPaneLayout() {
+        var namespace = typeof p0CurrentNamespace === "function"
+          ? String(p0CurrentNamespace() || "")
+          : "";
+        desktopPaneLayoutRuntime.namespace = namespace;
+        if (!namespace || typeof p0WriteRecord !== "function") {
+          return Promise.resolve(false);
+        }
+        var value = {
+          schema: DESKTOP_PANE_LAYOUT_SCHEMA,
+          railWidth: desktopPaneLayoutState.railWidth,
+          listWidth: desktopPaneLayoutState.listWidth,
+          sidebarCollapsed: desktopPaneLayoutState.sidebarCollapsed
+        };
+        return Promise.resolve(p0WriteRecord(
+          "layout",
+          desktopPaneStorageKey(namespace),
+          namespace,
+          value,
+          365 * 24 * 60 * 60 * 1000
+        )).catch(function () {
+          return false;
+        });
+      }
+
+      function p0ScheduleDesktopPaneLayoutPersist() {
+        if (desktopPaneLayoutRuntime.persistTimer) {
+          window.clearTimeout(desktopPaneLayoutRuntime.persistTimer);
+        }
+        desktopPaneLayoutRuntime.persistTimer = window.setTimeout(function () {
+          desktopPaneLayoutRuntime.persistTimer = 0;
+          p0PersistDesktopPaneLayout();
+        }, 180);
+      }
+
+      function desktopPaneStartDrag(event) {
+        if (!desktopPaneIsDesktop()) return;
+        var target = event.currentTarget;
+        var pane = target && target.getAttribute("data-pane");
+        if (pane !== "sidebar" && pane !== "list") return;
+        desktopPaneLayoutRuntime.drag = {
+          pane: pane,
+          startX: Number(event.clientX) || 0,
+          startLayout: normalizeDesktopPaneLayout(
+            desktopPaneLayoutState,
+            desktopPaneViewportWidth()
+          ),
+          target: target
+        };
+        target.classList.add("is-dragging");
+        if (target.setPointerCapture && event.pointerId != null) {
+          try { target.setPointerCapture(event.pointerId); } catch (error) {}
+        }
+        event.preventDefault();
+      }
+
+      function desktopPaneContinueDrag(event) {
+        var drag = desktopPaneLayoutRuntime.drag;
+        if (!drag || !desktopPaneIsDesktop()) return;
+        applyDesktopPaneLayout(desktopPaneLayoutAfterDelta(
+          drag.startLayout,
+          drag.pane,
+          (Number(event.clientX) || 0) - drag.startX,
+          desktopPaneViewportWidth()
+        ));
+        event.preventDefault();
+      }
+
+      function desktopPaneEndDrag() {
+        var drag = desktopPaneLayoutRuntime.drag;
+        if (!drag) return;
+        desktopPaneLayoutRuntime.drag = null;
+        if (drag.target) drag.target.classList.remove("is-dragging");
+        p0ScheduleDesktopPaneLayoutPersist();
+      }
+
+      function desktopPaneSeparatorKeydown(event) {
+        if (!desktopPaneIsDesktop()) return;
+        var pane = event.currentTarget && event.currentTarget.getAttribute("data-pane");
+        var next = desktopPaneLayoutAfterKey(
+          desktopPaneLayoutState,
+          pane,
+          event.key,
+          event.shiftKey,
+          desktopPaneViewportWidth()
+        );
+        if (!next) return;
+        event.preventDefault();
+        applyDesktopPaneLayout(next);
+        p0ScheduleDesktopPaneLayoutPersist();
+      }
+
+      function bindDesktopPaneLayout() {
+        if (desktopPaneLayoutRuntime.bound) return;
+        desktopPaneLayoutRuntime.bound = true;
+        var sidebarSeparator = document.getElementById("sidebarSeparator");
+        var listSeparator = document.getElementById("listSeparator");
+        var collapseButton = document.getElementById("sidebarCollapseButton");
+        [
+          [sidebarSeparator, "sidebar"],
+          [listSeparator, "list"]
+        ].forEach(function (entry) {
+          var node = entry[0];
+          if (!node) return;
+          node.setAttribute("data-pane", entry[1]);
+          node.addEventListener("pointerdown", desktopPaneStartDrag);
+          node.addEventListener("keydown", desktopPaneSeparatorKeydown);
+        });
+        if (sidebarSeparator) {
+          sidebarSeparator.addEventListener("dblclick", function () {
+            desktopPaneLayoutState.sidebarCollapsed =
+              !desktopPaneLayoutState.sidebarCollapsed;
+            applyDesktopPaneLayout(desktopPaneLayoutState);
+            p0ScheduleDesktopPaneLayoutPersist();
+          });
+        }
+        if (collapseButton) {
+          collapseButton.addEventListener("click", function () {
+            desktopPaneLayoutState.sidebarCollapsed =
+              !desktopPaneLayoutState.sidebarCollapsed;
+            applyDesktopPaneLayout(desktopPaneLayoutState);
+            p0ScheduleDesktopPaneLayoutPersist();
+          });
+        }
+        window.addEventListener("pointermove", desktopPaneContinueDrag);
+        window.addEventListener("pointerup", desktopPaneEndDrag);
+        window.addEventListener("pointercancel", desktopPaneEndDrag);
+        window.addEventListener("resize", function () {
+          applyDesktopPaneLayout(desktopPaneLayoutState);
+        }, { passive: true });
+        applyDesktopPaneLayout(desktopPaneLayoutState);
+      }
+      /* DESKTOP_PANE_LAYOUT_END */
+
       cacheElements();
       bindEvents();
   p0ExposeDiagnostics();
   applyTheme();
   bindTelegramViewportEvents();
+  bindDesktopPaneLayout();
   if (tg && typeof tg.onEvent === "function") tg.onEvent("themeChanged", applyTheme);
   boot();
     })();
