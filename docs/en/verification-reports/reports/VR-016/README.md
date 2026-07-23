@@ -80,3 +80,13 @@ Source marker v67 is the next cumulative immutable candidate after preserved v66
 ### Release decision
 
 No production promotion was performed. A future cumulative candidate requires a reproducible in-app time-to-interactive trace and a reviewed device-bound unlock or single-origin architecture decision before the offline-private and one-second requirements can become VERIFIED.
+
+## Telegram Web acceptance addendum
+
+- Status: UNVERIFIED tooling/platform gate
+- An already authenticated Chrome Telegram Web session opened the owner bot chat without QR, OTP, or OAuth.
+- The production Mini App menu control was resolved as one exact DOM target.
+- Activating that target produced a short blank child surface and returned to the chat. No persistent iframe, parent-tab network event, or console error was available for readback.
+- The Apps Script Executions readback timed out in browser control before evidence was returned. It is therefore unknown whether the launch reached Apps Script.
+- This observation is not classified as a v65 or v67 regression. No staging deployment was recreated and no production state was changed.
+- Retry condition: use a supported child-target/iframe trace or product-owned content-free launch telemetry, then correlate the exact launch with authenticated Apps Script execution evidence.
