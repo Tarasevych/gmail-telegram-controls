@@ -368,3 +368,31 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - The same merge SHA was fast-forwarded to private GitLab `main`.
 - Production remains v65 and staging remains `0`; immutable history, Telegram menu, OAuth, and Gmail were unchanged.
 - Native Telegram Desktop/WebView drag, keyboard, visual layout, and IndexedDB restoration after restart remain `UNVERIFIED`; the overall status is `PARTIAL`.
+
+## 2026-07-23 — B-01 access matrix evidence / Доказ матриці доступу
+
+### Українською
+
+- Існуючий V3 contour `B-01` продовжено в межах `B1-28`, `GT-048`, `VR-018`; нові registry IDs не створювалися.
+- Повторна перевірка `mailboxMultiResolveAccess_` не підтвердила product source defect; `MultiAccount.gs` не змінено.
+- Новий synthetic behavioral test перевіряє `25` role-threshold комбінацій для фактичних ролей `viewer`, `responder`, `manager`, `admin`, `owner`.
+- Окремо перевірено owner/shared access, exact connection selection, zone mismatch, cross-user denial, pending/expired/revoked/replayed invites, усі підтримувані invite roles, revoked-member reactivation, revoked connection і `reauth_required`.
+- Focused access matrix: `7/7`; повний Apps Script suite: `602/602`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff та tracked/untracked sensitive-pattern gates пройшли.
+- GitHub PR [#87](https://github.com/Tarasevych/gmail-telegram-controls/pull/87) пройшов `8/8` checks і був злитий normal merge як `b5c55a2ba8b5185493f10c06f06b0deeb64b8cef`.
+- Той самий merge SHA fast-forward опубліковано в приватний GitLab `main`.
+- Live Gmail/OAuth/Telegram, permissions, production v65, staging `0`, menu та immutable history не змінювалися.
+- Deployed/native access acceptance лишається `UNVERIFIED`; `B1-28/GT-048/VR-018` обґрунтовано лишаються `PARTIAL`.
+
+### English
+
+- The existing V3 `B-01` contour continued under `B1-28`, `GT-048`, and `VR-018`; no new registry IDs were created.
+- Reinspection of `mailboxMultiResolveAccess_` did not confirm a product source defect; `MultiAccount.gs` is unchanged.
+- A new synthetic behavioral test covers `25` role-threshold combinations for the actual `viewer`, `responder`, `manager`, `admin`, and `owner` roles.
+- Separate cases cover owner/shared access, exact connection selection, zone mismatch, cross-user denial, pending/expired/revoked/replayed invites, every supported invite role, revoked-member reactivation, revoked connections, and `reauth_required`.
+- Focused access matrix: `7/7`; complete Apps Script suite: `602/602`.
+- Bilingual, knowledge-hub, verification-report, release-state, diff, and tracked/untracked sensitive-pattern gates passed.
+- GitHub PR [#87](https://github.com/Tarasevych/gmail-telegram-controls/pull/87) passed `8/8` checks and was normal-merged as `b5c55a2ba8b5185493f10c06f06b0deeb64b8cef`.
+- The same merge SHA was fast-forwarded to private GitLab `main`.
+- Live Gmail/OAuth/Telegram, permissions, production v65, staging `0`, menu, and immutable history were unchanged.
+- Deployed/native access acceptance remains `UNVERIFIED`; `B1-28/GT-048/VR-018` correctly remain `PARTIAL`.
