@@ -438,3 +438,14 @@ Status: BLOCKED
 - **Ще потрібно:** native Telegram target-device p95 `<=1000 ms`, десять real-launch acceptance runs, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging і production. Вони лишаються `UNVERIFIED` або `BLOCKED` через shared Apps Script URL Fetch quota та `T-03`.
 - **Release boundary:** лише source/docs contour; без deployment, staging, production, Gmail або mailbox mutation.
 - **Пов’язано:** чинні `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; нові `GT-067`, `RCA-023`, `VR-042`.
+
+## B1-48 - P0-B account-scoped Gmail History revalidation
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** 45-секундний background cycle спочатку читає bounded Gmail History delta для кожного exact connection. Якщо змін немає, повний list/thread RPC не запускається; cursor оновлюється в ізольованому IndexedDB namespace. Concurrent timer/visibility/online checks використовують один reconciliation promise.
+- **Fail-closed boundary:** відсутній або прострочений cursor і більш ніж три History pages вимагають повної reconciliation. При реальній зміні складний query/shared view також оновлюється повним bounded list, щоб не вигадувати membership semantics, яких Gmail History не надає.
+- **Локально перевірено:** focused `30/30`; повний Apps Script suite `673/673` за `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- **Ще потрібно:** live cache-hit/request metrics, entity-level reconciliation для сумісних простих views, native multi-account/shared acceptance, staging і production. Shared Apps Script URL Fetch quota та `T-03` лишають release gate заблокованим.
+- **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-068`, `RCA-024`, `VR-043`, `REQ-0037`.

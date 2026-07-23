@@ -628,3 +628,14 @@ Status: BLOCKED
 - **Source evidence:** focused P0-A contracts `37/37`; повний Apps Script suite `668/668` за `24.229s`; implementation baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
 - **Release boundary:** runtime deployment або mailbox mutation не виконувалися. Native Telegram target-device p95 `<=1000 ms`, десять реальних launches, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging і production лишаються `UNVERIFIED` або `BLOCKED` через shared Apps Script URL Fetch quota та `T-03`.
 - **Доказ:** [VR-042](verification-reports/reports/VR-042/README.md).
+
+## GT-068 - Фоновий MailApp revalidation завжди повторно завантажував повний список
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує incremental-sync частину P0 без зміни `GT-067`.
+- **Product task:** `B1-48` / P0-B account-scoped Gmail History revalidation.
+- **Підтверджена першопричина:** кожен 45-секундний `p0RevalidateVisible()` безумовно запускав повний `loadThreads()` і повторне відкриття вибраного ланцюжка. Bootstrap уже повертав Gmail `historyId`, але client account normalization його відкидав. Окремий Telegram-card History scanner не можна було повторно використати як Mini App cursor через іншу runtime lane та вимогу ізоляції connection/owner state.
+- **Source correction:** додано read-only viewer operation `historyDelta`; decimal History ID лишається opaque string. Сервер читає максимум три bounded History pages, дедуплікує message/thread IDs і fail-closed повертає full-sync baseline при відсутньому/простроченому cursor або page-limit. Клієнт зберігає cursor лише в чинному Telegram-owner + Gmail-connection IndexedDB namespace, серіалізує reconciliation одним promise і не виконує повний list RPC, коли змін немає.
+- **Source evidence:** focused History/P0/adapter contracts `30/30`; повний Apps Script suite `673/673` за `25.763s`; exact implementation baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- **Межа:** це source-level stale-while-revalidate optimization. При реальній зміні або втраті boundary складний query/shared view безпечно отримує bounded full-list reconciliation; entity-level membership update, live request reduction, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`. OAuth scopes, Gmail mutations, листи, Telegram runtime та deployment не змінювалися.
+- **Доказ:** [VR-043](verification-reports/reports/VR-043/README.md).

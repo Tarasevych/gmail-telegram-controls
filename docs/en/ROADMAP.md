@@ -438,3 +438,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native Telegram target-device p95 `<=1000 ms`, ten real-launch acceptance runs, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging, and production. These remain `UNVERIFIED` or `BLOCKED` by shared Apps Script URL Fetch quota and `T-03`.
 - **Release boundary:** source/docs contour only; no deployment, staging, production, Gmail, or mailbox mutation.
 - **Related:** existing `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; new `GT-067`, `RCA-023`, `VR-042`.
+
+## B1-48 - P0-B account-scoped Gmail History revalidation
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** the 45-second background cycle now reads a bounded Gmail History delta for each exact connection first. When nothing changed, no full list/thread RPC starts and the cursor advances inside the isolated IndexedDB namespace. Concurrent timer/visibility/online checks share one reconciliation promise.
+- **Fail-closed boundary:** a missing or expired cursor and more than three History pages require full reconciliation. On a real change, a complex query/shared view also refreshes through one bounded full list rather than inventing membership semantics that Gmail History does not provide.
+- **Locally verified:** focused `30/30`; complete Apps Script suite `673/673` in `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- **Still required:** live cache-hit/request metrics, entity-level reconciliation for compatible simple views, native multi-account/shared acceptance, staging, and production. Shared Apps Script URL Fetch quota and `T-03` keep the release gate blocked.
+- **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-068`, `RCA-024`, `VR-043`, `REQ-0037`.

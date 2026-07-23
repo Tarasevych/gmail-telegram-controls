@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-042](reports/VR-042/README.md) records P0-A source verification and synthetic local E2 evidence for cross-document launch single-flight and the canonical launch-proof ledger. Focused contracts pass `37/37`, the complete Apps Script suite passes `668/668` in `24.229s`, and ten local warm reloads observed a `153 ms` maximum/p95-by-10; native target-device, offline, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging, and production gates remain `UNVERIFIED` or `BLOCKED`. No screenshot evidence is claimed.
+[VR-043](reports/VR-043/README.md) records P0-B source verification for account-scoped Gmail History revalidation. Focused contracts pass `30/30` and the complete Apps Script suite passes `673/673` in `25.763s`; no-change suppression, opaque cursor handling, 404 reset, bounded pagination, and account isolation have source evidence. Live request reduction, entity-level query/shared membership, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.

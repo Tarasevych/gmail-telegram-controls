@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-042](reports/VR-042/README.md) фіксує P0-A source verification і synthetic local E2 evidence для cross-document launch single-flight та canonical launch-proof ledger. Focused contracts пройшли `37/37`, повний Apps Script suite пройшов `668/668` за `24.229s`, а десять local warm reloads показали maximum/p95-by-10 `153 ms`; native target-device, offline, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging і production gates лишаються `UNVERIFIED` або `BLOCKED`. Screenshot evidence не заявляється.
+[VR-043](reports/VR-043/README.md) фіксує P0-B source verification для account-scoped Gmail History revalidation. Focused contracts пройшли `30/30`, а повний Apps Script suite — `673/673` за `25.763s`; no-change suppression, opaque cursor, 404 reset, bounded pagination і account isolation мають source evidence. Live request reduction, entity-level query/shared membership, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

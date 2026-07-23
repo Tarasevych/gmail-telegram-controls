@@ -628,3 +628,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused P0-A contracts `37/37`; complete Apps Script suite `668/668` in `24.229s`; implementation baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
 - **Release boundary:** no runtime deployment or mailbox mutation was performed. Native Telegram target-device p95 `<=1000 ms`, ten real launches, offline private device-bound unlock, POST-Redirect-GET behavior, incremental MailApp Gmail History, Service Worker/Background Sync, staging, and production remain `UNVERIFIED` or `BLOCKED` by the shared Apps Script URL Fetch quota and `T-03`.
 - **Evidence:** [VR-042](verification-reports/reports/VR-042/README.md).
+
+## GT-068 - Background MailApp revalidation always reloaded the complete list
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues the incremental-sync portion of P0 without rewriting `GT-067`.
+- **Product task:** `B1-48` / P0-B account-scoped Gmail History revalidation.
+- **Confirmed root cause:** every 45-second `p0RevalidateVisible()` unconditionally started a full `loadThreads()` and reopened the selected thread. Bootstrap already returned Gmail `historyId`, but client account normalization discarded it. The separate Telegram-card History scanner could not be reused as a Mini App cursor because it belongs to a different runtime lane and connection/owner state must remain isolated.
+- **Source correction:** a read-only viewer operation `historyDelta` was added; the decimal History ID remains an opaque string. The server reads at most three bounded History pages, deduplicates message/thread IDs, and fails closed to a full-sync baseline when the cursor is absent/expired or the page bound is reached. The client stores the cursor only in the existing Telegram-owner + Gmail-connection IndexedDB namespace, serializes reconciliation through one promise, and skips a full list RPC when no change exists.
+- **Source evidence:** focused History/P0/adapter contracts `30/30`; complete Apps Script suite `673/673` in `25.763s`; exact implementation baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- **Boundary:** this is a source-level stale-while-revalidate optimization. On a real change or lost boundary, a complex query/shared view safely receives bounded full-list reconciliation; entity-level membership updates, live request reduction, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`. OAuth scopes, Gmail mutations, messages, Telegram runtime, and deployment were unchanged.
+- **Evidence:** [VR-043](verification-reports/reports/VR-043/README.md).

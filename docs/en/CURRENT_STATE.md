@@ -72,3 +72,13 @@
 - Source evidence: focused `37/37`; full Apps Script suite `668/668` in `24.229s`; baseline `1d5fb8352ea62f7b25d6980312f277060ce4d0ae`.
 - Production and staging were not changed; no mailbox mutation occurred. Native p95, ten-launch acceptance, offline private device-bound unlock, POST-Redirect-GET, incremental Gmail History, Service Worker/Background Sync, staging, and production remain unverified or blocked by shared URL Fetch quota and `T-03`.
 - Records: existing `GT-040-GT-047`, `GT-051`, `GT-053`, `GT-054`; new `GT-067`, `B1-47`, `RCA-023`, `VR-042`.
+
+## REQ-0037 P0-B History contour - 2026-07-24
+
+- **Status:** `PARTIAL`; source evidence only.
+- The unconditional full-list background poll is replaced by an exact-connection Gmail History delta. A no-change cycle performs no repeat list/thread RPC.
+- The History cursor is stored as an opaque decimal string in the existing Telegram-owner + Gmail-connection IndexedDB namespace; secrets, OAuth tokens, and Telegram signatures are not stored there.
+- A missing/stale cursor, 404, or bounded page overflow fails closed to full reconciliation. A complex query/shared view also uses one bounded full list after a real change.
+- Source evidence: focused `30/30`; complete Apps Script suite `673/673` in `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
+- Runtime, staging, and production were unchanged; no Gmail/Telegram mutation or OAuth occurred. Live request metrics, native multi-account acceptance, and entity-level query membership remain `UNVERIFIED`; the release gate remains `BLOCKED` by shared URL Fetch quota and `T-03`.
+- Records: `GT-068`, `B1-48`, `RCA-024`, `VR-043`.
