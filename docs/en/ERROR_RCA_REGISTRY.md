@@ -24,6 +24,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-013 | Valid Google search/wrapper URLs had an implicit outcome; loops were detected only by a limit; provenance/licensing contract was incomplete | Fetch security and UX classification were not one state machine | Added explicit-wrapper extraction, no-fetch ambiguous routing, a visited-URL loop guard, origin/classification, and a licensing warning | Pure classifier tests, synthetic redirect matrix, fail-closed MIME/DNS/size boundary | `PARTIAL` | [VR-031](verification-reports/reports/VR-031/README.md) |
 
+| RCA-014 | Back/Forward lacked canonical list/thread state, the banner did not return to Inbox, and the reader duplicated account identity | Dynamic account context, route state, and reader presentation were separate mechanisms without a shared history contract | Added canonical hash routes, user-transition `pushState`, deduplicated `hashchange`/`popstate`, an Inbox action, and a contextual account chip | One route serializer, one history scheduler, stable connection IDs, and a regression contract for single/shared/mismatch states | `PARTIAL` | [VR-032](verification-reports/reports/VR-032/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

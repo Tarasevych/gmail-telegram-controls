@@ -366,3 +366,12 @@ Status: BLOCKED
 - **UX:** ambiguous Google page не називається malformed і не прикріплює випадковий файл; UI пропонує link mode або копіювання прямої адреси та показує licensing warning.
 - **Межа релізу:** source/docs contour без live URL fetch, staging чи production.
 - **Пов’язано:** `GT-060`, `RCA-013`, `VR-031`, `REQ-0035`.
+
+## B1-41 — E-03 Навігація та фактичний поштовий контекст
+
+- **Статус:** `PARTIAL`
+- **Результат:** list/thread переходи мають canonical hash-route і browser history; context banner доступно повертає до Inbox; reader не дублює account identity без contextual потреби.
+- **Ізоляція:** route використовує stable connection ID, а account chip з’являється у shared mode або при фактичній невідповідності thread/account context.
+- **Локально перевірено:** focused contract `5/5`; повний Apps Script suite `617/617`.
+- **Межа релізу:** source/docs contour; production v65, staging `0` та immutable history не змінюються. Native Telegram Desktop/WebView acceptance лишається `UNVERIFIED`.
+- **Пов’язано:** `GT-061`, `RCA-014`, `VR-032`, `REQ-0035`.

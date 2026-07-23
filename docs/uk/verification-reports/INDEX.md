@@ -242,3 +242,5 @@ Source request: `REQ-0004`.
 | [VR-030](reports/VR-030/README.md) | Box OAuth: мінімальні права, строгий callback та стабільна ідентичність | `PARTIAL` | `REQ-0035`, `GT-059`, `B1-39`, `RCA-012` |
 
 | [VR-031](reports/VR-031/README.md) | D-03 Smart, safe URL resolver | `PARTIAL` | `REQ-0035`, `GT-060`, `B1-40`, `RCA-013` |
+
+| [VR-032](reports/VR-032/README.md) | E-03 Навігація та фактичний поштовий контекст | `PARTIAL` | `REQ-0035`, `GT-061`, `B1-41`, `RCA-014` |

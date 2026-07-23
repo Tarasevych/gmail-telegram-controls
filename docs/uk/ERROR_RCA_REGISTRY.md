@@ -24,6 +24,8 @@
 
 | RCA-013 | Валідні Google search/wrapper URL мали неявний outcome; loop визначався лише лімітом; provenance/licensing contract був неповним | Fetch-security і UX classification не були єдиним state machine | Додано explicit-wrapper extraction, no-fetch ambiguous routing, visited-URL loop guard, origin/classification і licensing warning | Pure classifier tests, synthetic redirect matrix, fail-closed MIME/DNS/size boundary | `PARTIAL` | [VR-031](verification-reports/reports/VR-031/README.md) |
 
+| RCA-014 | Back/Forward не мав canonical list/thread state, banner не повертав до Inbox, reader дублював account identity | Dynamic account context, route state і reader presentation були окремими механізмами без спільного history contract | Додано canonical hash routes, user-transition `pushState`, deduplicated `hashchange`/`popstate`, Inbox action та contextual account chip | Один route serializer, один history scheduler, stable connection IDs і regression contract для single/shared/mismatch | `PARTIAL` | [VR-032](verification-reports/reports/VR-032/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.
