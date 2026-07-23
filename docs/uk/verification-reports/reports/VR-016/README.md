@@ -56,3 +56,27 @@
 ## Release decision
 
 Source marker v67 є наступним cumulative immutable candidate після збереженого v66. Створення staging дозволене лише після повного local/CI gate. Promotion заборонений, доки native acceptance не підтвердить account switch туди/назад, 10 launch traces, відсутність duplicate overlay/bootstrap і визначений cache/security сценарій. Production лишається v65.
+
+## Додаток до staging acceptance: immutable v67
+
+- Дата: 2026-07-23
+- Статус: PARTIAL
+- Межа production: v65 залишився незмінним.
+
+### Перевірені докази
+
+- Сукупний код v67, release-helper і staging bridge пройшли локальний release suite (522/522) та обов'язкові GitHub checks.
+- Коректні нативні запуски в Telegram Desktop відкривали попередньо кешоване робоче представлення без GitHub handoff-картки, повторного екрана підключення або нової OAuth-взаємодії.
+- Реалізація запуску використовує одну спільну bootstrap promise та залишає приватні кешовані записи заблокованими, доки серверний bootstrap не поверне дозволений набір акаунтів.
+- Після зупинки acceptance меню Telegram повернено до production bridge.
+- Точний staging deployment v67 видалено fail-closed, immutable v67 збережено, promotion у production не виконувався.
+
+### Докази, не прийняті як верифікація
+
+- Під час координатної серії з десяти запусків Telegram Desktop також відкривав нативні вікна профілю та файлів. Її часові вибірки не є валідним доказом продуктивності продукту та не використовуються для SLO однієї секунди.
+- Нативний p95 time-to-interactive, offline-запуск приватної пошти, двостороннє перемикання акаунтів, відновлення чернеток та ізоляція багатоакаунтного кешу залишаються unverified.
+- Чинний двоoriginний маршрут GitHub bridge до Apps Script не має перевіреного device-bound unlock, який дозволив би показати приватну кешовану пошту до серверного bootstrap.
+
+### Рішення щодо випуску
+
+Promotion у production не виконувався. Майбутній cumulative candidate потребує відтворюваного внутрішнього trace time-to-interactive та переглянутого рішення device-bound unlock або single-origin architecture, перш ніж offline-private вимоги й правило однієї секунди можуть отримати статус VERIFIED.

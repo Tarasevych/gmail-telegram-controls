@@ -49,3 +49,11 @@
 - Активний source delta має marker v67; deployment ще не створений.
 - Duplicate launch root cause і local source correction мають статус VERIFIED; native latency/offline acceptance — PARTIAL/UNVERIFIED.
 - Канонічний доказ: [VR-016](verification-reports/reports/VR-016/README.md).
+
+## Межа P0 acceptance v67 від 2026-07-23
+
+- Production і HEAD залишаються на immutable v65.
+- Immutable v67 збережено як історичний доказ; його точний тимчасовий staging deployment видалено.
+- Дубльовану видиму послідовність запуску/підключення виправлено у v67 та якісно підтверджено під час коректних запусків у Telegram Desktop.
+- P95 однієї секунди, offline unlock приватної пошти, відновлення чернеток і двостороннє багатоакаунтне перемикання не мають статусу VERIFIED; тому v67 не просувався.
+- VR-016 є авторитетним доказовим записом цієї acceptance-межі.

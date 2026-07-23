@@ -49,3 +49,11 @@
 - The active source delta carries marker v67; no deployment exists yet.
 - Duplicate-launch root cause and local source correction are VERIFIED; native latency/offline acceptance is PARTIAL/UNVERIFIED.
 - Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md).
+
+## 2026-07-23 P0 v67 acceptance boundary
+
+- Production and HEAD remain on immutable v65.
+- Immutable v67 is preserved as historical evidence; its exact temporary staging deployment has been removed.
+- The duplicate visible launch/connection sequence is fixed in v67 and was qualitatively confirmed in correct Telegram Desktop launches.
+- The one-second p95, offline private-mail unlock, draft recovery, and bidirectional multi-account switch are not VERIFIED; v67 was therefore not promoted.
+- VR-016 is the authoritative evidence record for this acceptance boundary.
