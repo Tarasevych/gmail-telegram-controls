@@ -23,4 +23,4 @@ Rollback і будь-яка exact legacy staging boundary є immutable v65. Immu
 
 ## Решта acceptance
 
-PreflightOnly, один StageOnly, signed native Telegram Desktop staging acceptance і production promotion лишаються UNVERIFIED. Production promotion заборонений до успішного staging acceptance. Новий OAuth consent, випадкова Gmail mutation або змішування Gmail/Telegram zones не допускаються.
+PreflightOnly і один StageOnly VERIFIED: stable та HEAD лишилися exact v65, immutable v66 створено один раз, і існує рівно один owner-only staging deployment. Signed native Telegram Desktop staging acceptance і production promotion лишаються UNVERIFIED. Production promotion заборонений до успішного staging acceptance. Новий OAuth consent, випадкова Gmail mutation або змішування Gmail/Telegram zones не допускаються.
