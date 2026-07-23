@@ -25,6 +25,8 @@ const MAILBOX_CLIENT_CONFIG_ = Object.freeze({
   REFRESH_SIGNING_SECRET_PROPERTY: 'MAILBOX_REFRESH_SIGNING_SECRET',
   REFRESH_FAMILIES_PROPERTY: 'MAILBOX_REFRESH_FAMILIES_V1',
   REFRESH_FAMILY_LIMIT: 24,
+  REFRESH_REPLAY_PREFIX: 'mailbox.refresh-replay.v1.',
+  REFRESH_REPLAY_SECONDS: 60,
   // A closed Telegram WebView cannot reliably notify Apps Script. Bound each
   // user's abandoned launch families while retaining several genuinely
   // parallel Mini App instances. A fresh launch may retire only that same
@@ -230,7 +232,10 @@ function mailboxOpenSession(initData) {
   try {
     const raw = String(initData || '');
     if (!raw || raw.length > 16384) {
-      throw mailboxError_('UNAUTHORIZED', 'Telegram-команда відсутня або має некоректний формат.');
+      throw mailboxError_(
+        'TELEGRAM_AUTH_REQUIRED',
+        'Telegram-команда відсутня або має некоректний формат.'
+      );
     }
     const user = validateTelegramMiniAppIdentity_(raw);
     principal = mailboxMultiPrincipal_(String(user.id || ''));
@@ -306,7 +311,17 @@ function mailboxCloseSession(sessionToken, refreshToken) {
 function mailboxRenewSession(refreshToken) {
   try {
     const claims = mailboxVerifyRefreshToken_(refreshToken);
-    return mailboxOk_(mailboxCreateSession_(claims.sub, claims.sub, claims));
+    const replay = mailboxReadSessionRenewalReplay_(claims);
+    if (replay) return mailboxOk_(replay);
+    try {
+      return mailboxOk_(mailboxCreateSession_(claims.sub, claims.sub, claims));
+    } catch (error) {
+      if (error && error.mailboxCode === 'SESSION_EXPIRED') {
+        const racedReplay = mailboxReadSessionRenewalReplay_(claims);
+        if (racedReplay) return mailboxOk_(racedReplay);
+      }
+      throw error;
+    }
   } catch (error) {
     return mailboxFailure_(error, 'UNAUTHORIZED');
   }
@@ -10071,19 +10086,21 @@ function mailboxCreateSession_(ownerIdValue, userIdValue, refreshClaims, recover
     expiresAt: sessionExpiresAt,
     familyId: credential.claims.fid,
   };
+  const result = {
+    sessionToken: token,
+    refreshToken: credential.token,
+    expiresInSeconds,
+  };
   mailboxPersistSessionFamily_(
     refreshClaims || null,
     credential.claims,
     token,
     session,
     expiresInSeconds,
-    recoveryOwnerIdValue
+    recoveryOwnerIdValue,
+    result
   );
-  return {
-    sessionToken: token,
-    refreshToken: credential.token,
-    expiresInSeconds,
-  };
+  return result;
 }
 
 function mailboxIssueRefreshToken_(
@@ -10232,7 +10249,8 @@ function mailboxPersistSessionFamily_(
   token,
   session,
   expiresInSeconds,
-  recoveryOwnerIdValue
+  recoveryOwnerIdValue,
+  renewalResultValue
 ) {
   const sessionToken = String(token || '');
   const nextSessionKey = mailboxSessionKey_(sessionToken);
@@ -10361,6 +10379,19 @@ function mailboxPersistSessionFamily_(
         console.error('Could not remove rotated mailbox session cache entry.');
       }
     }
+    if (presentedClaims) {
+      try {
+        mailboxStoreSessionRenewalReplay_(
+          cache,
+          presentedClaims,
+          renewalResultValue
+        );
+      } catch (error) {
+        // Rotation is already durably committed. Replay caching is a bounded
+        // parallel-tab aid and must never rewrite a confirmed auth outcome.
+        console.error('Could not cache the mailbox session renewal result.');
+      }
+    }
     retiredSessionKeys.forEach(mailboxRemoveSessionCacheBestEffort_);
   } finally {
     lock.releaseLock();
@@ -10459,6 +10490,95 @@ function mailboxRefreshFamilyRecord_(claims, sessionKeyValue) {
     exp: Number(claims && claims.exp || 0),
     jti: String(claims && claims.jti || ''),
     sessionKey: String(sessionKeyValue || ''),
+  };
+}
+
+function mailboxSessionRenewalReplayKey_(claims) {
+  const seed = [
+    String(claims && claims.sub || ''),
+    String(claims && claims.fid || ''),
+    String(claims && claims.jti || ''),
+  ].join(':');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    seed,
+    Utilities.Charset.UTF_8
+  );
+  return MAILBOX_CLIENT_CONFIG_.REFRESH_REPLAY_PREFIX +
+    Utilities.base64EncodeWebSafe(digest).replace(/=+$/g, '');
+}
+
+function mailboxStoreSessionRenewalReplay_(cache, presentedClaims, resultValue) {
+  const result = resultValue || {};
+  const record = {
+    v: 1,
+    sub: String(presentedClaims && presentedClaims.sub || ''),
+    fid: String(presentedClaims && presentedClaims.fid || ''),
+    iat: Number(presentedClaims && presentedClaims.iat || 0),
+    jti: String(presentedClaims && presentedClaims.jti || ''),
+    at: Date.now(),
+    sessionToken: String(result.sessionToken || ''),
+    refreshToken: String(result.refreshToken || ''),
+    expiresInSeconds: Number(result.expiresInSeconds || 0),
+  };
+  cache.put(
+    mailboxSessionRenewalReplayKey_(presentedClaims),
+    JSON.stringify(record),
+    MAILBOX_CLIENT_CONFIG_.REFRESH_REPLAY_SECONDS
+  );
+}
+
+function mailboxReadSessionRenewalReplay_(presentedClaims) {
+  const raw = String(CacheService.getScriptCache().get(
+    mailboxSessionRenewalReplayKey_(presentedClaims)
+  ) || '');
+  if (!raw) return null;
+  let record = null;
+  try { record = JSON.parse(raw); } catch (error) { record = null; }
+  const expectedKeys = [
+    'at', 'expiresInSeconds', 'fid', 'iat', 'jti',
+    'refreshToken', 'sessionToken', 'sub', 'v',
+  ];
+  const actualKeys = mailboxIsPlainObject_(record) ? Object.keys(record).sort() : [];
+  const structurallyValid = actualKeys.length === expectedKeys.length &&
+    actualKeys.every((key, index) => key === expectedKeys[index]) &&
+    record.v === 1 &&
+    /^\d{1,24}$/.test(String(record.sub || '')) &&
+    /^[A-Za-z0-9_-]{43}$/.test(String(record.fid || '')) &&
+    /^[A-Za-z0-9_-]{43}$/.test(String(record.jti || '')) &&
+    /^[A-Za-z0-9_-]{43}$/.test(String(record.sessionToken || '')) &&
+    /^mbr1\.[A-Za-z0-9_-]{40,384}\.[A-Za-z0-9_-]{43}$/.test(
+      String(record.refreshToken || '')
+    ) &&
+    Number.isInteger(record.iat) &&
+    Number.isInteger(record.expiresInSeconds) &&
+    record.expiresInSeconds > 0 &&
+    record.expiresInSeconds <= MAILBOX_CLIENT_CONFIG_.SESSION_SECONDS &&
+    Number.isFinite(Number(record.at)) &&
+    Date.now() - Number(record.at) >= 0 &&
+    Date.now() - Number(record.at) <= MAILBOX_CLIENT_CONFIG_.REFRESH_REPLAY_SECONDS * 1000 &&
+    constantTimeEqual_(String(record.sub), String(presentedClaims && presentedClaims.sub || '')) &&
+    constantTimeEqual_(String(record.fid), String(presentedClaims && presentedClaims.fid || '')) &&
+    constantTimeEqual_(String(record.jti), String(presentedClaims && presentedClaims.jti || '')) &&
+    Number(record.iat) === Number(presentedClaims && presentedClaims.iat);
+  if (!structurallyValid) return null;
+
+  try {
+    const nextClaims = mailboxVerifyRefreshToken_(record.refreshToken);
+    const sameFamily = constantTimeEqual_(String(nextClaims.sub), String(record.sub)) &&
+      constantTimeEqual_(String(nextClaims.fid), String(record.fid)) &&
+      Number(nextClaims.iat) === Number(record.iat);
+    const session = mailboxRequireSession_(record.sessionToken);
+    if (!sameFamily ||
+        !constantTimeEqual_(String(session.ownerId), String(record.sub)) ||
+        !constantTimeEqual_(String(session.familyId), String(record.fid))) return null;
+  } catch (error) {
+    return null;
+  }
+  return {
+    sessionToken: String(record.sessionToken),
+    refreshToken: String(record.refreshToken),
+    expiresInSeconds: Number(record.expiresInSeconds),
   };
 }
 

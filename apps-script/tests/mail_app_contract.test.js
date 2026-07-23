@@ -901,8 +901,10 @@ test('expired mailbox sessions are classified, cleared, and never retried with t
   const state = { session: 'expired-bearer', routeReady: true, requestVersion: 2, sessionFailureShown: false };
   const context = vm.createContext({
     state,
+    window: {},
     app: { setAttribute() {} },
     safeText(value, fallback = '') { return value == null || String(value).trim() === '' ? String(fallback || '') : String(value); },
+    recordMailboxSessionDiagnostic() {},
     showBootError(message, options) { shown.push([message, options]); },
   });
   vm.runInContext(responseSource, context);

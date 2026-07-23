@@ -51,6 +51,37 @@ test('launch is single-flight and warms storage without reading private records'
     'private cache hydration must remain behind the server-established account allowlist');
 });
 
+test('reload restores the app session from Telegram SecureStorage before launch replay handling', () => {
+  const getSecure = functionSource(mailApp, 'telegramSecureSessionGet');
+  const setSecure = functionSource(mailApp, 'telegramSecureSessionSet');
+  const removeSecure = functionSource(mailApp, 'telegramSecureSessionRemove');
+  const recover = functionSource(mailApp, 'recoverMailboxSessionFromSecureStorage');
+  const pipeline = functionSource(mailApp, 'runBootPipeline');
+  const signOut = functionSource(mailApp, 'signOutMailboxSession');
+
+  assert.match(getSecure, /tg\.SecureStorage\.getItem/);
+  assert.match(setSecure, /tg\.SecureStorage\.setItem/);
+  assert.match(removeSecure, /tg\.SecureStorage\.removeItem/);
+  assert.match(getSecure, /750/);
+  assert.match(recover, /callRenewSession\(stored\.token\)/);
+  assert.match(recover, /isTerminalRefreshCredentialFailure/);
+  assert.ok(
+    pipeline.indexOf('recoverMailboxSessionFromSecureStorage') <
+      pipeline.indexOf('if (!opened && embeddedLaunchError)'),
+    'secure owner-bound recovery must run before a replay error is shown'
+  );
+  assert.ok(
+    pipeline.indexOf('recoverMailboxSessionFromSecureStorage') <
+      pipeline.indexOf('callRedeemLaunch'),
+    'a consumed launch nonce must not be retried when secure recovery is available'
+  );
+  assert.match(signOut, /await telegramSecureSessionRemove\(\)/);
+  assert.doesNotMatch(
+    mailApp,
+    /(?:localStorage|sessionStorage)\.(?:setItem|getItem)\([^\n]{0,240}(?:refreshToken|sessionToken)/
+  );
+});
+
 test('RPC layer retains single-flight request deduplication', () => {
   const rpc = functionSource(mailApp, 'rpc');
   assert.match(rpc, /inflight/);
