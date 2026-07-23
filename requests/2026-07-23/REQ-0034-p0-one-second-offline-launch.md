@@ -72,3 +72,21 @@
 - Prior context: `REQ-0033`; this record does not rewrite its history and adds a separate measurable launch contract and duplicate-launch defect.
 - Authority: active `P-006` for autonomous implementation and active `P-009` for bounded Versie 1 release automation.
 - The product remains `Versie 1`; historical immutable v66 is not changed and cannot be promoted by this new cycle.
+
+<!-- lang:uk -->
+### Результат контрольованого контуру 2026-07-23
+
+- Cumulative source v70 merged normal PR, локальні source/release/bridge gates пройшли, immutable v70 створено рівно один раз і опубліковано рівно один owner-only staging.
+- Native staging відкрив mailbox без нового OAuth або повторного connection screen, відновив cached thread і показав avatar та три isolated Gmail roots. Secondary account switch повернув generic mail-operation error.
+- Fresh production v65 launch повернув той самий generic error до mailbox. Apps Script executions `doPost`, `mailboxRedeemLaunch` і `mailboxRpc` завершилися, а content-free timer trace впав у `legacy_recovery` з `errorCode=urlfetch_quota`.
+- Candidate-specific regression v70 не доведена. Production promotion не виконано; menu повернуто на production; exact staging видалено journal-bound helper; active staging `0`; immutable v70 збережено історично; journal terminal `abandoned`.
+- One-second p95, offline private Inbox, exact Windows SecureStorage recovery, hard reload, десять запусків і bidirectional account switching залишаються `UNVERIFIED`/`BLOCKED`. Наступний bounded A/B дозволено лише після відновлення добової квоти та за наявності причинного нового candidate, без повторного просування v70.
+
+<!-- lang:en -->
+### Controlled-contour result 2026-07-23
+
+- Cumulative v70 source merged by normal PR, local source/release/bridge gates passed, immutable v70 was created exactly once, and exactly one owner-only staging was published.
+- Native staging opened the mailbox without new OAuth or a repeated connection screen, restored a cached thread, and exposed the avatar plus three isolated Gmail roots. The secondary-account switch returned the generic mail-operation error.
+- A fresh production v65 launch returned the same generic error before the mailbox. Apps Script `doPost`, `mailboxRedeemLaunch`, and `mailboxRpc` executions completed, while the content-free timer trace failed in `legacy_recovery` with `errorCode=urlfetch_quota`.
+- A candidate-specific v70 regression is not established. Production promotion was not performed; the menu was restored to production; exact staging was removed by the journal-bound helper; active staging is `0`; immutable v70 remains historical; the journal is terminal `abandoned`.
+- One-second p95, offline private Inbox, exact Windows SecureStorage recovery, hard reload, ten launches, and bidirectional account switching remain `UNVERIFIED`/`BLOCKED`. The next bounded A/B is allowed only after daily quota recovery and with a causal new candidate; v70 must not be promoted again.
