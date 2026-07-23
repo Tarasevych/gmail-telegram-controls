@@ -417,3 +417,13 @@ Status: BLOCKED
 - **Release boundary:** лише source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth і Telegram runtime не змінюються.
 - **Ще потрібно:** native acceptance populated reader і current-production verification після зняття shared quota blocker.
 - **Пов’язано:** `GT-065`, `RCA-019`, `VR-038`, `REQ-0035`.
+
+## B1-46 — C-02 Безпечне закриття, мінімізація та attachment handoff composer
+
+- **Статус:** `PARTIAL`
+- **Результат:** header `X` тепер є one-shot close intent: mail view повертається негайно, same-session attachment transfer не скасовується, canonical Gmail save завершує close лише після transfer settlement. Minimize/restore зберігає draft object, focus, selection, attachments і stable operation identity.
+- **UX:** compose recovery chip та global transfer chip доступні, рухомі й автоматично рознесені; transfer row може відкрити саме пов’язану чернетку. Pending operation більше не утримує blocking editor без доступного шляху повернення.
+- **Recovery boundary:** локальні bytes не вважаються server-resumable після закриття WebView. Persistent recovery фіксує missing local jobs і вимагає повторного вибору, тоді як canonical Gmail draft лишається доступною за чинним restart reconciliation.
+- **Локально перевірено:** focused `5/5`, повний Apps Script suite `656/656`, synthetic browser close/minimize/restore і simultaneous-chip layout та окремий executable pointer-contract для drag bounds.
+- **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail/OAuth/Telegram runtime не змінюються. Native slow-network/restart acceptance лишається `UNVERIFIED`.
+- **Пов’язано:** `GT-066`, `RCA-022`, `VR-041`, `REQ-0035`.

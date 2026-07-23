@@ -4131,6 +4131,12 @@
       box-shadow: var(--shadow-soft);
       color: var(--text);
       text-align: left;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .compose-restore-chip.with-transfer-manager {
+      bottom: max(var(--compose-transfer-offset, 82px), calc(18px + env(safe-area-inset-bottom)));
     }
 
     .compose-restore-chip strong,
@@ -4613,6 +4619,10 @@
       .compose-restore-chip {
         right: 12px;
         bottom: calc(68px + env(safe-area-inset-bottom));
+      }
+
+      .compose-restore-chip.with-transfer-manager {
+        bottom: max(var(--compose-transfer-offset, 128px), calc(68px + env(safe-area-inset-bottom)));
       }
 
       .snackbar {
@@ -5901,6 +5911,8 @@
         composeSaveQueued: false,
         composeAutosaveTimer: 0,
         composeMinimized: false,
+        composeCloseRequested: false,
+        composeEditFocus: null,
         composeScheduleLoading: false,
         composeCloseDialogOpen: false,
         composeSourceOpen: false,
@@ -10498,6 +10510,9 @@
 
       function p0ComposeRecoveryValue(compose) {
         var draft = compose || {};
+        var localAttachmentJobs = typeof composeAttachmentJobs === "function"
+          ? composeAttachmentJobs().length
+          : 0;
         return {
           connectionId: safeId(draft.connectionId),
           id: safeId(draft.id),
@@ -10515,8 +10530,12 @@
           savedRevision: Number(draft.savedRevision || 0),
           lastCanonicalSavedAt: Math.max(0, Number(draft.lastCanonicalSavedAt || 0)),
           serverFingerprint: safeText(draft.baselineFingerprint),
-          attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length,
-          missingAttachmentCount: Math.max(0, Number(draft.restartRecoveryBlockedCount || 0)),
+          attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length + localAttachmentJobs,
+          missingAttachmentCount: Math.max(
+            0,
+            Number(draft.restartRecoveryBlockedCount || 0),
+            localAttachmentJobs
+          ),
           draftOperation: p0DraftRestartDescriptor(draft),
           updatedAt: Date.now()
         };
@@ -15848,7 +15867,21 @@
         if (els.composeRestoreStatus && draft) {
           var localJobs = composeAttachmentJobsPending();
           var failedJobs = allLocalJobs.filter(function (job) { return job.state === "error"; });
-          els.composeRestoreStatus.textContent = localJobs.length
+          els.composeRestoreStatus.textContent = state.composeCloseRequested
+            ? localJobs.length
+              ? "Закрию після обробки файлів: " + localJobs.length
+              : failedJobs.length
+              ? "Закриття призупинено — відкрийте чернетку"
+              : allLocalJobs.length
+              ? "Додаю готові файли до чернетки"
+              : pending === "send"
+              ? "Надсилання триває — відкрийте для перевірки"
+              : state.composeSaveInFlight || pending === "draft"
+              ? "Закрию після підтвердження Gmail"
+              : draft.dirty
+              ? "Закрию після збереження"
+              : "Збережено в Gmail"
+            : localJobs.length
             ? "Локально обробляється файлів: " + localJobs.length
             : failedJobs.length
             ? "Потрібна дія для файлів: " + failedJobs.length
@@ -15857,8 +15890,8 @@
             : pending === "send"
             ? "Gmail перевіряє надсилання"
             : state.composeSaveInFlight || pending === "draft"
-              ? "Чернетка зберігається"
-              : draft.dirty ? "Є незбережені зміни" : "Збережено в Gmail";
+            ? "Чернетка зберігається"
+            : draft.dirty ? "Є незбережені зміни" : "Збережено в Gmail";
         }
         updateComposeSaveStatus();
       }
@@ -16038,6 +16071,8 @@
         }
         if (state.composeBusy) return;
         cancelAllComposeAttachmentJobs();
+        state.composeCloseRequested = false;
+        state.composeEditFocus = null;
         state.composeSessionId = newClientOperationId();
         state.composeAttachmentSequence = 0;
         state.composeAttachmentFlushScheduled = false;
@@ -17685,6 +17720,7 @@
               state.compose.pendingSaveSnapshot = null;
               if (state.compose.dirty) state.composeSaveQueued = true;
             }
+            if (state.composeCloseRequested) syncComposeTransferAssociations();
             acknowledgeComposeOperation("draft", completedDraftOperationId, composeAtStart.connectionId);
           if (!opts.quiet) showSnackbar(safeText(data.message, "Чернетку збережено"), { success: true });
             if (closeAfter && state.compose === composeAtStart) {
@@ -17792,6 +17828,7 @@
             state.composeSaveQueued = false;
             updateComposeLifecycleControls();
             if (shouldContinue) scheduleComposeAutosave(retryDelay);
+            if (state.composeCloseRequested) window.setTimeout(settleComposeCloseRequest, 0);
           } else {
             updateComposeLifecycleControls();
           }
@@ -18233,6 +18270,42 @@
         });
       }
 
+      function rememberComposeEditFocus(event) {
+        var target = event && event.currentTarget ? event.currentTarget : document.activeElement;
+        if (!target || !target.id || !els.composeSheet.contains(target)) return;
+        if (target !== els.composeBody && !/^(composeTo|composeCc|composeBcc|composeSubject)$/.test(target.id)) return;
+        var snapshot = { id: target.id, start: null, end: null };
+        if (typeof target.selectionStart === "number" && typeof target.selectionEnd === "number") {
+          snapshot.start = target.selectionStart;
+          snapshot.end = target.selectionEnd;
+        }
+        state.composeEditFocus = snapshot;
+        if (target === els.composeBody) rememberComposeSelection();
+      }
+
+      function composeTransferAssociation() {
+        if (!state.compose || !safeClientOperationId(state.composeSessionId)) return null;
+        return {
+          version: 1,
+          composeSessionId: safeClientOperationId(state.composeSessionId),
+          connectionId: safeId(state.compose.connectionId),
+          draftId: safeId(state.compose.id),
+          boundAt: Date.now()
+        };
+      }
+
+      function syncComposeTransferAssociations() {
+        var association = composeTransferAssociation();
+        if (!association) return [];
+        var jobs = composeAttachmentJobs();
+        jobs.forEach(function (job) {
+          if (safeClientOperationId(job.sessionId) !== association.composeSessionId) return;
+          job.composeAssociation = Object.assign({}, association, { transferOperationId: job.id });
+        });
+        renderTransferManager();
+        return jobs;
+      }
+
       function openComposeCloseDialog() {
         if (!state.compose) return;
         clearComposeAutosaveTimer();
@@ -18264,13 +18337,16 @@
         closeComposeTableEditor(false);
         setSendLaterPanelOpen(false, false);
         if (state.composeSourceOpen) closeComposeSourceDialog(false);
-        state.composeSelection = null;
         state.composeMinimized = true;
         els.composeSheet.classList.remove("open");
         els.composeSheet.hidden = true;
         els.composeBackdrop.classList.remove("open");
         document.body.removeAttribute("data-compose-open");
         els.composeRestoreChip.hidden = false;
+        updateComposeRestoreChipTransferOffset(
+          state.transferUi,
+          Boolean(state.transferUi && state.transferUi.host && !state.transferUi.host.hidden)
+        );
         setComposeModalIsolation(false);
         updateComposeLifecycleControls();
         if (!opts.quiet) {
@@ -18284,15 +18360,17 @@
       async function minimizeCompose(options) {
         var opts = options || {};
         if (!state.compose) return false;
+        rememberComposeSelection();
         syncComposeFromFields();
-        if (state.composeBusy || composePendingKind() === "send") {
-          if (!opts.quiet) showSnackbar("Редактор лишається відкритим, доки Gmail не підтвердить операцію.");
-          return false;
-        }
-        var confirmed = Boolean(!state.compose.dirty && !state.composeSaveInFlight && !composePendingKind());
+        var confirmed = Boolean(
+          !state.compose.dirty && !state.composeBusy && !state.composeSaveInFlight &&
+          !composePendingKind() && !composeAttachmentJobs().length
+        );
         var minimized = applyConfirmedComposeMinimize(Object.assign({}, opts, { confirmed: confirmed }));
         if (!minimized || !state.compose) return false;
-        if (state.compose.dirty && hasDraftContent() && !state.composeSavePromise) {
+        p0PersistComposeRecovery();
+        if (state.compose.dirty && hasDraftContent() && !state.composeSavePromise &&
+            composePendingKind() !== "send" && navigator.onLine !== false) {
           saveDraft({ quiet: true, background: true, reason: safeText(opts.reason, "minimize") }).catch(function () {
             /* The restore chip and save-status control keep the local state honest. */
           });
@@ -18302,8 +18380,12 @@
 
       function restoreCompose() {
         if (!state.compose || !state.composeMinimized) return;
+        var focusSnapshot = state.composeEditFocus;
+        state.composeCloseRequested = false;
+        state.compose.closeAfterSave = false;
         state.composeMinimized = false;
         els.composeRestoreChip.hidden = true;
+        updateComposeRestoreChipTransferOffset(state.transferUi, false);
         els.composeSheet.hidden = false;
         els.composeSheet.classList.add("open");
         els.composeBackdrop.classList.add("open");
@@ -18311,7 +18393,58 @@
         setComposeModalIsolation(true);
         setComposeBusy(state.composeBusy);
         updateComposeLifecycleControls();
-        window.setTimeout(function () { els.composeBody.focus(); }, 0);
+        window.setTimeout(function () {
+          var target = focusSnapshot && focusSnapshot.id
+            ? document.getElementById(focusSnapshot.id)
+            : els.composeBody;
+          if (target === els.composeBody && state.composeSelection && activateComposeRange(state.composeSelection)) return;
+          if (!target || !target.isConnected || typeof target.focus !== "function") target = els.composeBody;
+          target.focus();
+          if (typeof target.setSelectionRange === "function" && focusSnapshot &&
+              typeof focusSnapshot.start === "number" && typeof focusSnapshot.end === "number") {
+            target.setSelectionRange(focusSnapshot.start, focusSnapshot.end);
+          }
+        }, 0);
+      }
+
+      function bindComposeRestoreChip() {
+        var drag = null;
+        var moved = false;
+        els.composeRestoreChip.addEventListener("pointerdown", function (event) {
+          if (event.button !== 0) return;
+          var rect = els.composeRestoreChip.getBoundingClientRect();
+          drag = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+          moved = false;
+          if (typeof els.composeRestoreChip.setPointerCapture === "function") {
+            els.composeRestoreChip.setPointerCapture(event.pointerId);
+          }
+        });
+        els.composeRestoreChip.addEventListener("pointermove", function (event) {
+          if (!drag) return;
+          event.preventDefault();
+          var left = Math.max(8, Math.min(
+            window.innerWidth - els.composeRestoreChip.offsetWidth - 8,
+            drag.left + event.clientX - drag.x
+          ));
+          var top = Math.max(8, Math.min(
+            window.innerHeight - els.composeRestoreChip.offsetHeight - 8,
+            drag.top + event.clientY - drag.y
+          ));
+          moved = moved || Math.abs(event.clientX - drag.x) > 4 || Math.abs(event.clientY - drag.y) > 4;
+          els.composeRestoreChip.style.left = left + "px";
+          els.composeRestoreChip.style.top = top + "px";
+          els.composeRestoreChip.style.right = "auto";
+          els.composeRestoreChip.style.bottom = "auto";
+        });
+        els.composeRestoreChip.addEventListener("pointerup", function () { drag = null; });
+        els.composeRestoreChip.addEventListener("pointercancel", function () { drag = null; });
+        els.composeRestoreChip.addEventListener("click", function () {
+          if (moved) {
+            moved = false;
+            return;
+          }
+          restoreCompose();
+        });
       }
 
       function discardComposeChanges() {
@@ -18322,15 +18455,68 @@
         }
         clearComposeAutosaveTimer();
         closeComposeCloseDialog(false);
-        finishCloseCompose();
+        finishCloseCompose({ discardTransfers: true });
         showSnackbar("Локальні зміни відхилено.", { success: true });
+      }
+
+      function settleComposeCloseRequest() {
+        if (!state.compose || !state.composeCloseRequested) return false;
+        syncComposeTransferAssociations();
+        var jobs = composeAttachmentJobs();
+        if (jobs.length || state.composeBusy || state.composeSaveInFlight ||
+            state.composeSavePromise || composePendingKind()) {
+          updateComposeLifecycleControls();
+          return false;
+        }
+        if (state.compose.dirty && hasDraftContent()) {
+          if (navigator.onLine === false || state.compose.draftSaveDeferred ||
+              state.compose.restartRecoveryDeferred || Number(state.compose.restartRecoveryBlockedCount || 0) > 0) {
+            updateComposeLifecycleControls();
+            return false;
+          }
+          saveDraft({ quiet: true, background: true, reason: "close-intent" }).catch(function () {
+            /* The minimized recovery chip exposes the exact terminal state and manual action. */
+          });
+          return false;
+        }
+        return finishCloseCompose();
+      }
+
+      function closeComposeFromHeader() {
+        if (!state.compose) return;
+        syncComposeFromFields();
+        var jobs = composeAttachmentJobs();
+        if (!hasDraftContent() && !jobs.length && !state.composeSaveInFlight && !composePendingKind()) {
+          finishCloseCompose();
+          return;
+        }
+        if (!state.compose.dirty && !jobs.length && !state.composeSaveInFlight && !composePendingKind()) {
+          finishCloseCompose();
+          return;
+        }
+        state.composeCloseRequested = true;
+        if (!safeClientOperationId(state.compose.draftOperationId) && state.compose.dirty && hasDraftContent()) {
+          state.compose.draftOperationId = newClientOperationId();
+        }
+        syncComposeTransferAssociations();
+        p0PersistComposeRecovery();
+        minimizeCompose({ quiet: true, reason: "header-close" });
+        updateComposeLifecycleControls();
+        settleComposeCloseRequest();
+        showSnackbar(
+          jobs.length
+            ? "Редактор закрито. Передавання триває; ця сама чернетка доступна через chip."
+            : "Редактор закрито. Чернетка зберігається у фоні.",
+          { success: true }
+        );
       }
 
       function requestCloseCompose() {
         if (!state.compose) return;
         syncComposeFromFields();
         if (state.composeBusy || state.composeSaveInFlight || composePendingKind()) {
-          showSnackbar("Gmail ще завершує операцію. Редактор лишається відкритим і чернетку можна відновити.");
+          minimizeCompose({ quiet: true, reason: "close-pending" });
+          showSnackbar("Редактор згорнуто. Відкрийте chip чернетки, щоб перевірити операцію.");
           return;
         }
         if ((!state.compose.dirty && !composeAttachmentJobs().length) || !hasDraftContent()) {
@@ -18341,8 +18527,15 @@
         else saveDraft({ closeAfter: true });
       }
 
-      function finishCloseCompose() {
+      function finishCloseCompose(options) {
         if (!state.compose) return;
+        var opts = options || {};
+        if (composeAttachmentJobs().length && !opts.discardTransfers) {
+          state.composeCloseRequested = true;
+          syncComposeTransferAssociations();
+          minimizeCompose({ quiet: true, reason: "protected-close" });
+          return false;
+        }
         var returnFocus = state.composeReturnFocus;
         var closingCompose = state.compose;
         clearComposeAutosaveTimer();
@@ -18352,7 +18545,7 @@
         setSendLaterPanelOpen(false, false);
         if (state.composeSourceOpen) closeComposeSourceDialog(false);
         state.composeSelection = null;
-        cancelAllComposeAttachmentJobs();
+        if (opts.discardTransfers) cancelAllComposeAttachmentJobs();
         releaseComposeInlinePreviews(closingCompose);
         state.compose = null;
         state.composeSessionId = "";
@@ -18361,6 +18554,8 @@
         state.composeScheduleLoading = false;
         els.sendLaterDateTime.value = "";
         state.composeMinimized = false;
+        state.composeCloseRequested = false;
+        state.composeEditFocus = null;
         state.composeSaveQueued = false;
         els.composeRestoreChip.hidden = true;
         els.composeSheet.classList.remove("open");
@@ -18381,6 +18576,7 @@
           if (target && target.isConnected && typeof target.focus === "function") target.focus();
           closingCompose = null;
         }, 210);
+        return true;
       }
 
       function setComposeSourceIsolation(active) {
@@ -19584,6 +19780,24 @@
         };
       }
 
+      function updateComposeRestoreChipTransferOffset(ui, hasTasks) {
+        var chip = els.composeRestoreChip;
+        var active = Boolean(ui && hasTasks && state.composeMinimized && chip && !chip.hidden);
+        if (!chip) return;
+        chip.classList.toggle("with-transfer-manager", active);
+        if (!active) {
+          chip.style.removeProperty("--compose-transfer-offset");
+          return;
+        }
+        var measure = function () {
+          if (!state.composeMinimized || chip.hidden || !ui.host || ui.host.hidden) return;
+          var managerHeight = Math.max(44, Math.ceil(ui.host.getBoundingClientRect().height || 0));
+          chip.style.setProperty("--compose-transfer-offset", Math.min(window.innerHeight - 54, managerHeight + 24) + "px");
+        };
+        if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(measure);
+        else window.setTimeout(measure, 0);
+      }
+
       function ensureTransferManagerUi() {
         if (state.transferUi || !document.body) return state.transferUi;
         var host = make("section", {
@@ -19630,6 +19844,7 @@
           state.transferUiExpanded = !state.transferUiExpanded;
           details.hidden = !state.transferUiExpanded;
           toggle.setAttribute("aria-expanded", state.transferUiExpanded ? "true" : "false");
+          updateComposeRestoreChipTransferOffset(state.transferUi, !host.hidden);
         });
         state.transferUi = { host: host, toggle: toggle, details: details };
         return state.transferUi;
@@ -19647,7 +19862,10 @@
         var ui = ensureTransferManagerUi();
         if (!ui) return;
         ui.host.hidden = !tasks.length;
-        if (!tasks.length) return;
+        if (!tasks.length) {
+          updateComposeRestoreChipTransferOffset(ui, false);
+          return;
+        }
         var aggregate = transferAggregate(tasks);
         ui.toggle.textContent = aggregate.active
           ? "Передавання: " + aggregate.active + (aggregate.determinate ? " · " + aggregate.percent + "%" : " · у процесі")
@@ -19663,6 +19881,16 @@
             make("div", { text: transferTaskProgressText(task) })
           );
           var actions = make("div", {});
+          if (task.transferDomain === "compose" && state.compose && state.composeMinimized &&
+              safeClientOperationId(task.sessionId) === safeClientOperationId(state.composeSessionId)) {
+            var reopenDraft = make("button", {
+              type: "button",
+              text: "Чернетка",
+              attrs: { "aria-label": "Повернутися до чернетки цього передавання" }
+            });
+            reopenDraft.addEventListener("click", restoreCompose);
+            actions.append(reopenDraft);
+          }
           if (managedTransferCanCancel(task)) {
             var cancel = make("button", {
               type: "button",
@@ -19693,6 +19921,7 @@
           row.append(text, actions);
           ui.details.append(row);
         });
+        updateComposeRestoreChipTransferOffset(ui, true);
       }
 
       function pruneManagedTransfers() {
@@ -19779,6 +20008,7 @@
         updateComposeLifecycleControls();
         if (typeof renderTransferManager === "function") renderTransferManager();
         window.setTimeout(flushReadyComposeAttachmentJobs, 0);
+        if (state.composeCloseRequested) window.setTimeout(settleComposeCloseRequest, 0);
         return true;
       }
 
@@ -20195,6 +20425,7 @@
           canResume: false,
           abort: null,
           retry: null,
+          composeAssociation: composeTransferAssociation(),
           transferRunner: null,
           transferPromise: null
         };
@@ -20246,6 +20477,10 @@
         renderComposeAttachments();
         updateComposeLifecycleControls();
         scheduleComposeAutosave(120);
+        if (state.composeCloseRequested) {
+          syncComposeTransferAssociations();
+          window.setTimeout(settleComposeCloseRequest, 0);
+        }
         var completionParts = [];
         if (added.length) completionParts.push(added.length === 1 ? "вкладення готове" : "вкладень готово: " + added.length);
         if (insertedInline) completionParts.push(insertedInline === 1 ? "зображення вставлено в текст" : "зображень вставлено: " + insertedInline);
@@ -20559,9 +20794,9 @@
           event.preventDefault();
           scheduleThreadSnooze(new Date(els.snoozeCustomDate.value).getTime());
         });
-        els.closeComposeButton.addEventListener("click", requestCloseCompose);
+        els.closeComposeButton.addEventListener("click", closeComposeFromHeader);
         els.minimizeComposeButton.addEventListener("click", function () { minimizeCompose(); });
-        els.composeRestoreChip.addEventListener("click", restoreCompose);
+        bindComposeRestoreChip();
         els.composeSaveStatusButton.addEventListener("click", checkComposeSaveStatus);
         els.composeBackdrop.addEventListener("click", requestCloseCompose);
         els.continueComposeButton.addEventListener("click", function () { closeComposeCloseDialog(true); });
@@ -20582,6 +20817,11 @@
         els.composeBcc.addEventListener("blur", function () { collapseEmptyRecipientField("bcc"); });
         [els.composeFrom, els.composeTo, els.composeCc, els.composeBcc, els.composeSubject, els.composeBody].forEach(function (field) {
           field.addEventListener("input", syncComposeFromFields);
+        });
+        [els.composeTo, els.composeCc, els.composeBcc, els.composeSubject, els.composeBody].forEach(function (field) {
+          field.addEventListener("focus", rememberComposeEditFocus);
+          field.addEventListener("keyup", rememberComposeEditFocus);
+          field.addEventListener("mouseup", rememberComposeEditFocus);
         });
         els.composeFrom.addEventListener("change", syncComposeFromFields);
         els.composeBody.addEventListener("mouseup", rememberComposeSelection);

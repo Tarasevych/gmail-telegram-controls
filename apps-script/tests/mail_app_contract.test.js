@@ -618,7 +618,7 @@ test('compose close is explicit, clean close is immediate, and minimize stays no
   assert.match(uiSource, /id="saveAndCloseComposeButton"[^>]*>Зберегти в чернетки<\/button>/);
   assert.match(uiSource, /id="discardComposeButton"[^>]*>Відхилити зміни<\/button>/);
   assert.match(uiSource, /id="continueComposeButton"[^>]*>Продовжити<\/button>/);
-  assert.match(closeSource, /state\.composeBusy \|\| state\.composeSaveInFlight \|\| composePendingKind\(\)[\s\S]*Редактор лишається відкритим/);
+  assert.match(closeSource, /state\.composeBusy \|\| state\.composeSaveInFlight \|\| composePendingKind\(\)[\s\S]*minimizeCompose\(\{ quiet: true, reason: "close-pending" \}\)/);
   assert.match(closeSource, /\(!state\.compose\.dirty && !composeAttachmentJobs\(\)\.length\) \|\| !hasDraftContent\(\)[\s\S]*finishCloseCompose\(\)/);
   assert.match(closeSource, /openComposeCloseDialog\(\)/);
   assert.match(decisionSource, /function discardComposeChanges\(\)[\s\S]*finishCloseCompose\(\)/);

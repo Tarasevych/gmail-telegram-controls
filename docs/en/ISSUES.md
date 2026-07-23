@@ -604,3 +604,15 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Safety boundary:** analysis remains local heuristic plus the existing Apps Script Language service. No external AI endpoint, raw mail transfer, Gmail mutation, OAuth, staging, production, or release-state change is introduced.
 - **Remaining:** native populated-thread acceptance, real multilingual/attachment corpus acceptance, and current-production evidence remain `UNVERIFIED`; overall status is therefore `PARTIAL`.
 - **Evidence:** [VR-038](verification-reports/reports/VR-038/README.md).
+
+## GT-066 — Closing the composer cancelled attachment transfer and minimized draft lost interaction context
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-46` / V3 `C-02`
+- **Confirmed root cause:** header `X` used the shared close guard, which blocked a pending operation, while `finishCloseCompose()` unconditionally called `cancelAllComposeAttachmentJobs()`. Minimize hid the editor but erased the saved Range; the compose chip was not movable and overlapped the global transfer chip.
+- **Correction:** header `X` creates one close intent, immediately returns to the mail view, persists the local recovery record and the `compose session ↔ stable transfer operation` association, then clears compose state only after local jobs finish and Gmail returns canonical draft readback. Explicit discard is the only close path that cancels local jobs. Restore returns the same draft/session without restarting upload, including focus/selection and a movable accessible chip; the global transfer manager has an explicit action to reopen that draft.
+- **Truth boundary:** local `FileReader` work and the in-memory association continue only while the Mini App remains alive. After the WebView fully closes, an unfinished device file is not represented as resumable: the recovery record requires file reselection. Server-side draft-operation reconciliation is unchanged.
+- **Local evidence:** focused C-02 contracts `5/5`; complete Apps Script suite `656/656`; synthetic browser acceptance covers close/minimize/restore and no overlap without a real Gmail mutation, while the executable pointer contract separately covers drag bounds.
+- **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth, Telegram menu, and release journal remain unchanged. Native slow-network, app-restart, and current-production acceptance remain `UNVERIFIED`.
+- **Evidence:** [VR-041](verification-reports/reports/VR-041/README.md).

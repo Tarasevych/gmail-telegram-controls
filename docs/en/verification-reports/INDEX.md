@@ -257,3 +257,4 @@ A historical report is not rewritten after publication to hide an error. A new i
 | [VR-038](reports/VR-038/README.md) | F-04 trustworthy automated analysis and one real next action | `PARTIAL` | `REQ-0035`, `GT-065`, `B1-45`, `RCA-019` |
 | [VR-039](reports/VR-039/README.md) | F-05 honest and stable reading progress | `PARTIAL` | `REQ-0035`, `GT-050`, `B1-30`, `RCA-020` |
 | [VR-040](reports/VR-040/README.md) | C-01 Gmail-style autosave state machine | `PARTIAL` | `REQ-0035`, `GT-045`, `B1-25`, `RCA-021` |
+| [VR-041](reports/VR-041/README.md) | C-02 safe composer close, minimize, and attachment handoff | `PARTIAL` | `REQ-0035`, `GT-066`, `B1-46`, `RCA-022` |

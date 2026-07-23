@@ -264,7 +264,7 @@ test('movable global chip is independent from composer minimize and has accessib
   assert.match(managerSource, /pointerdown[\s\S]*pointermove[\s\S]*pointerup/);
   assert.match(managerSource, /aria-label": "Передавання файлів"/);
   assert.match(managerSource, /aria-label": "Скасувати /);
-  assert.doesNotMatch(managerSource, /composeMinimized/);
+  assert.match(managerSource, /task\.transferDomain === "compose"[\s\S]*state\.composeMinimized[\s\S]*task\.sessionId[\s\S]*state\.composeSessionId[\s\S]*restoreCompose/);
 });
 
 test('incoming RPC progress remains indeterminate because google.script.run exposes no byte callbacks', () => {

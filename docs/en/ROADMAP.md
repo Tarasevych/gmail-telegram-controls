@@ -417,3 +417,13 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Release boundary:** source/docs contour only; production v65, staging `0`, immutable history, Gmail, OAuth, and Telegram runtime remain unchanged.
 - **Still required:** native populated-reader acceptance and current-production verification after the shared quota blocker clears.
 - **Related:** `GT-065`, `RCA-019`, `VR-038`, `REQ-0035`.
+
+## B1-46 — C-02 Safe composer close, minimize, and attachment handoff
+
+- **Status:** `PARTIAL`
+- **Result:** header `X` is now a one-shot close intent: the mail view returns immediately, the same-session attachment transfer is not cancelled, and canonical Gmail save completes close only after transfer settlement. Minimize/restore retains the draft object, focus, selection, attachments, and stable operation identity.
+- **UX:** the compose recovery chip and global transfer chip are accessible, movable, and automatically separated; a transfer row can reopen the exact associated draft. A pending operation no longer holds a blocking editor without an accessible return path.
+- **Recovery boundary:** local bytes are not represented as server-resumable after WebView closure. Persistent recovery records missing local jobs and requires reselection, while a canonical Gmail draft remains available through the existing restart reconciliation.
+- **Locally verified:** focused `5/5`, complete Apps Script suite `656/656`, synthetic browser close/minimize/restore and simultaneous-chip layout, plus a separate executable pointer contract for drag bounds.
+- **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, and Gmail/OAuth/Telegram runtime remain unchanged. Native slow-network/restart acceptance remains `UNVERIFIED`.
+- **Related:** `GT-066`, `RCA-022`, `VR-041`, `REQ-0035`.

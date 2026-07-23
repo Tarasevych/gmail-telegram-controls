@@ -604,3 +604,15 @@ Status: BLOCKED
 - **Межа безпеки:** аналіз лишається локальною евристикою плюс чинний Apps Script Language service. Зовнішній AI endpoint, raw mail transfer, Gmail mutation, OAuth, staging, production або release-state change не додаються.
 - **Залишається:** native acceptance на populated thread, real multilingual/attachment corpus і current-production evidence лишаються `UNVERIFIED`; загальний статус тому `PARTIAL`.
 - **Доказ:** [VR-038](verification-reports/reports/VR-038/README.md).
+
+## GT-066 — Закриття composer скасовувало attachment transfer, а minimized draft не зберігав повний interaction context
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-46` / V3 `C-02`
+- **Підтверджена першопричина:** header `X` використовував загальний close guard, який блокував pending operation, а `finishCloseCompose()` безумовно викликав `cancelAllComposeAttachmentJobs()`. Minimize ховав редактор, але стирав saved Range; compose chip не був рухомим і перекривав global transfer chip.
+- **Виправлення:** header `X` створює один close intent, негайно повертає до mail view, зберігає локальний recovery record і association `compose session ↔ stable transfer operation`, а потім закриває state лише після завершення локальних job-ів і canonical Gmail draft readback. Explicit discard є єдиним close path, що скасовує локальні jobs. Restore повертає той самий draft/session без restart upload, з focus/selection і рухомим доступним chip; global transfer manager має явну дію повернення до цієї чернетки.
+- **Чесна межа:** локальний `FileReader` і in-memory association продовжуються лише поки Mini App живий. Після повного закриття WebView незавершений device file не заявляється resumable: recovery record вимагає повторного вибору файла. Server-side draft operation reconciliation не змінено.
+- **Локальний доказ:** focused C-02 contracts `5/5`; повний Apps Script suite `656/656`; synthetic browser acceptance перевіряє close/minimize/restore і відсутність overlap без реальної Gmail mutation, а executable pointer-contract окремо перевіряє drag bounds.
+- **Release boundary:** source/docs contour; production v65, staging `0`, immutable history, Gmail, OAuth, Telegram menu та release journal не змінюються. Native slow-network, app-restart і current-production acceptance лишаються `UNVERIFIED`.
+- **Доказ:** [VR-041](verification-reports/reports/VR-041/README.md).
