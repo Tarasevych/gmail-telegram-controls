@@ -536,3 +536,12 @@ Status: BLOCKED
 - **Виправлення:** `scope=root_readonly`, строгий callback envelope, stable Box account ID та сумісний lookup історичного protected token record.
 - **Доказ:** [VR-030](verification-reports/reports/VR-030/README.md).
 - **Залишок:** authenticated Box acceptance, callback, refresh, revoke і picker залишаються `UNVERIFIED`; новий OAuth не запускався.
+
+## GT-060 — Smart, safe URL resolver
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Першопричина:** secure fetch perimeter існував, але intent classification була неявною: Google search/ambiguous wrapper доходив до server fetch, redirect loop мав лише count bound, а origin/resolution kind і licensing warning не були явним DTO/UI contract.
+- **Виправлення:** deterministic explicit-wrapper resolver, no-fetch Google search routing до link mode, identity loop guard, provenance/classification metadata та постійне licensing нагадування.
+- **Доказ:** [VR-031](verification-reports/reports/VR-031/README.md).
+- **Залишок:** DNS-rebinding TOCTOU та native deployment transfer acceptance залишаються `UNVERIFIED`; staging/production не змінювалися.

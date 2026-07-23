@@ -21,6 +21,10 @@ const helperSource = sourceBetween(
   "      function runManagedPublicHttpsImport(sourceValue, options) {",
   "      function sourcePreviewData(response, metadata) {"
 );
+const classificationSource = sourceBetween(
+  "      function classifyPublicSourceInput(value) {",
+  "      function insertPublicSourceLink() {"
+);
 
 function harness(options = {}) {
   const phases = [];
@@ -151,8 +155,39 @@ test("retry keeps the task and fails closed after compose context changes", asyn
 });
 
 test("form submit delegates to the managed import and hides raw URL from labels", () => {
+  assert.match(source, /var classification = classifyPublicSourceInput\(els\.composePublicSourceUrl\.value\)/);
   assert.match(source, /await runManagedPublicHttpsImport\(source\)\.promise/);
   assert.doesNotMatch(helperSource, /label:\s*[^,\n]*source\.url/);
   assert.doesNotMatch(helperSource, /id:\s*[^,\n]*source\.url/);
   assert.doesNotMatch(helperSource, /setInterval|percent|canCancel:\s*true/);
+});
+
+test("URL classification keeps direct files and explicit wrappers while routing ambiguous Google pages to link mode", () => {
+  const context = vm.createContext({
+    safeComposeLink(value) {
+      try {
+        const parsed = new URL(String(value || ""));
+        return parsed.protocol === "https:" && !parsed.username && !parsed.password ? parsed.toString() : "";
+      } catch (error) {
+        return "";
+      }
+    },
+    safeText: value => String(value == null ? "" : value),
+    URL
+  });
+  vm.runInContext(classificationSource, context);
+
+  assert.equal(context.classifyPublicSourceInput("https://cdn.example.com/file.jpg").kind, "https_candidate");
+  assert.equal(
+    context.classifyPublicSourceInput("https://www.google.com/imgres?imgurl=https%3A%2F%2Fcdn.example.com%2Ffile.jpg").kind,
+    "explicit_wrapper"
+  );
+  assert.equal(
+    context.classifyPublicSourceInput("https://www.google.com/search?tbm=isch&q=books").kind,
+    "google_search"
+  );
+  assert.equal(
+    context.classifyPublicSourceInput("https://www.google.com/imgres?imgrefurl=https%3A%2F%2Fexample.com").kind,
+    "ambiguous_wrapper"
+  );
 });

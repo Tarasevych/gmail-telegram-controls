@@ -240,3 +240,5 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
 | [VR-030](reports/VR-030/README.md) | Box OAuth least privilege, strict callback, and stable identity | `PARTIAL` | `REQ-0035`, `GT-059`, `B1-39`, `RCA-012` |
+
+| [VR-031](reports/VR-031/README.md) | D-03 Smart, safe URL resolver | `PARTIAL` | `REQ-0035`, `GT-060`, `B1-40`, `RCA-013` |

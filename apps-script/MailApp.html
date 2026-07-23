@@ -5409,7 +5409,7 @@
                   <button class="primary-button" type="submit">Додати як вкладення</button>
                 </div>
               </form>
-              <p class="compose-source-note" id="composePublicSourceStatus" role="status" aria-live="polite">Прямі публічні файли можна додати як вкладення. Сторінки YouTube, Vimeo, Instagram, TikTok, Google, OneDrive, Dropbox, Box, iCloud, MEGA та pCloud вставляються в текст листа як безпечні клікабельні посилання. Приватні файли потребують авторизації відповідного сервісу.</p>
+              <p class="compose-source-note" id="composePublicSourceStatus" role="status" aria-live="polite">Прямі публічні файли можна додати як вкладення. Сторінки YouTube, Vimeo, Instagram, TikTok, Google, OneDrive, Dropbox, Box, iCloud, MEGA та pCloud вставляються в текст листа як безпечні клікабельні посилання. Приватні файли потребують авторизації відповідного сервісу. Перед додаванням переконайтеся, що маєте право використовувати й надсилати матеріал.</p>
             </section>
           </div>
           <div class="box-disconnect-layer" id="composeBoxDisconnectLayer" hidden>
@@ -5906,6 +5906,12 @@
           size: Math.max(0, Number(item.size || 0)),
           modifiedTime: safeText(item.modifiedTime),
           webViewLink: safeUrl(item.webViewLink, false),
+          originUrl: safeUrl(item.originUrl || source.url, false),
+          resolvedUrl: safeUrl(item.url || item.webViewLink, false),
+          classification: ["direct_file", "redirected_file", "wrapper_file"].indexOf(safeText(item.classification)) !== -1
+            ? safeText(item.classification)
+            : "",
+          licensingWarning: safeText(item.licensingWarning).slice(0, 240),
           nativeGoogle: Boolean(item.nativeGoogle),
           exportAs: Array.isArray(item.exportAs) ? item.exportAs.filter(function (format) { return safeText(format).toLowerCase() === "pdf"; }) : []
         };
@@ -17566,6 +17572,53 @@
         return provider ? provider.label : "Відкрити матеріал за посиланням";
       }
 
+      function classifyPublicSourceInput(value) {
+        var href = safeComposeLink(value);
+        if (!href || href.indexOf("https:") !== 0) {
+          return { kind: "invalid", url: "", message: "Вкажіть повне безпечне HTTPS-посилання без логіна й пароля в адресі." };
+        }
+        var parsed;
+        try { parsed = new URL(href); } catch (error) {
+          return { kind: "invalid", url: "", message: "Вкажіть повне безпечне HTTPS-посилання без логіна й пароля в адресі." };
+        }
+        var host = parsed.hostname.toLowerCase().replace(/\.$/, "");
+        var googleHost = host === "www.google.com" || host === "images.google.com";
+        if (googleHost && (parsed.pathname === "/search" || parsed.pathname === "/imghp")) {
+          return {
+            kind: "google_search",
+            url: href,
+            message: "Це сторінка результатів Google, а не один файл. Вставте її як посилання або скопіюйте адресу самого зображення."
+          };
+        }
+        if (host === "www.google.com" && parsed.pathname === "/imgres") {
+          var imageTargets = parsed.searchParams.getAll("imgurl").filter(function (target) {
+            return /^https:\/\//i.test(safeText(target).trim());
+          });
+          if (imageTargets.length !== 1) {
+            return {
+              kind: "ambiguous_wrapper",
+              url: href,
+              message: "Google-посилання не визначає один файл. Вставте його як посилання або скопіюйте адресу самого зображення."
+            };
+          }
+          return { kind: "explicit_wrapper", url: href, message: "" };
+        }
+        if (host === "www.google.com" && parsed.pathname === "/url") {
+          var redirectTargets = parsed.searchParams.getAll("url")
+            .concat(parsed.searchParams.getAll("q"))
+            .filter(function (target) { return /^https:\/\//i.test(safeText(target).trim()); });
+          if (redirectTargets.length !== 1) {
+            return {
+              kind: "ambiguous_wrapper",
+              url: href,
+              message: "Google-посилання не визначає один файл. Вставте його як посилання або скопіюйте пряму адресу файла."
+            };
+          }
+          return { kind: "explicit_wrapper", url: href, message: "" };
+        }
+        return { kind: "https_candidate", url: href, message: "" };
+      }
+
       function insertPublicSourceLink() {
         var href = safeComposeLink(els.composePublicSourceUrl.value);
         if (!href || href.indexOf("https:") !== 0) {
@@ -17670,7 +17723,8 @@
               throw new Error("Редактор або Gmail-акаунт змінився до завершення перевірки.");
             }
             addComposeSourceAttachment(metadata, false);
-            els.composePublicSourceStatus.textContent = "Файл перевірено й додано до чернетки.";
+            els.composePublicSourceStatus.textContent = "Файл перевірено й додано до чернетки. " +
+              safeText(metadata.licensingWarning, "Переконайтеся, що маєте право використовувати й надсилати цей файл.");
             return metadata;
           }).catch(function (error) {
             els.composePublicSourceStatus.textContent = safeText(error.message, "Не вдалося додати HTTPS-файл.");
@@ -19608,9 +19662,15 @@
         els.composePublicInsertLink.addEventListener("click", insertPublicSourceLink);
         els.composePublicSourceForm.addEventListener("submit", async function (event) {
           event.preventDefault();
-          var source = normalizeAttachmentSource({ provider: "publicHttps", url: els.composePublicSourceUrl.value });
+          var classification = classifyPublicSourceInput(els.composePublicSourceUrl.value);
+          if (classification.kind === "google_search" || classification.kind === "ambiguous_wrapper") {
+            els.composePublicSourceStatus.textContent = classification.message;
+            els.composePublicInsertLink.focus();
+            return;
+          }
+          var source = normalizeAttachmentSource({ provider: "publicHttps", url: classification.url });
           if (!source) {
-            els.composePublicSourceStatus.textContent = "Вкажіть повне публічне посилання https://.";
+            els.composePublicSourceStatus.textContent = classification.message || "Вкажіть повне публічне посилання https://.";
             return;
           }
           try {

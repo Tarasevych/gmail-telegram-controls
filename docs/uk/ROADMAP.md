@@ -358,3 +358,11 @@ Status: BLOCKED
 - **Межа релізу:** source/docs contour; staging і production не змінюються.
 - **Наступний доказовий крок:** authenticated owner-only Box acceptance лише в дозволеному release contour і без повторного consent без підтвердженої потреби.
 - **Пов’язано:** `GT-059`, `VR-030`, `REQ-0035`.
+
+## B1-40 — D-03 Smart, safe URL resolver
+
+- **Статус:** `PARTIAL`
+- **Результат:** direct files, explicit Google wrappers, search pages, ordinary pages, authenticated/private URL та unsafe schemes мають окремі deterministic outcomes; redirects bounded і loop-aware.
+- **UX:** ambiguous Google page не називається malformed і не прикріплює випадковий файл; UI пропонує link mode або копіювання прямої адреси та показує licensing warning.
+- **Межа релізу:** source/docs contour без live URL fetch, staging чи production.
+- **Пов’язано:** `GT-060`, `RCA-013`, `VR-031`, `REQ-0035`.

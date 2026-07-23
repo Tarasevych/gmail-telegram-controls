@@ -22,6 +22,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-012 | Box OAuth could inherit broader app scopes, duplicate an account after login/email changes, or accept an incomplete callback envelope | The authorize URL omitted an explicit scope; reconnect depended on mutable email; `errorDescription` lacked provider-specific validation | Added `root_readonly`, stable account ID, legacy protected-record lookup, and fail-closed validation | Provider allowlist, stable provider IDs, and direct callback source-contract tests | `PARTIAL` | [VR-030](verification-reports/reports/VR-030/README.md) |
 
+| RCA-013 | Valid Google search/wrapper URLs had an implicit outcome; loops were detected only by a limit; provenance/licensing contract was incomplete | Fetch security and UX classification were not one state machine | Added explicit-wrapper extraction, no-fetch ambiguous routing, a visited-URL loop guard, origin/classification, and a licensing warning | Pure classifier tests, synthetic redirect matrix, fail-closed MIME/DNS/size boundary | `PARTIAL` | [VR-031](verification-reports/reports/VR-031/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

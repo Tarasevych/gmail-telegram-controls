@@ -1189,6 +1189,9 @@ test('compose attachment sources use the exact Drive, Box and publicHttps RPC co
   assert.match(sourceUi, /op:\s*"sourceContent"[\s\S]*purpose:\s*"preview"/);
   assert.match(sourceUi, /function insertComposeAttachmentReference\(attachment, explicitIndex\)[\s\S]*createTextNode\("\\u00a0"\)[\s\S]*insertComposeNode\(fragment, separator, false\)/);
   assert.match(sourceUi, /function insertPublicSourceLink\(\)[\s\S]*safeComposeLink\(els\.composePublicSourceUrl\.value\)/);
+  assert.match(sourceUi, /function classifyPublicSourceInput\(value\)[\s\S]*kind:\s*"google_search"[\s\S]*kind:\s*"ambiguous_wrapper"/);
+  assert.match(uiSource, /classification\.kind === "google_search" \|\| classification\.kind === "ambiguous_wrapper"[\s\S]*composePublicInsertLink\.focus\(\)/);
+  assert.match(uiSource, /маєте право використовувати й надсилати/);
   assert.match(sourceUi, /function runManagedPublicHttpsImport\(sourceValue, options\)/);
   assert.match(sourceUi, /kind:\s*"url-import"[\s\S]*canCancel:\s*false[\s\S]*byteProgress:\s*false/);
   assert.match(sourceUi, /p0Runtime\.publicHttpsTransfers[\s\S]*op:\s*"sourceMetadata"/);

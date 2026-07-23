@@ -6793,6 +6793,9 @@ test('public HTTPS sources enforce DNS/IP redirects MIME and byte bounds', () =>
   }));
   assert.equal(metadata.name, 'report.pdf');
   assert.equal(metadata.size, pdf.length);
+  assert.equal(metadata.originUrl, target);
+  assert.equal(metadata.classification, 'direct_file');
+  assert.match(metadata.licensingWarning, /право використовувати/i);
   const content = resultData(rpc(harness, token, 'sourceContent', {
     source: { provider: 'publicHttps', url: target }, purpose: 'download', maxBytes: pdf.length,
   }));
@@ -6882,6 +6885,8 @@ test('share.google resolves only a safe Google imgres target and rejects an HTML
     source: { provider: 'publicHttps', url: shareUrl },
   }));
   assert.equal(metadata.url, imageUrl);
+  assert.equal(metadata.originUrl, shareUrl);
+  assert.equal(metadata.classification, 'wrapper_file');
   assert.equal(metadata.mimeType, 'image/jpeg');
   const content = resultData(rpc(harness, token, 'sourceContent', {
     source: { provider: 'publicHttps', url: shareUrl }, purpose: 'download', maxBytes: jpeg.length,
@@ -6889,6 +6894,25 @@ test('share.google resolves only a safe Google imgres target and rejects an HTML
   assert.deepEqual(Buffer.from(content.dataBase64Url, 'base64url'), jpeg);
   assert.equal(harness.urlFetchCalls.some(call => call.url === imgresUrl), false,
     'the Google HTML imgres wrapper must never be fetched as attachment content');
+
+  const explicitWrapper = 'https://www.google.com/url?url=' + encodeURIComponent(imageUrl);
+  const explicitMetadata = resultData(rpc(harness, token, 'sourceMetadata', {
+    source: { provider: 'publicHttps', url: explicitWrapper },
+  }));
+  assert.equal(explicitMetadata.url, imageUrl);
+  assert.equal(explicitMetadata.originUrl, explicitWrapper);
+  assert.equal(explicitMetadata.classification, 'wrapper_file');
+  assert.equal(harness.urlFetchCalls.some(call => call.url === explicitWrapper), false,
+    'an explicit Google redirect wrapper must not be fetched as attachment content');
+
+  const googleSearch = 'https://www.google.com/search?tbm=isch&q=books';
+  const searchError = resultFailed(rpc(harness, token, 'sourceMetadata', {
+    source: { provider: 'publicHttps', url: googleSearch },
+  }));
+  assert.equal(searchError.code, 'SOURCE_AMBIGUOUS');
+  assert.match(searchError.message, /сторінка результатів|адресу самого зображення/i);
+  assert.equal(harness.urlFetchCalls.some(call => call.url === googleSearch), false,
+    'an ambiguous Google result page must be classified without fetching its HTML');
 
   const htmlError = resultFailed(rpc(harness, token, 'sourceMetadata', {
     source: { provider: 'publicHttps', url: badShareUrl },
