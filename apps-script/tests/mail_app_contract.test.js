@@ -3323,6 +3323,72 @@ test('nested Gmail labels use a normalized full name and never invent a parent A
   assert.doesNotMatch(uiSource, /parentLabelId|moveToCategory|labelParentApi/);
 });
 
+test('E-04 label controls follow authoritative provider type instead of name or visibility', () => {
+  const normalizeSource = extractUiFunction('normalizeMetadataLabel');
+  const context = vm.createContext({
+    safeId: value => String(value || ''),
+    safeText: (value, fallback = '') => value == null || value === ''
+      ? String(fallback || '')
+      : String(value),
+    safeColor: (value, fallback) => String(value || fallback || ''),
+    AVATAR_COLORS: ['#5b8def'],
+  });
+  vm.runInContext(normalizeSource, context);
+
+  const hiddenSystemLikeUser = context.normalizeMetadataLabel({
+    id: 'Label_inbox_child',
+    name: 'INBOX/Проєкт',
+    type: 'user',
+    canApply: true,
+    canEdit: true,
+    messageListVisibility: 'hide',
+    labelListVisibility: 'labelHide',
+  }, 0);
+  const imapUser = context.normalizeMetadataLabel({
+    id: 'Label_imap_archive',
+    name: '[Imap]/Archive',
+    type: 'user',
+    canApply: true,
+    canEdit: true,
+    labelListVisibility: 'labelShowIfUnread',
+  }, 0);
+  const localizedSystem = context.normalizeMetadataLabel({
+    id: 'INBOX',
+    name: 'Вхідні',
+    type: 'system',
+    canApply: true,
+    canEdit: false,
+  }, 0);
+
+  assert.equal(hiddenSystemLikeUser.type, 'user');
+  assert.equal(hiddenSystemLikeUser.canEdit, true);
+  assert.equal(hiddenSystemLikeUser.labelListVisibility, 'labelHide');
+  assert.equal(hiddenSystemLikeUser.messageListVisibility, 'hide');
+  assert.equal(imapUser.type, 'user');
+  assert.equal(imapUser.canEdit, true);
+  assert.equal(localizedSystem.type, 'system');
+  assert.equal(localizedSystem.canEdit, false);
+  assert.doesNotMatch(normalizeSource, /INBOX|\[Imap\]|startsWith|name\.indexOf/,
+    'client classification must never infer label type from a name');
+
+  const snapshotSource = sourceBetween(
+    '      function applyGmailMetadataSnapshot(value) {',
+    '      function gmailMetadataSettingText(name, section) {'
+  );
+  const navigationSource = sourceBetween(
+    '      function renderNavigation() {',
+    '      function selectedNavigationName() {'
+  );
+  const managerSource = sourceBetween(
+    '      function buildGmailLabelManager(metadata) {',
+    '      function renderGmailMetadata() {'
+  );
+  assert.match(snapshotSource, /label\.type === "user" && label\.canApply/);
+  assert.match(navigationSource, /row\.append\(button, makeGmailLabelManageButton\(label\)\)/);
+  assert.match(managerSource, /metadata\.labels\.filter\(function \(label\) \{ return label\.type === "user"; \}\)/);
+  assert.match(managerSource, /metadata\.labels\.filter\(function \(label\) \{ return label\.type === "system"; \}\)/);
+});
+
 test('ADHD focus is visible, manually assignable, and rule-driven per Gmail account', () => {
   assert.match(uiSource, /id="focusSettingsPanel"/);
   assert.ok(

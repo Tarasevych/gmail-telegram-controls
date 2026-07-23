@@ -244,3 +244,5 @@ A historical report is not rewritten after publication to hide an error. A new i
 | [VR-031](reports/VR-031/README.md) | D-03 Smart, safe URL resolver | `PARTIAL` | `REQ-0035`, `GT-060`, `B1-40`, `RCA-013` |
 
 | [VR-032](reports/VR-032/README.md) | E-03 navigation and actual mailbox context | `PARTIAL` | `REQ-0035`, `GT-061`, `B1-41`, `RCA-014` |
+
+| [VR-033](reports/VR-033/README.md) | E-04 Gmail label-management regression audit | `CONFLICTING` | `REQ-0035`, `GT-027`, `B1-21`, `VR-005` |
