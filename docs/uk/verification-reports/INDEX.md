@@ -220,3 +220,12 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-025/README.md](reports/VR-025/README.md)
 - **Висновок:** production skip і current-source exactly-once обидва доказові, але owner policy суперечлива; release цього delta `BLOCKED` до одного прямого рішення.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-028 — Прямі контракти Google Drive OAuth
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `D-01`, owner-bound one-use state, strict callback envelope, provider isolation, token-free DTO, refresh/generation fail-closed та exact disconnect.
+- **Звіт:** [reports/VR-028/README.md](reports/VR-028/README.md)
+- **Висновок:** source defect підтверджено й мінімально виправлено; focused synthetic matrix є локальним evidence. Native Google/deployed callback і user-visible acceptance лишаються `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

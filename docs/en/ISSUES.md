@@ -502,3 +502,15 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Safety boundary:** no `localStorage`/`sessionStorage`, new account state, RPC, reload, OAuth, or Gmail mutation; the mobile drawer is unchanged.
 - **Verification:** focused Mail App suite `90/90`; the complete suite and documentation/release/privacy gates are publication gates. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
 - **Evidence:** [VR-027](verification-reports/reports/VR-027/README.md)
+
+## GT-057 — Drive OAuth callback did not reject state from another source provider
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-37`
+- **Confirmed root cause:** shared source OAuth state stored `provider`, but the Drive callback did not verify `stateRecord.provider === "drive"` after one-use consumption. Separately, the Drive envelope lacked bounded provider-error and description validation even though the Box contour already had a provider-error allowlist.
+- **Source correction:** the callback now fails closed on state from another provider before token exchange, accepts only a bounded provider error and control-free description, and rejects a description without a provider error.
+- **Behavioral evidence:** the synthetic matrix covers owner binding, exact callback URI/route, hash-only ten-minute one-use state with limit 24, expiry/replay, sanitized denial, strict envelope, wrong provider/user/session, token-free DTOs, fail-closed refresh/generation handling, and exact selected-account revocation.
+- **Safety boundary:** only `.invalid` identities and in-memory provider responses are used. No real Google OAuth, consent, account selection, secret, Gmail, Telegram, staging, production, or release-helper action was started or changed.
+- **Remaining:** native Google provider redirect, deployed callback, real refresh/revocation, and user-visible Mini App acceptance remain `UNVERIFIED`; the overall status is therefore `PARTIAL`.
+- **Evidence:** [VR-028](verification-reports/reports/VR-028/README.md)

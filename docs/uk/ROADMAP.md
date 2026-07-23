@@ -328,3 +328,14 @@ Status: BLOCKED
 - **Ще потрібно:** clean-quota readback, один controlled staging candidate лише за причинного обґрунтування, native acceptance і production promotion лише після успішного staging acceptance.
 - **Доказ:** [GT-054](ISSUES.md), [VR-024](verification-reports/reports/VR-024/README.md).
 - **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).
+
+## B1-37 — Прямі контракти Google Drive OAuth
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Завершено у source:** strict Drive callback envelope, fail-closed provider binding після one-use state consume та збереження чинної owner/account/token-generation ізоляції.
+- **Локальний evidence gate:** focused synthetic test має підтвердити exact route/redirect, bounded hash-only state, replay/expiry, sanitized errors, token-free DTO, refresh failure і відключення лише exact selected Drive account.
+- **Release boundary:** це source-only V3 `D-01`; real Google OAuth, consent, Gmail, Telegram, staging, production та release helper не входять у контур.
+- **Ще потрібно:** native provider redirect, deployed callback, provider refresh/revocation і Mini App acceptance. До такого evidence статус лишається `PARTIAL`.
+- **Доказ:** [GT-057](ISSUES.md), [VR-028](verification-reports/reports/VR-028/README.md).
+- **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).
