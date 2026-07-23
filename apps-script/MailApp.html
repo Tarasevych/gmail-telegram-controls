@@ -8,7 +8,9 @@
   <title>Пошта · Versie 1</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root {
+  :root {
+    --app-viewport-height: var(--tg-viewport-height, 100dvh);
+    --app-viewport-stable-height: var(--tg-viewport-stable-height, var(--app-viewport-height));
       color-scheme: light;
       --bg: #ffffff;
       --rail: #f7f9fc;
@@ -145,14 +147,14 @@
       stroke-linejoin: round;
     }
 
-    .app-shell {
+  .app-shell {
       position: relative;
       display: grid;
       grid-template-columns: var(--rail-w) var(--list-w) minmax(0, 1fr);
       grid-template-rows: var(--topbar-h) minmax(0, 1fr);
       width: 100%;
       height: 100vh;
-      height: 100dvh;
+    height: var(--app-viewport-stable-height, 100dvh);
       overflow: hidden;
       background: var(--bg);
     }
@@ -5303,7 +5305,56 @@
     (function () {
       "use strict";
 
-      var tg = window.Telegram && window.Telegram.WebApp;
+  var tg = window.Telegram && window.Telegram.WebApp;
+
+  /* TELEGRAM_VIEWPORT_BRIDGE_START */
+  var telegramViewportFrame = 0;
+  var telegramViewportBound = false;
+  var pendingTelegramViewportEvent = null;
+
+  function applyTelegramViewportMetrics(webApp, root, event) {
+    if (!webApp || !root || !root.style || typeof root.style.setProperty !== "function") return;
+    var viewportHeight = Number(webApp.viewportHeight);
+    if (Number.isFinite(viewportHeight) && viewportHeight > 0) {
+      root.style.setProperty("--app-viewport-height", viewportHeight + "px");
+    }
+    if (!event || event.isStateStable !== false) {
+      var stableHeight = Number(webApp.viewportStableHeight);
+      if (!(Number.isFinite(stableHeight) && stableHeight > 0)) stableHeight = viewportHeight;
+      if (Number.isFinite(stableHeight) && stableHeight > 0) {
+        root.style.setProperty("--app-viewport-stable-height", stableHeight + "px");
+      }
+    }
+  }
+
+  function scheduleTelegramViewportSync(event) {
+    pendingTelegramViewportEvent = event || {};
+    if (telegramViewportFrame) return;
+    var scheduleFrame = typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame.bind(window)
+      : function (callback) { return window.setTimeout(callback, 0); };
+    telegramViewportFrame = scheduleFrame(function () {
+      telegramViewportFrame = 0;
+      var nextEvent = pendingTelegramViewportEvent;
+      pendingTelegramViewportEvent = null;
+      applyTelegramViewportMetrics(tg, document.documentElement, nextEvent);
+    });
+  }
+
+  function bindTelegramViewportEvents() {
+    if (telegramViewportBound) return;
+    telegramViewportBound = true;
+    scheduleTelegramViewportSync({ isStateStable: true });
+    if (tg && typeof tg.onEvent === "function") {
+      tg.onEvent("viewportChanged", scheduleTelegramViewportSync);
+      tg.onEvent("safeAreaChanged", scheduleTelegramViewportSync);
+      tg.onEvent("contentSafeAreaChanged", scheduleTelegramViewportSync);
+    }
+    if (typeof window.addEventListener === "function") {
+      window.addEventListener("resize", scheduleTelegramViewportSync, { passive: true });
+    }
+  }
+  /* TELEGRAM_VIEWPORT_BRIDGE_END */
       var MAILBOX_BRIDGE_URL = "https://tarasevych.github.io/gmail-telegram-controls/?action=mailbox";
       var TELEGRAM_SECURE_SESSION_KEY = "gmail_telegram_app_refresh_v1";
       // Attachment bytes are large enough to terminate a mobile Telegram
@@ -20958,10 +21009,11 @@
 
       cacheElements();
       bindEvents();
-      p0ExposeDiagnostics();
-      applyTheme();
-      if (tg && typeof tg.onEvent === "function") tg.onEvent("themeChanged", applyTheme);
-      boot();
+  p0ExposeDiagnostics();
+  applyTheme();
+  bindTelegramViewportEvents();
+  if (tg && typeof tg.onEvent === "function") tg.onEvent("themeChanged", applyTheme);
+  boot();
     })();
   </script>
 </body>

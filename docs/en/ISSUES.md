@@ -479,3 +479,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Verification:** focused runtime-budget contracts `9/9`; complete Apps Script suite `593/593`; bilingual, knowledge-hub, verification-report, release-state, diff, and added-line sensitive-pattern gates pass.
 - **Remaining:** Apps Script documents per-user reset 24 hours after the first request but exposes no exact reset timestamp. Live quota recovery, a clean native A/B window, staging, and production acceptance remain `UNVERIFIED`.
 - **Evidence:** [VR-024](verification-reports/reports/VR-024/README.md)
+
+## GT-055 — Layout did not react to Telegram Mini App viewport events
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-35`
+- **Root cause:** the client called `Telegram.WebApp.expand()` but did not subscribe to `viewportChanged` or safe-area events; the app shell relied only on `100dvh`.
+- **Source correction:** one idempotent bridge coalesces events through an animation frame, separates live height from stable height, and feeds the stable height to the app shell through a CSS custom property.
+- **Safety boundary:** the bridge does not start another bootstrap, render, RPC, reload, OAuth, or Gmail mutation.
+- **Verification:** the automated VM contract and complete Apps Script suite must pass before publication; native Telegram Desktop/mobile acceptance remains `UNVERIFIED`.
+- **Evidence:** [VR-026](verification-reports/reports/VR-026/README.md)

@@ -30,6 +30,15 @@ Source request: `REQ-0004`.
 - **Примітка:** shared machine index залишається на VR-003; VR-005 не змінює machine-report contract.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
 
+## VR-026 — Події viewport Telegram Mini App
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** V3 `E-01`, Telegram viewport/safe-area event bridge, stable-height layout, behavioral source contract і source-only release boundary.
+- **Звіт:** [reports/VR-026/README.md](reports/VR-026/README.md)
+- **Висновок:** source correction підготовлено з behavioral contract; native Desktop/mobile keyboard, resize і safe-area acceptance лишається `UNVERIFIED`.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
 ## VR-007 — v59 release attempt і exact rollback
 
 - **Статус:** PARTIAL

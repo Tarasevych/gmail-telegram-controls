@@ -30,6 +30,15 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Note:** the shared machine index remains at VR-003; VR-005 does not change the machine-report contract.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
 
+## VR-026 — Telegram Mini App viewport events
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** V3 `E-01`, the Telegram viewport/safe-area event bridge, stable-height layout, the behavioral source contract, and the source-only release boundary.
+- **Report:** [reports/VR-026/README.md](reports/VR-026/README.md)
+- **Conclusion:** the source correction is prepared with a behavioral contract; native Desktop/mobile keyboard, resize, and safe-area acceptance remains `UNVERIFIED`.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
 ## VR-007 — v59 release attempt and exact rollback
 
 - **Status:** PARTIAL

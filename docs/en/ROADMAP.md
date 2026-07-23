@@ -149,6 +149,16 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Tests:** focused `88/88`; final cumulative suite `505/505`.
 - **Evidence:** [GT-031](ISSUES.md), [VR-013](verification-reports/reports/VR-013/README.md). Source requests: `REQ-0032` and `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-35 — Telegram Mini App viewport events
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Completed in source:** idempotent subscriptions to `viewportChanged`, `safeAreaChanged`, and `contentSafeAreaChanged`; frame coalescing; live/stable height separation; app-shell sizing through the stable Telegram viewport.
+- **Local acceptance:** the automated behavioral contract and complete suite are publication gates.
+- **Release boundary:** source-only cumulative Versie 1; production v65, staging, menu, OAuth, and Gmail are unchanged.
+- **Still required:** native Telegram Desktop/mobile acceptance with keyboard resize, safe-area, and a narrow viewport after the shared quota blocker and release-policy conflict are cleared.
+- **Evidence:** [GT-055](ISSUES.md), [VR-026](verification-reports/reports/VR-026/README.md).
 ## B1-25 — P0 fast navigation, bounded cache, drafts, typography and client updates
 
 - **Status:** PARTIAL
