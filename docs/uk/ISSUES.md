@@ -226,3 +226,54 @@
 - **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production лишається v65 до hash-pinned staging v66.
 - **Доказ:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).
+
+## GT-040 — ONE-SECOND warm-launch performance
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Доказ:** [VR-016](verification-reports/reports/VR-016/README.md)
+- Локальний попередній trace: cold `898 ms`, B `431 ms`, cached A `409 ms`.
+- Production p95 від Telegram button до реального interactive cached Inbox ще `UNVERIFIED`; потрібні 10 native staging launches.
+
+## GT-041 — Дубльований launch/auth pipeline
+
+- **Статус:** PARTIAL
+- **Root cause:** bridge handoff, статичний MailApp overlay і повторний `setBootLoading()` показували однаковий connection screen.
+- **Source fix:** hidden credentialless handoff, single-flight form submit, shared in-flight `boot()` Promise і відсутність boot overlay у звичайному validated launch.
+- **Доказ:** launch contract `5/5`; native staging acceptance ще `UNVERIFIED`.
+
+## GT-042 — Offline persistent cache
+
+- **Статус:** PARTIAL
+- Чинний bounded/versioned IndexedDB cache, LRU і account namespaces перевірені локально.
+- Приватне читання лишається після server bootstrap/allowlist. Справжній offline private Inbox до bootstrap є `BLOCKED` без окремого device-bound unlock contract.
+
+## GT-043 — Фоновий prefetch та incremental sync
+
+- **Статус:** PARTIAL
+- Warm list/thread stale-while-revalidate і Gmail History boundary вже існують у cumulative source.
+- Closed-app Background Sync не заявляється: він залежить від Service Worker і не має універсальної WebView підтримки. Native arrival/prefetch trace лишається `UNVERIFIED`.
+
+## GT-044 — Session/cache locking
+
+- **Статус:** PARTIAL
+- Cache namespaces fail closed за Telegram/Gmail connection IDs; storage warmup не читає приватних records.
+- Device-bound unlock для показу приватного cache до server bootstrap не реалізований і потребує окремого security decision.
+
+## GT-045 — Чернетки
+
+- **Статус:** PARTIAL
+- Локальний recovery, serialized autosave, stable draft operation IDs і Gmail readback contracts проходять локально.
+- Cross-session/device continuation, offline conflict і native restart acceptance лишаються `UNVERIFIED`.
+
+## GT-046 — Version-aware client update
+
+- **Статус:** PARTIAL
+- One-reload/no-loop source guard перевірений; новий source marker — v67 після preserved immutable v66.
+- Реальний production transition не перевіряється до staging pass і не є підставою для автоматичного promotion.
+
+## GT-047 — Multi-account cache isolation та switch
+
+- **Статус:** CONFLICTING
+- Локальні namespace/switch contracts проходять, але v66 staging не повернув UI marker із secondary до primary account.
+- Promotion заборонений до native bidirectional switch acceptance без OAuth і без змішування зон.

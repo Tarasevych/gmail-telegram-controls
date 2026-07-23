@@ -5297,7 +5297,7 @@
     </div>
   </div>
 
-  <div class="boot-state" id="bootState" role="status" aria-live="polite">
+  <div class="boot-state" id="bootState" role="status" aria-live="polite" hidden>
     <div class="state-content">
       <div class="spinner" aria-hidden="true"></div>
       <h2>Відкриваю пошту</h2>
@@ -8820,8 +8820,9 @@
       }
 
       var P0_CACHE_SCHEMA = 1;
-      var P0_CLIENT_RELEASE_VERSION = 66;
-      var P0_CLIENT_RELEASE_ID = "Versie-1-v66-p0";
+      var P0_PREVIOUS_IMMUTABLE_VERSION = 66;
+      var P0_CLIENT_RELEASE_VERSION = 67;
+      var P0_CLIENT_RELEASE_ID = "Versie-1-v67-p0";
       var P0_RELEASE_MANIFEST_URL = "https://raw.githubusercontent.com/Tarasevych/gmail-telegram-controls/main/docs/release-state.json";
       var P0_CACHE_MAX_RECORDS = 120;
       var P0_CACHE_MAX_BYTES = 4 * 1024 * 1024;
@@ -17890,8 +17891,38 @@
         }
       }
 
+      var launchBootPromise = null;
+
       async function boot() {
-        setBootLoading();
+        var launchTrace = window.__gtLaunchTrace || (window.__gtLaunchTrace = {
+          startedAt: typeof performance !== "undefined" ? performance.now() : Date.now(),
+          bootCalls: 0,
+          duplicateBootCalls: 0,
+          sessionReadyAt: 0,
+          interactiveAt: 0,
+          storageWarmup: null
+        });
+        launchTrace.bootCalls += 1;
+        if (launchBootPromise) {
+          launchTrace.duplicateBootCalls += 1;
+          return launchBootPromise;
+        }
+        launchBootPromise = runBootPipeline();
+        try {
+          return await launchBootPromise;
+        } finally {
+          launchBootPromise = null;
+        }
+      }
+
+      async function runBootPipeline() {
+        var launchTrace = window.__gtLaunchTrace;
+        bootState.hidden = true;
+        if (!launchTrace.storageWarmup && typeof p0OpenDatabase === "function") {
+          launchTrace.storageWarmup = Promise.resolve()
+            .then(function warmPersistentStorage() { return p0OpenDatabase(); })
+            .catch(function ignoreStorageWarmupFailure() { return null; });
+        }
         renderMailContext({ status: "loading" });
         applyTheme();
         try {
@@ -17926,6 +17957,7 @@
             bootstrap = await rpc({ op: "bootstrap" });
           }
           initializeFromBootstrap(bootstrap || {});
+          launchTrace.sessionReadyAt = typeof performance !== "undefined" ? performance.now() : Date.now();
           await p0HydratePersistentState();
           var savedAttention = null;
           if (!state.needsGoogleConnection && state.account && state.account.id) {
@@ -17965,6 +17997,7 @@
             return;
           }
           await loadThreads(true);
+          launchTrace.interactiveAt = typeof performance !== "undefined" ? performance.now() : Date.now();
           if (state.backlogRescue.active) await loadBacklogRescue("load", { silent: true });
           state.routeReady = true;
           p0StartBackgroundWork();

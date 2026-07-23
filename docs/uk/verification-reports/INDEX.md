@@ -110,3 +110,14 @@ Source request: `REQ-0004`.
 - **Звіт:** [reports/VR-015/README.md](reports/VR-015/README.md)
 - **Висновок:** exclusion у production v65 verified, source correction пройшов `161/161`; live acceptance потребує cumulative v66.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+## VR-016 — P0 ONE-SECOND launch та offline-first межа
+
+- **Статус:** PARTIAL
+- **Дата:** 2026-07-23
+- **Покриття:** v66 safe terminal state, duplicate launch root cause, bridge/boot single-flight source correction, cache security ordering, platform boundary та v67 release gates.
+- **Звіт:** [reports/VR-016/README.md](reports/VR-016/README.md)
+- **Висновок:** local contracts `5/5 + 14/14 + 88/88` зелені; production лишається v65, а native one-second/offline/account-switch acceptance ще не виконано.
+- **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)
+
+- **VR-016 final local gate:** cumulative `518/518` і всі documentation validators пройшли.

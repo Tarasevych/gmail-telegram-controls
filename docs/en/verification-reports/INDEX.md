@@ -110,3 +110,14 @@ A historical report is not rewritten after publication to hide an error. A new i
 - **Report:** [reports/VR-015/README.md](reports/VR-015/README.md)
 - **Conclusion:** the production-v65 exclusion is verified and the source correction passed `161/161`; live acceptance requires cumulative v66.
 - **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+## VR-016 — P0 ONE-SECOND launch and offline-first boundary
+
+- **Status:** PARTIAL
+- **Date:** 2026-07-23
+- **Coverage:** v66 safe terminal state, duplicate-launch root cause, bridge/boot single-flight source correction, cache security ordering, platform boundary and v67 release gates.
+- **Report:** [reports/VR-016/README.md](reports/VR-016/README.md)
+- **Conclusion:** local contracts `5/5 + 14/14 + 88/88` are green; production remains v65 and native one-second/offline/account-switch acceptance has not run.
+- **Українське дзеркало:** [docs/uk/verification-reports/INDEX.md](../../uk/verification-reports/INDEX.md)
+
+- **VR-016 final local gate:** cumulative `518/518` and every documentation validator passed.

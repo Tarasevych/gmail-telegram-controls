@@ -62,34 +62,8 @@ test('v66 helper is fail closed and preserves at-most-once release mutations', (
   assert.equal((promote.match(/Invoke-GoogleJson PUT \$stableUri/g) || []).length, 1);
   assert.match(helper, /sourceMainSha=\$SourceMainSha/);
 });
-{
-  const v66Assert = require('node:assert/strict');
-  const v66Crypto = require('node:crypto');
-  const v66Fs = require('node:fs');
-  const v66Path = require('node:path');
-  const v66Test = require('node:test');
-  const v66Root = v66Path.resolve(__dirname, '..');
-  const v66Expected = {
-    Code: '12aa579e7659f6e0bdc8407d8f7fffb9bce00fc9d439662beced08bb6908f7b1',
-    MultiAccount: '8d07e8b9f0f524ed5cedccbb8bfecbb547c93a34eda8ef876e40776d6b470f10',
-    MailClient: 'a04b56d4955ba72d46a7fedb7e48b837cd0737da87a6c720281472aa724c5a06',
-    MailApp: 'dca3b0a8f97d7ed3b4747043e9592b9c331f5f60611687d6e8ffda8823debb43',
-    appsscript: '354ad159bcd81637d9abf7711cfc675b192ac373317744cf90376f7b14f4edc9',
-  };
-  const v66Extensions = {Code: 'gs', MultiAccount: 'gs', MailClient: 'gs', MailApp: 'html', appsscript: 'json'};
-
-  function v66Hash(name) {
-    const source = v66Fs.readFileSync(v66Path.join(v66Root, name + '.' + v66Extensions[name]), 'utf8')
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n');
-    return v66Crypto.createHash('sha256').update(source, 'utf8').digest('hex');
-  }
-
-  v66Test('v66 helper pins the exact merged cumulative source and client marker', () => {
-    for (const [name, hash] of Object.entries(v66Expected)) {
-      v66Assert.equal(v66Hash(name), hash, name);
-    }
-    const mailApp = v66Fs.readFileSync(v66Path.join(v66Root, 'MailApp.html'), 'utf8');
-    v66Assert.match(mailApp, /Versie-1-v66-p0/);
-  });
-}
+test('v66 history remains pinned without binding later mutable source', () => {
+  assert.match(helper, /\$CandidateVersion\s*=\s*66\b/);
+  assert.ok(helper.includes(expectedCandidate.MailApp));
+  assert.doesNotMatch(helper, /\$CandidateVersion\s*=\s*67\b/);
+});

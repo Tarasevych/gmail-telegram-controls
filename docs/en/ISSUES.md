@@ -226,3 +226,54 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Release boundary:** fix merge `a6ba4d07feaeb7e9369b5e64860e1c3acd57048b`; production remains v65 until hash-pinned v66 staging passes.
 - **Evidence:** [VR-015](verification-reports/reports/VR-015/README.md). Source request: `REQ-0033`.
 - **Українське дзеркало:** [docs/uk/ISSUES.md](../uk/ISSUES.md).
+
+## GT-040 — ONE-SECOND warm-launch performance
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0034`
+- **Evidence:** [VR-016](verification-reports/reports/VR-016/README.md)
+- Prior local trace: cold `898 ms`, B `431 ms`, cached A `409 ms`.
+- Production p95 from Telegram button to a real interactive cached Inbox remains `UNVERIFIED`; ten native staging launches are required.
+
+## GT-041 — Duplicate launch/auth pipeline
+
+- **Status:** PARTIAL
+- **Root cause:** the bridge handoff, static MailApp overlay and repeated `setBootLoading()` displayed the same connection screen.
+- **Source fix:** hidden credentialless handoff, single-flight form submission, a shared in-flight `boot()` Promise and no boot overlay during an ordinary validated launch.
+- **Evidence:** launch contract `5/5`; native staging acceptance remains `UNVERIFIED`.
+
+## GT-042 — Offline persistent cache
+
+- **Status:** PARTIAL
+- The existing bounded/versioned IndexedDB cache, LRU and account namespaces are locally verified.
+- Private reads remain behind server bootstrap/allowlist. A true offline private Inbox before bootstrap is `BLOCKED` without a separate device-bound unlock contract.
+
+## GT-043 — Background prefetch and incremental sync
+
+- **Status:** PARTIAL
+- Warm list/thread stale-while-revalidate and the Gmail History boundary already exist in cumulative source.
+- Closed-app Background Sync is not claimed: it depends on a Service Worker and lacks universal WebView support. Native arrival/prefetch evidence remains `UNVERIFIED`.
+
+## GT-044 — Session/cache locking
+
+- **Status:** PARTIAL
+- Cache namespaces fail closed by Telegram/Gmail connection IDs; storage warmup reads no private records.
+- Device-bound unlock for private cache display before server bootstrap is not implemented and requires a separate security decision.
+
+## GT-045 — Drafts
+
+- **Status:** PARTIAL
+- Local recovery, serialized autosave, stable draft operation IDs and Gmail readback contracts pass locally.
+- Cross-session/device continuation, offline conflicts and native restart acceptance remain `UNVERIFIED`.
+
+## GT-046 — Version-aware client update
+
+- **Status:** PARTIAL
+- The one-reload/no-loop source guard is verified; the new source marker is v67 after preserved immutable v66.
+- A real production transition is not tested before staging pass and is not grounds for automatic promotion.
+
+## GT-047 — Multi-account cache isolation and switching
+
+- **Status:** CONFLICTING
+- Local namespace/switch contracts pass, but v66 staging did not return the UI marker from the secondary to the primary account.
+- Promotion is forbidden until native bidirectional switching passes without OAuth or zone mixing.

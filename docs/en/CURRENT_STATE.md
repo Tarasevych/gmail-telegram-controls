@@ -41,3 +41,11 @@
 - [Historical v63 release and GT-030 closure report](reports/VERSIE_001_V63_RELEASE_AND_GT030_CLOSURE_2026-07-22.md)
 - [Cumulative Versie 1 release history](releases/VERSIE-001-2026-07-19.md)
 - [Machine-readable release state](../release-state.json)
+
+## P0 ONE-SECOND boundary — 2026-07-23
+
+- Production and HEAD remain immutable v65; staging is `0`.
+- Immutable v66 is preserved historically but was not promoted because bidirectional account-switch acceptance failed.
+- The active source delta carries marker v67; no deployment exists yet.
+- Duplicate-launch root cause and local source correction are VERIFIED; native latency/offline acceptance is PARTIAL/UNVERIFIED.
+- Canonical evidence: [VR-016](verification-reports/reports/VR-016/README.md).

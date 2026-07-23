@@ -6,8 +6,25 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org https://script.google.com https://script.googleusercontent.com; style-src 'unsafe-inline'; img-src data:; form-action https://script.google.com https://script.googleusercontent.com; base-uri 'none'; object-src 'none'; connect-src 'none'">
   <title>Gmail сповіщення Павла</title>
+  <script>
+    (function prepareMailboxHandoff() {
+      try {
+        if (new URLSearchParams(window.location.search).get('action') !== 'mailbox') return;
+        document.documentElement.setAttribute('data-mailbox-handoff', 'pending');
+        window.__gtMailboxHandoff = { submitted: false };
+        window.setTimeout(function revealFailedHandoff() {
+          if (!window.__gtMailboxHandoff || !window.__gtMailboxHandoff.submitted) {
+            document.documentElement.removeAttribute('data-mailbox-handoff');
+          }
+        }, 1200);
+      } catch (_error) {
+        document.documentElement.removeAttribute('data-mailbox-handoff');
+      }
+    }());
+  </script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    html[data-mailbox-handoff="pending"] #card { visibility: hidden; }
     :root {
       color-scheme: light dark;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -124,7 +141,7 @@
       let timeoutId = 0;
 
       const titles = {
-        mailbox: ['Відкриваю пошту', 'Захищено підключаю Gmail до вашого Telegram…'],
+        mailbox: ['Пошта', 'Передаю перевірений запуск до Mini App…'],
         check: ['Перевіряю Gmail', 'Шукаю нові листи та готую повідомлення…'],
         status: ['Перевіряю стан', 'Збираю актуальний статус бота…'],
         menu: ['Відкриваю меню', 'Готую кнопки керування в чаті…'],
@@ -181,10 +198,13 @@
       tg.expand();
 
       if (action === 'mailbox') {
+        if (started) return;
+        const handoffState = window.__gtMailboxHandoff || (window.__gtMailboxHandoff = { submitted: false });
         if (!tg.initData || tg.initData.length > 16384) {
           finish({ ok: false, message: 'Telegram не передав захищену команду. Закрийте вікно та відкрийте пошту ще раз.' });
           return;
         }
+        started = true;
 
         const initData = tg.initData;
         const sourceRoute = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
@@ -226,7 +246,15 @@
         addField('init_data', initData);
         addField('route', routeValue);
         document.body.appendChild(form);
-        form.submit();
+        handoffState.submitted = true;
+        try {
+          form.submit();
+        } catch (_error) {
+          started = false;
+          handoffState.submitted = false;
+          document.documentElement.removeAttribute('data-mailbox-handoff');
+          finish({ ok: false, message: 'Не вдалося передати захищений запуск. Спробуйте ще раз.' });
+        }
         return;
       }
 
