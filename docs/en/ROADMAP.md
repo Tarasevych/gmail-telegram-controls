@@ -225,3 +225,15 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Release boundary:** source commit `1d7c6c1`; no immutable, staging, production, OAuth, Gmail, or Telegram state changed in this contour.
 - **Evidence:** [GT-050](ISSUES.md), [VR-020](verification-reports/reports/VR-020/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
+
+## B1-31 — Honest shared transfer-manager foundation
+
+- **Status:** PARTIAL.
+- **Source request:** `REQ-0035`; V3 task `B-03`.
+- **Locally VERIFIED:** one store and canonical lifecycle, at most three active runners, actual-byte progress with speed/ETA for `FileReader`, indeterminate RPC status without fabricated percent, queued/running cancel contracts, stable-ID retry, aggregate progress, and an accessible movable chip independent of composer minimize.
+- **Integrated lanes:** local compose attachments, incoming attachment preview/download fetch, and Drive/Box/public provider preview.
+- **Gates:** focused transfer/MailApp contracts `99/99`, complete Apps Script suite `551/551`, clean diff check, and `0` secret-signature matches.
+- **Still required:** thread detail, draft persistence and URL-import integration; resumable server session and restart recovery; native slow/stalled network, minimize, cancel, retry, and provider readback.
+- **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box state changed.
+- **Evidence:** [GT-051](ISSUES.md), [VR-021](verification-reports/reports/VR-021/README.md).
+- **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).

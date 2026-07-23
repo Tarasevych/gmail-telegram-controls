@@ -386,3 +386,15 @@ The complete report-derived risk and unresolved-conflict list is in [Problems](k
 - **Local evidence:** focused reader contracts `8/8`, related MailApp/launch/reader contracts `101/101`, complete Apps Script suite `540/540`, clean `git diff --check`, and `0` secret-signature matches in the changed files.
 - **Release boundary:** source commit `1d7c6c1`; no Apps Script staging, production promotion, OAuth, Gmail, or Telegram mutation was performed. Native desktop/mobile, long HTML with real remote-image layout changes, and production acceptance remain `UNVERIFIED`.
 - **Evidence:** [VR-020](verification-reports/reports/VR-020/README.md)
+
+## GT-051 — Transfer progress used fragmented stores and inconsistent truth boundaries
+
+- **Status:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-31` / V3 `B-03`
+- **Root cause:** local device files had a compose-only `FileReader` job map and byte progress, while incoming attachment and provider previews used independent blocking copy, spinners, and snackbars. Local reads were started without a shared concurrency gate, and Apps Script RPC lanes cannot expose trustworthy transport-byte callbacks or real abort.
+- **Source fix:** one underlying transfer store now carries compose and global task domains through a canonical lifecycle, a bounded scheduler of three runners, capability-aware cancel/retry/pause/resume controls, honest aggregate status, and a movable accessible global chip. Actual `FileReader` callbacks drive bytes, percent, smoothed speed, and ETA; Apps Script RPC remains explicitly indeterminate. Compose local reads, incoming attachment fetch, and Drive/Box/public provider preview use this shared foundation.
+- **Local evidence:** transfer-manager and MailApp contracts `99/99`, complete Apps Script suite `551/551`, clean `git diff --check`, and `0` secret-signature matches in changed files.
+- **Remaining boundary:** thread-detail loading, final draft attachment persistence, URL-import transfer, server-resumable restart recovery, real RPC abort, and native slow-network/minimize acceptance are `UNVERIFIED` or not yet integrated. No synthetic percentage or closed-WebView continuation is claimed.
+- **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box mutation was performed.
+- **Evidence:** [VR-021](verification-reports/reports/VR-021/README.md)
