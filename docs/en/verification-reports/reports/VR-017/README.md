@@ -8,13 +8,14 @@
 - **Verification framework:** `REQ-0004`
 - **Product task:** `B1-27`
 - **Issues:** `GT-040–GT-047`
-- **Release boundary:** production/HEAD v65, staging `0`; immutable v67 is preserved; source marker v68 is not yet an immutable release
+- **Release boundary:** production/HEAD v65, staging `0`; immutable v67 and v68 are preserved; v68 was not promoted and the journal is `abandoned`
 
 ## Recovery boundary
 
 - The atomic v67 acceptance operation ended before this work: the production menu was restored, exact staging was removed, immutable v67 was preserved, and no promotion ran.
 - V3 product work runs in a separate worktree/branch and does not change Gmail OAuth, Telegram zones, mail, or protected properties.
 - `REQ-0035` was registered before the product change; relevant instructions and the authority index were corrected through separate normal PRs.
+- The cumulative source was published and exact hash-pinned tooling created immutable v68 plus one owner-only staging deployment. After incomplete native acceptance, the menu returned to production and journal-bound `AbandonStaging` removed the exact staging deployment without changing production v65.
 
 ## Verified root causes
 
@@ -49,15 +50,17 @@
 | VR-017-04 | Cache namespace is isolated by an opaque Telegram-owner scope and stable Gmail connection ID. | VERIFIED | `MailClient.gs`, namespace VM contracts |
 | VR-017-05 | The cache is bounded/versioned and the new delta stores no token/signature. | VERIFIED | source contracts and added-lines scan with `0` high-risk signatures |
 | VR-017-06 | Prefetch does not change read state. | VERIFIED | source contract: no `markRead`/mutation in prefetch |
-| VR-017-07 | Existing draft, label, navigation, multi-account, and version-update contracts did not regress locally. | VERIFIED | cumulative suite `526/526` |
+| VR-017-07 | Existing draft, label, navigation, multi-account, and version-update contracts did not regress locally. | VERIFIED | final cumulative suite `531/531` |
 | VR-017-08 | Targeted P0/release tests pass. | VERIFIED | `25/25` |
 | VR-017-09 | The MailApp contract passes. | VERIFIED | `88/88` |
 | VR-017-10 | Bilingual, knowledge-hub, verification-report, and release-state validators pass. | VERIFIED | local validator output |
-| VR-017-11 | Native warm-launch p95 `≤1000 ms` and ten consecutive launches are proven. | UNVERIFIED | no v68 staging exists |
+| VR-017-11 | Native warm-launch p95 `≤1000 ms` and ten consecutive launches are proven. | UNVERIFIED | the first control point near `1.2 s` showed the app shell but not a usable cached Inbox; desktop-control overhead cannot establish a valid p95 |
 | VR-017-12 | A private offline Inbox is available before server bootstrap without a device-bound secret. | BLOCKED | current security/origin boundary |
-| VR-017-13 | Native prefetch, drafts, bidirectional switching, and shared-mode isolation are proven. | UNVERIFIED | owner-only staging acceptance is pending |
+| VR-017-13 | Native prefetch, drafts, bidirectional switching, and shared-mode isolation are proven. | PARTIAL | primary-secondary-primary and the shared context across three roots are VERIFIED without OAuth; prefetch/drafts/offline locking remain UNVERIFIED |
 | VR-017-14 | A production one-reload/no-loop v67/v68 transition is proven. | UNVERIFIED | v68 was not promoted |
-| VR-017-15 | Immutable v67 remains unchanged; the new cumulative source uses marker v68. | VERIFIED | v67 helper/history is unchanged |
+| VR-017-15 | Immutable v67 remains unchanged and the cumulative source is recorded separately as immutable v68. | VERIFIED | exact hash-pinned helper and authenticated Apps Script readback |
+| VR-017-16 | Two observed native launches showed no repeated connection overlay and no new OAuth. | PARTIAL | owner-only Telegram Desktop trace; the ten-launch requirement is still incomplete |
+| VR-017-17 | The release ended fail-closed without changing production. | VERIFIED | production v65, production owner menu, staging `0`, immutable v68 retained, journal `abandoned`; PR #62 merge `825d5be7bd0032a72b18a5b6ed1a2e57aeda7a71` |
 
 ## Platform boundary
 
@@ -81,4 +84,4 @@
 
 ## Release decision
 
-The local source/test gate passed, but native acceptance is absent. After merge, create a separate exact hash-pinned immutable v68 helper, pass `PreflightOnly`, and create one owner-only staging deployment. Production promotion is forbidden until the critical native gates are VERIFIED; v65 remains rollback-safe production.
+Source, release-helper, CI, and partial native acceptance passed. v68 is an immutable historical candidate, but production promotion did not run because a real cached Inbox within `≤1000 ms`, ten launches, offline private mail, native prefetch, and draft recovery were not proven. The exact staging deployment was removed fail-closed; v65 remains rollback-safe production.

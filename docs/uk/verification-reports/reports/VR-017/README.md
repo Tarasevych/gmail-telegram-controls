@@ -8,13 +8,14 @@
 - **Verification framework:** `REQ-0004`
 - **Product task:** `B1-27`
 - **Issues:** `GT-040–GT-047`
-- **Release boundary:** production/HEAD v65, staging `0`; immutable v67 збережено; source marker v68 ще не є immutable release
+- **Release boundary:** production/HEAD v65, staging `0`; immutable v67 і v68 збережено; v68 не просувався, journal `abandoned`
 
 ## Recovery boundary
 
 - Атомарна v67 acceptance-операція завершилася до цієї роботи: production menu відновлено, exact staging видалено, immutable v67 збережено, promotion не виконувався.
 - V3 product work виконується в окремому worktree/branch і не змінює Gmail OAuth, Telegram zone, листи або protected properties.
 - `REQ-0035` зареєстровано до product change; relevant instructions і authority index були виправлені окремими normal PR.
+- Cumulative source опубліковано, immutable v68 і один owner-only staging створено з exact hash-pinned helper. Після неповного native acceptance menu повернуто на production, exact staging видалено через journal-bound `AbandonStaging`, production v65 не змінювався.
 
 ## Підтверджені першопричини
 
@@ -49,15 +50,17 @@
 | VR-017-04 | Cache namespace ізольовано opaque Telegram-owner scope та stable Gmail connection ID. | VERIFIED | `MailClient.gs`, namespace VM contracts |
 | VR-017-05 | Cache bounded/versioned і не зберігає token/signature у новому delta. | VERIFIED | source contracts і added-lines scan `0` high-risk signatures |
 | VR-017-06 | Prefetch не змінює read state. | VERIFIED | source contract: відсутні `markRead`/mutation у prefetch |
-| VR-017-07 | Existing drafts, labels, navigation, multi-account і version-update contracts не регресували локально. | VERIFIED | cumulative suite `526/526` |
+| VR-017-07 | Existing drafts, labels, navigation, multi-account і version-update contracts не регресували локально. | VERIFIED | final cumulative suite `531/531` |
 | VR-017-08 | Targeted P0/release tests проходять. | VERIFIED | `25/25` |
 | VR-017-09 | MailApp contract проходить. | VERIFIED | `88/88` |
 | VR-017-10 | Bilingual, knowledge-hub, verification-report і release-state validators проходять. | VERIFIED | local validator output |
-| VR-017-11 | Native warm-launch p95 `≤1000 ms` і десять послідовних запусків доведені. | UNVERIFIED | staging v68 ще не створено |
+| VR-017-11 | Native warm-launch p95 `≤1000 ms` і десять послідовних запусків доведені. | UNVERIFIED | під час першої контрольної точки близько `1.2 s` був видимий app shell, але не придатний cached Inbox; desktop-control overhead не дає валідного p95 |
 | VR-017-12 | Приватний offline Inbox до server bootstrap доступний без device-bound secret. | BLOCKED | чинна security/origin boundary |
-| VR-017-13 | Native prefetch, drafts, bidirectional switching і shared-mode isolation доведені. | UNVERIFIED | owner-only staging acceptance очікується |
+| VR-017-13 | Native prefetch, drafts, bidirectional switching і shared-mode isolation доведені. | PARTIAL | primary-secondary-primary і shared context для трьох roots VERIFIED без OAuth; prefetch/drafts/offline lock лишаються UNVERIFIED |
 | VR-017-14 | Production one-reload/no-loop transition v67/v68 доведений. | UNVERIFIED | v68 не promoted |
-| VR-017-15 | Immutable v67 лишився незмінним; новий cumulative source має marker v68. | VERIFIED | v67 helper/history не змінено |
+| VR-017-15 | Immutable v67 лишився незмінним; cumulative source зафіксовано окремим immutable v68. | VERIFIED | exact hash-pinned helper і authenticated Apps Script readback |
+| VR-017-16 | Два спостережені native launches не показали повторного connection overlay або нового OAuth. | PARTIAL | owner-only Telegram Desktop trace; вимога десяти запусків ще не виконана |
+| VR-017-17 | Release завершено fail-closed без зміни production. | VERIFIED | production v65, owner menu production, staging `0`, immutable v68 retained, journal `abandoned`; PR #62 merge `825d5be7bd0032a72b18a5b6ed1a2e57aeda7a71` |
 
 ## Платформна межа
 
@@ -81,4 +84,4 @@
 
 ## Release decision
 
-Локальний source/test gate пройдено, але native acceptance відсутній. Після merge необхідно окремо створити exact hash-pinned immutable v68 helper, пройти `PreflightOnly` і один owner-only staging. Production promotion заборонений до VERIFIED critical native gates; v65 лишається rollback-safe production.
+Source, release-helper, CI і частковий native acceptance пройдено. v68 став immutable historical candidate, але production promotion не виконувався: реальний cached Inbox `≤1000 ms`, десять запусків, offline private-mail, native prefetch і draft recovery не доведено. Exact staging видалено fail-closed; v65 лишається rollback-safe production.

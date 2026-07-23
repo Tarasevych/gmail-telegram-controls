@@ -126,7 +126,7 @@ Source request: `REQ-0004`.
 
 - **Статус:** PARTIAL
 - **Дата:** 2026-07-23
-- **Покриття:** REQ-0035 recovery boundary, confirmed v67 source defects, v68 code correction, owner/account cache isolation, local/CI gates, platform limits і release gate.
+- **Покриття:** REQ-0035 recovery boundary, confirmed v67 source defects, immutable v68 code correction, owner/account cache isolation, local/CI gates, owner-only native staging, platform limits і fail-closed abandon.
 - **Звіт:** [reports/VR-017/README.md](reports/VR-017/README.md)
-- **Висновок:** source/test evidence verified у локальному scope; production лишається v65, staging `0`, immutable v67 не переписано, а native one-second/offline/drafts/switch acceptance ще не виконано.
+- **Висновок:** final suite `531/531`; multi-account switch/shared context частково прийнято нативно, але one-second/offline/drafts gate не пройдено. v68 не promoted; production v65, staging `0`, immutable v68 retained, journal `abandoned`.
 - **English mirror:** [docs/en/verification-reports/INDEX.md](../../en/verification-reports/INDEX.md)

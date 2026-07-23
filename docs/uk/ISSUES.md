@@ -307,7 +307,7 @@
 ### GT-040 — ONE-SECOND warm-launch performance
 
 - **Статус:** PARTIAL.
-- Source candidate v68 додає content-free `warmLaunchUsableMs`, cache-hit і request counters, але native p95 `≤1000 ms` та десять контрольованих запусків ще `UNVERIFIED`.
+- Immutable v68 додає content-free `warmLaunchUsableMs`, cache-hit і request counters. Owner-only staging показав app shell біля першої контрольної точки `1.2 s`, але не придатний cached Inbox; native p95 `≤1000 ms` та десять контрольованих запусків лишаються `UNVERIFIED`.
 - Попередні `898/431/409 ms` лишаються лише локальним baseline і не є production button-to-interactive доказом.
 
 ### GT-041 — Дубльований launch/auth pipeline
@@ -315,7 +315,7 @@
 - **Статус:** PARTIAL.
 - Підтверджені source root causes: дубльований static/runtime connection copy, помилковий виклик неіснуючого `p0OpenDatabase` замість `p0OpenDb` і можливість повторного boot після завершення першої Promise.
 - Source fix: один порожній hidden boot host, settled single-flight guard, правильний storage warmup helper і account-scoped onboarding decision після `attentionState`.
-- Local contracts проходять; нуль повторних екранів і нуль duplicate bootstrap у native staging ще `UNVERIFIED`.
+- Local contracts проходять; у двох спостережених native launches повторний connection overlay і новий OAuth не з'явилися. Повний gate десяти запусків лишається `UNVERIFIED`.
 
 ### GT-042 — Offline persistent cache
 
@@ -339,17 +339,17 @@
 ### GT-045 — Чернетки
 
 - **Статус:** PARTIAL.
-- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs і conflict contracts не регресували у suite `526/526`.
+- Existing local recovery, serialized Gmail autosave, stable operation/draft IDs і conflict contracts не регресували у final suite `531/531`.
 - Native restart, offline/online recovery і підтверджене cross-device Gmail Draft continuation ще `UNVERIFIED`.
 
 ### GT-046 — Version-aware client update
 
 - **Статус:** PARTIAL.
-- Source marker v68, schema migration і one-reload/no-loop guards існують; historical immutable v67 не переписано.
-- v68 ще не є immutable release і не просувався; production transition evidence відсутній.
+- Immutable v68, schema migration і one-reload/no-loop guards існують; historical immutable v67 не переписано.
+- v68 не просувався: exact staging видалено, journal `abandoned`, production лишився v65. Production transition evidence відсутній.
 
 ### GT-047 — Multi-account cache isolation та switch
 
 - **Статус:** PARTIAL.
 - Owner/account namespace, poisoned-record rejection і deterministic switch contracts проходять локально.
-- Native primary-secondary-primary switching, shared mode і cache lock/readback ще `UNVERIFIED`; новий OAuth не запускався.
+- Native primary-secondary-primary switching і shared mode для трьох roots `VERIFIED` без нового OAuth. Offline cache lock/readback іншого owner та eviction recovery лишаються `UNVERIFIED`.
