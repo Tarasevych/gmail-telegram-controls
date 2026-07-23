@@ -1,0 +1,28 @@
+# Error and root-cause registry
+
+[Українською](../uk/ERROR_RCA_REGISTRY.md)
+
+This is the concise active index of confirmed Gmail Telegram Controls failures. It does not replace the [issue register](ISSUES.md), postmortem, or verification reports: it preserves the causal chain, applicability boundary, and recurrence-prevention rule.
+
+Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMMENDED`.
+
+| ID | Symptom | Confirmed root cause | Correction and applicability | Prevention | Status | Evidence |
+|---|---|---|---|---|---|---|
+| RCA-001 | Telegram card capacity could appear exhausted despite free slots | The guard counted a raw index containing duplicate, stale, and missing-record keys; the first patch missed the reservation-path read | Index compaction now precedes every capacity read | Test every caller with duplicate, ghost, and live keys | VERIFIED | [VR-003 root causes](verification-reports/reports/VR-003/ROOT_CAUSES.md) |
+| RCA-002 | Realtime mail waited behind slower work | A shared legacy `UserLock` covered external Gmail/Telegram I/O | Short `ScriptLock` claim/commit/release sections and a per-lane lease | Never hold a shared lock across external I/O; assert zero realtime `UserLock` calls | VERIFIED | [Postmortem](POSTMORTEM.md), [VR-003 architecture](verification-reports/reports/VR-003/ARCHITECTURE.md) |
+| RCA-003 | A `SENT+INBOX` message was dropped or could duplicate a card | Different eligibility paths treated one Gmail message inconsistently | Canonical eligibility accepts `SENT+INBOX`, rejects sent-only/spam/trash, and deduplicates by stable message ID; production v65 does not yet contain the correction | One eligibility function and one at-most-once key across all lanes | PARTIAL | [VR-015](verification-reports/reports/VR-015/README.md) |
+| RCA-004 | The same connection screen appeared twice | Bridge handoff, static/runtime overlays, repeated boot, and the invalid `p0OpenDatabase` symbol | Settled single-flight, a hidden boot host, and `p0OpenDb` exist in immutable-v68 source; production activation is absent | One launch owner, settled idempotency, and a test for the actual symbol | PARTIAL | [VR-017](verification-reports/reports/VR-017/README.md) |
+| RCA-005 | The mailbox showed a generic network error on stable and candidate | The shared Apps Script daily `URLFetch` quota was exhausted; release switching could not restore it | The incident root cause is verified; current quota state after the historical incident is not claimed | A/B stable first, one bounded attempt, and no release oscillation for a shared failure | VERIFIED | [VR-004](verification-reports/reports/VR-004/README.md) |
+| RCA-006 | Repeated GitHub Actions failures for REQ metadata | Documents and the monolithic regex validator disagreed on `Routes` and `Permission basis` contracts | Canonical fields and detailed schema checks were introduced; historical failed runs remain failed | Template plus key/value-set parser plus a fixture for every invalid field | VERIFIED | [CI failure audit](verification-reports/reports/VR-004/CI_FAILURE_AUDIT.md) |
+| RCA-007 | Verification manifest hashes differed between Windows and Linux | SHA-256 covered physical CRLF/LF bytes | Hashing is canonicalized to LF | Mandatory LF and CRLF fixtures with the same expected hash | VERIFIED | [CI failure audit](verification-reports/reports/VR-004/CI_FAILURE_AUDIT.md) |
+| RCA-008 | A Telegram callback could return a different attachment | The callback used a mutable MIME ordinal instead of exact Gmail attachment identity | Opaque exact token, single-match lookup, and fail-closed ambiguity are merged; native download is still unverified | Stable identity, reorder/duplicate-name tests, and no raw attachment ID in callback data | PARTIAL | [VR-018](verification-reports/reports/VR-018/README.md) |
+| RCA-009 | The historical v68 integrity test blocked every later source change | The test compared immutable-v68 hashes with mutable HEAD | The test verifies pinned helper hashes; immutable helper and hashes were not rewritten | A historical release test must not require mutable HEAD to remain equal forever | VERIFIED | [VR-018](verification-reports/reports/VR-018/README.md) |
+| RCA-010 | Parallel branches received the same `GT/B1` IDs | IDs were allocated without serialized live registry/readback | A follow-up renumbered active records without rewriting history | Before allocation: fetch main, check open PRs, check maxima, and hold one registry lease | VERIFIED | [VR-006](verification-reports/reports/VR-006/README.md) |
+
+## Update rule
+
+1. Add a row only after a sanitized source request and causal evidence.
+2. A symptom without causal evidence is `UNVERIFIED`, not a guessed root cause.
+3. A source test cannot elevate a native/runtime claim to `VERIFIED`.
+4. After deployment, update source, staging, and production evidence separately.
+5. Do not rewrite a historical row retroactively; add a linked clarification when understanding changes.
