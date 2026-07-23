@@ -127,3 +127,112 @@ test("saveDraft delegates only its existing snapshot RPC to the manager", () => 
   assert.match(saveSource, /var data = await transfer\.promise/);
   assert.doesNotMatch(saveSource, /setInterval|percent|canCancel:\s*true/);
 });
+
+test("restart recovery queries only the scoped operation status and never resends draft bytes", async () => {
+  const phases = [];
+  const requests = [];
+  const compose = {
+    connectionId: "gmail-unit-personal",
+    draftOperationId: "draft_restart_operation_0001"
+  };
+  const snapshot = {
+    operationId: compose.draftOperationId,
+    restartCheckOnly: true,
+    restartAttempts: 0,
+    transientAttachmentCount: 2
+  };
+  compose.pendingSaveSnapshot = snapshot;
+  const context = vm.createContext({
+    state: { compose },
+    safeClientOperationId: value => String(value || ""),
+    safeId: value => String(value || ""),
+    safeText: value => String(value || ""),
+    createManagedTransfer: options => Object.assign({ transferState: "queued" }, options),
+    enqueueManagedTransfer: (task, runner) => Promise.resolve().then(() => runner(task, {
+      setPhase: phase => phases.push(phase)
+    })),
+    rpc: async request => {
+      requests.push(JSON.parse(JSON.stringify(request)));
+      return { status: "committed", draft: { id: "draft-1" } };
+    },
+    saveDraft: async () => true,
+    renderTransferManager() {},
+    scheduleTransferPrune() {},
+    Date,
+    Promise,
+    Error
+  });
+  vm.runInContext(helperSource(), context);
+
+  const transfer = context.runManagedDraftPersistence(compose, snapshot, {});
+  const result = await transfer.promise;
+  assert.equal(transfer.task.label, "Відновлюю стан чернетки");
+  assert.deepEqual(phases, ["transferring", "processing"]);
+  assert.deepEqual(requests, [{
+    op: "draftOperationStatus",
+    connectionId: compose.connectionId,
+    clientOperationId: compose.draftOperationId
+  }]);
+  assert.equal(Object.prototype.hasOwnProperty.call(requests[0], "draft"), false);
+  assert.equal(result.draft.id, "draft-1");
+});
+
+test("restart reconciliation becomes manually retryable after three bounded pending checks", async () => {
+  const compose = {
+    connectionId: "gmail-unit-personal",
+    draftOperationId: "draft_restart_operation_0002"
+  };
+  const snapshot = {
+    operationId: compose.draftOperationId,
+    restartCheckOnly: true,
+    restartAttempts: 0,
+    transientAttachmentCount: 0
+  };
+  compose.pendingSaveSnapshot = snapshot;
+  const context = vm.createContext({
+    state: { compose },
+    safeClientOperationId: value => String(value || ""),
+    safeId: value => String(value || ""),
+    safeText: value => String(value || ""),
+    createManagedTransfer: options => Object.assign({ transferState: "queued" }, options),
+    enqueueManagedTransfer: (task, runner) => Promise.resolve().then(() => runner(task, {
+      setPhase() {}
+    })),
+    rpc: async () => ({ status: "pending" }),
+    saveDraft: async () => true,
+    renderTransferManager() {},
+    scheduleTransferPrune() {},
+    Date,
+    Promise,
+    Error
+  });
+  vm.runInContext(helperSource(), context);
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const transfer = context.runManagedDraftPersistence(compose, snapshot, {});
+    await assert.rejects(
+      transfer.promise,
+      error => error && error.code === (attempt === 3 ? "DRAFT_RESTART_DEFERRED" : "DRAFT_PENDING")
+    );
+  }
+  assert.equal(snapshot.restartAttempts, 3);
+});
+
+test("persistent restart descriptor is content-free and save snapshots are persisted before dispatch", () => {
+  const descriptorSource = sourceBetween(
+    "      function p0DraftRestartDescriptor(compose) {",
+    "      function p0ComposeRecoveryValue(compose) {"
+  );
+  const saveSource = sourceBetween(
+    "      async function saveDraft(options) {",
+    "      function normalizeScheduledSend(value) {"
+  );
+  assert.match(descriptorSource, /operationId:[\s\S]*fingerprint:[\s\S]*transientAttachmentCount:/);
+  assert.doesNotMatch(descriptorSource, /dataBase64|source:\s|url:\s|payload:\s/);
+  assert.ok(
+    saveSource.indexOf("await p0PersistComposeRecovery()") <
+      saveSource.indexOf("runManagedDraftPersistence(composeAtStart, snapshot, opts)")
+  );
+  assert.match(saveSource, /composeRestartRecoveryIsRequired[\s\S]*restartRecoveryBlockedCount/);
+  assert.match(saveSource, /composeRestartRecoveryIsDeferred[\s\S]*restartRecoveryDeferred/);
+});

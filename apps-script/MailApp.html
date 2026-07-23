@@ -9170,6 +9170,20 @@
         catch (error) { return ""; }
       }
 
+      function p0RestartFingerprint(value) {
+        var text = value == null ? "" : String(value);
+        var left = 2166136261;
+        var right = 2246822519;
+        for (var index = 0; index < text.length; index += 1) {
+          var code = text.charCodeAt(index);
+          left = Math.imul(left ^ code, 16777619);
+          right = Math.imul(right ^ (code + index), 3266489917);
+        }
+        return "r1-" +
+          ("00000000" + (left >>> 0).toString(16)).slice(-8) +
+          ("00000000" + (right >>> 0).toString(16)).slice(-8);
+      }
+
       function p0SafeCacheScope(value) {
         var scope = safeText(value);
         return /^[A-Za-z0-9_-]{43}$/.test(scope) ? scope : "";
@@ -9839,6 +9853,33 @@
         return namespace && identity ? namespace + ":" + identity : "";
       }
 
+      function p0DraftRestartDescriptor(compose) {
+        var draft = compose || {};
+        var snapshot = draft.pendingSaveSnapshot;
+        var operationId = safeClientOperationId(snapshot && snapshot.operationId);
+        if (!snapshot || !operationId) return null;
+        var request = snapshot.payload && typeof snapshot.payload === "object"
+          ? snapshot.payload
+          : {};
+        var transientAttachmentCount = Math.max(
+          0,
+          Number(snapshot.transientAttachmentCount || 0),
+          Array.isArray(request.attachments) ? request.attachments.length : 0,
+          Array.isArray(request.inlineAttachments) ? request.inlineAttachments.length : 0,
+          request.forwardSource && Array.isArray(request.forwardSource.partIds)
+            ? request.forwardSource.partIds.length
+            : 0
+        );
+        return {
+          v: 1,
+          operationId: operationId,
+          revision: Number(snapshot.revision || 0),
+          fingerprint: p0RestartFingerprint(snapshot.fingerprint),
+          transientAttachmentCount: transientAttachmentCount,
+          recordedAt: Date.now()
+        };
+      }
+
       function p0ComposeRecoveryValue(compose) {
         var draft = compose || {};
         return {
@@ -9858,6 +9899,8 @@
           savedRevision: Number(draft.savedRevision || 0),
           serverFingerprint: safeText(draft.baselineFingerprint),
           attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length,
+          missingAttachmentCount: Math.max(0, Number(draft.restartRecoveryBlockedCount || 0)),
+          draftOperation: p0DraftRestartDescriptor(draft),
           updatedAt: Date.now()
         };
       }
@@ -9951,6 +9994,49 @@
           p0RecoveryKey: p0DraftRecoveryKey(value),
           p0LocalRecovery: true
         });
+        recovered.restartRecoveryBlockedCount = Math.max(
+          0,
+          Number(value.missingAttachmentCount || 0)
+        );
+        var descriptor = value.draftOperation && typeof value.draftOperation === "object"
+          ? value.draftOperation
+          : null;
+        var descriptorOperationId = safeClientOperationId(
+          descriptor && descriptor.operationId
+        );
+        if (descriptor && descriptor.v === 1 && descriptorOperationId &&
+            /^r1-[0-9a-f]{16}$/.test(safeText(descriptor.fingerprint))) {
+          try {
+            recovered.draftOperationId = descriptorOperationId;
+            recovered.pendingKind = "draft";
+            recovered.pendingSaveSnapshot = {
+              revision: Number(descriptor.revision || recovered.revision || 0),
+              fingerprint: composeFingerprint(recovered),
+              operationId: descriptorOperationId,
+              attachmentKeys: composeRegularAttachmentSnapshot(recovered.attachments),
+              payload: null,
+              restartCheckOnly: true,
+              restartAttempts: 0,
+              transientAttachmentCount: Math.max(
+                0,
+                Number(descriptor.transientAttachmentCount || 0)
+              )
+            };
+            recovered.p0RestartRecovery = true;
+            window.setTimeout(function () {
+              if (state.compose !== recovered || !recovered.p0RestartRecovery) return;
+              saveDraft({ quiet: true, background: true, restartRecovery: true });
+            }, 0);
+          } catch (error) {
+            recovered.draftOperationId = "";
+            recovered.pendingKind = "";
+            recovered.pendingSaveSnapshot = null;
+            recovered.restartRecoveryBlockedCount = Math.max(
+              recovered.restartRecoveryBlockedCount,
+              Number(descriptor.transientAttachmentCount || 0)
+            );
+          }
+        }
         var serverFingerprint = composeFingerprint(server);
         if (base.id && value.serverFingerprint && serverFingerprint !== value.serverFingerprint) {
           p0Runtime.composeConflict = { server: server, local: recovered };
@@ -9958,9 +10044,11 @@
         window.setTimeout(function () {
           if (p0Runtime.composeConflict) p0RenderDraftConflictControls();
           else if (els.composeRestoreStatus) {
-            els.composeRestoreStatus.textContent = value.attachmentCount
-              ? "Локальний текст відновлено; вкладення потрібно перевірити перед надсиланням"
-              : "Локальний текст відновлено; Gmail ще не підтвердив цю версію";
+            els.composeRestoreStatus.textContent = recovered.restartRecoveryBlockedCount
+              ? "Локальний текст відновлено; відсутні локальні вкладення потрібно вибрати знову"
+              : value.attachmentCount
+                ? "Локальний текст відновлено; вкладення потрібно перевірити перед надсиланням"
+                : "Локальний текст відновлено; Gmail ще не підтвердив цю версію";
           }
         }, 0);
         return recovered;
@@ -14623,6 +14711,14 @@
         return !code;
       }
 
+      function composeRestartRecoveryIsDeferred(error) {
+        return composeErrorCode(error) === "DRAFT_RESTART_DEFERRED";
+      }
+
+      function composeRestartRecoveryIsRequired(error) {
+        return composeErrorCode(error) === "DRAFT_RESTART_REQUIRED";
+      }
+
       function acknowledgeComposeOperation(kind, operationId, connectionId) {
         var safeOperationId = safeClientOperationId(operationId);
         if (!safeOperationId || (kind !== "draft" && kind !== "send")) return;
@@ -16144,10 +16240,11 @@
       function runManagedDraftPersistence(composeAtStart, snapshot, options) {
         var opts = options || {};
         var operationId = safeClientOperationId(snapshot && snapshot.operationId);
+        var restartCheckOnly = Boolean(snapshot && snapshot.restartCheckOnly);
         var task = opts.transferTask || createManagedTransfer({
           id: operationId,
           kind: "draft-persistence",
-          label: "Зберігаю чернетку",
+          label: restartCheckOnly ? "Відновлюю стан чернетки" : "Зберігаю чернетку",
           canCancel: false,
           canPause: false,
           canRetry: true,
@@ -16165,6 +16262,7 @@
             scheduleTransferPrune();
             return Promise.resolve(false);
           }
+          composeAtStart.restartRecoveryDeferred = false;
           return saveDraft(Object.assign({}, opts, {
             transferTask: task,
             quiet: false,
@@ -16176,12 +16274,45 @@
           task: task,
           promise: enqueueManagedTransfer(task, function (_managedTask, controls) {
             controls.setPhase("transferring");
-            return rpc({
+            var request = restartCheckOnly ? {
+              op: "draftOperationStatus",
+              connectionId: safeId(composeAtStart.connectionId),
+              clientOperationId: operationId
+            } : {
               op: "saveDraft",
               connectionId: safeId(composeAtStart.connectionId),
               draft: snapshot.payload
-            }).then(function (data) {
+            };
+            return rpc(request).then(function (data) {
               controls.setPhase("processing");
+              if (restartCheckOnly && (!data || data.status !== "committed" || !data.draft)) {
+                snapshot.restartAttempts = Number(snapshot.restartAttempts || 0) + 1;
+                var restartError = new Error(
+                  data && data.status === "pending"
+                    ? "Gmail ще перевіряє попереднє збереження."
+                    : "Попереднє збереження не було передано до Gmail."
+                );
+                restartError.restartStatus = safeText(data && data.status);
+                restartError.transientAttachmentCount = Math.max(
+                  0,
+                  Number(snapshot.transientAttachmentCount || 0)
+                );
+                if (data && data.status === "pending") {
+                  restartError.code = snapshot.restartAttempts >= 3
+                    ? "DRAFT_RESTART_DEFERRED"
+                    : "DRAFT_PENDING";
+                  if (restartError.code === "DRAFT_RESTART_DEFERRED") {
+                    restartError.transferOutcome = "retryable";
+                  }
+                } else {
+                  restartError.code = "DRAFT_RESTART_REQUIRED";
+                  if (restartError.transientAttachmentCount) {
+                    restartError.transferOutcome = "blocked";
+                    task.canRetry = false;
+                  }
+                }
+                throw restartError;
+              }
               return data;
             });
           })
@@ -16196,6 +16327,25 @@
           return false;
         }
         syncComposeFromFields();
+        if (Number(state.compose.restartRecoveryBlockedCount || 0) > 0) {
+          var requiredAttachments = Number(state.compose.restartRecoveryBlockedCount || 0);
+          var selectedAttachments = state.compose.attachments.filter(function (attachment) {
+            return !attachment.existing && !attachment.forward;
+          }).length + (state.compose.inlineAttachments || []).filter(function (attachment) {
+            return !attachment.existing;
+          }).length;
+          if (selectedAttachments < requiredAttachments) {
+            if (els.composeRestoreStatus) {
+              els.composeRestoreStatus.textContent =
+                "Повторно виберіть відсутні локальні вкладення перед збереженням.";
+            }
+            if (!opts.quiet) {
+              showSnackbar("Чернетку не збережено: повторно виберіть локальні вкладення.", { error: true });
+            }
+            return false;
+          }
+          state.compose.restartRecoveryBlockedCount = 0;
+        }
         if (opts.closeAfter && composeAttachmentJobs().length) {
           els.composeCloseStatus.textContent = "Дочекайтеся готовності локальних файлів або відхиліть їх. Редактор можна згорнути без втрати поточного сеансу.";
           showSnackbar("Чернетку не закрито: локальні вкладення ще потребують завершення або явного скасування.", { error: true });
@@ -16237,6 +16387,7 @@
           };
           composeAtStart.pendingSaveSnapshot = snapshot;
         }
+        if (!snapshot.restartCheckOnly) await p0PersistComposeRecovery();
         composeAtStart.pendingKind = "";
         state.composeSaveInFlight = true;
         state.composeSaveQueued = false;
@@ -16311,6 +16462,46 @@
           return true;
           } catch (error) {
             if (state.compose !== composeAtStart) return false;
+            if (composeRestartRecoveryIsRequired(error)) {
+              var missingAttachments = Math.max(
+                0,
+                Number(error && error.transientAttachmentCount || 0)
+              );
+              composeAtStart.draftOperationId = "";
+              composeAtStart.pendingKind = "";
+              composeAtStart.pendingSaveSnapshot = null;
+              composeAtStart.p0RestartRecovery = false;
+              composeAtStart.restartRecoveryDeferred = false;
+              composeAtStart.restartRecoveryBlockedCount = missingAttachments;
+              composeAtStart.closeAfterSave = false;
+              if (missingAttachments) {
+                state.composeSaveQueued = false;
+                if (els.composeRestoreStatus) {
+                  els.composeRestoreStatus.textContent =
+                    "Збереження не було передано до Gmail; повторно виберіть локальні вкладення.";
+                }
+                if (!opts.quiet) {
+                  showSnackbar("Повторно виберіть локальні вкладення перед збереженням.", { error: true });
+                }
+              } else {
+                state.composeSaveQueued = true;
+                if (!opts.quiet) showSnackbar("Повторюю безпечне збереження чернетки.");
+              }
+              p0PersistComposeRecovery();
+              return false;
+            }
+            if (composeRestartRecoveryIsDeferred(error)) {
+              composeAtStart.pendingKind = "draft";
+              composeAtStart.closeAfterSave = closeAfter;
+              composeAtStart.pendingSaveSnapshot = snapshot;
+              composeAtStart.restartRecoveryDeferred = true;
+              state.composeSaveQueued = false;
+              p0PersistComposeRecovery();
+              if (!opts.quiet) {
+                showSnackbar("Gmail ще перевіряє чернетку. Скористайтеся «Повторити» трохи пізніше.");
+              }
+              return false;
+            }
             if (composeOperationIsPending(error, "draft")) {
               composeAtStart.pendingKind = "draft";
               composeAtStart.closeAfterSave = closeAfter;
@@ -16341,8 +16532,11 @@
           setComposeBusy(state.composeBusy);
           if (state.compose === composeAtStart) {
             var retryDelay = composePendingKind() === "draft" ? 3500 : 80;
-            var shouldContinue = state.composeSaveQueued ||
-              (state.compose.dirty && Number(state.compose.revision || 0) > Number(state.compose.savedRevision || 0));
+            var shouldContinue = !Number(state.compose.restartRecoveryBlockedCount || 0) &&
+              !state.compose.restartRecoveryDeferred &&
+              (state.composeSaveQueued ||
+                (state.compose.dirty &&
+                  Number(state.compose.revision || 0) > Number(state.compose.savedRevision || 0)));
             state.composeSaveQueued = false;
             updateComposeLifecycleControls();
             if (shouldContinue) scheduleComposeAutosave(retryDelay);
@@ -17985,7 +18179,10 @@
               queued.resolve(result);
             }, function (error) {
               task.error = safeText(error && error.message, "Не вдалося завершити передавання.");
-              task.transferState = task.canRetry && task.retry ? "retryable" : "failed";
+              var failureState = safeText(error && error.transferOutcome).toLowerCase();
+              task.transferState = TRANSFER_STATES[failureState]
+                ? failureState
+                : (task.canRetry && task.retry ? "retryable" : "failed");
               task.finishedAt = Date.now();
               queued.reject(error);
             }).then(function () {

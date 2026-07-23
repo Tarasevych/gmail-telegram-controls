@@ -1758,6 +1758,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'functionalMetrics') return mailboxFunctionalMetrics_(payload, session);
   if (op === 'label') return mailboxModifyUserLabels_(payload);
   if (op === 'action') return mailboxApplyAction_(payload);
+  if (op === 'draftOperationStatus') return mailboxDraftOperationStatus_(payload);
   if (op === 'saveDraft') return mailboxSaveDraft_(payload);
   if (op === 'sendDraft') return mailboxSendDraft_(payload);
   if (op === 'scheduledSendState') return mailboxScheduledSendState_(payload, session);
@@ -1780,7 +1781,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'list', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1895,7 +1896,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'thread', 'attachment', 'label', 'action', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1926,6 +1927,7 @@ function mailboxBootstrap_(payload, session) {
         privateOneDrive: false,
         resumableUpload: false,
         backgroundUpload: false,
+        draftRestartReconciliation: true,
         sourceProviders: ['drive', 'box', 'publicHttps'],
       },
       labels: {
@@ -1952,7 +1954,7 @@ function mailboxBootstrap_(payload, session) {
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
   if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'scheduledSendState', 'list', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
-  if (['saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
+  if (['draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
 }
@@ -8088,6 +8090,64 @@ function mailboxReconcileDraftSaveOperation_(operationValue) {
     return { operation, committed: true, draft: matches[0] };
   }
   throw mailboxDraftPending_();
+}
+
+/**
+ * Reconcile a durably journaled draft save after the WebView was unloaded.
+ *
+ * This is deliberately not a byte-resumable upload endpoint. The browser sends
+ * only the stable operation ID; MIME bytes, source URLs, OAuth material and
+ * resumable-session capabilities never cross this restart contract.
+ */
+function mailboxDraftOperationStatus_(payload) {
+  mailboxAssertAllowedKeys_(payload, ['clientOperationId']);
+  const operationId = mailboxRequireClientOperationId_(payload.clientOperationId);
+  let operation = mailboxWithDraftOperationLock_(properties => {
+    const ownerId = mailboxDraftOperationScopeId_();
+    const matches = mailboxReadDraftOperations_(properties, ownerId).filter(item =>
+      item.operationId === operationId &&
+      (item.kind === 'draft_create' || item.kind === 'draft_update')
+    );
+    if (matches.length > 1) {
+      throw mailboxError_('SERVER_CONFIG', 'Журнал містить неоднозначну операцію чернетки.');
+    }
+    return matches[0] || null;
+  });
+
+  if (!operation) return { status: 'missing' };
+  if (operation.state === 'failed') {
+    return {
+      status: 'failed',
+      errorCode: mailboxSafeText_(operation.errorCode, 64),
+    };
+  }
+  if (operation.state === 'reserved') {
+    operation = mailboxFailDraftOperation_(
+      operation,
+      mailboxError_('DRAFT_NOT_DISPATCHED', 'Збереження не було передано до Gmail.')
+    );
+    return { status: 'not_dispatched' };
+  }
+
+  let reconciliation;
+  try {
+    reconciliation = mailboxReconcileDraftSaveOperation_(operation);
+  } catch (error) {
+    if (String(error && error.mailboxCode || '') === 'DRAFT_PENDING') {
+      return { status: 'pending' };
+    }
+    throw error;
+  }
+  if (!reconciliation || !reconciliation.committed || !reconciliation.draft) {
+    return { status: 'pending' };
+  }
+  return Object.assign(
+    { status: 'committed' },
+    mailboxDraftResponseFromFull_(
+      reconciliation.draft,
+      reconciliation.superseded
+    )
+  );
 }
 
 function mailboxSearchSentByMessageId_(messageIdHeader) {

@@ -233,7 +233,7 @@ Long-term report-derived phases, dependencies, and evidence gates are in the [Ma
 - **Locally VERIFIED:** one store and canonical lifecycle, at most three active runners, actual-byte progress with speed/ETA for `FileReader`, indeterminate RPC status without fabricated percent, queued/running cancel contracts, stable-ID retry, aggregate progress, and an accessible movable chip independent of composer minimize.
 - **Integrated lanes:** local compose attachments, incoming attachment preview/download fetch, and Drive/Box/public provider preview.
 - **Gates:** focused transfer/MailApp contracts `99/99`, complete Apps Script suite `551/551`, clean diff check, and `0` secret-signature matches.
-- **Still required:** thread detail, draft persistence and URL-import integration; resumable server session and restart recovery; native slow/stalled network, minimize, cancel, retry, and provider readback.
+- **Still required:** true byte-resumable server upload and real RPC abort where transport support exists; native slow/stalled-network, restart, minimize, cancel, retry, and provider readback. Thread detail, draft persistence, URL import, and scoped draft restart reconciliation are integrated.
 - **Release boundary:** source commit `58933f0`; no immutable, staging, production, OAuth, Gmail, Telegram, Drive, or Box state changed.
 - **Evidence:** [GT-051](ISSUES.md), [VR-021](verification-reports/reports/VR-021/README.md).
 - **Українське дзеркало:** [docs/uk/ROADMAP.md](../uk/ROADMAP.md).
@@ -279,3 +279,9 @@ The next B-03 lane is implemented: the existing Gmail draft save RPC now partici
 Status: PARTIAL
 
 The URL-import lane is implemented without changing the server security boundary: the client now deduplicates the complete public-HTTPS metadata-and-attach operation through the bounded shared transfer manager, keeps private URLs out of task labels and IDs, and fails closed after compose/account changes. Focused contracts pass 111/111 and the full Apps Script suite passes 584/584.
+
+## 2026-07-23: B1-31 restart-reconciliation increment
+
+Status: PARTIAL
+
+The maximum safe restart contract in the current Apps Script architecture is implemented. A content-free operation descriptor survives WebView restart and performs account-scoped, read-only/idempotent Gmail draft outcome reconciliation without resending MIME or attachment bytes. Missing or never-dispatched operations may start a fresh save only when no transient attachment bytes were lost; otherwise the task is `blocked` until explicit reselection. Automatic pending checks stop after three attempts. Six new restart contracts and the complete `590/590` Apps Script suite pass. Official Gmail resumable upload exists, but the current `google.script.run` transport supplies neither streaming bytes nor an abort/progress handle, so byte-resumable upload remains a separate `UNVERIFIED` architecture decision.

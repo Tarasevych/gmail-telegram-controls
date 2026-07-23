@@ -36,11 +36,11 @@
 | VR-021-05 | Actual byte callbacks створюють bytes, percentage, speed та ETA. | VERIFIED | behavioral contract |
 | VR-021-06 | Queued cancel не допускає execution; running cancel викликає registered abort callback; retry зберігає stable transfer ID. | VERIFIED | behavioral contracts |
 | VR-021-07 | Пов'язані transfer/MailApp contracts проходять `99/99`; повний Apps Script suite проходить `551/551`. | VERIFIED | local Node test traces |
-| VR-021-08 | Thread detail, draft persistence, URL import, RPC abort, restart recovery і native slow-network behavior використовують повний manager. | UNVERIFIED | не повністю інтегровано або не прийнято нативно |
+| VR-021-08 | Thread detail, draft persistence, URL import і scoped restart reconciliation чернетки використовують повний manager; реальний RPC abort, byte-resumable upload і native slow-network behavior лишаються відкритими. | PARTIAL | локальні behavioral contracts; native acceptance відсутній |
 
 ## Platform та release boundary
 
-Manager не заявляє JavaScript continuation після вивантаження Telegram WebView. Restart recovery можна перевести у `VERIFIED` лише для server-side resumable session. Apps Script RPC лишається indeterminate, бо не надає trustworthy transport byte stream або abort handle. Перед production claims потрібні окремо авторизований cumulative candidate і native slow/stalled-network acceptance.
+Manager не заявляє JavaScript continuation після вивантаження Telegram WebView. Після restart він може узгодити результат server-journaled draft operation, але не може продовжити browser bytes. Gmail документує справжній resumable upload protocol, тоді як `google.script.run` надає asynchronous success/failure callbacks без trustworthy transport byte stream або abort handle; обмеження Apps Script execution та URL Fetch також залишаються. Тому `resumableUpload` лишається `false`. Перед production claims потрібні окремо авторизований cumulative candidate і native slow/stalled-network acceptance. Первинні джерела: [Gmail upload guide](https://developers.google.com/workspace/gmail/api/guides/uploads), [google.script.run](https://developers.google.com/apps-script/guides/html/reference/run), [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas).
 
 ## 2026-07-23: докази продовження для деталей ланцюжка
 
@@ -59,3 +59,9 @@ REQ-0035 розширює реалізацію спільного transfer-state
 Status: PARTIAL
 
 REQ-0035 розширює shared transfer-state на повний public-HTTPS source submit. Runtime-тести підтверджують один RPC та одне вкладення для паралельних submit, generic content-free task identity, чесний невизначений прогрес і account/session fail-closed retry. Чинні server SSRF і content-bound контракти лишаються покритими повним suite. Focused contract-тести пройшли 111/111, а повний Apps Script suite — 584/584. Live external URL, Gmail mutation, OAuth-дія, staging deployment або production promotion не використовувалися.
+
+## 2026-07-23: докази продовження restart reconciliation
+
+Status: PARTIAL
+
+REQ-0035 тепер охоплює максимальну безпечну restart-поведінку без нової upload-інфраструктури. Перед dispatch IndexedDB отримує лише account-scoped operation ID, локальний fingerprint, counters і timestamps; MIME, bytes вкладень, provider URL, token чи resumable session URI до descriptor не додаються. `draftOperationStatus` має responder scope і повертає лише `missing`, `not_dispatched`, `failed`, `pending` або canonical committed draft. Reserved-операція переводиться в terminal state лише до dispatch boundary; uncertain/committed operations узгоджуються через Gmail reads і ніколи не повторюють mutation. Клієнт обмежує автоматичні перевірки трьома та блокує втрачені локальні bytes до повторного вибору. Шість нових behavioral contracts і повний suite `590/590` пройшли. Цей source-only інкремент не використовував live Gmail mutation, external URL, OAuth-дію, staging deployment або production promotion.
