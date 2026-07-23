@@ -479,3 +479,14 @@ Status: BLOCKED
 - **Verification:** focused runtime-budget contracts `9/9`; повний Apps Script suite `593/593`; bilingual, knowledge hub, verification report, release state, diff та added-line sensitive-pattern gates проходять.
 - **Залишається:** Apps Script документує per-user reset через 24 години після першого request, але не надає exact reset timestamp. Live quota recovery, чисте native A/B window, staging та production acceptance лишаються `UNVERIFIED`.
 - **Доказ:** [VR-024](verification-reports/reports/VR-024/README.md)
+
+## GT-055 — Layout не реагував на viewport events Telegram Mini App
+
+- **Статус:** PARTIAL
+- **Source request:** `REQ-0035`
+- **Product task:** `B1-35`
+- **Root cause:** клієнт викликав `Telegram.WebApp.expand()`, але не підписувався на `viewportChanged` та safe-area events; app shell покладався лише на `100dvh`.
+- **Source correction:** один ідемпотентний bridge дедуплікує події через animation frame, відокремлює live height від stable height і передає стабільну висоту в app shell через CSS custom property.
+- **Safety boundary:** bridge не запускає повторний bootstrap, render, RPC, reload, OAuth або Gmail mutation.
+- **Verification:** автоматизований VM-контракт і повний Apps Script suite мають пройти до публікації; native Telegram Desktop/mobile acceptance лишається `UNVERIFIED`.
+- **Доказ:** [VR-026](verification-reports/reports/VR-026/README.md)

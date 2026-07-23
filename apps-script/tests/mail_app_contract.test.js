@@ -3727,3 +3727,63 @@ test('all inline Mini App scripts remain syntactically valid', () => {
   assert.ok(inlineScripts.length > 0);
   inlineScripts.forEach(source => assert.doesNotThrow(() => new Function(source)));
 });
+test("Telegram viewport bridge applies stable metrics without relaunching the app", () => {
+  const start = uiSource.indexOf("/* TELEGRAM_VIEWPORT_BRIDGE_START */");
+  const end = uiSource.indexOf("/* TELEGRAM_VIEWPORT_BRIDGE_END */");
+  assert.ok(start >= 0 && end > start, "viewport bridge must be present");
+  const bridgeSource = uiSource.slice(start, end);
+  const writes = [];
+  const handlers = [];
+  const root = {
+    style: {
+      setProperty(name, value) {
+        writes.push([name, value]);
+      },
+    },
+  };
+  const webApp = {
+    viewportHeight: 640,
+    viewportStableHeight: 600,
+    onEvent(name) {
+      handlers.push(name);
+    },
+  };
+  const sandbox = {
+    window: {
+      setTimeout(callback) {
+        callback();
+        return 1;
+      },
+      addEventListener() {},
+    },
+    document: { documentElement: root },
+    tg: webApp,
+  };
+  vm.runInNewContext(
+    `${bridgeSource}
+      this.viewportApi = {
+        apply: applyTelegramViewportMetrics,
+        bind: bindTelegramViewportEvents
+      };`,
+    sandbox,
+  );
+
+  sandbox.viewportApi.apply(webApp, root, { isStateStable: false });
+  assert.deepEqual(writes, [["--app-viewport-height", "640px"]]);
+
+  writes.length = 0;
+  webApp.viewportHeight = 660;
+  webApp.viewportStableHeight = 620;
+  sandbox.viewportApi.apply(webApp, root, { isStateStable: true });
+  assert.deepEqual(writes, [
+    ["--app-viewport-height", "660px"],
+    ["--app-viewport-stable-height", "620px"],
+  ]);
+
+  sandbox.viewportApi.bind();
+  sandbox.viewportApi.bind();
+  assert.deepEqual(handlers, ["viewportChanged", "safeAreaChanged", "contentSafeAreaChanged"]);
+  assert.match(uiSource, /--app-viewport-stable-height:\s*var\(--tg-viewport-stable-height/);
+  assert.match(uiSource, /height:\s*var\(--app-viewport-stable-height,\s*100dvh\)/);
+  assert.doesNotMatch(bridgeSource, /location\.reload|google\.script\.run|\bboot\(|\brender\(/);
+});
