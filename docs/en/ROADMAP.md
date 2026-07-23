@@ -385,3 +385,12 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Locally verified:** focused contract `4/4`; full Apps Script suite `623/623`.
 - **Release boundary:** source/docs contour; production v65, staging `0`, and immutable history are unchanged. Native Telegram Desktop/WebView acceptance remains `UNVERIFIED`.
 - **Related:** `GT-062`, `RCA-015`, `VR-034`, `REQ-0035`.
+
+## B1-43 — F-01 Mail-reader fidelity and privacy
+
+- **Status:** `PARTIAL`
+- **Result:** valid RTL/language hints survive server sanitization; plain and HTML content use content-derived direction; remote images cannot bypass the attachment-token/MIME boundary or create a tracking request.
+- **Fixture evidence:** newsletter, invoice/table, plain fallback, RTL/Unicode, malformed HTML, quoted history, CID boundary, and scroll/focus contracts are covered by the focused `6/6` suite; the full suite is `629/629`.
+- **Release boundary:** source/docs contour; no real message was read or changed, and production v65, staging `0`, and immutable history are unchanged.
+- **Still required:** native desktop/mobile comparison with representative owner-approved fixtures after the shared quota recovers.
+- **Related:** `GT-063`, `RCA-016`, `VR-035`, `REQ-0035`.

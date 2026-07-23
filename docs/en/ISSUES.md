@@ -568,3 +568,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Local evidence:** focused E-05 contract `4/4`; full Apps Script suite `623/623`.
 - **Boundary:** native mouse/touch/keyboard acceptance for 0/1/50/500 rows and deployed multi-account bulk actions remains `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
 - **Evidence:** [VR-034](verification-reports/reports/VR-034/README.md).
+
+## GT-063 — The reader lost RTL semantics and had an overly broad remote-image fallback
+
+- **Status:** `PARTIAL`
+- **Request:** `REQ-0035`
+- **Product task:** `B1-43` / V3 `F-01`
+- **Root cause:** the server sanitizer discarded valid `dir/lang`, while the defense-in-depth sandbox allowed `https:`/`data:` image sources even though the normal server path already removed remote images.
+- **Correction:** the sanitizer preserves only bounded `ltr|rtl|auto` and BCP47-like `lang`; the reader uses content-derived direction, logical quote borders, and permits images only through an exact authenticated attachment token that becomes a short-lived `blob:` after a MIME check.
+- **Local evidence:** focused F-01 corpus `6/6`; full Apps Script suite `629/629`.
+- **Boundary:** native Telegram Desktop/mobile fidelity with real newsletter/invoice/RTL/CID fixtures remains `UNVERIFIED`; production v65, staging `0`, and immutable history are unchanged.
+- **Evidence:** [VR-035](verification-reports/reports/VR-035/README.md).

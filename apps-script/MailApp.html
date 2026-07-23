@@ -12631,14 +12631,10 @@
             image.setAttribute("referrerpolicy", "no-referrer");
             return;
           }
-          var src = safeUrl(image.getAttribute("src"), false);
-          if (!src) {
-            image.remove();
-            return;
-          }
-          image.setAttribute("src", src);
-          image.setAttribute("loading", "lazy");
-          image.setAttribute("referrerpolicy", "no-referrer");
+          // Defense in depth: incoming mail may render only an authenticated
+          // inline attachment token. Never let a sanitizer regression turn an
+          // external image into a tracking request from the reader iframe.
+          image.remove();
         });
 
         var serializedBody = Array.from(parsed.body.childNodes).map(function (node) {
@@ -12653,10 +12649,10 @@
         var documentMarkup = "<!doctype html><html><head>" +
           "<meta charset=\"utf-8\">" +
           "<meta name=\"referrer\" content=\"no-referrer\">" +
-          "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src https: data: blob:; media-src https:; style-src 'unsafe-inline'; font-src 'none'; form-action 'none'; base-uri 'none'\">" +
+          "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src blob:; media-src 'none'; style-src 'unsafe-inline'; font-src 'none'; form-action 'none'; base-uri 'none'\">" +
           "<base target=\"_blank\">" +
-          "<style>html,body{margin:0;padding:0;background:" + background + ";color:" + color + ";font:14px/1.5 Arial,sans-serif;overflow-wrap:anywhere}body{max-width:100%;overflow-x:auto}a{color:" + link + ";text-decoration:underline;text-underline-offset:2px}img{max-width:100%}blockquote{margin:12px 0;padding-left:12px;border-left:3px solid #d5dce6;color:#667085}pre{max-width:100%;overflow:auto;padding:10px;border-radius:6px;background:#f7f9fc}table{max-width:100%}</style>" +
-          "</head><body>" + serializedBody + "</body></html>";
+          "<style>html,body{margin:0;padding:0;background:" + background + ";color:" + color + ";font:14px/1.5 Arial,sans-serif;overflow-wrap:anywhere}body{max-width:100%;overflow-x:auto}p,div,li,blockquote,td,th,pre{unicode-bidi:plaintext}a{color:" + link + ";text-decoration:underline;text-underline-offset:2px}img{max-width:100%}blockquote{margin:12px 0;padding-inline-start:12px;border-inline-start:3px solid #d5dce6;color:#667085}pre{max-width:100%;overflow:auto;padding:10px;border-radius:6px;background:#f7f9fc}table{max-width:100%}</style>" +
+          "</head><body dir=\"auto\">" + serializedBody + "</body></html>";
         return { markup: documentMarkup, height: estimatedHeight };
       }
 
@@ -12740,6 +12736,7 @@
 
       function setSanitizedMessageBody(container, message) {
         if (!message.bodyHtmlSanitized) {
+          container.setAttribute("dir", "auto");
           container.textContent = message.bodyText || "Текст цього повідомлення недоступний.";
           return;
         }

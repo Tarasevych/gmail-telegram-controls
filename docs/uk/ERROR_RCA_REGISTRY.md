@@ -28,6 +28,8 @@
 
 | RCA-015 | Checkbox selection був відсутній, `Space` відкривав лист, а double-click міг повторити route/open | Single-selection reader state помилково використовувався як повний list interaction model; click activation не мав single-flight guard | Додано namespaced stable-key selection, explicit keyboard contract, bounded account-scoped bulk pipeline і focus restoration | Не перевикористовувати `row.click()` для різних намірів; selection, activation і Gmail mutation мають окремі invariants та regression matrix | `PARTIAL` | [VR-034](verification-reports/reports/VR-034/README.md) |
 
+| RCA-016 | RTL-листи втрачали явний напрямок, а client fallback теоретично міг завантажити remote image після sanitizer regression | `dir/lang` не входили до allowlist; iframe CSP і secondary sanitizer покладалися на server sanitizer як єдину remote-image межу | Додано bounded directional attributes, content-derived direction і attachment-token-only image rendering з `blob:` CSP | Для untrusted mail HTML потрібні незалежні server/client fail-closed boundaries та fixture corpus для direction, active content і tracking | `PARTIAL` | [VR-035](verification-reports/reports/VR-035/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

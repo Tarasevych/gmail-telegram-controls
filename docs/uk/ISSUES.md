@@ -568,3 +568,14 @@ Status: BLOCKED
 - **Локальний доказ:** focused E-05 contract `4/4`; повний Apps Script suite `623/623`.
 - **Межа:** native mouse/touch/keyboard acceptance для 0/1/50/500 rows і deployed multi-account bulk actions лишається `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
 - **Доказ:** [VR-034](verification-reports/reports/VR-034/README.md).
+
+## GT-063 — Reader втрачав RTL-семантику та мав зайво широкий fallback для remote images
+
+- **Статус:** `PARTIAL`
+- **Запит:** `REQ-0035`
+- **Product task:** `B1-43` / V3 `F-01`
+- **Першопричина:** server sanitizer відкидав валідні `dir/lang`, а defense-in-depth sandbox дозволяв `https:`/`data:` image sources, хоча штатний серверний path уже видаляв remote images.
+- **Виправлення:** sanitizer зберігає лише bounded `ltr|rtl|auto` і BCP47-подібний `lang`; reader використовує content-derived direction, logical quote borders і допускає зображення тільки через exact authenticated attachment token, який після MIME-check замінюється на short-lived `blob:`.
+- **Локальний доказ:** focused F-01 corpus `6/6`; повний Apps Script suite `629/629`.
+- **Межа:** native Telegram Desktop/mobile fidelity для реальних newsletter/invoice/RTL/CID fixtures лишається `UNVERIFIED`; production v65, staging `0` та immutable history не змінюються.
+- **Доказ:** [VR-035](verification-reports/reports/VR-035/README.md).

@@ -11013,7 +11013,7 @@ function mailboxSanitizeHtml_(htmlValue, inlineImagePolicyValue) {
       if (!voidTags.has(tag)) output += '</' + tag + '>';
       continue;
     }
-    const attributes = [];
+    const attributes = mailboxSafeDirectionalHtmlAttributes_(parsed[3]);
     if (tag === 'img') {
       const sourceMatches = Array.from(parsed[3].matchAll(
         /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi
@@ -11081,6 +11081,31 @@ function mailboxSanitizeHtml_(htmlValue, inlineImagePolicyValue) {
   }
   output += mailboxEscapeHtmlText_(source.slice(cursor));
   return output.slice(0, MAILBOX_CLIENT_CONFIG_.MAX_HTML_CHARS);
+}
+
+function mailboxSafeDirectionalHtmlAttributes_(rawAttributesValue) {
+  const source = String(rawAttributesValue || '');
+  const attributes = [];
+  const directionMatch = source.match(
+    /(?:^|\s)dir\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i
+  );
+  const direction = decodeHtmlEntities_(
+    directionMatch ? (directionMatch[1] || directionMatch[2] || directionMatch[3] || '') : ''
+  ).trim().toLowerCase();
+  if (direction === 'ltr' || direction === 'rtl' || direction === 'auto') {
+    attributes.push('dir="' + direction + '"');
+  }
+
+  const languageMatch = source.match(
+    /(?:^|\s)lang\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i
+  );
+  const language = decodeHtmlEntities_(
+    languageMatch ? (languageMatch[1] || languageMatch[2] || languageMatch[3] || '') : ''
+  ).trim();
+  if (/^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8}){0,3}$/.test(language)) {
+    attributes.push('lang="' + mailboxEscapeHtmlAttribute_(language) + '"');
+  }
+  return attributes;
 }
 
 function mailboxSanitizedInlineImageSource_(value, policyValue) {

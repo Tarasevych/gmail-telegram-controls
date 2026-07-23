@@ -248,3 +248,5 @@ Source request: `REQ-0004`.
 | [VR-033](reports/VR-033/README.md) | E-04 Регресійна перевірка керування Gmail-мітками | `CONFLICTING` | `REQ-0035`, `GT-027`, `B1-21`, `VR-005` |
 
 | [VR-034](reports/VR-034/README.md) | E-05 Семантика списку, мультивибір і deterministic activation | `PARTIAL` | `REQ-0035`, `GT-062`, `B1-42`, `RCA-015` |
+
+| [VR-035](reports/VR-035/README.md) | F-01 Fidelity reader, RTL і remote-image privacy | `PARTIAL` | `REQ-0035`, `GT-063`, `B1-43`, `RCA-016` |

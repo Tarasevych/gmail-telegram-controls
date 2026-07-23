@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-009](reports/VR-009/README.md) records the P0 instant-navigation, bounded-cache, draft-recovery, typography and client-update baseline and candidate evidence. Runtime acceptance remains a separate gate.
+[VR-035](reports/VR-035/README.md) records F-01 reader fidelity, RTL/language preservation, and fail-closed remote-image privacy. Native acceptance remains a separate gate.

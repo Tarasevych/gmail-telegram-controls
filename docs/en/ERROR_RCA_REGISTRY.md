@@ -28,6 +28,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-015 | Checkbox selection was absent, `Space` opened a thread, and double-click could repeat route/open | Single-reader selection state was incorrectly treated as the complete list interaction model; click activation had no single-flight guard | Added namespaced stable-key selection, an explicit keyboard contract, a bounded account-scoped bulk pipeline, and focus restoration | Do not reuse `row.click()` for different intents; selection, activation, and Gmail mutation need separate invariants and a regression matrix | `PARTIAL` | [VR-034](verification-reports/reports/VR-034/README.md) |
 
+| RCA-016 | RTL messages lost explicit direction, while a client fallback could theoretically load a remote image after a sanitizer regression | `dir/lang` were outside the allowlist; the iframe CSP and secondary sanitizer treated the server sanitizer as the only remote-image boundary | Added bounded directional attributes, content-derived direction, and attachment-token-only image rendering with a `blob:` CSP | Untrusted mail HTML needs independent fail-closed server/client boundaries and a fixture corpus for direction, active content, and tracking | `PARTIAL` | [VR-035](verification-reports/reports/VR-035/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.
