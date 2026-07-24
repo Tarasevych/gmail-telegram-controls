@@ -705,3 +705,14 @@ Status: BLOCKED
 - **Source evidence:** focused folder contracts `9/9`; Mail App contract `93/93`; повний Apps Script suite `716/716` за `25.980s`; exact implementation baseline `a33242df9689f6d483825940632df3030663d1a6`.
 - **Чесна межа:** current attachment policy все ще обмежує фактичне вкладення; вибір `100/1000` файлів fail fast і пропонує Drive замість неправдивого upload. Native folder picker, mobile/desktop visual acceptance, staging і production ще не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
 - **Доказ:** [VR-049](verification-reports/reports/VR-049/README.md).
+
+## GT-075 - Recipient layout і rich editor мали три несумісні interaction models
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`; окремий V3 C-04 source contour без зміни release boundary.
+- **Product task:** `B1-55` / C-04 rich compose editing і recipient layout.
+- **Підтверджена першопричина:** `To/CC/BCC` залишалися plain text inputs без token identity та keyboard removal; paste завжди примусово перетворював rich clipboard на plain text; усі formatting controls одночасно займали одну горизонтальну стрічку. Existing table engine мав row/column mutations, але не whole-table delete, regenerated ARIA coordinates або keyboard cell traversal.
+- **Source correction:** один UI adapter tokenizes і валідує recipients, показує bounded accessible chips та синхронізує їх назад у чинні canonical draft strings. Rich paste проходить existing allowlist sanitizer і ніколи не вставляє raw clipboard HTML. Primary toolbar лишає часті actions видимими, secondary group відкривається явно; table engine отримав labels, row/column counts, Tab/Shift+Tab navigation і whole-table delete. Internal composer/recipient scrolling bounded.
+- **Source evidence:** focused C-04 contracts `5/5`; affected compose matrix `116/116`; MailClient `153/153`; повний Apps Script suite `721/721` за `25.457s`; exact implementation baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- **Чесна межа:** local browser automation contract був недоступний, тому visual mobile/desktop/keyboard-open і native Telegram WebView acceptance не заявляються. Real Gmail draft, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
+- **Доказ:** [VR-050](verification-reports/reports/VR-050/README.md).

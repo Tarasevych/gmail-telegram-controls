@@ -705,3 +705,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused folder contracts `9/9`; Mail App contract `93/93`; complete Apps Script suite `716/716` in `25.980s`; exact implementation baseline `a33242df9689f6d483825940632df3030663d1a6`.
 - **Honest boundary:** the current attachment policy still limits actual attachment; a `100/1000`-file selection fails fast and offers Drive rather than pretending to upload. Native folder-picker, mobile/desktop visual acceptance, staging, and production remain unverified; shared URL Fetch quota and `T-03` release blockers are unchanged.
 - **Evidence:** [VR-049](verification-reports/reports/VR-049/README.md).
+
+## GT-075 - Recipient layout and rich editing used three incompatible interaction models
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`; a separate V3 C-04 source contour without changing the release boundary.
+- **Product task:** `B1-55` / C-04 rich compose editing and recipient layout.
+- **Confirmed root cause:** `To/CC/BCC` remained plain text inputs without token identity or keyboard removal; paste always forced rich clipboard content to plain text; every formatting control occupied one horizontal strip at the same time. The existing table engine supported row/column mutations but lacked whole-table deletion, regenerated ARIA coordinates, and keyboard cell traversal.
+- **Source correction:** one UI adapter tokenizes and validates recipients, renders bounded accessible chips, and synchronizes them back into the existing canonical draft strings. Rich paste passes through the existing allowlist sanitizer and never inserts raw clipboard HTML. The primary toolbar keeps frequent actions visible while a secondary group opens explicitly; the table engine now has labels, row/column counts, Tab/Shift+Tab navigation, and whole-table deletion. Internal composer/recipient scrolling is bounded.
+- **Source evidence:** focused C-04 contracts `5/5`; affected compose matrix `116/116`; MailClient `153/153`; complete Apps Script suite `721/721` in `25.457s`; exact implementation baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- **Honest boundary:** the local browser automation contract was unavailable, so visual mobile/desktop/keyboard-open and native Telegram WebView acceptance are not claimed. Real Gmail draft, staging, and production were not verified; shared URL Fetch quota and `T-03` release blockers are unchanged.
+- **Evidence:** [VR-050](verification-reports/reports/VR-050/README.md).

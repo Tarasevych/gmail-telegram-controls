@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-049](reports/VR-049/README.md) records V3 C-03 source verification of bounded scalable folder upload. Focused contracts pass `9/9`, the Mail App contract passes `93/93`, and the complete Apps Script suite passes `716/716` in `25.980s`; batch planning, recursive relative paths, aggregate fail-fast, and progressive controls have source evidence. Native picker/fallback acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-050](reports/VR-050/README.md) records V3 C-04 source verification of rich compose editing and recipient layout. Focused contracts pass `5/5`, the affected compose matrix passes `116/116`, MailClient passes `153/153`, and the complete Apps Script suite passes `721/721` in `25.457s`; recipient chips, safe rich paste, a progressive toolbar, and accessible table controls have source evidence. Visual/native acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.
