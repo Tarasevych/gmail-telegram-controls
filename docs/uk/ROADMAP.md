@@ -529,3 +529,22 @@ Status: BLOCKED
 - **Ще потрібно:** visual desktop/mobile/keyboard-open, native screen-reader/Telegram WebView acceptance, real controlled Gmail draft roundtrip і лише після зняття shared URL Fetch quota та `T-03` blockers — staging/production.
 - **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-075`, `RCA-031`, `VR-050`, `REQ-0035`.
+
+## B1-56 - Reconciliation повноти V3 task-code
+
+- **Статус:** `VERIFIED` для knowledge-map coverage; загальний V3 execution лишається `PARTIAL`.
+- **Source requests:** `REQ-0035`, `REQ-0037`.
+- **Початковий результат:** exact-ID scan активних UK реєстрів знайшов `26/31` V3 tasks; без явного alias лишалися п'ять уже реалізованих source contours.
+
+| V3 task | Чинний execution/evidence contour | Фактичний статус |
+| --- | --- | --- |
+| `A-04` | `B1-50`–`B1-52`, `GT-070`–`GT-072`, `VR-045`–`VR-047` | `PARTIAL`; native device-bound offline acceptance і fresh offline shell не доведені |
+| `A-05` | `B1-25`, `B1-47`, `GT-036`, `GT-067`, `VR-015`, `VR-042` | `PARTIAL`; native old/new production transition і one-reload proof не завершені |
+| `D-02` | `B1-39`, `GT-059`, `VR-030` | `PARTIAL`; authenticated Box redirect/file acceptance не завершено |
+| `E-01` | `B1-35`, `GT-055`, `VR-026` | `PARTIAL`; native viewport/keyboard/safe-area matrix не завершена |
+| `E-02` | `B1-36`, `GT-056`, `VR-027` | `PARTIAL`; native drag/keyboard/restart preference acceptance не завершена |
+
+- **Результат:** active roadmap тепер містить усі `31/31` plan IDs і посилається на чинні докази замість дублювання source.
+- **Safety gate:** coverage означає маршрутизацію, а не повний DoD. Жоден `PARTIAL/BLOCKED/UNVERIFIED` статус не підвищено.
+- **Наступний крок:** не створювати новий code candidate через відсутній alias. Native/live acceptance дозволена лише після shared URL Fetch quota і `T-03` gates.
+- **Пов’язано:** `GT-076`, `RCA-032`, `VR-051`, `REQ-0035`, `REQ-0037`.

@@ -716,3 +716,14 @@ Status: BLOCKED
 - **Source evidence:** focused C-04 contracts `5/5`; affected compose matrix `116/116`; MailClient `153/153`; повний Apps Script suite `721/721` за `25.457s`; exact implementation baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
 - **Чесна межа:** local browser automation contract був недоступний, тому visual mobile/desktop/keyboard-open і native Telegram WebView acceptance не заявляються. Real Gmail draft, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
 - **Доказ:** [VR-050](verification-reports/reports/VR-050/README.md).
+
+## GT-076 - П'ять V3 task codes не мали явного маршруту в активних реєстрах
+
+- **Статус:** `VERIFIED`
+- **Source requests:** `REQ-0035`, `REQ-0037`; reconciliation не створює нової Versie або release authority.
+- **Product task:** `B1-56` / V3 coverage reconciliation.
+- **Підтверджена першопричина:** активні `ROADMAP`, `CURRENT_STATE`, `ISSUES`, RCA і VR відстежували реалізації через `B1/GT/VR`, але не повторювали plan IDs `A-04`, `A-05`, `D-02`, `E-01`, `E-02`. Автоматичний exact-ID аудит тому знайшов лише `26/31` task codes і міг помилково трактувати п'ять відсутніх alias як відсутній source.
+- **Correction:** `B1-56` і `VR-051` додають однозначну матрицю task-code → чинні `B1/GT/VR` та окремо зберігають фактичний статус кожного контуру. Повторний exact-ID gate повинен бачити `31/31`, не підвищуючи source evidence до native/runtime acceptance.
+- **Source evidence:** cache lock/AES-GCM/offline unlock, version marker/reload guard, Box OAuth callback, Telegram viewport events і pane controls уже присутні у source/tests на baseline `689c401397be8419df60239063ebe831477e96ba`.
+- **Boundary:** `A-04`, `A-05`, `D-02`, `E-01` і `E-02` лишаються `PARTIAL`, `UNVERIFIED` або `BLOCKED` там, де бракує native/live evidence. Документаційний alias не є staging або production proof.
+- **Доказ:** [VR-051](verification-reports/reports/VR-051/README.md).

@@ -146,3 +146,12 @@
 - Focused evidence `5/5`; affected compose matrix `116/116`; MailClient `153/153`; complete Apps Script suite `721/721` in `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
 - The browser automation contract was unavailable; visual/native, real Gmail draft, staging, and production were not verified. Shared URL Fetch quota and `T-03` release blockers are unchanged.
 - Records: `GT-075`, `B1-55`, `RCA-031`, `VR-050`.
+
+## V3 task-code coverage reconciliation
+
+- **Status:** `VERIFIED` for navigation; overall V3 status remains `PARTIAL`.
+- The exact-ID baseline was `26/31`: explicit aliases were missing for `A-04`, `A-05`, `D-02`, `E-01`, and `E-02`, although their source/test contours already existed.
+- `B1-56` now routes all `31/31` task IDs to existing `B1/GT/VR` evidence and creates no parallel implementation.
+- Open native/runtime boundaries are unchanged: device-bound offline/fresh shell, version transition, Box provider acceptance, the viewport matrix, and pane acceptance remain `PARTIAL`, `UNVERIFIED`, or `BLOCKED`.
+- Production remains v65, staging is `0`, and immutable v70 is historical; shared URL Fetch quota and `T-03` prohibit release continuation.
+- Records: `GT-076`, `B1-56`, `RCA-032`, `VR-051`.

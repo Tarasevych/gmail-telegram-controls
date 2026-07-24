@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-050](reports/VR-050/README.md) фіксує V3 C-04 source verification rich compose editing і recipient layout. Focused contracts пройшли `5/5`, affected compose matrix — `116/116`, MailClient — `153/153`, а повний Apps Script suite — `721/721` за `25.457s`; recipient chips, safe rich paste, progressive toolbar і accessible table controls мають source evidence. Visual/native acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-051](reports/VR-051/README.md) перевіряє V3 task-code coverage. Baseline active-doc scan знайшов `26/31` IDs; `A-04`, `A-05`, `D-02`, `E-01`, `E-02` вже мали source/test evidence, але не мали явного alias. `B1-56` маршрутизує `31/31` IDs без дублювання коду або підвищення `PARTIAL/BLOCKED` acceptance status.

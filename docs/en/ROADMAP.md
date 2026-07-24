@@ -529,3 +529,22 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** visual desktop/mobile/keyboard-open, native screen-reader/Telegram WebView acceptance, a real controlled Gmail-draft roundtrip, and only after shared URL Fetch quota and `T-03` blockers clear, staging/production.
 - **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-075`, `RCA-031`, `VR-050`, `REQ-0035`.
+
+## B1-56 - V3 task-code coverage reconciliation
+
+- **Status:** `VERIFIED` for knowledge-map coverage; overall V3 execution remains `PARTIAL`.
+- **Source requests:** `REQ-0035`, `REQ-0037`.
+- **Initial result:** an exact-ID scan of the active Ukrainian registries found `26/31` V3 tasks; five already-implemented source contours had no explicit alias.
+
+| V3 task | Existing execution/evidence contour | Factual status |
+| --- | --- | --- |
+| `A-04` | `B1-50`–`B1-52`, `GT-070`–`GT-072`, `VR-045`–`VR-047` | `PARTIAL`; native device-bound offline acceptance and a fresh offline shell are not proven |
+| `A-05` | `B1-25`, `B1-47`, `GT-036`, `GT-067`, `VR-015`, `VR-042` | `PARTIAL`; native old/new production transition and one-reload proof are incomplete |
+| `D-02` | `B1-39`, `GT-059`, `VR-030` | `PARTIAL`; authenticated Box redirect/file acceptance is incomplete |
+| `E-01` | `B1-35`, `GT-055`, `VR-026` | `PARTIAL`; the native viewport/keyboard/safe-area matrix is incomplete |
+| `E-02` | `B1-36`, `GT-056`, `VR-027` | `PARTIAL`; native drag/keyboard/restart preference acceptance is incomplete |
+
+- **Result:** the active roadmap now contains all `31/31` plan IDs and points to existing evidence instead of duplicating source.
+- **Safety gate:** coverage means routing, not complete DoD. No `PARTIAL/BLOCKED/UNVERIFIED` status was elevated.
+- **Next step:** do not create a new code candidate because an alias was missing. Native/live acceptance is allowed only after the shared URL Fetch quota and `T-03` gates.
+- **Related:** `GT-076`, `RCA-032`, `VR-051`, `REQ-0035`, `REQ-0037`.

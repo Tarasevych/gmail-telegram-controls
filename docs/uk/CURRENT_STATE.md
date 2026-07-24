@@ -146,3 +146,12 @@
 - Focused evidence `5/5`; affected compose matrix `116/116`; MailClient `153/153`; повний Apps Script suite `721/721` за `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
 - Browser automation contract не був доступний; visual/native, real Gmail draft, staging і production не перевірялися. Shared URL Fetch quota та `T-03` release blockers не змінені.
 - Записи: `GT-075`, `B1-55`, `RCA-031`, `VR-050`.
+
+## V3 task-code coverage reconciliation
+
+- **Статус:** `VERIFIED` для навігації; загальний V3 стан лишається `PARTIAL`.
+- Exact-ID baseline був `26/31`: явні aliases були відсутні для `A-04`, `A-05`, `D-02`, `E-01`, `E-02`, хоча їхні source/test contours уже існували.
+- `B1-56` тепер маршрутизує всі `31/31` task IDs до чинних `B1/GT/VR` доказів і не створює паралельної реалізації.
+- Відкриті native/runtime boundaries не змінено: device-bound offline/fresh shell, version transition, Box provider acceptance, viewport matrix і pane acceptance лишаються `PARTIAL`, `UNVERIFIED` або `BLOCKED`.
+- Production лишається v65, staging `0`, immutable v70 історичний; shared URL Fetch quota та `T-03` забороняють release continuation.
+- Записи: `GT-076`, `B1-56`, `RCA-032`, `VR-051`.
