@@ -86,6 +86,16 @@
 - `PARTIAL`: створено `GT-070`, `B1-50`, `RCA-026` і парний `VR-045`. IndexedDB records ще не encrypted at rest; offline device-bound unlock, native target-device acceptance, staging і production лишаються `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
 
+### Оновлення доказів P0-E — 2026-07-24
+
+- `PARTIAL`: source implementation `6f8a357e1a650639c3a16f9d6c7601d89817e3fe` і paired evidence `f18fce674ab81233052f941a04f0ba96b7a9899c` злиті normal merge через product PR `#114` як `aff8c59a9b82fafdd30e83295a19ae0420ed3fd1`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: schema `3` не зберігає plaintext private cache value в IndexedDB. Кожен retained record шифрується AES-256-GCM із random 96-bit IV, 128-bit tag та AAD, що зв’язує schema, key, kind, namespace і expiry; incompatible schema upgrade очищає попередні plaintext records.
+- `VERIFIED`: 32-byte cache key існує в runtime як non-extractable `CryptoKey`, а compact owner-scoped envelope зберігається лише через Telegram SecureStorage item `gmail_telegram_cache_key_v1`; browser `localStorage`, `sessionStorage`, IndexedDB і Cache Storage не отримують raw key, OAuth/Telegram secrets або plaintext fallback.
+- `VERIFIED`: missing, malformed, scope-mismatched, `RESTORABLE` або unsupported SecureStorage state fail closed для persistent private cache без автоматичного consent/restore prompt; online mailbox залишається доступним, а lock очищає runtime key без видалення owner-retained encrypted records.
+- `VERIFIED`: focused crypto/cache/launch gate `55/55`; повний Apps Script suite `692/692` за `23.540 s`; product PR checks успішні; bilingual `103` пари; knowledge-hub, verification-report, release-state та diff gates успішні.
+- `PARTIAL`: створено `GT-071`, `B1-51`, `RCA-027` і парний `VR-046`. Реальна підтримка Telegram SecureStorage у цільовому WebView, device-bound offline unlock, offline document launch, native target-device performance, staging і production лишаються `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -163,4 +173,14 @@
 - `VERIFIED`: all five account-changing bootstrap paths rebind the exact allowlist; switch, disconnect, and confirmed sign-out clear private memory and mail DOM without deleting retained persistent records.
 - `VERIFIED`: focused cache/launch/history gate `48/48`; complete Apps Script suite `685/685` in `26.020 s`; product PR checks `8/8`; `102` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
 - `PARTIAL`: `GT-070`, `B1-50`, `RCA-026`, and paired `VR-045` were created. IndexedDB records are not yet encrypted at rest; offline device-bound unlock, native target-device acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0-E evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `6f8a357e1a650639c3a16f9d6c7601d89817e3fe` and paired evidence `f18fce674ab81233052f941a04f0ba96b7a9899c` were normally merged through product PR `#114` as `aff8c59a9b82fafdd30e83295a19ae0420ed3fd1`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: schema `3` stores no plaintext private-cache value in IndexedDB. Every retained record is encrypted with AES-256-GCM, a random 96-bit IV, a 128-bit tag, and AAD binding the schema, key, kind, namespace, and expiry; the incompatible schema upgrade clears prior plaintext records.
+- `VERIFIED`: the 32-byte cache key exists at runtime as a non-extractable `CryptoKey`, while a compact owner-scoped envelope is stored only through the Telegram SecureStorage item `gmail_telegram_cache_key_v1`; browser `localStorage`, `sessionStorage`, IndexedDB, and Cache Storage receive no raw key, OAuth or Telegram secret, or plaintext fallback.
+- `VERIFIED`: a missing, malformed, scope-mismatched, `RESTORABLE`, or unsupported SecureStorage state fails closed for the persistent private cache without an automatic consent or restore prompt; the online mailbox remains available, and locking clears the runtime key without deleting owner-retained encrypted records.
+- `VERIFIED`: focused crypto/cache/launch gate `55/55`; complete Apps Script suite `692/692` in `23.540 s`; product PR checks passed; `103` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
+- `PARTIAL`: `GT-071`, `B1-51`, `RCA-027`, and paired `VR-046` were created. Real Telegram SecureStorage support in the target WebView, device-bound offline unlock, offline document launch, native target-device performance, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
