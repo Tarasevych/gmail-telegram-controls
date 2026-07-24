@@ -518,3 +518,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native-picker and fallback acceptance on mobile/desktop for `1/10/100/1000`, visual/accessibility evidence, and only after shared URL Fetch quota and `T-03` blockers clear, staging/production.
 - **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-074`, `RCA-030`, `VR-049`, `REQ-0035`.
+
+## B1-55 - C-04 rich compose editing and recipient layout
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`.
+- **Result:** `To/CC/BCC` now use one chip adapter with a quoted-name tokenizer, email validation, duplicate suppression, removal controls, and keyboard navigation, while the canonical draft contract remains string-based. Rich clipboard content passes through the existing sanitizer; the toolbar has primary/secondary disclosure; tables support accessible coordinates, cell traversal, and deletion.
+- **Safety gate:** raw clipboard HTML is never assigned to the DOM; the existing sanitizer drops remote/unsafe images, scripts, and event content. Invalid recipients remain visible with `aria-invalid` instead of disappearing. Autosave/minimize/recovery continue through the same draft fields and selection bookmarks.
+- **Locally verified:** focused `5/5`; affected compose matrix `116/116`; MailClient `153/153`; complete Apps Script suite `721/721` in `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- **Still required:** visual desktop/mobile/keyboard-open, native screen-reader/Telegram WebView acceptance, a real controlled Gmail-draft roundtrip, and only after shared URL Fetch quota and `T-03` blockers clear, staging/production.
+- **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-075`, `RCA-031`, `VR-050`, `REQ-0035`.

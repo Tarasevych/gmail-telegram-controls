@@ -137,3 +137,12 @@
 - Focused evidence `9/9`; Mail App contract `93/93`; повний Apps Script suite `716/716` за `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
 - Native picker/fallback, visual mobile/desktop, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
 - Записи: `GT-074`, `B1-54`, `RCA-030`, `VR-049`.
+
+## V3 C-04 rich compose editing і recipient layout
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Recipient UI тепер tokenizes/validates `To/CC/BCC` у bounded accessible chips та синхронізує їх назад у чинні string draft fields без паралельної compose model.
+- Rich paste використовує existing sanitizer; formatting toolbar має explicit progressive disclosure; table engine отримав regenerated ARIA coordinates, keyboard traversal і whole-table delete.
+- Focused evidence `5/5`; affected compose matrix `116/116`; MailClient `153/153`; повний Apps Script suite `721/721` за `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- Browser automation contract не був доступний; visual/native, real Gmail draft, staging і production не перевірялися. Shared URL Fetch quota та `T-03` release blockers не змінені.
+- Записи: `GT-075`, `B1-55`, `RCA-031`, `VR-050`.

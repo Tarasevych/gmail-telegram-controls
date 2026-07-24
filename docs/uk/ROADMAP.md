@@ -518,3 +518,14 @@ Status: BLOCKED
 - **Ще потрібно:** native picker і fallback acceptance на mobile/desktop для `1/10/100/1000`, visual/a11y evidence та лише після зняття shared URL Fetch quota і `T-03` blockers — staging/production.
 - **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-074`, `RCA-030`, `VR-049`, `REQ-0035`.
+
+## B1-55 - C-04 rich compose editing і recipient layout
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`.
+- **Результат:** `To/CC/BCC` тепер використовують один chip adapter із quoted-name tokenizer, email validation, duplicate suppression, remove controls і keyboard navigation, але canonical draft contract лишається рядковим. Rich clipboard проходить чинний sanitizer; toolbar має primary/secondary disclosure; tables підтримують accessible coordinates, cell traversal і delete.
+- **Safety gate:** raw clipboard HTML не присвоюється DOM; remote/unsafe image, script та event content відкидає existing sanitizer. Invalid recipients лишаються видимими з `aria-invalid`, а не зникають. Autosave/minimize/recovery продовжують працювати через ті самі draft fields і selection bookmarks.
+- **Локально перевірено:** focused `5/5`; affected compose matrix `116/116`; MailClient `153/153`; повний Apps Script suite `721/721` за `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- **Ще потрібно:** visual desktop/mobile/keyboard-open, native screen-reader/Telegram WebView acceptance, real controlled Gmail draft roundtrip і лише після зняття shared URL Fetch quota та `T-03` blockers — staging/production.
+- **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-075`, `RCA-031`, `VR-050`, `REQ-0035`.

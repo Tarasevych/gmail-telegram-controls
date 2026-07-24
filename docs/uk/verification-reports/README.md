@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-049](reports/VR-049/README.md) фіксує V3 C-03 source verification bounded scalable folder upload. Focused contracts пройшли `9/9`, Mail App contract — `93/93`, а повний Apps Script suite — `716/716` за `25.980s`; batch planning, recursive relative paths, aggregate fail-fast і progressive controls мають source evidence. Native picker/fallback acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-050](reports/VR-050/README.md) фіксує V3 C-04 source verification rich compose editing і recipient layout. Focused contracts пройшли `5/5`, affected compose matrix — `116/116`, MailClient — `153/153`, а повний Apps Script suite — `721/721` за `25.457s`; recipient chips, safe rich paste, progressive toolbar і accessible table controls мають source evidence. Visual/native acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

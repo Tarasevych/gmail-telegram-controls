@@ -137,3 +137,12 @@
 - Focused evidence `9/9`; Mail App contract `93/93`; complete Apps Script suite `716/716` in `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
 - Native picker/fallback, visual mobile/desktop, staging, and production were not verified; shared URL Fetch quota and `T-03` release blockers are unchanged.
 - Records: `GT-074`, `B1-54`, `RCA-030`, `VR-049`.
+
+## V3 C-04 rich compose editing and recipient layout
+
+- **Status:** `PARTIAL`; source evidence only.
+- The recipient UI now tokenizes/validates `To/CC/BCC` into bounded accessible chips and synchronizes them back into the existing string draft fields without a parallel compose model.
+- Rich paste uses the existing sanitizer; the formatting toolbar has explicit progressive disclosure; the table engine now regenerates ARIA coordinates, supports keyboard traversal, and deletes a whole table.
+- Focused evidence `5/5`; affected compose matrix `116/116`; MailClient `153/153`; complete Apps Script suite `721/721` in `25.457s`; baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
+- The browser automation contract was unavailable; visual/native, real Gmail draft, staging, and production were not verified. Shared URL Fetch quota and `T-03` release blockers are unchanged.
+- Records: `GT-075`, `B1-55`, `RCA-031`, `VR-050`.
