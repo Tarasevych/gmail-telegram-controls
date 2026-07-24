@@ -96,6 +96,16 @@
 - `PARTIAL`: створено `GT-071`, `B1-51`, `RCA-027` і парний `VR-046`. Реальна підтримка Telegram SecureStorage у цільовому WebView, device-bound offline unlock, offline document launch, native target-device performance, staging і production лишаються `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
 
+### Оновлення доказів P0-F — 2026-07-24
+
+- `PARTIAL`: source implementation `2bd7eb52d2f3297929c24c12d8ccbb4611699b84` і paired evidence `3ab96c6e40821151c3815e71524332b1396d8250` злиті normal merge через product PR `#116` як `64b77f0a000b94e2d9a578ec0fa81f795e5a5c88`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: після verified online bootstrap створюється 35-day AES-GCM encrypted bootstrap record без session token, OAuth token, Telegram `initData` або signed launch data. Record key/kind/owner-bootstrap namespace/schema/expiry входять до AAD.
+- `VERIFIED`: transient network failure може відновити exact owner/account context лише через Telegram SecureStorage content key, validated ciphertext, schema/scope/age/unique-account-set/active-account checks. `RESTORABLE`, malformed/expired data, decrypt failure, revoked auth або account mismatch не обходяться.
+- `VERIFIED`: offline-unlocked cache є read-only; `rpc()` fail closed з `OFFLINE_CACHE_ONLY`, prefetch/revalidation не запускаються, а online/visibility retry повторює verified boot pipeline. Online verified bootstrap вимикає offline mode та оновлює snapshot.
+- `VERIFIED`: focused offline/cache/security gate `33/33`; повний Apps Script suite `701/701` за `25.944 s`; product PR checks успішні; bilingual `104` пари; knowledge-hub, verification-report, release-state та diff gates успішні.
+- `PARTIAL`: створено `GT-072`, `B1-52`, `RCA-028` і парний `VR-047`. Fresh offline Apps Script document navigation, native Telegram SecureStorage/WebView acceptance, target-device one-second measurements, staging і production лишаються `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -183,4 +193,14 @@
 - `VERIFIED`: a missing, malformed, scope-mismatched, `RESTORABLE`, or unsupported SecureStorage state fails closed for the persistent private cache without an automatic consent or restore prompt; the online mailbox remains available, and locking clears the runtime key without deleting owner-retained encrypted records.
 - `VERIFIED`: focused crypto/cache/launch gate `55/55`; complete Apps Script suite `692/692` in `23.540 s`; product PR checks passed; `103` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
 - `PARTIAL`: `GT-071`, `B1-51`, `RCA-027`, and paired `VR-046` were created. Real Telegram SecureStorage support in the target WebView, device-bound offline unlock, offline document launch, native target-device performance, staging, and production remain `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0-F evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `2bd7eb52d2f3297929c24c12d8ccbb4611699b84` and paired evidence `3ab96c6e40821151c3815e71524332b1396d8250` were normally merged through product PR `#116` as `64b77f0a000b94e2d9a578ec0fa81f795e5a5c88`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: a 35-day AES-GCM encrypted bootstrap record is created after verified online bootstrap without a session token, OAuth token, Telegram `initData`, or signed launch data. Record key, kind, owner-bootstrap namespace, schema, and expiry are included in AAD.
+- `VERIFIED`: a transient network failure can restore the exact owner/account context only through the Telegram SecureStorage content key, validated ciphertext, and schema/scope/age/unique-account-set/active-account checks. `RESTORABLE`, malformed or expired data, decrypt failure, revoked auth, and account mismatch are not bypassed.
+- `VERIFIED`: offline-unlocked cache is read-only; `rpc()` fails closed with `OFFLINE_CACHE_ONLY`, prefetch and revalidation do not run, and online or visibility retry reruns the verified boot pipeline. Verified online bootstrap disables offline mode and refreshes the snapshot.
+- `VERIFIED`: focused offline/cache/security gate `33/33`; complete Apps Script suite `701/701` in `25.944 s`; product PR checks passed; `104` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
+- `PARTIAL`: `GT-072`, `B1-52`, `RCA-028`, and paired `VR-047` were created. Fresh offline Apps Script document navigation, native Telegram SecureStorage/WebView acceptance, target-device one-second measurements, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
