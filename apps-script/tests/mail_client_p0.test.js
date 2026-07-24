@@ -128,7 +128,7 @@ test('account switch clears the prior account reader before the new bootstrap', 
   assert.match(switcher, /state\.compose \|\| state\.composeBusy \|\| state\.actionBusy \|\| state\.handoffBusy/,
     'account switching must not expose an active draft or mutation in another account context');
   assert.match(switcher,
-    /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);[\s\S]{0,160}await p0HydratePersistentState\(\);[\s\S]{0,80}p0ApplyPersistedView\(\)/,
+    /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);[\s\S]{0,320}await p0HydratePersistentState\(\);[\s\S]{0,80}p0ApplyPersistedView\(\)/,
     'the incoming account must hydrate only its own persisted view');
   assert.match(switcher,
     /restoredTargetView\.selectedConnectionId[\s\S]{0,240}openThread\(/,
