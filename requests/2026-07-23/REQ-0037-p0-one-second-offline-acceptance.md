@@ -77,6 +77,15 @@
 - `PARTIAL`: створено `GT-069`, `B1-49`, `RCA-025` і парний `VR-044`. Live cache-hit/request reduction, arbitrary shared/query reconciliation, native target-device acceptance, staging і production лишаються `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
 
+### Оновлення доказів P0-D — 2026-07-24
+
+- `PARTIAL`: source implementation `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb` і paired evidence `59bcfcda96dd6dd5d01a39e399f57f1311eff0d2` злиті normal merge через product PR `#112` як `e3b68bdb5e2d35d76859ec912367d8d467cdd696`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: private cache тепер стартує locked; low-level IndexedDB reads/writes доступні лише після exact app-session, opaque owner `cacheScope` і connected-account allowlist gate. Hydration більше не self-authorize із mutable client state.
+- `VERIFIED`: усі п’ять account-changing bootstrap paths rebind exact allowlist; switch, disconnect і confirmed sign-out очищають private memory та mail DOM, але не видаляють retained persistent records.
+- `VERIFIED`: focused cache/launch/history gate `48/48`; повний Apps Script suite `685/685` за `26.020 s`; product PR checks `8/8`; bilingual `102` пари; knowledge-hub, verification-report, release-state та diff gates успішні.
+- `PARTIAL`: створено `GT-070`, `B1-50`, `RCA-026` і парний `VR-045`. IndexedDB records ще не encrypted at rest; offline device-bound unlock, native target-device acceptance, staging і production лишаються `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -145,4 +154,13 @@
 - `VERIFIED`: shared/search/filter/custom-label/full-sync paths, more than `20` changed thread IDs, or incomplete summaries fail closed to one bounded full-list refresh; a foreign-account entity cannot be applied to the active namespace.
 - `VERIFIED`: focused entity/History/P0/Advanced Gmail gate `35/35`; complete Apps Script suite `678/678` in `25.414 s`; product PR checks `8/8`; `101` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
 - `PARTIAL`: `GT-069`, `B1-49`, `RCA-025`, and paired `VR-044` were created. Live cache-hit/request reduction, arbitrary shared/query reconciliation, native target-device acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0-D evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb` and paired evidence `59bcfcda96dd6dd5d01a39e399f57f1311eff0d2` were normally merged through product PR `#112` as `e3b68bdb5e2d35d76859ec912367d8d467cdd696`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: private cache now starts locked; low-level IndexedDB reads and writes become available only after the exact app-session, opaque owner `cacheScope`, and connected-account allowlist gate. Hydration can no longer self-authorize from mutable client state.
+- `VERIFIED`: all five account-changing bootstrap paths rebind the exact allowlist; switch, disconnect, and confirmed sign-out clear private memory and mail DOM without deleting retained persistent records.
+- `VERIFIED`: focused cache/launch/history gate `48/48`; complete Apps Script suite `685/685` in `26.020 s`; product PR checks `8/8`; `102` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
+- `PARTIAL`: `GT-070`, `B1-50`, `RCA-026`, and paired `VR-045` were created. IndexedDB records are not yet encrypted at rest; offline device-bound unlock, native target-device acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
