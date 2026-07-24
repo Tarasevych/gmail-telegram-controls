@@ -672,3 +672,14 @@ Status: BLOCKED
 - **Source evidence:** focused crypto/cache/launch contracts `55/55`; повний Apps Script suite `692/692` за `23.540s`; exact implementation baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
 - **Межа:** WebCrypto roundtrip і tamper rejection перевірено у source/Node, але native Telegram SecureStorage persistence та Apps Script WebView crypto support ще не мають target-device доказу. Offline launch/bootstrap, staging і production лишаються `UNVERIFIED` або `BLOCKED`; runtime mutation не виконувалася.
 - **Доказ:** [VR-046](verification-reports/reports/VR-046/README.md).
+
+## GT-072 - Encrypted cache не міг безпечно відновити mailbox context під час transient outage
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує P0-E окремим device-bound offline-unlock contour.
+- **Product task:** `B1-52` / P0-F encrypted offline bootstrap.
+- **Підтверджена першопричина:** private-cache access вимагав live `state.session`, а owner/account allowlist існував лише у server bootstrap. Тому навіть валідні AES-GCM records і SecureStorage key не могли відновити exact mailbox context під час transient network failure.
+- **Source correction:** після verified online bootstrap записується окремий 35-day encrypted bootstrap record без session/OAuth secrets. Лише exact Telegram SecureStorage envelope може розшифрувати record із owner/bootstrap AAD; snapshot перевіряє schema, owner scope, age, unique account set та active account. Offline mode є read-only, блокує всі RPC до відновлення verified online session і запускається лише для `TRANSIENT_NETWORK_FAILURE`.
+- **Source evidence:** focused offline/cache/security contracts `33/33`; повний Apps Script suite `701/701` за `25.944s`; exact implementation baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
+- **Межа:** відновлення працює лише коли Apps Script document/app shell уже завантажений. Fresh offline navigation чинного HTML deployment усе ще не має Service Worker/same-origin offline shell; native Telegram SecureStorage/WebView, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+- **Доказ:** [VR-047](verification-reports/reports/VR-047/README.md).

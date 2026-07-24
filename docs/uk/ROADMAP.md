@@ -483,3 +483,15 @@ Status: BLOCKED
 - **Ще потрібно:** native Telegram/Apps Script crypto acceptance, encrypted bootstrap snapshot і device-bound offline unlock, staging та production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
 - **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-071`, `RCA-027`, `VR-046`, `REQ-0037`.
+
+## B1-52 - P0-F encrypted offline bootstrap та read-only unlock
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** verified online bootstrap тепер зберігає окремий encrypted snapshot з owner scope, account allowlist, active account, folders, labels і safe view context без session/OAuth secrets. Термін дії snapshot обмежено `35` днями.
+- **Security boundary:** offline restore бере content key лише з Telegram SecureStorage, приймає тільки exact bootstrap key/namespace/AAD, перевіряє age/schema/scope/account set і відкриває private cache у read-only mode. RPC, mutation та background prefetch блокуються, доки verified online session не відновиться.
+- **Failure boundary:** fallback запускається лише після `TRANSIENT_NETWORK_FAILURE`; expired/revoked auth, `RESTORABLE`, malformed envelope, decrypt failure або account mismatch не обходяться.
+- **Локально перевірено:** focused `33/33`; повний Apps Script suite `701/701` за `25.944s`; baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
+- **Ще потрібно:** native Telegram target-device SecureStorage/WebCrypto acceptance, fresh offline app-shell hosting path, warm-launch measurements, staging і production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
+- **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-072`, `RCA-028`, `VR-047`, `REQ-0037`.

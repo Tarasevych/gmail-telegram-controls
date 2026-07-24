@@ -672,3 +672,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused crypto/cache/launch contracts `55/55`; complete Apps Script suite `692/692` in `23.540s`; exact implementation baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
 - **Boundary:** WebCrypto roundtrip and tamper rejection are source/Node verified, but native Telegram SecureStorage persistence and Apps Script WebView crypto support lack target-device evidence. Offline launch/bootstrap, staging, and production remain `UNVERIFIED` or `BLOCKED`; no runtime mutation was performed.
 - **Evidence:** [VR-046](verification-reports/reports/VR-046/README.md).
+
+## GT-072 - Encrypted cache could not safely restore mailbox context during a transient outage
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues P0-E through a separate device-bound offline-unlock contour.
+- **Product task:** `B1-52` / P0-F encrypted offline bootstrap.
+- **Confirmed root cause:** private-cache access required a live `state.session`, while the owner/account allowlist existed only in server bootstrap. Valid AES-GCM records and a SecureStorage key therefore could not reconstruct the exact mailbox context during a transient network failure.
+- **Source correction:** a separate 35-day encrypted bootstrap record without session or OAuth secrets is written after verified online bootstrap. Only the exact Telegram SecureStorage envelope can decrypt the owner/bootstrap AAD-bound record; the snapshot validates schema, owner scope, age, the unique account set, and the active account. Offline mode is read-only, blocks all RPC until a verified online session returns, and is entered only for `TRANSIENT_NETWORK_FAILURE`.
+- **Source evidence:** focused offline/cache/security contracts `33/33`; complete Apps Script suite `701/701` in `25.944s`; exact implementation baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
+- **Boundary:** recovery works only when the Apps Script document/app shell is already loaded. A fresh offline navigation of the current HTML deployment still has no Service Worker or same-origin offline shell; native Telegram SecureStorage/WebView, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+- **Evidence:** [VR-047](verification-reports/reports/VR-047/README.md).

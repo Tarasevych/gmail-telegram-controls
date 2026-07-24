@@ -483,3 +483,15 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native Telegram/Apps Script crypto acceptance, an encrypted bootstrap snapshot and device-bound offline unlock, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
 - **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-071`, `RCA-027`, `VR-046`, `REQ-0037`.
+
+## B1-52 - P0-F encrypted offline bootstrap and read-only unlock
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** verified online bootstrap now stores a separate encrypted snapshot containing owner scope, account allowlist, active account, folders, labels, and safe view context without session or OAuth secrets. Snapshot lifetime is bounded to `35` days.
+- **Security boundary:** offline restore obtains the content key only from Telegram SecureStorage, accepts only the exact bootstrap key/namespace/AAD, validates age/schema/scope/account set, and opens private cache in read-only mode. RPC, mutation, and background prefetch remain blocked until a verified online session returns.
+- **Failure boundary:** fallback runs only after `TRANSIENT_NETWORK_FAILURE`; expired or revoked auth, `RESTORABLE`, malformed envelopes, decrypt failure, and account mismatch are not bypassed.
+- **Locally verified:** focused `33/33`; complete Apps Script suite `701/701` in `25.944s`; baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
+- **Still required:** native Telegram target-device SecureStorage/WebCrypto acceptance, a fresh offline app-shell hosting path, warm-launch measurements, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
+- **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-072`, `RCA-028`, `VR-047`, `REQ-0037`.
