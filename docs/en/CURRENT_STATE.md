@@ -82,3 +82,13 @@
 - Source evidence: focused `30/30`; complete Apps Script suite `673/673` in `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
 - Runtime, staging, and production were unchanged; no Gmail/Telegram mutation or OAuth occurred. Live request metrics, native multi-account acceptance, and entity-level query membership remain `UNVERIFIED`; the release gate remains `BLOCKED` by shared URL Fetch quota and `T-03`.
 - Records: `GT-068`, `B1-48`, `RCA-024`, `VR-043`.
+
+## REQ-0037 P0-C entity contour - 2026-07-24
+
+- **Status:** `PARTIAL`; source evidence only.
+- A simple single-account Inbox now applies History delta through bounded metadata-only `threadSummaries`: new/relabeled/missing rows change without a full list RPC or replacement of cached body.
+- History event type distinguishes a message change from a label-only change; the selected body is reread only for a message event.
+- Safety boundary: at most 20 exact IDs, viewer-only account access, an explicit missing set, stable timestamp order, a page-capacity bound, and foreign-account isolation.
+- Focused evidence `35/35`; complete Apps Script suite `678/678` in `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- Shared/query/filter/custom-label/oversized/incomplete paths retain the full-list fallback. Live Gmail, native Telegram, staging, and production were not verified; release blockers are unchanged.
+- Records: `GT-069`, `B1-49`, `RCA-025`, `VR-044`.

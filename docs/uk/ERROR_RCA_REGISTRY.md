@@ -45,6 +45,8 @@
 
 | RCA-024 | Кожен background revalidation повторно завантажував список і вибраний ланцюжок навіть без Gmail-змін | `p0RevalidateVisible()` напряму викликав full `loadThreads()`; bootstrap `historyId` втрачався в client normalization, а окремий Telegram-card History state не був безпечним Mini App cursor | Додано exact-connection read-only History delta, account-scoped IndexedDB cursor, one-promise reconciliation і fail-closed full sync при missing/stale cursor або bounded page overflow | Не ділити cursors між runtime lanes чи акаунтами; зберігати History ID як opaque string; тестувати no-change RPC suppression, 404 reset, pagination bound і unified-account isolation | `PARTIAL` | [VR-043](verification-reports/reports/VR-043/README.md) |
 
+| RCA-025 | Після реальної зміни навіть simple Inbox повторно завантажував повний list і міг перечитати body через зміну лише label | P0-B мав change detector, але не event classification або bounded summary fetch; усі changed states ішли в один full-list fallback | Додано per-thread event flags, viewer-only metadata batch до 20 IDs та client entity merge з body preservation, page-capacity bound і message-only selected-thread refresh | Розділяти metadata та body invalidation; використовувати entity merge лише для доведеної view membership, а ambiguous query/shared states лишати на fail-closed fallback | `PARTIAL` | [VR-044](verification-reports/reports/VR-044/README.md) |
+
 ## Правило оновлення
 
 1. Новий рядок додається лише після санітизованого source request і доказу root cause.

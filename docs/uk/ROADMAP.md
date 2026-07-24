@@ -449,3 +449,14 @@ Status: BLOCKED
 - **Ще потрібно:** live cache-hit/request metrics, entity-level reconciliation для сумісних простих views, native multi-account/shared acceptance, staging і production. Shared Apps Script URL Fetch quota та `T-03` лишають release gate заблокованим.
 - **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-068`, `RCA-024`, `VR-043`, `REQ-0037`.
+
+## B1-49 - P0-C metadata-only entity reconciliation для простого Inbox
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** single-account Inbox без search/filter/custom label застосовує bounded History change set через metadata-only batch: exact rows insert/update/remove без повного list RPC, cached body лишається незмінним, а label-only event не запускає thread-body read.
+- **Safety gate:** batch має максимум 20 unique IDs, exact connection viewer access та explicit missing IDs. Stable timestamp ordering і loaded-page capacity зберігаються; foreign account rows не змінюються.
+- **Fallback:** shared/query/filter/custom-label views, full-sync boundary, oversized або incomplete delta використовують чинну bounded full-list reconciliation.
+- **Локально перевірено:** focused `35/35`; повний Apps Script suite `678/678` за `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- **Ще потрібно:** live Gmail change acceptance, request/cache-hit metrics, native multi-account/shared paths, staging і production; release gate лишається blocked shared URL Fetch quota та `T-03`.
+- **Пов’язано:** `GT-069`, `RCA-025`, `VR-044`, `REQ-0037`.

@@ -82,3 +82,13 @@
 - Source evidence: focused `30/30`; повний Apps Script suite `673/673` за `25.763s`; baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
 - Runtime, staging і production не змінювалися; Gmail/Telegram mutation або OAuth не виконувалися. Live request metrics, native multi-account acceptance та entity-level query membership лишаються `UNVERIFIED`; release gate лишається `BLOCKED` shared URL Fetch quota і `T-03`.
 - Записи: `GT-068`, `B1-48`, `RCA-024`, `VR-043`.
+
+## REQ-0037 P0-C entity contour - 2026-07-24
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Simple single-account Inbox тепер застосовує History delta через bounded metadata-only `threadSummaries`: new/relabelled/missing rows змінюються без повного list RPC і без заміни cached body.
+- History event type відрізняє message change від label-only change; selected body повторно читається лише для message event.
+- Safety boundary: максимум 20 exact IDs, viewer-only account access, explicit missing set, stable timestamp order, page-capacity bound та foreign-account isolation.
+- Focused evidence `35/35`; повний Apps Script suite `678/678` за `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- Shared/query/filter/custom-label/oversized/incomplete paths лишаються на full-list fallback. Live Gmail, native Telegram, staging і production не перевірялися; release blockers не змінені.
+- Записи: `GT-069`, `B1-49`, `RCA-025`, `VR-044`.

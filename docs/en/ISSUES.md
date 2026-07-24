@@ -639,3 +639,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused History/P0/adapter contracts `30/30`; complete Apps Script suite `673/673` in `25.763s`; exact implementation baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
 - **Boundary:** this is a source-level stale-while-revalidate optimization. On a real change or lost boundary, a complex query/shared view safely receives bounded full-list reconciliation; entity-level membership updates, live request reduction, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`. OAuth scopes, Gmail mutations, messages, Telegram runtime, and deployment were unchanged.
 - **Evidence:** [VR-043](verification-reports/reports/VR-043/README.md).
+
+## GT-069 - A real change in a simple Inbox still triggered a full list refresh
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues `GT-068` without changing its no-change History contract.
+- **Product task:** `B1-49` / P0-C metadata-only simple-Inbox entity reconciliation.
+- **Confirmed root cause:** P0-B correctly suppressed a no-change poll, but any `changed=true` immediately fell through to `loadThreads()`. The History delta did not expose event type, while the client had no bounded metadata-only way to distinguish a new/body change from a label-only change or an exact missing thread.
+- **Source correction:** History delta now classifies message/label events per thread; viewer-only `threadSummaries` reads metadata for at most 20 exact IDs and returns explicit missing IDs. For a single-account Inbox with no query/filter/custom label, the client inserts, updates, or removes only changed rows while preserving cached body, account namespace, stable order, and page capacity. The selected body is reread only for a message change, never for a label-only event.
+- **Source evidence:** focused P0-C/P0-B/client/adapter contracts `35/35`; complete Apps Script suite `678/678` in `25.414s`; exact implementation baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- **Boundary:** shared mode, search, filters, custom labels, a full-sync boundary, more than 20 changed IDs, or incomplete metadata retain the bounded full-list fallback. Live insert/remove timing, request counts, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`. Gmail mutations, OAuth, Telegram runtime, and cached-body storage were unchanged.
+- **Evidence:** [VR-044](verification-reports/reports/VR-044/README.md).

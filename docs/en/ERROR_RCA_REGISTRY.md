@@ -45,6 +45,8 @@ Statuses: `VERIFIED`, `PARTIAL`, `UNVERIFIED`, `CONFLICTING`, `BLOCKED`, `RECOMM
 
 | RCA-024 | Every background revalidation reloaded the list and selected thread even when Gmail had no change | `p0RevalidateVisible()` called full `loadThreads()` directly; bootstrap `historyId` was lost during client normalization, while the separate Telegram-card History state was not a safe Mini App cursor | Added an exact-connection read-only History delta, an account-scoped IndexedDB cursor, one-promise reconciliation, and fail-closed full sync for a missing/stale cursor or bounded page overflow | Never share cursors across runtime lanes or accounts; retain History IDs as opaque strings; test no-change RPC suppression, 404 reset, pagination bounds, and unified-account isolation | `PARTIAL` | [VR-043](verification-reports/reports/VR-043/README.md) |
 
+| RCA-025 | After a real change, even a simple Inbox reloaded the full list and could reread body for a label-only change | P0-B had a change detector but no event classification or bounded summary fetch; every changed state used one full-list fallback | Added per-thread event flags, a viewer-only metadata batch for at most 20 IDs, and client entity merge with body preservation, a page-capacity bound, and message-only selected-thread refresh | Separate metadata from body invalidation; use entity merge only for proven view membership and keep ambiguous query/shared states on the fail-closed fallback | `PARTIAL` | [VR-044](verification-reports/reports/VR-044/README.md) |
+
 ## Update rule
 
 1. Add a row only after a sanitized source request and causal evidence.

@@ -449,3 +449,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** live cache-hit/request metrics, entity-level reconciliation for compatible simple views, native multi-account/shared acceptance, staging, and production. Shared Apps Script URL Fetch quota and `T-03` keep the release gate blocked.
 - **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-068`, `RCA-024`, `VR-043`, `REQ-0037`.
+
+## B1-49 - P0-C metadata-only entity reconciliation for a simple Inbox
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** a single-account Inbox with no search/filter/custom label applies a bounded History change set through a metadata-only batch: exact rows insert/update/remove without a full list RPC, cached body stays unchanged, and a label-only event does not start a thread-body read.
+- **Safety gate:** the batch accepts at most 20 unique IDs, exact-connection viewer access, and explicit missing IDs. Stable timestamp order and loaded-page capacity are retained; foreign-account rows are untouched.
+- **Fallback:** shared/query/filter/custom-label views, a full-sync boundary, and an oversized or incomplete delta use the existing bounded full-list reconciliation.
+- **Locally verified:** focused `35/35`; complete Apps Script suite `678/678` in `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- **Still required:** live Gmail change acceptance, request/cache-hit metrics, native multi-account/shared paths, staging, and production; the release gate remains blocked by shared URL Fetch quota and `T-03`.
+- **Related:** `GT-069`, `RCA-025`, `VR-044`, `REQ-0037`.
