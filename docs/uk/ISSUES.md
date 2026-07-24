@@ -694,3 +694,14 @@ Status: BLOCKED
 - **Source evidence:** focused contracts `258/258`; повний Apps Script suite `707/707` за `23.349s`; exact implementation baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
 - **Чесна межа:** офіційний Gmail `users.drafts.update` не документує atomic revision/ETag precondition. Другий read звужує, але не усуває вузьку TOCTOU-щілину між останнім `GET` і `PUT`. Native multi-session acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED` shared URL Fetch quota та `T-03`.
 - **Доказ:** [VR-048](verification-reports/reports/VR-048/README.md).
+
+## GT-074 - Вибір папки міг мовчки обрізати або частково запустити завеликий batch вкладень
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`; окремий V3 C-03 source contour без зміни release boundary.
+- **Product task:** `B1-54` / C-03 scalable folder upload.
+- **Підтверджена першопричина:** native folder recursion зупинявся на поточній межі вкладень, а fallback `webkitdirectory` передавав усі файли до поелементного приймання. Через відсутність одного batch plan користувач не отримував повного підсумку шляхів, сукупного розміру, дублікатів і причини, чому вибір `100/1000` файлів не може почати завантаження.
+- **Source correction:** один bounded planner сканує не більш як `1000` записів, зберігає нормалізований relative path, відхиляє traversal, hidden/service, empty та exact duplicate entries, розрізняє однакові basename у різних папках і перевіряє count/aggregate bytes до читання файлів. Progressive batch card показує total/status, до `40` рядків за крок, per-file retry/cancel, cancel-all і Drive fallback; accepted jobs далі використовують чинний transfer manager.
+- **Source evidence:** focused folder contracts `9/9`; Mail App contract `93/93`; повний Apps Script suite `716/716` за `25.980s`; exact implementation baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- **Чесна межа:** current attachment policy все ще обмежує фактичне вкладення; вибір `100/1000` файлів fail fast і пропонує Drive замість неправдивого upload. Native folder picker, mobile/desktop visual acceptance, staging і production ще не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
+- **Доказ:** [VR-049](verification-reports/reports/VR-049/README.md).

@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-048](reports/VR-048/README.md) фіксує P0-G source verification conflict-safe Gmail Drafts update. Focused contracts пройшли `258/258`, а повний Apps Script suite — `707/707` за `23.349s`; opaque version propagation, два pre-`PUT` checks і explicit conflict choice мають source evidence. Gmail API не документує atomic revision/ETag precondition, а native multi-session acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-049](reports/VR-049/README.md) фіксує V3 C-03 source verification bounded scalable folder upload. Focused contracts пройшли `9/9`, Mail App contract — `93/93`, а повний Apps Script suite — `716/716` за `25.980s`; batch planning, recursive relative paths, aggregate fail-fast і progressive controls мають source evidence. Native picker/fallback acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

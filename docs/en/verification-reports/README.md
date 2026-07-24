@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-048](reports/VR-048/README.md) records P0-G source verification of conflict-safe Gmail Drafts update. Focused contracts pass `258/258` and the complete Apps Script suite passes `707/707` in `23.349s`; opaque version propagation, two pre-`PUT` checks, and explicit conflict choice have source evidence. Gmail API documents no atomic revision/ETag precondition, while native multi-session acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-049](reports/VR-049/README.md) records V3 C-03 source verification of bounded scalable folder upload. Focused contracts pass `9/9`, the Mail App contract passes `93/93`, and the complete Apps Script suite passes `716/716` in `25.980s`; batch planning, recursive relative paths, aggregate fail-fast, and progressive controls have source evidence. Native picker/fallback acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.

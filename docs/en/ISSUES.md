@@ -694,3 +694,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused contracts `258/258`; complete Apps Script suite `707/707` in `23.349s`; exact implementation baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
 - **Honest boundary:** official Gmail `users.drafts.update` documentation exposes no atomic revision/ETag precondition. The second read narrows but cannot eliminate the small TOCTOU interval between the final `GET` and `PUT`. Native multi-session acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED` by shared URL Fetch quota and `T-03`.
 - **Evidence:** [VR-048](verification-reports/reports/VR-048/README.md).
+
+## GT-074 - Folder selection could silently truncate or partially start an oversized attachment batch
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`; a separate V3 C-03 source contour without changing the release boundary.
+- **Product task:** `B1-54` / C-03 scalable folder upload.
+- **Confirmed root cause:** native folder recursion stopped at the current attachment limit, while the `webkitdirectory` fallback passed every file into per-item admission. Without one batch plan, the user received no complete summary of paths, aggregate size, duplicates, or the reason a `100/1000`-file selection could not begin uploading.
+- **Source correction:** one bounded planner scans at most `1000` entries, retains a normalized relative path, rejects traversal, hidden/service, empty, and exact-duplicate entries, distinguishes equal basenames in different folders, and checks count/aggregate bytes before reading files. A progressive batch card exposes totals/status, up to `40` rows per step, per-file retry/cancel, cancel-all, and a Drive fallback; accepted jobs continue through the existing transfer manager.
+- **Source evidence:** focused folder contracts `9/9`; Mail App contract `93/93`; complete Apps Script suite `716/716` in `25.980s`; exact implementation baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- **Honest boundary:** the current attachment policy still limits actual attachment; a `100/1000`-file selection fails fast and offers Drive rather than pretending to upload. Native folder-picker, mobile/desktop visual acceptance, staging, and production remain unverified; shared URL Fetch quota and `T-03` release blockers are unchanged.
+- **Evidence:** [VR-049](verification-reports/reports/VR-049/README.md).

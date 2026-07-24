@@ -128,3 +128,12 @@
 - Focused evidence `258/258`; complete Apps Script suite `707/707` in `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
 - Gmail API documents no atomic revision/ETag precondition, so a narrow TOCTOU race remains between the second read and update. Authenticated multi-session, staging, and production were not verified; release blockers are unchanged.
 - Records: `GT-073`, `B1-53`, `RCA-029`, `VR-048`.
+
+## V3 C-03 bounded scalable folder upload
+
+- **Status:** `PARTIAL`; source evidence only.
+- Folder selection now passes through one bounded `1000`-entry planner with recursive relative paths, an aggregate count/byte gate, and exact-duplicate/unsafe-path rejection before local reads begin.
+- A progressive batch card shows total/status, bounded rows, a Drive fallback, per-file retry/cancel, and cancel-all; accepted entries reuse the existing transfer manager.
+- Focused evidence `9/9`; Mail App contract `93/93`; complete Apps Script suite `716/716` in `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- Native picker/fallback, visual mobile/desktop, staging, and production were not verified; shared URL Fetch quota and `T-03` release blockers are unchanged.
+- Records: `GT-074`, `B1-54`, `RCA-030`, `VR-049`.
