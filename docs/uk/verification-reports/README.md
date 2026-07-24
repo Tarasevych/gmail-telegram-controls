@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-043](reports/VR-043/README.md) фіксує P0-B source verification для account-scoped Gmail History revalidation. Focused contracts пройшли `30/30`, а повний Apps Script suite — `673/673` за `25.763s`; no-change suppression, opaque cursor, 404 reset, bounded pagination і account isolation мають source evidence. Live request reduction, entity-level query/shared membership, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-044](reports/VR-044/README.md) фіксує P0-C source verification для metadata-only entity reconciliation простого Inbox. Focused contracts пройшли `35/35`, а повний Apps Script suite — `678/678` за `25.414s`; exact insert/update/remove, cached-body preservation, event classification, page bound і account isolation мають source evidence. Live Gmail timing/request metrics, complex/shared entity reconciliation, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

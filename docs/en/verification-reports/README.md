@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-043](reports/VR-043/README.md) records P0-B source verification for account-scoped Gmail History revalidation. Focused contracts pass `30/30` and the complete Apps Script suite passes `673/673` in `25.763s`; no-change suppression, opaque cursor handling, 404 reset, bounded pagination, and account isolation have source evidence. Live request reduction, entity-level query/shared membership, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-044](reports/VR-044/README.md) records P0-C source verification for metadata-only entity reconciliation of a simple Inbox. Focused contracts pass `35/35` and the complete Apps Script suite passes `678/678` in `25.414s`; exact insert/update/remove, cached-body preservation, event classification, page bounds, and account isolation have source evidence. Live Gmail timing/request metrics, complex/shared entity reconciliation, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.

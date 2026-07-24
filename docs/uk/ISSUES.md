@@ -639,3 +639,14 @@ Status: BLOCKED
 - **Source evidence:** focused History/P0/adapter contracts `30/30`; повний Apps Script suite `673/673` за `25.763s`; exact implementation baseline `28b438e68e1b327308761c246e074558b7ccd53d`.
 - **Межа:** це source-level stale-while-revalidate optimization. При реальній зміні або втраті boundary складний query/shared view безпечно отримує bounded full-list reconciliation; entity-level membership update, live request reduction, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`. OAuth scopes, Gmail mutations, листи, Telegram runtime та deployment не змінювалися.
 - **Доказ:** [VR-043](verification-reports/reports/VR-043/README.md).
+
+## GT-069 - Реальна зміна простого Inbox все ще запускала повний list refresh
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує `GT-068`, не змінюючи його no-change History contract.
+- **Product task:** `B1-49` / P0-C metadata-only simple-Inbox entity reconciliation.
+- **Підтверджена першопричина:** P0-B коректно пригнічував no-change poll, але будь-який `changed=true` одразу переходив до `loadThreads()`. History delta не передавав event type, а client не мав bounded metadata-only способу відрізнити new/body change від label-only change або exact missing thread.
+- **Source correction:** History delta тепер класифікує message/label events за thread; viewer-only `threadSummaries` читає metadata максимум 20 exact IDs і повертає explicit missing IDs. Для single-account Inbox без query/filter/custom label client вставляє, оновлює або прибирає лише змінені rows, зберігає cached body, account namespace, stable ordering і page capacity. Selected body повторно читається лише для message change, не для label-only event.
+- **Source evidence:** focused P0-C/P0-B/client/adapter contracts `35/35`; повний Apps Script suite `678/678` за `25.414s`; exact implementation baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
+- **Межа:** shared mode, search, filters, custom labels, full-sync boundary, понад 20 changed IDs або incomplete metadata залишаються на bounded full-list fallback. Live insert/remove timing, request counts, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`. Gmail mutations, OAuth, Telegram runtime і cached body storage не змінювалися.
+- **Доказ:** [VR-044](verification-reports/reports/VR-044/README.md).
