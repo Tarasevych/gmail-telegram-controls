@@ -3490,6 +3490,23 @@ function mailboxDraftIdsByMessage_(messages) {
   return found;
 }
 
+function mailboxDraftVersion_(draftValue) {
+  const draft = draftValue || {};
+  const message = draft.message || {};
+  const draftId = mailboxSafeGmailId_(draft.id);
+  const messageId = mailboxSafeGmailId_(message.id);
+  if (!draftId || !messageId) return '';
+  return mailboxDigestText_(JSON.stringify(mailboxCanonicalOperationValue_({
+    draftId,
+    messageId,
+    threadId: mailboxSafeGmailId_(message.threadId),
+    historyId: mailboxSafeOpaqueToken_(message.historyId, 128),
+    internalDate: mailboxSafeOpaqueToken_(message.internalDate, 64),
+    sizeEstimate: Math.max(0, Number(message.sizeEstimate || 0)),
+    payload: mailboxIsPlainObject_(message.payload) ? message.payload : {},
+  })));
+}
+
 function mailboxEditableDraftDto_(draftIdValue, message, messageDtoValue, parsedMimeValue) {
   const draftId = mailboxRequireGmailId_(draftIdValue, 'draftId');
   const mime = parsedMimeValue || mailboxParseMessageMime_(message);
@@ -3511,6 +3528,7 @@ function mailboxEditableDraftDto_(draftIdValue, message, messageDtoValue, parsed
     bodyHtml: mailboxDraftHtmlWithInlineRefs_(mime.html, inlineAttachments),
     attachments: mailboxDraftAttachmentRefs_(message),
     inlineAttachments,
+    serverVersion: mailboxDraftVersion_({ id: draftId, message }),
   };
 }
 
@@ -8369,6 +8387,21 @@ function mailboxDraftResponseFromFull_(draftValue, supersededValue) {
   return response;
 }
 
+function mailboxDraftConflictResponse_(operation, draftValue) {
+  const response = mailboxDraftResponseFromFull_(draftValue);
+  const conflictError = mailboxError_(
+    'DRAFT_CONFLICT',
+    'Чернетка змінилася в іншій сесії. Оберіть версію перед збереженням.'
+  );
+  mailboxFailDraftOperation_(operation, conflictError);
+  return {
+    conflict: true,
+    draftId: response.draftId,
+    serverVersion: String(response.draft && response.draft.serverVersion || ''),
+    draft: response.draft,
+  };
+}
+
 function mailboxStoredDraftResponse_(operation, supersededValue) {
   const result = operation && operation.result || {};
   const response = {
@@ -8593,12 +8626,19 @@ function mailboxSaveDraft_(payload) {
   mailboxAssertAllowedKeys_(payload, [
     'draftId', 'threadId', 'replyMessageId', 'from', 'to', 'cc', 'bcc', 'subject', 'bodyText', 'bodyHtml',
     'attachments', 'inlineAttachments', 'existingAttachments', 'existingInlineAttachments',
-    'forwardSource', 'clientOperationId',
+    'forwardSource', 'clientOperationId', 'expectedVersion',
   ]);
   const draftId = payload.draftId
     ? mailboxRequireGmailId_(payload.draftId, 'draftId')
     : '';
   const operationId = mailboxRequireClientOperationId_(payload.clientOperationId);
+  const expectedVersion = draftId ? String(payload.expectedVersion || '') : '';
+  if (draftId && !/^[A-Za-z0-9_-]{43}$/.test(expectedVersion)) {
+    throw mailboxError_(
+      'DRAFT_VERSION_REQUIRED',
+      'Оновіть чернетку перед збереженням, щоб не перезаписати новішу Gmail-версію.'
+    );
+  }
   if (!draftId && Object.prototype.hasOwnProperty.call(payload, 'existingAttachments')) {
     throw mailboxError_('INVALID_ATTACHMENT', 'Посилання на вкладення дозволені лише для наявної чернетки.');
   }
@@ -8631,6 +8671,9 @@ function mailboxSaveDraft_(payload) {
     const existingDraft = reconciliation && reconciliation.currentDraft || null;
     const compose = mailboxNormalizeCompose_(payload, false);
     if (existingDraft) {
+      if (mailboxDraftVersion_(existingDraft) !== expectedVersion) {
+        return mailboxDraftConflictResponse_(operation, existingDraft);
+      }
       const existingMessage = existingDraft && existingDraft.message ? existingDraft.message : {};
       const existingThreadId = mailboxRequireGmailId_(existingMessage.threadId, 'threadId');
       if (compose.threadId && compose.threadId !== existingThreadId) {
@@ -8673,6 +8716,15 @@ function mailboxSaveDraft_(payload) {
     );
     if (!String(compose.bodyText || '').trim() && compose.bodyHtml) {
       compose.bodyText = mailboxNormalizeBody_(htmlToText_(compose.bodyHtml));
+    }
+    if (draftId) {
+      const latestDraft = gmailApiRequest_(
+        '/drafts/' + encodeURIComponent(draftId) + '?format=full',
+        { method: 'get' }
+      );
+      if (mailboxDraftVersion_(latestDraft) !== expectedVersion) {
+        return mailboxDraftConflictResponse_(operation, latestDraft);
+      }
     }
     compose.messageIdHeader = String(operation.messageIdHeader);
     message = { raw: mailboxBuildMime_(compose) };

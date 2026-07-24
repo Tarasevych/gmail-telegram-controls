@@ -819,24 +819,25 @@ test('confirmed draft save becomes pending after readback failure and retries wi
   const token = openOwnerSession(harness);
   const draftId = 'draft_post_commit';
   const threadId = 'thread_draft_post_commit';
-  let initialReadCount = 0;
+  const initialDraft = {
+    id: draftId,
+    message: {
+      id: 'message_draft_before',
+      threadId,
+      internalDate: '1710000000000',
+      labelIds: ['DRAFT'],
+      payload: { headers: [], parts: [] },
+    },
+  };
+  let validationReadCount = 0;
   let updateCount = 0;
   let readbackCount = 0;
   let operationMessageId = '';
   harness.setGmail((requestPath, options) => {
     if (requestPath === `/drafts/${draftId}?format=full`) {
-      if (!initialReadCount) {
-        initialReadCount += 1;
-        return {
-          id: draftId,
-          message: {
-            id: 'message_draft_before',
-            threadId,
-            internalDate: '1710000000000',
-            labelIds: ['DRAFT'],
-            payload: { headers: [], parts: [] },
-          },
-        };
+      if (!operationMessageId) {
+        validationReadCount += 1;
+        return initialDraft;
       }
       readbackCount += 1;
       if (readbackCount === 1) throw new Error('injected post-commit draft readback failure');
@@ -869,6 +870,7 @@ test('confirmed draft save becomes pending after readback failure and retries wi
 
   const request = {
     draftId,
+    expectedVersion: harness.context.mailboxDraftVersion_(initialDraft),
     bodyText: 'Підтверджений текст чернетки',
     existingAttachments: [],
     clientOperationId: 'post-commit-readback-operation-0001',
@@ -879,7 +881,7 @@ test('confirmed draft save becomes pending after readback failure and retries wi
     'the exact retry should recover the confirmed draft read-only');
   assert.equal(data.draftId, draftId);
   assert.equal(data.draft.draftId, draftId);
-  assert.equal(initialReadCount, 1, 'pre-commit draft validation remains fail-closed');
+  assert.equal(validationReadCount, 2, 'the draft version is checked again immediately before PUT');
   assert.equal(updateCount, 1, 'Gmail draft PUT must execute exactly once');
   assert.equal(readbackCount, 2, 'retry performs only the missing canonical readback');
 });
@@ -4753,6 +4755,7 @@ test('existing Gmail drafts expose a bounded editable DTO, preserve referenced a
   const callsBeforeBadRef = writes.length;
   resultFailed(rpc(harness, token, 'saveDraft', {
     draftId,
+    expectedVersion: editable.serverVersion,
     threadId,
     to: editable.to,
     subject: editable.subject,
@@ -4764,6 +4767,7 @@ test('existing Gmail drafts expose a bounded editable DTO, preserve referenced a
 
   const saved = resultData(rpc(harness, token, 'saveDraft', {
     draftId,
+    expectedVersion: editable.serverVersion,
     threadId,
     to: editable.to,
     cc: editable.cc,
@@ -4943,6 +4947,7 @@ test('uncertain draft update preserves authoritative attachment bytes and never 
   const request = {
     clientOperationId: 'uncertain-update-operation-0001',
     draftId,
+    expectedVersion: harness.context.mailboxDraftVersion_(currentDraft),
     threadId,
     to: 'recipient@example.com',
     subject: 'Attachment update',
@@ -5070,6 +5075,7 @@ test('committed save retry distinguishes a stripped Message-ID from a later supe
   const first = {
     clientOperationId: 'superseded-save-operation-0001',
     draftId,
+    expectedVersion: harness.context.mailboxDraftVersion_(current),
     to: 'recipient@example.com',
     subject: 'Superseded save',
     bodyText: 'First version',
@@ -5087,6 +5093,7 @@ test('committed save retry distinguishes a stripped Message-ID from a later supe
   const second = {
     clientOperationId: 'superseded-save-operation-0002',
     draftId,
+    expectedVersion: harness.context.mailboxDraftVersion_(current),
     to: 'recipient@example.com',
     subject: 'Superseded save',
     bodyText: 'Second version',
@@ -5248,6 +5255,7 @@ test('per-draft mutex blocks concurrent update/update and update/send before Gma
   const secondUpdate = resultFailed(rpc(harness, token, 'saveDraft', {
     clientOperationId: 'draft-mutex-second-operation',
     draftId,
+    expectedVersion: 'A'.repeat(43),
     to: 'recipient@example.com',
     bodyText: 'Concurrent update',
   }));
