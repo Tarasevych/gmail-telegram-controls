@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-047](reports/VR-047/README.md) records P0-F source verification of the encrypted offline bootstrap and read-only cache unlock. Focused contracts pass `33/33` and the complete Apps Script suite passes `701/701` in `25.944s`; exact owner/bootstrap AAD, transient-only fallback, and RPC blocking have source evidence. Fresh offline document launch, native Telegram target-device acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-048](reports/VR-048/README.md) records P0-G source verification of conflict-safe Gmail Drafts update. Focused contracts pass `258/258` and the complete Apps Script suite passes `707/707` in `23.349s`; opaque version propagation, two pre-`PUT` checks, and explicit conflict choice have source evidence. Gmail API documents no atomic revision/ETag precondition, while native multi-session acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.

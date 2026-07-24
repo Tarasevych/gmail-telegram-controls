@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-047](reports/VR-047/README.md) фіксує P0-F source verification encrypted offline bootstrap та read-only cache unlock. Focused contracts пройшли `33/33`, а повний Apps Script suite — `701/701` за `25.944s`; exact owner/bootstrap AAD, transient-only fallback і RPC blocking мають source evidence. Fresh offline document launch, native Telegram target-device acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-048](reports/VR-048/README.md) фіксує P0-G source verification conflict-safe Gmail Drafts update. Focused contracts пройшли `258/258`, а повний Apps Script suite — `707/707` за `23.349s`; opaque version propagation, два pre-`PUT` checks і explicit conflict choice мають source evidence. Gmail API не документує atomic revision/ETag precondition, а native multi-session acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

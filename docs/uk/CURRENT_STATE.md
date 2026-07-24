@@ -119,3 +119,12 @@
 - Focused evidence `33/33`; повний Apps Script suite `701/701` за `25.944s`; baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
 - Fresh offline document navigation, native target-device acceptance, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
 - Записи: `GT-072`, `B1-52`, `RCA-028`, `VR-047`.
+
+## P0-G conflict-safe Gmail Drafts update
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Canonical Gmail draft DTO тепер містить opaque `serverVersion`; encrypted recovery та save payload зберігають exact expected version для account-bound draft.
+- Existing-draft update fail closed без 43-символьної version, перевіряє canonical server state двічі до `PUT` і при mismatch повертає read-only conflict. UI зупиняє retry та вимагає явного вибору локальної або Gmail-версії.
+- Focused evidence `258/258`; повний Apps Script suite `707/707` за `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- Gmail API не документує atomic revision/ETag precondition, тому вузька TOCTOU-гонка між другим read і update лишається. Authenticated multi-session, staging і production не перевірялися; release blockers не змінені.
+- Записи: `GT-073`, `B1-53`, `RCA-029`, `VR-048`.

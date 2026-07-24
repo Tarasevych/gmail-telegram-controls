@@ -119,3 +119,12 @@
 - Focused evidence `33/33`; complete Apps Script suite `701/701` in `25.944s`; baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
 - Fresh offline document navigation, native target-device acceptance, staging, and production were not verified; shared URL Fetch quota and `T-03` release blockers are unchanged.
 - Records: `GT-072`, `B1-52`, `RCA-028`, `VR-047`.
+
+## P0-G conflict-safe Gmail Drafts update
+
+- **Status:** `PARTIAL`; source evidence only.
+- The canonical Gmail draft DTO now carries an opaque `serverVersion`; encrypted recovery and the save payload retain the exact expected version for the account-bound draft.
+- An existing-draft update fails closed without a 43-character version, checks canonical server state twice before `PUT`, and returns a read-only conflict on mismatch. The UI stops retrying and requires an explicit local-versus-Gmail choice.
+- Focused evidence `258/258`; complete Apps Script suite `707/707` in `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- Gmail API documents no atomic revision/ETag precondition, so a narrow TOCTOU race remains between the second read and update. Authenticated multi-session, staging, and production were not verified; release blockers are unchanged.
+- Records: `GT-073`, `B1-53`, `RCA-029`, `VR-048`.

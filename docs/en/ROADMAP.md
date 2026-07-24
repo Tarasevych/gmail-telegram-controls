@@ -495,3 +495,15 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** native Telegram target-device SecureStorage/WebCrypto acceptance, a fresh offline app-shell hosting path, warm-launch measurements, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
 - **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-072`, `RCA-028`, `VR-047`, `REQ-0037`.
+
+## B1-53 - P0-G conflict-safe Gmail Drafts update
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** updating an existing draft now requires an opaque server version, checks it twice before Gmail `PUT`, and returns a read-only conflict instead of overwriting on mismatch. The client retains the version in encrypted recovery state, starts no automatic retry loop, and offers an explicit local-versus-Gmail choice.
+- **Safety gate:** the version token contains no body, address, token, or provider credential; a conflict closes the exact operation reservation as failed before any Gmail mutation.
+- **API boundary:** Gmail API documents no atomic revision/ETag precondition for `users.drafts.update`; a narrow race between the second `GET` and `PUT` remains beyond this source contour.
+- **Locally verified:** focused `258/258`; complete Apps Script suite `707/707` in `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- **Still required:** authenticated two-session acceptance on a controlled draft, staging, and production after the shared URL Fetch quota and `T-03` blockers are cleared.
+- **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-073`, `RCA-029`, `VR-048`, `REQ-0037`.

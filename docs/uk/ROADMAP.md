@@ -495,3 +495,15 @@ Status: BLOCKED
 - **Ще потрібно:** native Telegram target-device SecureStorage/WebCrypto acceptance, fresh offline app-shell hosting path, warm-launch measurements, staging і production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
 - **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-072`, `RCA-028`, `VR-047`, `REQ-0037`.
+
+## B1-53 - P0-G conflict-safe Gmail Drafts update
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** update наявної чернетки тепер вимагає opaque server version, перевіряє її двічі до Gmail `PUT` і при mismatch повертає read-only conflict замість перезапису. Клієнт зберігає version у encrypted recovery-state, не запускає автоматичний retry-loop і дає явний вибір локальної або Gmail-версії.
+- **Safety gate:** version token не містить body, адрес, токенів або provider credentials; conflict закриває exact operation reservation як failed до будь-якої Gmail mutation.
+- **API boundary:** Gmail API не документує atomic revision/ETag precondition для `users.drafts.update`; залишається вузька гонка між другим `GET` та `PUT`, яку source contour не може усунути.
+- **Локально перевірено:** focused `258/258`; повний Apps Script suite `707/707` за `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- **Ще потрібно:** authenticated two-session acceptance на контрольній чернетці, staging і production після зняття shared URL Fetch quota та `T-03` blockers.
+- **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-073`, `RCA-029`, `VR-048`, `REQ-0037`.

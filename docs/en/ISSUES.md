@@ -683,3 +683,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused offline/cache/security contracts `33/33`; complete Apps Script suite `701/701` in `25.944s`; exact implementation baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
 - **Boundary:** recovery works only when the Apps Script document/app shell is already loaded. A fresh offline navigation of the current HTML deployment still has no Service Worker or same-origin offline shell; native Telegram SecureStorage/WebView, staging, and production remain `UNVERIFIED` or `BLOCKED`.
 - **Evidence:** [VR-047](verification-reports/reports/VR-047/README.md).
+
+## GT-073 - A Gmail draft could silently overwrite a newer cross-session version
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues the P0 drafts contour without changing the release boundary.
+- **Product task:** `B1-53` / P0-G conflict-safe Gmail Drafts update.
+- **Confirmed root cause:** local recovery, a stable operation ID, and the operation journal prevented loss and duplicate `PUT`, but an existing Gmail-draft update was not bound to an expected server version. A change in another session between canonical readback and the next save could be overwritten silently.
+- **Source correction:** the canonical draft DTO returns a 43-character opaque `serverVersion`; encrypted recovery and the save payload retain it without putting message content in operation metadata. The server requires the exact version for update, checks it after the first read, and checks it again immediately before `PUT`. A mismatch closes the reservation as failed without a Gmail mutation and returns the canonical conflict DTO. The client stops retrying and offers an explicit local-versus-Gmail choice.
+- **Source evidence:** focused contracts `258/258`; complete Apps Script suite `707/707` in `23.349s`; exact implementation baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- **Honest boundary:** official Gmail `users.drafts.update` documentation exposes no atomic revision/ETag precondition. The second read narrows but cannot eliminate the small TOCTOU interval between the final `GET` and `PUT`. Native multi-session acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED` by shared URL Fetch quota and `T-03`.
+- **Evidence:** [VR-048](verification-reports/reports/VR-048/README.md).

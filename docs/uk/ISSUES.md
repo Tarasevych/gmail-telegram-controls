@@ -683,3 +683,14 @@ Status: BLOCKED
 - **Source evidence:** focused offline/cache/security contracts `33/33`; повний Apps Script suite `701/701` за `25.944s`; exact implementation baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
 - **Межа:** відновлення працює лише коли Apps Script document/app shell уже завантажений. Fresh offline navigation чинного HTML deployment усе ще не має Service Worker/same-origin offline shell; native Telegram SecureStorage/WebView, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
 - **Доказ:** [VR-047](verification-reports/reports/VR-047/README.md).
+
+## GT-073 - Gmail-чернетка могла мовчки перезаписати новішу cross-session версію
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує P0 drafts contour без зміни release boundary.
+- **Product task:** `B1-53` / P0-G conflict-safe Gmail Drafts update.
+- **Підтверджена першопричина:** локальний recovery, stable operation ID і operation journal захищали від втрати та повторного `PUT`, але update наявної Gmail-чернетки не був прив’язаний до очікуваної server version. Зміна в іншій сесії між canonical readback і наступним save могла бути мовчки перезаписана.
+- **Source correction:** canonical draft DTO повертає 43-символьний opaque `serverVersion`; encrypted recovery і save payload зберігають його без вмісту листа в operation metadata. Сервер вимагає exact version для update, звіряє її після першого read і повторно безпосередньо перед `PUT`. Mismatch закриває reservation як failed без Gmail mutation і повертає canonical conflict DTO. Клієнт припиняє retry та пропонує явний вибір локальної або Gmail-версії.
+- **Source evidence:** focused contracts `258/258`; повний Apps Script suite `707/707` за `23.349s`; exact implementation baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
+- **Чесна межа:** офіційний Gmail `users.drafts.update` не документує atomic revision/ETag precondition. Другий read звужує, але не усуває вузьку TOCTOU-щілину між останнім `GET` і `PUT`. Native multi-session acceptance, staging і production лишаються `UNVERIFIED` або `BLOCKED` shared URL Fetch quota та `T-03`.
+- **Доказ:** [VR-048](verification-reports/reports/VR-048/README.md).
