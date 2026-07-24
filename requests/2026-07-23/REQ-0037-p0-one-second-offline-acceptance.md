@@ -106,6 +106,16 @@
 - `PARTIAL`: створено `GT-072`, `B1-52`, `RCA-028` і парний `VR-047`. Fresh offline Apps Script document navigation, native Telegram SecureStorage/WebView acceptance, target-device one-second measurements, staging і production лишаються `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
 
+### Оновлення доказів P0-G — 2026-07-24
+
+- `PARTIAL`: source implementation `9b00a335c0016c439a463233b67a16e1499b7222` і paired evidence `8991d0a6791cc7617b68834c43f849f55703c442` злиті normal merge через product PR `#118` як `16e5a02532287648d0fd339c68c82629fbde66c6`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: canonical Gmail draft DTO повертає 43-символьний opaque `serverVersion`; encrypted recovery і update payload зберігають exact expected version без body, адрес, OAuth/session credentials або Telegram identifiers.
+- `VERIFIED`: update наявної чернетки fail closed без exact version, звіряє canonical Gmail state після першого read і повторно безпосередньо перед `PUT`. Mismatch не виконує Gmail mutation, terminalizes exact journal reservation як failed і повертає read-only conflict DTO.
+- `VERIFIED`: client не запускає automatic retry після conflict і показує явний вибір: прийняти canonical Gmail version або залишити local version із latest server version як новим expected baseline.
+- `VERIFIED`: focused draft/client contracts `258/258`; повний Apps Script suite `707/707` за `23.349 s`; product PR checks `8/8`; bilingual `105` пар; knowledge-hub, verification-report і diff gates успішні.
+- `PARTIAL`: створено `GT-073`, `B1-53`, `RCA-029` і парний `VR-048`. Офіційний Gmail `users.drafts.update` не документує atomic revision/ETag precondition, тому другий read звужує, але не усуває вузьку гонку до `PUT`; authenticated multi-session acceptance, staging і production лишаються `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: OAuth, реальна Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -204,3 +214,13 @@
 - `VERIFIED`: focused offline/cache/security gate `33/33`; complete Apps Script suite `701/701` in `25.944 s`; product PR checks passed; `104` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
 - `PARTIAL`: `GT-072`, `B1-52`, `RCA-028`, and paired `VR-047` were created. Fresh offline Apps Script document navigation, native Telegram SecureStorage/WebView acceptance, target-device one-second measurements, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0-G evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `9b00a335c0016c439a463233b67a16e1499b7222` and paired evidence `8991d0a6791cc7617b68834c43f849f55703c442` were normally merged through product PR `#118` as `16e5a02532287648d0fd339c68c82629fbde66c6`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: the canonical Gmail draft DTO returns a 43-character opaque `serverVersion`; encrypted recovery and the update payload retain the exact expected version without a body, address, OAuth/session credential, or Telegram identifier.
+- `VERIFIED`: updating an existing draft fails closed without the exact version, checks canonical Gmail state after the first read, and checks it again immediately before `PUT`. A mismatch performs no Gmail mutation, terminalizes the exact journal reservation as failed, and returns a read-only conflict DTO.
+- `VERIFIED`: the client starts no automatic retry after a conflict and presents an explicit choice: accept canonical Gmail state or retain local state with the latest server version as the new expected baseline.
+- `VERIFIED`: focused draft/client contracts `258/258`; complete Apps Script suite `707/707` in `23.349 s`; product PR checks `8/8`; `105` bilingual pairs; knowledge-hub, verification-report, and diff gates passed.
+- `PARTIAL`: `GT-073`, `B1-53`, `RCA-029`, and paired `VR-048` were created. Official Gmail `users.drafts.update` documentation exposes no atomic revision/ETag precondition, so the second read narrows but cannot eliminate the small race before `PUT`; authenticated multi-session acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: no OAuth, real Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
