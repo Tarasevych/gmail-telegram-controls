@@ -3190,6 +3190,9 @@
       position: relative;
       z-index: 2;
       flex: 0 0 auto;
+      max-height: min(38vh, 260px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       background: var(--bg);
     }
 
@@ -3304,6 +3307,81 @@
       font-size: 12px;
     }
 
+    .compose-recipient-editor {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-width: 0;
+      max-height: 96px;
+      padding: 4px 2px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .compose-recipient-editor input {
+      flex: 1 1 170px;
+      min-width: 120px;
+      height: 30px;
+      padding-block: 0;
+    }
+
+    .compose-recipient-editor input[aria-invalid="true"] {
+      box-shadow: inset 0 -2px 0 var(--danger);
+    }
+
+    .compose-recipient-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .compose-recipient-chips:empty {
+      display: none;
+    }
+
+    .compose-recipient-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+      max-width: min(100%, 280px);
+      min-height: 28px;
+      padding: 2px 3px 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--rail);
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .compose-recipient-chip-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .compose-recipient-remove {
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .compose-recipient-remove:hover,
+    .compose-recipient-remove:focus-visible {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+
     .compose-field-actions {
       display: flex;
       gap: 4px;
@@ -3342,6 +3420,9 @@
     }
 
     .compose-format-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1;
       display: flex;
       align-items: center;
       gap: 3px;
@@ -3350,6 +3431,17 @@
       border-bottom: 1px solid var(--border);
       background: var(--rail);
       overflow-x: auto;
+    }
+
+    .compose-format-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      flex: 0 0 auto;
+    }
+
+    .compose-format-secondary[hidden] {
+      display: none;
     }
 
     .compose-format-button {
@@ -3413,6 +3505,24 @@
       border: 0;
       opacity: .92;
       cursor: pointer;
+    }
+
+    .compose-editor {
+      min-height: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .compose-editor table {
+      max-width: 100%;
+    }
+
+    .compose-editor td,
+    .compose-editor th {
+      min-width: 72px;
+      overflow-wrap: anywhere;
+      vertical-align: top;
     }
 
     .compose-link-panel {
@@ -5492,7 +5602,10 @@
         </div>
         <div class="compose-field">
           <label for="composeTo">Кому</label>
-          <input id="composeTo" type="text" inputmode="email" autocomplete="email">
+          <div class="compose-recipient-editor" data-recipient-kind="to">
+            <div class="compose-recipient-chips" id="composeToChips" role="list" aria-label="Одержувачі"></div>
+            <input id="composeTo" type="text" inputmode="email" autocomplete="email" aria-label="Додати одержувача">
+          </div>
           <div class="compose-field-actions">
             <button id="showCcButton" type="button">Копія</button>
             <button id="showBccButton" type="button">Прихована копія</button>
@@ -5500,14 +5613,20 @@
         </div>
         <div class="compose-field compose-optional" id="ccField">
           <label for="composeCc">Копія</label>
-          <input id="composeCc" type="text" inputmode="email">
+          <div class="compose-recipient-editor" data-recipient-kind="cc">
+            <div class="compose-recipient-chips" id="composeCcChips" role="list" aria-label="Одержувачі копії"></div>
+            <input id="composeCc" type="text" inputmode="email" aria-label="Додати одержувача копії">
+          </div>
           <div class="compose-field-actions">
             <button id="hideCcButton" type="button" aria-label="Сховати порожнє поле копії">Сховати</button>
           </div>
         </div>
         <div class="compose-field compose-optional" id="bccField">
           <label for="composeBcc">Прих. копія</label>
-          <input id="composeBcc" type="text" inputmode="email">
+          <div class="compose-recipient-editor" data-recipient-kind="bcc">
+            <div class="compose-recipient-chips" id="composeBccChips" role="list" aria-label="Одержувачі прихованої копії"></div>
+            <input id="composeBcc" type="text" inputmode="email" aria-label="Додати одержувача прихованої копії">
+          </div>
           <div class="compose-field-actions">
             <button id="hideBccButton" type="button" aria-label="Сховати порожнє поле прихованої копії">Сховати</button>
           </div>
@@ -5517,6 +5636,7 @@
           <input id="composeSubject" type="text">
           <span></span>
         </div>
+        <p class="sr-only" id="composeRecipientStatus" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
       <div class="reply-starter-panel" id="replyStarterPanel" hidden>
         <div class="reply-starter-heading">
@@ -5539,63 +5659,66 @@
       </div>
       <div class="compose-body">
         <div class="compose-format-toolbar" id="composeFormatToolbar" role="toolbar" aria-label="Форматування тексту">
-          <label class="sr-only" for="composeParagraphStyle">Стиль абзацу</label>
-          <select class="compose-format-select" id="composeParagraphStyle" aria-label="Стиль абзацу">
-            <option value="p">Абзац</option>
-            <option value="h1">Заголовок 1</option>
-            <option value="h2">Заголовок 2</option>
-            <option value="h3">Заголовок 3</option>
-          </select>
-          <label class="sr-only" for="composeFontFamily">Шрифт</label>
-          <select class="compose-format-select" id="composeFontFamily" aria-label="Шрифт">
-            <option value="Arial">Arial</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Verdana">Verdana</option>
-            <option value="Tahoma">Tahoma</option>
-            <option value="Trebuchet MS">Trebuchet MS</option>
-            <option value="Courier New">Courier New</option>
-          </select>
-          <label class="sr-only" for="composeFontSize">Розмір тексту</label>
-          <select class="compose-format-select" id="composeFontSize" aria-label="Розмір тексту">
-            <option value="10px">10</option>
-            <option value="12px">12</option>
-            <option value="14px" selected>14</option>
-            <option value="16px">16</option>
-            <option value="18px">18</option>
-            <option value="24px">24</option>
-            <option value="32px">32</option>
-          </select>
           <button class="compose-format-button" type="button" data-format="bold" aria-label="Жирний текст" title="Жирний текст"><strong>Ж</strong></button>
           <button class="compose-format-button" type="button" data-format="italic" aria-label="Курсив" title="Курсив"><em>К</em></button>
-          <button class="compose-format-button" type="button" data-format="underline" aria-label="Підкреслений текст" title="Підкреслений текст"><u>П</u></button>
-          <button class="compose-format-button" type="button" data-format="strike" aria-label="Закреслений текст" title="Закреслений текст"><s>З</s></button>
-          <label class="compose-color-control" title="Колір тексту">A
-            <span class="sr-only">Колір тексту</span>
-            <input id="composeTextColor" type="color" value="#202124" aria-label="Колір тексту">
-          </label>
-          <label class="compose-color-control" title="Колір фону">▣
-            <span class="sr-only">Колір фону</span>
-            <input id="composeBackgroundColor" type="color" value="#fff2a8" aria-label="Колір фону тексту">
-          </label>
-          <button class="compose-format-button" type="button" data-format="alignLeft" aria-label="Вирівняти ліворуч" title="Вирівняти ліворуч">⇤</button>
-          <button class="compose-format-button" type="button" data-format="alignCenter" aria-label="Вирівняти по центру" title="Вирівняти по центру">↔</button>
-          <button class="compose-format-button" type="button" data-format="alignRight" aria-label="Вирівняти праворуч" title="Вирівняти праворуч">⇥</button>
-          <button class="compose-format-button" type="button" data-format="alignJustify" aria-label="Вирівняти по ширині" title="Вирівняти по ширині">☰</button>
           <button class="compose-format-button" type="button" data-format="unorderedList" aria-label="Маркований список" title="Маркований список">• Список</button>
           <button class="compose-format-button" type="button" data-format="orderedList" aria-label="Нумерований список" title="Нумерований список">1. Список</button>
-          <button class="compose-format-button" type="button" data-format="indent" aria-label="Збільшити відступ" title="Збільшити відступ">→|</button>
-          <button class="compose-format-button" type="button" data-format="outdent" aria-label="Зменшити відступ" title="Зменшити відступ">|←</button>
-          <button class="compose-format-button" type="button" data-format="blockquote" aria-label="Цитата" title="Цитата">❝</button>
-          <button class="compose-format-button" type="button" data-format="horizontalRule" aria-label="Горизонтальна лінія" title="Горизонтальна лінія">―</button>
-          <button class="compose-format-button" id="composeTableButton" type="button" data-format="table" aria-label="Налаштувати таблицю" aria-expanded="false" title="Налаштувати таблицю">Таблиця</button>
-          <button class="compose-format-button" type="button" data-format="image" aria-label="Вставити зображення" title="Вставити зображення">Зображення</button>
-          <label class="sr-only" for="inlineImageInput">Вибрати зображення для вставлення в текст</label>
-          <input class="sr-only" id="inlineImageInput" type="file" multiple accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Вибрати зображення для вставлення в текст">
           <button class="compose-format-button" id="composeLinkButton" type="button" data-format="link" aria-label="Додати посилання" aria-expanded="false" title="Додати посилання">Посилання</button>
           <button class="compose-format-button" type="button" data-format="undo" aria-label="Скасувати редагування" title="Скасувати редагування">↶</button>
           <button class="compose-format-button" type="button" data-format="redo" aria-label="Повторити редагування" title="Повторити редагування">↷</button>
-          <button class="compose-format-button" type="button" data-format="clearFormatting" aria-label="Очистити форматування" title="Очистити форматування">Tx</button>
+          <button class="compose-format-button" id="composeMoreFormattingButton" type="button" aria-label="Показати додаткове форматування" aria-expanded="false" aria-controls="composeSecondaryFormatting">Ще</button>
+          <span class="compose-format-secondary" id="composeSecondaryFormatting" role="group" aria-label="Додаткове форматування" hidden>
+            <label class="sr-only" for="composeParagraphStyle">Стиль абзацу</label>
+            <select class="compose-format-select" id="composeParagraphStyle" aria-label="Стиль абзацу">
+              <option value="p">Абзац</option>
+              <option value="h1">Заголовок 1</option>
+              <option value="h2">Заголовок 2</option>
+              <option value="h3">Заголовок 3</option>
+            </select>
+            <label class="sr-only" for="composeFontFamily">Шрифт</label>
+            <select class="compose-format-select" id="composeFontFamily" aria-label="Шрифт">
+              <option value="Arial">Arial</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+              <option value="Courier New">Courier New</option>
+            </select>
+            <label class="sr-only" for="composeFontSize">Розмір тексту</label>
+            <select class="compose-format-select" id="composeFontSize" aria-label="Розмір тексту">
+              <option value="10px">10</option>
+              <option value="12px">12</option>
+              <option value="14px" selected>14</option>
+              <option value="16px">16</option>
+              <option value="18px">18</option>
+              <option value="24px">24</option>
+              <option value="32px">32</option>
+            </select>
+            <button class="compose-format-button" type="button" data-format="underline" aria-label="Підкреслений текст" title="Підкреслений текст"><u>П</u></button>
+            <button class="compose-format-button" type="button" data-format="strike" aria-label="Закреслений текст" title="Закреслений текст"><s>З</s></button>
+            <label class="compose-color-control" title="Колір тексту">A
+              <span class="sr-only">Колір тексту</span>
+              <input id="composeTextColor" type="color" value="#202124" aria-label="Колір тексту">
+            </label>
+            <label class="compose-color-control" title="Колір фону">▣
+              <span class="sr-only">Колір фону</span>
+              <input id="composeBackgroundColor" type="color" value="#fff2a8" aria-label="Колір фону тексту">
+            </label>
+            <button class="compose-format-button" type="button" data-format="alignLeft" aria-label="Вирівняти ліворуч" title="Вирівняти ліворуч">⇤</button>
+            <button class="compose-format-button" type="button" data-format="alignCenter" aria-label="Вирівняти по центру" title="Вирівняти по центру">↔</button>
+            <button class="compose-format-button" type="button" data-format="alignRight" aria-label="Вирівняти праворуч" title="Вирівняти праворуч">⇥</button>
+            <button class="compose-format-button" type="button" data-format="alignJustify" aria-label="Вирівняти по ширині" title="Вирівняти по ширині">☰</button>
+            <button class="compose-format-button" type="button" data-format="indent" aria-label="Збільшити відступ" title="Збільшити відступ">→|</button>
+            <button class="compose-format-button" type="button" data-format="outdent" aria-label="Зменшити відступ" title="Зменшити відступ">|←</button>
+            <button class="compose-format-button" type="button" data-format="blockquote" aria-label="Цитата" title="Цитата">❝</button>
+            <button class="compose-format-button" type="button" data-format="horizontalRule" aria-label="Горизонтальна лінія" title="Горизонтальна лінія">―</button>
+            <button class="compose-format-button" id="composeTableButton" type="button" data-format="table" aria-label="Налаштувати таблицю" aria-expanded="false" title="Налаштувати таблицю">Таблиця</button>
+            <button class="compose-format-button" type="button" data-format="image" aria-label="Вставити зображення" title="Вставити зображення">Зображення</button>
+            <label class="sr-only" for="inlineImageInput">Вибрати зображення для вставлення в текст</label>
+            <input class="sr-only" id="inlineImageInput" type="file" multiple accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Вибрати зображення для вставлення в текст">
+            <button class="compose-format-button" type="button" data-format="clearFormatting" aria-label="Очистити форматування" title="Очистити форматування">Tx</button>
+          </span>
         </div>
         <form class="compose-link-panel" id="composeLinkForm" hidden>
           <label class="sr-only" for="composeLinkUrl">Адреса посилання</label>
@@ -5634,6 +5757,7 @@
             <button class="outline-button" type="button" data-table-action="addColumnRight">Стовпець →</button>
             <button class="text-button" type="button" data-table-action="removeRow">Видалити рядок</button>
             <button class="text-button" type="button" data-table-action="removeColumn">Видалити стовпець</button>
+            <button class="text-button" type="button" data-table-action="removeTable">Видалити таблицю</button>
             <button class="text-button" id="cancelComposeTable" type="button">Закрити</button>
           </div>
           <span class="compose-source-note">Нестандартні межі доступні у редакторі; Gmail може нормалізувати їх під час канонічного збереження.</span>
@@ -17569,6 +17693,7 @@
             els.composeBody.append(document.importNode(node, true));
           });
           hydrateComposeInlineImages();
+          refreshComposeTablesAccessibility();
           return;
         }
         var text = bodyText == null ? "" : String(bodyText);
@@ -18035,6 +18160,32 @@
         return (spec.width ? spec.width + "px" : "0") + " " + spec.style + " " + spec.color;
       }
 
+      function refreshComposeTableAccessibility(table) {
+        if (!table || table.tagName !== "TABLE") return false;
+        var rows = Array.from(table.rows || []);
+        var columnCount = rows.reduce(function (maximum, row) {
+          return Math.max(maximum, row.cells.length);
+        }, 0);
+        table.setAttribute("role", "table");
+        table.setAttribute("aria-label", "Редагована таблиця: " + rows.length + " рядків, " + columnCount + " стовпців");
+        table.setAttribute("aria-rowcount", String(rows.length));
+        table.setAttribute("aria-colcount", String(columnCount));
+        rows.forEach(function (row, rowIndex) {
+          row.setAttribute("role", "row");
+          Array.from(row.cells).forEach(function (cell, columnIndex) {
+            var header = cell.tagName === "TH";
+            cell.setAttribute("role", header ? "columnheader" : "cell");
+            cell.setAttribute("aria-label", (header ? "Заголовок" : "Комірка") + ", рядок " +
+              (rowIndex + 1) + ", стовпець " + (columnIndex + 1));
+          });
+        });
+        return true;
+      }
+
+      function refreshComposeTablesAccessibility() {
+        Array.from(els.composeBody.querySelectorAll("table")).forEach(refreshComposeTableAccessibility);
+      }
+
       function setComposeStyleProperty(node, property, value) {
         if (!node || node.nodeType !== 1) return;
         var declarations = String(node.getAttribute("style") || "").split(";").filter(function (declaration) {
@@ -18070,6 +18221,7 @@
           body.append(row);
         }
         table.append(body);
+        refreshComposeTableAccessibility(table);
         return insertComposeNode(table, firstCell || table);
       }
 
@@ -18087,6 +18239,17 @@
         Array.from(els.composeTablePanel.querySelectorAll("[data-table-action]")).forEach(function (button) {
           button.disabled = !cell;
         });
+      }
+
+      function moveComposeTableCell(direction) {
+        var cell = composeSelectedTableCell();
+        if (!cell) return false;
+        var cells = Array.from(cell.closest("table").querySelectorAll("th,td"));
+        var index = cells.indexOf(cell);
+        var next = cells[index + (direction < 0 ? -1 : 1)];
+        if (!next) return false;
+        selectComposeNode(next, true);
+        return true;
       }
 
       function openComposeTableEditor() {
@@ -18162,11 +18325,20 @@
             if (tableRow.cells[columnIndex]) tableRow.cells[columnIndex].remove();
           });
           target = row.cells[Math.min(columnIndex, row.cells.length - 1)];
+        } else if (action === "removeTable") {
+          var paragraph = document.createElement("p");
+          paragraph.append(document.createElement("br"));
+          table.parentNode.replaceChild(paragraph, table);
+          selectComposeNode(paragraph, true);
+          syncComposeFromFields();
+          closeComposeTableEditor(false);
+          return true;
         } else if (action === "applyStyle") {
           return applyComposeTableBorder();
         } else {
           return false;
         }
+        refreshComposeTableAccessibility(table);
         selectComposeNode(target, true);
         syncComposeFromFields();
         updateComposeTableActions();
@@ -18362,9 +18534,37 @@
         return false;
       }
 
+      function setComposeSecondaryFormatting(expanded, focusFirst) {
+        var button = byId("composeMoreFormattingButton");
+        var group = byId("composeSecondaryFormatting");
+        if (!button || !group) return false;
+        var open = Boolean(expanded);
+        group.hidden = !open;
+        button.setAttribute("aria-expanded", open ? "true" : "false");
+        button.setAttribute("aria-label", open ? "Сховати додаткове форматування" : "Показати додаткове форматування");
+        if (open && focusFirst) {
+          var first = group.querySelector("button:not([disabled]),select:not([disabled]),input:not([disabled])");
+          if (first) first.focus();
+        }
+        return true;
+      }
+
+      function finishComposeInsertion(range, lastNode) {
+        if (lastNode) {
+          range.setStartAfter(lastNode);
+          range.collapse(true);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          state.composeSelection = range.cloneRange();
+        }
+        syncComposeFromFields();
+        return true;
+      }
+
       function insertPlainTextIntoCompose(text) {
         var range = composeSelectionRange();
-        if (!range) return;
+        if (!range) return false;
         range.deleteContents();
         var fragment = document.createDocumentFragment();
         String(text || "").split("\n").forEach(function (line, index) {
@@ -18373,15 +18573,221 @@
         });
         var last = fragment.lastChild;
         range.insertNode(fragment);
-        if (last) {
-          range.setStartAfter(last);
-          range.collapse(true);
-          var selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-          state.composeSelection = range.cloneRange();
+        return finishComposeInsertion(range, last);
+      }
+
+      function insertSafeRichTextIntoCompose(html, plainText) {
+        var sanitized = sanitizeComposeHtml(html);
+        if (!sanitized) return insertPlainTextIntoCompose(plainText);
+        var range = composeSelectionRange();
+        if (!range) return false;
+        var parsed = new DOMParser().parseFromString(sanitized, "text/html");
+        var fragment = document.createDocumentFragment();
+        Array.from(parsed.body.childNodes).forEach(function (node) {
+          fragment.append(document.importNode(node, true));
+        });
+        var last = fragment.lastChild;
+        if (!last) return insertPlainTextIntoCompose(plainText);
+        range.deleteContents();
+        range.insertNode(fragment);
+        refreshComposeTablesAccessibility();
+        return finishComposeInsertion(range, last);
+      }
+
+      function splitComposeRecipientTokens(value) {
+        var source = safeText(value);
+        var tokens = [];
+        var buffer = "";
+        var quoted = false;
+        var escaped = false;
+        var angleDepth = 0;
+        function pushBuffer() {
+          var token = buffer.trim();
+          if (token) tokens.push(token);
+          buffer = "";
+        }
+        for (var index = 0; index < source.length; index += 1) {
+          var character = source.charAt(index);
+          if (escaped) {
+            buffer += character;
+            escaped = false;
+            continue;
+          }
+          if (quoted && character === "\\") {
+            buffer += character;
+            escaped = true;
+            continue;
+          }
+          if (character === '"') quoted = !quoted;
+          if (!quoted && character === "<") angleDepth += 1;
+          if (!quoted && character === ">" && angleDepth) angleDepth -= 1;
+          if (!quoted && angleDepth === 0 && (character === "," || character === ";" || character === "\n")) {
+            pushBuffer();
+          } else {
+            buffer += character;
+          }
+        }
+        pushBuffer();
+        return tokens.slice(0, 200);
+      }
+
+      function normalizeComposeRecipientToken(value) {
+        var raw = safeText(value).replace(/[\r\n]+/g, " ").trim().slice(0, 512);
+        if (!raw) return null;
+        var angle = raw.match(/^(.*)<([^<>]+)>$/);
+        var address = (angle ? angle[2] : raw).trim();
+        if (!/^[^\s@(),:;<>[\]\\]+@[^\s@(),:;<>[\]\\]+\.[^\s@(),:;<>[\]\\]+$/.test(address)) return null;
+        var label = angle ? angle[1].trim().replace(/^"(.*)"$/, "$1").trim() : address;
+        label = label || address;
+        return {
+          email: address,
+          label: label,
+          value: angle && label !== address ? label + " <" + address + ">" : address
+        };
+      }
+
+      function composeRecipientListElement(input) {
+        var editor = input && input.closest ? input.closest(".compose-recipient-editor") : null;
+        return editor && editor.querySelector(".compose-recipient-chips");
+      }
+
+      function composeRecipientEntries(input) {
+        try {
+          var values = JSON.parse(input && input.dataset.recipientValues || "[]");
+          return Array.isArray(values) ? values.filter(function (entry) {
+            return entry && safeText(entry.email) && safeText(entry.value);
+          }).slice(0, 200) : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function renderComposeRecipientChips(input, entries) {
+        var list = composeRecipientListElement(input);
+        if (!list) return;
+        list.textContent = "";
+        var values = (entries || []).slice(0, 200);
+        input.dataset.recipientValues = JSON.stringify(values);
+        values.forEach(function (entry, index) {
+          var chip = document.createElement("span");
+          chip.className = "compose-recipient-chip";
+          chip.setAttribute("role", "listitem");
+          chip.title = entry.value;
+          var text = document.createElement("span");
+          text.className = "compose-recipient-chip-text";
+          text.textContent = entry.label || entry.email;
+          var remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "compose-recipient-remove";
+          remove.dataset.recipientIndex = String(index);
+          remove.setAttribute("aria-label", "Видалити одержувача " + entry.email);
+          remove.textContent = "×";
+          chip.append(text, remove);
+          list.append(chip);
+        });
+      }
+
+      function setComposeRecipientValue(input, value) {
+        var entries = [];
+        var invalid = [];
+        var seen = new Set();
+        splitComposeRecipientTokens(value).forEach(function (token) {
+          var entry = normalizeComposeRecipientToken(token);
+          if (!entry) {
+            invalid.push(token);
+            return;
+          }
+          var key = entry.email.toLocaleLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          entries.push(entry);
+        });
+        renderComposeRecipientChips(input, entries);
+        input.value = invalid.join("; ");
+        input.setAttribute("aria-invalid", invalid.length ? "true" : "false");
+        return invalid.length === 0;
+      }
+
+      function composeRecipientValue(input) {
+        var values = composeRecipientEntries(input).map(function (entry) { return entry.value; });
+        var pending = safeText(input && input.value).trim();
+        if (pending) values.push(pending);
+        return values.join(", ");
+      }
+
+      function announceComposeRecipient(message) {
+        var status = byId("composeRecipientStatus");
+        if (status) status.textContent = safeText(message);
+      }
+
+      function commitComposeRecipientInput(input, announce) {
+        var pending = splitComposeRecipientTokens(input && input.value);
+        if (!pending.length) return true;
+        var entries = composeRecipientEntries(input);
+        var seen = new Set(entries.map(function (entry) { return entry.email.toLocaleLowerCase(); }));
+        var invalid = [];
+        var added = 0;
+        pending.forEach(function (token) {
+          var entry = normalizeComposeRecipientToken(token);
+          if (!entry) {
+            invalid.push(token);
+            return;
+          }
+          var key = entry.email.toLocaleLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          entries.push(entry);
+          added += 1;
+        });
+        renderComposeRecipientChips(input, entries);
+        input.value = invalid.join("; ");
+        input.setAttribute("aria-invalid", invalid.length ? "true" : "false");
+        if (announce) {
+          announceComposeRecipient(invalid.length
+            ? "Перевірте адресу: " + invalid[0]
+            : added ? "Одержувача додано." : "Ця адреса вже додана.");
         }
         syncComposeFromFields();
+        return invalid.length === 0;
+      }
+
+      function removeComposeRecipient(input, index, returnFocus) {
+        var entries = composeRecipientEntries(input);
+        if (!Number.isInteger(index) || index < 0 || index >= entries.length) return false;
+        var removed = entries.splice(index, 1)[0];
+        renderComposeRecipientChips(input, entries);
+        syncComposeFromFields();
+        announceComposeRecipient("Одержувача " + removed.email + " видалено.");
+        if (returnFocus) {
+          var buttons = Array.from(composeRecipientListElement(input).querySelectorAll(".compose-recipient-remove"));
+          (buttons[Math.min(index, buttons.length - 1)] || input).focus();
+        }
+        return true;
+      }
+
+      function handleComposeRecipientInputKeydown(event) {
+        var input = event.currentTarget;
+        var pending = safeText(input.value);
+        if ((event.key === "Enter" || event.key === "," || event.key === ";" || event.key === "Tab") && pending.trim()) {
+          event.preventDefault();
+          commitComposeRecipientInput(input, true);
+          return;
+        }
+        if (event.key === "Backspace" && !pending) {
+          var entries = composeRecipientEntries(input);
+          if (entries.length) {
+            event.preventDefault();
+            removeComposeRecipient(input, entries.length - 1, true);
+          }
+          return;
+        }
+        if (event.key === "ArrowLeft" && !pending) {
+          var buttons = Array.from(composeRecipientListElement(input).querySelectorAll(".compose-recipient-remove"));
+          if (buttons.length) {
+            event.preventDefault();
+            buttons[buttons.length - 1].focus();
+          }
+        }
       }
 
       function setOptionalRecipientField(kind, visible, focusField) {
@@ -18389,7 +18795,7 @@
         var field = isBcc ? els.bccField : els.ccField;
         var input = isBcc ? els.composeBcc : els.composeCc;
         var trigger = isBcc ? els.showBccButton : els.showCcButton;
-        if (!visible && safeText(input.value)) {
+        if (!visible && composeRecipientValue(input)) {
           showSnackbar("Поле можна сховати після очищення адрес.");
           return false;
         }
@@ -18401,7 +18807,7 @@
 
       function collapseEmptyRecipientField(kind) {
         var input = kind === "bcc" ? els.composeBcc : els.composeCc;
-        if (safeText(input.value)) return false;
+        if (composeRecipientValue(input)) return false;
         return setOptionalRecipientField(kind, false, false);
       }
 
@@ -18411,6 +18817,7 @@
         var draft = state.compose || blankCompose("compose");
         closeComposeLinkEditor(false);
         closeComposeTableEditor(false);
+        setComposeSecondaryFormatting(false, false);
         clearComposeSelection();
         var visibleComposeTitle = draft.mode === "replyAll"
           ? "Відповідь усім"
@@ -18421,15 +18828,15 @@
             : draft.mode === "draft" ? "Редагування чернетки" : "Новий лист";
         els.composeTitle.textContent = visibleComposeTitle;
         renderComposeFrom(draft.from);
-        els.composeTo.value = draft.to;
-        els.composeCc.value = draft.cc;
-        els.composeBcc.value = draft.bcc;
+        setComposeRecipientValue(els.composeTo, draft.to);
+        setComposeRecipientValue(els.composeCc, draft.cc);
+        setComposeRecipientValue(els.composeBcc, draft.bcc);
         els.composeSubject.value = draft.subject;
         setComposeEditorContent(draft.bodyHtml, draft.body);
         if (selectionBookmark) restoreComposeSelectionBookmark(selectionBookmark);
         resetComposeHistory();
-        setOptionalRecipientField("cc", Boolean(draft.cc), false);
-        setOptionalRecipientField("bcc", Boolean(draft.bcc), false);
+        setOptionalRecipientField("cc", Boolean(composeRecipientValue(els.composeCc)), false);
+        setOptionalRecipientField("bcc", Boolean(composeRecipientValue(els.composeBcc)), false);
         renderReplyStarterPanel();
         renderReplyAttachmentsOption();
         renderComposeAttachments();
@@ -18676,9 +19083,9 @@
         }
         var previous = editableSnapshot(state.compose);
         state.compose.from = normalizeComposeFrom(els.composeFrom.value);
-        state.compose.to = els.composeTo.value;
-        state.compose.cc = els.composeCc.value;
-        state.compose.bcc = els.composeBcc.value;
+        state.compose.to = composeRecipientValue(els.composeTo);
+        state.compose.cc = composeRecipientValue(els.composeCc);
+        state.compose.bcc = composeRecipientValue(els.composeBcc);
         state.compose.subject = els.composeSubject.value;
         state.compose.body = composeEditorText();
         state.compose.bodyHtml = composeEditorHtml();
@@ -22484,8 +22891,40 @@
         });
         els.hideCcButton.addEventListener("click", function () { collapseEmptyRecipientField("cc"); });
         els.hideBccButton.addEventListener("click", function () { collapseEmptyRecipientField("bcc"); });
-        els.composeCc.addEventListener("blur", function () { collapseEmptyRecipientField("cc"); });
-        els.composeBcc.addEventListener("blur", function () { collapseEmptyRecipientField("bcc"); });
+        [els.composeTo, els.composeCc, els.composeBcc].forEach(function (input) {
+          input.addEventListener("keydown", handleComposeRecipientInputKeydown);
+          input.addEventListener("blur", function () {
+            if (safeText(input.value).trim()) commitComposeRecipientInput(input, false);
+            if (input === els.composeCc) collapseEmptyRecipientField("cc");
+            if (input === els.composeBcc) collapseEmptyRecipientField("bcc");
+          });
+          var editor = input.closest(".compose-recipient-editor");
+          editor.addEventListener("click", function (event) {
+            var button = event.target.closest && event.target.closest(".compose-recipient-remove");
+            if (!button || !editor.contains(button)) return;
+            removeComposeRecipient(input, Number(button.dataset.recipientIndex), false);
+            input.focus();
+          });
+          editor.addEventListener("keydown", function (event) {
+            var button = event.target.closest && event.target.closest(".compose-recipient-remove");
+            if (!button) return;
+            var buttons = Array.from(editor.querySelectorAll(".compose-recipient-remove"));
+            var index = buttons.indexOf(button);
+            if (event.key === "Delete" || event.key === "Backspace") {
+              event.preventDefault();
+              removeComposeRecipient(input, Number(button.dataset.recipientIndex), true);
+            } else if (event.key === "ArrowLeft" && index > 0) {
+              event.preventDefault();
+              buttons[index - 1].focus();
+            } else if (event.key === "ArrowRight") {
+              event.preventDefault();
+              (buttons[index + 1] || input).focus();
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              input.focus();
+            }
+          });
+        });
         [els.composeFrom, els.composeTo, els.composeCc, els.composeBcc, els.composeSubject, els.composeBody].forEach(function (field) {
           field.addEventListener("input", syncComposeFromFields);
         });
@@ -22501,7 +22940,9 @@
         els.composeBody.addEventListener("paste", function (event) {
           event.preventDefault();
           var clipboard = event.clipboardData || window.clipboardData;
-          insertPlainTextIntoCompose(clipboard ? clipboard.getData("text/plain") : "");
+          var plainText = clipboard ? clipboard.getData("text/plain") : "";
+          var richText = clipboard ? clipboard.getData("text/html") : "";
+          if (!richText || !insertSafeRichTextIntoCompose(richText, plainText)) insertPlainTextIntoCompose(plainText);
         });
         els.composeBody.addEventListener("drop", function (event) {
           event.preventDefault();
@@ -22509,6 +22950,12 @@
           insertPlainTextIntoCompose(transfer ? transfer.getData("text/plain") : "");
         });
         els.composeBody.addEventListener("keydown", function (event) {
+          if (event.key === "Tab" && composeSelectedTableCell()) {
+            if (moveComposeTableCell(event.shiftKey ? -1 : 1)) {
+              event.preventDefault();
+              return;
+            }
+          }
           if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
           var shortcut = event.key.toLowerCase();
           var format = { b: "bold", i: "italic", u: "underline" }[shortcut];
@@ -22528,6 +22975,15 @@
         els.composeFormatToolbar.querySelectorAll("[data-format]").forEach(function (button) {
           button.addEventListener("mousedown", function (event) { event.preventDefault(); });
           button.addEventListener("click", function () { applyComposeFormat(button.dataset.format); });
+        });
+        byId("composeMoreFormattingButton").addEventListener("click", function () {
+          setComposeSecondaryFormatting(byId("composeSecondaryFormatting").hidden, false);
+        });
+        byId("composeSecondaryFormatting").addEventListener("keydown", function (event) {
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          setComposeSecondaryFormatting(false, false);
+          byId("composeMoreFormattingButton").focus();
         });
         els.composeParagraphStyle.addEventListener("change", function () {
           applyComposeBlockTag(els.composeParagraphStyle.value);
