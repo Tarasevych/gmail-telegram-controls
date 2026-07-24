@@ -2498,6 +2498,7 @@ test('inline compose images use safe local tokens and keep binary data out of HT
     op: 'saveDraft',
     draft: {
       id: 'draft-1',
+      expectedVersion: 'A'.repeat(43),
       clientOperationId: 'draft_operation_1234567890',
       bodyHtml: '<img src="attachment:inline_readback.token">',
       inlineAttachments: [],

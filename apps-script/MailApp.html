@@ -7534,6 +7534,7 @@
           var draft = input.draft || {};
           var composePayload = {
             clientOperationId: safeClientOperationId(draft.clientOperationId),
+            expectedVersion: safeText(draft.expectedVersion),
             threadId: safeId(draft.threadId),
             replyMessageId: safeId(draft.replyToMessageId),
             from: safeText(draft.from),
@@ -7598,10 +7599,16 @@
           }
           composePayload.draftId = safeId(draft.id);
           if (!composePayload.draftId) {
+            delete composePayload.expectedVersion;
             delete composePayload.existingAttachments;
             delete composePayload.existingInlineAttachments;
           }
-          else delete composePayload.forwardSource;
+          else {
+            if (!/^[A-Za-z0-9_-]{43}$/.test(composePayload.expectedVersion)) {
+              throw new Error("Оновіть Gmail-чернетку перед збереженням, щоб не перезаписати новішу версію.");
+            }
+            delete composePayload.forwardSource;
+          }
           return { op: "saveDraft", connectionId: safeId(input.connectionId || draft.connectionId), payload: composePayload };
         }
         if (op === "sendDraft") {
@@ -11207,6 +11214,8 @@
           savedRevision: Number(draft.savedRevision || 0),
           lastCanonicalSavedAt: Math.max(0, Number(draft.lastCanonicalSavedAt || 0)),
           serverFingerprint: safeText(draft.baselineFingerprint),
+          serverVersion: /^[A-Za-z0-9_-]{43}$/.test(safeText(draft.serverVersion))
+            ? safeText(draft.serverVersion) : "",
           attachmentCount: (draft.attachments || []).length + (draft.inlineAttachments || []).length + localAttachmentJobs,
           missingAttachmentCount: Math.max(
             0,
@@ -11266,7 +11275,13 @@
         var keepLocal = make("button", { className: "outline-button", type: "button", text: "Залишити локальну" });
         var useGmail = make("button", { className: "outline-button", type: "button", text: "Використати Gmail" });
         keepLocal.addEventListener("click", function () {
+          var conflict = p0Runtime.composeConflict;
           p0Runtime.composeConflict = null;
+          state.compose.serverVersion = safeText(
+            conflict && conflict.server && conflict.server.serverVersion
+          );
+          state.compose.draftSaveDeferred = false;
+          state.compose.draftSaveError = "";
           state.compose.dirty = true;
           p0PersistComposeRecovery();
           scheduleComposeAutosave(0);
@@ -11308,6 +11323,8 @@
           ),
           dirty: true,
           baselineFingerprint: safeText(value.serverFingerprint, base.baselineFingerprint),
+          serverVersion: /^[A-Za-z0-9_-]{43}$/.test(safeText(value.serverVersion))
+            ? safeText(value.serverVersion) : safeText(base.serverVersion),
           p0RecoveryKey: p0DraftRecoveryKey(value),
           p0LocalRecovery: true,
           draftSaveFailureCount: 0,
@@ -16541,7 +16558,8 @@
         return p0ApplyRecoveredDraft(draft);
       }
 
-      function normalizeDraft(value, mode) {
+      function normalizeDraft(value, mode, options) {
+        var opts = options || {};
         var draft = value && value.draft ? value.draft : (value || {});
         var draftSendAs = Array.isArray(draft.sendAs)
           ? normalizeSendAs(draft.sendAs, draft.accountEmail)
@@ -16559,6 +16577,8 @@
             (state.account && state.account.id)
           ),
           id: safeId(draft.id || draft.draftId),
+          serverVersion: /^[A-Za-z0-9_-]{43}$/.test(safeText(draft.serverVersion))
+            ? safeText(draft.serverVersion) : "",
           threadId: safeId(draft.threadId || (state.thread && state.thread.id)),
           replyToMessageId: safeId(draft.replyToMessageId),
           sendAs: draftSendAs,
@@ -16590,7 +16610,7 @@
           dirty: false,
           baselineFingerprint: ""
         });
-        return p0ApplyRecoveredDraft(normalized);
+        return opts.skipRecovery ? normalized : p0ApplyRecoveredDraft(normalized);
       }
 
       function composeFingerprint(draftValue) {
@@ -18579,6 +18599,7 @@
         var existingInlineAttachments = (draft.inlineAttachments || []).filter(function (attachment) { return attachment.existing; });
         var payload = {
           clientOperationId: safeClientOperationId(draft.draftOperationId),
+          expectedVersion: safeText(draft.serverVersion),
           connectionId: safeId(draft.connectionId),
           id: draft.id,
           mode: draft.mode,
@@ -18836,11 +18857,29 @@
           try {
             var transfer = runManagedDraftPersistence(composeAtStart, snapshot, opts);
             var data = await transfer.promise;
-          if (!data || !data.draft) {
-            var incompleteSave = new Error("Gmail ще не повернув підтверджену чернетку.");
-            incompleteSave.code = "DRAFT_PENDING";
-            throw incompleteSave;
-          }
+          if (data && data.conflict && data.draft) {
+            var serverConflict = normalizeDraft(data.draft, "draft", { skipRecovery: true });
+            composeAtStart.draftOperationId = "";
+            composeAtStart.pendingKind = "";
+            composeAtStart.pendingSaveSnapshot = null;
+            composeAtStart.draftSaveDeferred = true;
+            composeAtStart.draftSaveError = "server-conflict";
+            composeAtStart.closeAfterSave = false;
+            state.composeSaveQueued = false;
+              p0Runtime.composeConflict = {
+                server: serverConflict,
+                local: p0Clone(composeAtStart)
+              };
+              await p0PersistComposeRecovery();
+              renderCompose({ preserveSelection: true });
+              p0RenderDraftConflictControls();
+              return false;
+            }
+            if (!data || !data.draft) {
+              var incompleteSave = new Error("Gmail ще не повернув підтверджену чернетку.");
+              incompleteSave.code = "DRAFT_PENDING";
+              throw incompleteSave;
+            }
             var canonical = normalizeDraft(data.draft, "draft");
             var canonicalAcknowledgedAt = Date.now();
             canonical.lastCanonicalSavedAt = canonicalAcknowledgedAt;
@@ -18905,12 +18944,12 @@
             }
             if (state.composeCloseRequested) syncComposeTransferAssociations();
             acknowledgeComposeOperation("draft", completedDraftOperationId, composeAtStart.connectionId);
-          if (!opts.quiet) showSnackbar(safeText(data.message, "Чернетку збережено"), { success: true });
+            if (!opts.quiet) showSnackbar(safeText(data.message, "Чернетку збережено"), { success: true });
             if (closeAfter && state.compose === composeAtStart) {
               if (state.compose.dirty) state.composeSaveQueued = true;
               else finishCloseCompose();
             }
-          return true;
+            return true;
           } catch (error) {
             if (state.compose !== composeAtStart) return false;
             if (composeRestartRecoveryIsRequired(error)) {
@@ -19005,6 +19044,7 @@
             var shouldContinue = !Number(state.compose.restartRecoveryBlockedCount || 0) &&
               !state.compose.restartRecoveryDeferred &&
               !state.compose.draftSaveDeferred &&
+              !(typeof p0Runtime === "object" && p0Runtime && p0Runtime.composeConflict) &&
               (state.composeSaveQueued ||
                 (state.compose.dirty &&
                   Number(state.compose.revision || 0) > Number(state.compose.savedRevision || 0)));
