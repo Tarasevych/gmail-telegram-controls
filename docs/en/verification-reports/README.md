@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-046](reports/VR-046/README.md) records P0-E source verification of the AES-GCM persistent-cache envelope. Focused contracts pass `55/55` and the complete Apps Script suite passes `692/692` in `23.540s`; schema-3 plaintext purge, AES-GCM roundtrip/tamper rejection, and the SecureStorage-only key contract have source evidence. Native Telegram crypto, offline bootstrap, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-047](reports/VR-047/README.md) records P0-F source verification of the encrypted offline bootstrap and read-only cache unlock. Focused contracts pass `33/33` and the complete Apps Script suite passes `701/701` in `25.944s`; exact owner/bootstrap AAD, transient-only fallback, and RPC blocking have source evidence. Fresh offline document launch, native Telegram target-device acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.

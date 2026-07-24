@@ -110,3 +110,12 @@
 - Upgrade очищає incompatible schema-2 plaintext cache. Focused evidence `55/55`; повний Apps Script suite `692/692` за `23.540s`; baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
 - Native target-device key persistence, offline encrypted bootstrap, staging і production не перевірялися; release blockers не змінені.
 - Записи: `GT-071`, `B1-51`, `RCA-027`, `VR-046`.
+
+## P0-F encrypted offline bootstrap
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Verified online session зберігає encrypted 35-day bootstrap snapshot без session/OAuth secrets; Telegram SecureStorage owner key та AES-GCM AAD прив’язують його до exact owner namespace.
+- Лише transient network failure може відкрити read-only retained cache; RPC і mutations блокуються до verified online recovery.
+- Focused evidence `33/33`; повний Apps Script suite `701/701` за `25.944s`; baseline `2bd7eb52d2f3297929c24c12d8ccbb4611699b84`.
+- Fresh offline document navigation, native target-device acceptance, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
+- Записи: `GT-072`, `B1-52`, `RCA-028`, `VR-047`.
