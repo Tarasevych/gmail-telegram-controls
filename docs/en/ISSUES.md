@@ -716,3 +716,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused C-04 contracts `5/5`; affected compose matrix `116/116`; MailClient `153/153`; complete Apps Script suite `721/721` in `25.457s`; exact implementation baseline `f790897e8dec4a83e8ab8c7114618109b99b436a`.
 - **Honest boundary:** the local browser automation contract was unavailable, so visual mobile/desktop/keyboard-open and native Telegram WebView acceptance are not claimed. Real Gmail draft, staging, and production were not verified; shared URL Fetch quota and `T-03` release blockers are unchanged.
 - **Evidence:** [VR-050](verification-reports/reports/VR-050/README.md).
+
+## GT-076 - Five V3 task codes had no explicit route in the active registries
+
+- **Status:** `VERIFIED`
+- **Source requests:** `REQ-0035`, `REQ-0037`; reconciliation creates no new Versie or release authority.
+- **Product task:** `B1-56` / V3 coverage reconciliation.
+- **Confirmed root cause:** active `ROADMAP`, `CURRENT_STATE`, `ISSUES`, RCA, and VR records tracked implementations through `B1/GT/VR` but did not repeat plan IDs `A-04`, `A-05`, `D-02`, `E-01`, and `E-02`. An automated exact-ID audit therefore found only `26/31` task codes and could misread five missing aliases as missing source.
+- **Correction:** `B1-56` and `VR-051` add an unambiguous task-code → existing `B1/GT/VR` matrix while preserving the factual status of every contour. The repeated exact-ID gate must find `31/31` without elevating source evidence to native/runtime acceptance.
+- **Source evidence:** cache lock/AES-GCM/offline unlock, version marker/reload guard, Box OAuth callback, Telegram viewport events, and pane controls already exist in source/tests at baseline `689c401397be8419df60239063ebe831477e96ba`.
+- **Boundary:** `A-04`, `A-05`, `D-02`, `E-01`, and `E-02` remain `PARTIAL`, `UNVERIFIED`, or `BLOCKED` wherever native/live evidence is missing. A documentation alias is not staging or production proof.
+- **Evidence:** [VR-051](verification-reports/reports/VR-051/README.md).

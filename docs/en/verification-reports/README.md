@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-050](reports/VR-050/README.md) records V3 C-04 source verification of rich compose editing and recipient layout. Focused contracts pass `5/5`, the affected compose matrix passes `116/116`, MailClient passes `153/153`, and the complete Apps Script suite passes `721/721` in `25.457s`; recipient chips, safe rich paste, a progressive toolbar, and accessible table controls have source evidence. Visual/native acceptance, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-051](reports/VR-051/README.md) verifies V3 task-code coverage. The baseline active-doc scan found `26/31` IDs; `A-04`, `A-05`, `D-02`, `E-01`, and `E-02` already had source/test evidence but no explicit alias. `B1-56` routes `31/31` IDs without duplicating code or elevating any `PARTIAL/BLOCKED` acceptance status.
