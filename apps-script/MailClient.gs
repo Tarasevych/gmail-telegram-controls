@@ -1725,6 +1725,7 @@ function mailboxDispatch_(op, payload, session) {
   if (op === 'disconnectGmail') return mailboxMultiDisconnectGmail_(payload, session);
   if (op === 'list') return mailboxListThreads_(payload);
   if (op === 'historyDelta') return mailboxHistoryDelta_(payload);
+  if (op === 'threadSummaries') return mailboxChangedThreadSummaries_(payload);
   if (op === 'unifiedList') return mailboxListUnifiedThreads_(payload, session);
   if (op === 'thread') return mailboxGetThread_(payload);
   if (op === 'attachment') return mailboxGetAttachment_(payload);
@@ -1782,7 +1783,7 @@ function mailboxNormalizeRequest_(request) {
   mailboxAssertAllowedKeys_(request, ['op', 'payload', 'connectionId']);
   const op = String(request.op || '');
   const allowed = [
-    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'list', 'historyDelta', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+    'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'metadata', 'labelAdmin', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'list', 'historyDelta', 'threadSummaries', 'unifiedList', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
     'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
     'boxStatus', 'boxConnectStart', 'boxDisconnect',
   ];
@@ -1897,7 +1898,7 @@ function mailboxBootstrap_(payload, session) {
     customLabels,
     capabilities: {
       operations: [
-        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'historyDelta', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
+        'bootstrap', 'switchAccount', 'connectGoogleStart', 'accountSettings', 'updateAccountSettings', 'workspaceAccess', 'createInvite', 'acceptInvite', 'updateMember', 'disconnectGmail', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'functionalMetrics', 'list', 'historyDelta', 'threadSummaries', 'thread', 'attachment', 'label', 'action', 'draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduledSendState', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend',
         'ackOperation', 'sourceList', 'sourceMetadata', 'sourceContent', 'sourceAccounts', 'sourceConnectStart', 'sourceSelect', 'sourceDisconnect',
         'boxStatus', 'boxConnectStart', 'boxDisconnect',
       ],
@@ -1954,7 +1955,7 @@ function mailboxBootstrap_(payload, session) {
 
 function mailboxRequestMinimumRole_(opValue) {
   const op = String(opValue || '');
-  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'scheduledSendState', 'list', 'historyDelta', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
+  if (['metadata', 'focusConfig', 'focusRuleAdmin', 'focusThread', 'attentionState', 'attentionUpdate', 'attentionPreferences', 'backlogRescue', 'coProcessingSession', 'functionalMetrics', 'scheduledSendState', 'list', 'historyDelta', 'threadSummaries', 'thread', 'attachment'].indexOf(op) !== -1) return 'viewer';
   if (['draftOperationStatus', 'saveDraft', 'sendDraft', 'scheduleDraftSend', 'rescheduleDraftSend', 'cancelScheduledSend', 'ackOperation'].indexOf(op) !== -1) return 'responder';
   if (['label', 'labelAdmin', 'action'].indexOf(op) !== -1) return 'manager';
   return '';
@@ -2273,8 +2274,9 @@ function mailboxHistoryChangeSet_(historyRows) {
   const threadIds = [];
   const seenMessages = new Set();
   const seenThreads = new Set();
+  const threadChanges = {};
   let eventCount = 0;
-  const addMessage = message => {
+  const addMessage = (message, changeType) => {
     if (!message || typeof message !== 'object') return;
     const messageId = String(message.id || '');
     const threadId = String(message.threadId || '');
@@ -2288,21 +2290,40 @@ function mailboxHistoryChangeSet_(historyRows) {
       seenThreads.add(threadId);
       threadIds.push(threadId);
     }
+    if (/^[A-Za-z0-9_-]{1,128}$/.test(threadId)) {
+      const change = threadChanges[threadId] || {
+        threadId,
+        messageChanged: false,
+        messageAdded: false,
+        messageDeleted: false,
+        labelAdded: false,
+        labelRemoved: false,
+      };
+      if (Object.prototype.hasOwnProperty.call(change, changeType)) change[changeType] = true;
+      threadChanges[threadId] = change;
+    }
   };
   (Array.isArray(historyRows) ? historyRows : []).forEach(row => {
     if (!row || typeof row !== 'object') return;
     const direct = Array.isArray(row.messages) ? row.messages : [];
     eventCount += direct.length;
-    direct.forEach(addMessage);
-    ['messagesAdded', 'messagesDeleted', 'labelsAdded', 'labelsRemoved'].forEach(name => {
+    direct.forEach(message => addMessage(message, 'messageChanged'));
+    [
+      ['messagesAdded', 'messageAdded'],
+      ['messagesDeleted', 'messageDeleted'],
+      ['labelsAdded', 'labelAdded'],
+      ['labelsRemoved', 'labelRemoved'],
+    ].forEach(entry => {
+      const name = entry[0];
       const events = Array.isArray(row[name]) ? row[name] : [];
       eventCount += events.length;
-      events.forEach(event => addMessage(event && event.message));
+      events.forEach(event => addMessage(event && event.message, entry[1]));
     });
   });
   return {
     changedMessageIds: messageIds,
     changedThreadIds: threadIds,
+    threadChanges: Object.keys(threadChanges).map(threadId => threadChanges[threadId]),
     eventCount,
   };
 }
@@ -2318,6 +2339,22 @@ function mailboxMergeHistoryChangeSet_(target, source) {
   });
   target.changedMessageIds = Array.from(messageIds);
   target.changedThreadIds = Array.from(threadIds);
+  const changes = {};
+  (target.threadChanges || []).concat(source.threadChanges || []).forEach(change => {
+    if (!change || !change.threadId) return;
+    const current = changes[change.threadId] || {
+      threadId: change.threadId,
+      messageChanged: false,
+      messageAdded: false,
+      messageDeleted: false,
+      labelAdded: false,
+      labelRemoved: false,
+    };
+    ['messageChanged', 'messageAdded', 'messageDeleted', 'labelAdded', 'labelRemoved']
+      .forEach(name => { current[name] = current[name] || change[name] === true; });
+    changes[change.threadId] = current;
+  });
+  target.threadChanges = Object.keys(changes).map(threadId => changes[threadId]);
   target.eventCount += Number(source.eventCount || 0);
   return target;
 }
@@ -2339,6 +2376,7 @@ function mailboxHistoryDelta_(payloadValue) {
       historyId: mailboxCurrentHistoryBaseline_(),
       changedMessageIds: [],
       changedThreadIds: [],
+      threadChanges: [],
       eventCount: 0,
       pages: 0,
       complete: true,
@@ -2349,6 +2387,7 @@ function mailboxHistoryDelta_(payloadValue) {
   const aggregate = {
     changedMessageIds: [],
     changedThreadIds: [],
+    threadChanges: [],
     eventCount: 0,
   };
   let pageToken = '';
@@ -2376,6 +2415,7 @@ function mailboxHistoryDelta_(payloadValue) {
           historyId: mailboxCurrentHistoryBaseline_(),
           changedMessageIds: [],
           changedThreadIds: [],
+          threadChanges: [],
           eventCount: 0,
           pages,
           complete: true,
@@ -2405,6 +2445,7 @@ function mailboxHistoryDelta_(payloadValue) {
         historyId: targetHistoryId,
         changedMessageIds: aggregate.changedMessageIds,
         changedThreadIds: aggregate.changedThreadIds,
+        threadChanges: aggregate.threadChanges,
         eventCount: aggregate.eventCount,
         pages,
         complete: true,
@@ -2421,9 +2462,50 @@ function mailboxHistoryDelta_(payloadValue) {
     historyId: targetHistoryId,
     changedMessageIds: aggregate.changedMessageIds,
     changedThreadIds: aggregate.changedThreadIds,
+    threadChanges: aggregate.threadChanges,
     eventCount: aggregate.eventCount,
     pages,
     complete: true,
+  };
+}
+
+function mailboxChangedThreadSummaries_(payloadValue) {
+  const payload = payloadValue || {};
+  mailboxAssertAllowedKeys_(payload, ['threadIds']);
+  if (!Array.isArray(payload.threadIds) || !payload.threadIds.length || payload.threadIds.length > 20) {
+    throw mailboxError_('INVALID_THREAD_BATCH', 'Потрібно передати від 1 до 20 Gmail thread IDs.');
+  }
+  const seen = new Set();
+  const threadIds = payload.threadIds.map(value => {
+    const id = String(value || '');
+    if (!/^[A-Za-z0-9_-]{5,128}$/.test(id) || seen.has(id)) {
+      throw mailboxError_('INVALID_THREAD_BATCH', 'Gmail thread IDs мають бути унікальними та коректними.');
+    }
+    seen.add(id);
+    return id;
+  });
+  const references = threadIds.map(id => ({ id }));
+  const metadataQuery = mailboxMetadataQuery_([
+    'From', 'To', 'Cc', 'Date', 'Subject', 'Message-ID',
+  ]);
+  const resources = mailboxFetchThreadMetadataBatch_(references, metadataQuery);
+  const pending = [];
+  const missingThreadIds = [];
+  references.forEach((reference, index) => {
+    if (!resources[index]) {
+      missingThreadIds.push(reference.id);
+      return;
+    }
+    pending.push(mailboxThreadSummaryFromResource_(reference, resources[index]));
+  });
+  const summariesUk = mailboxTranslateSummariesUk_(
+    pending.map(item => item.summarySource)
+  );
+  return {
+    threads: pending.map((item, index) =>
+      mailboxFinalizeThreadSummary_(item.dto, summariesUk[index])
+    ),
+    missingThreadIds,
   };
 }
 

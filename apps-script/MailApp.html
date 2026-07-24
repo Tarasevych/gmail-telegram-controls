@@ -7130,6 +7130,17 @@
             }
           };
         }
+        if (op === "threadSummaries") {
+          return {
+            op: "threadSummaries",
+            connectionId: safeId(input.connectionId),
+            payload: {
+              threadIds: Array.isArray(input.threadIds)
+                ? input.threadIds.slice(0, 20).map(safeId).filter(Boolean)
+                : []
+            }
+          };
+        }
         if (op === "metadata") {
           return { op: "metadata", connectionId: safeId(input.connectionId), payload: {} };
         }
@@ -9793,7 +9804,8 @@
           historyChecks: 0,
           historyNoopChecks: 0,
           historyListRefreshes: 0,
-          historyFullResyncs: 0
+          historyFullResyncs: 0,
+          historyEntityReconciles: 0
         }
       };
 
@@ -10804,7 +10816,7 @@
 
       function p0RpcDedupeKey(payload) {
         var op = safeText(payload && payload.op);
-        if (["bootstrap", "listThreads", "getThread", "historyDelta", "attentionState", "clientRelease"].indexOf(op) === -1) return "";
+        if (["bootstrap", "listThreads", "getThread", "historyDelta", "threadSummaries", "attentionState", "clientRelease"].indexOf(op) === -1) return "";
         return op + ":" + p0StableStringify(payload);
       }
 
@@ -11125,8 +11137,152 @@
           reason: safeText(result.reason),
           changedThreadIds: Array.isArray(result.changedThreadIds)
             ? result.changedThreadIds.map(safeId).filter(Boolean)
+            : [],
+          threadChanges: Array.isArray(result.threadChanges)
+            ? result.threadChanges.map(function (change) {
+              return {
+                threadId: safeId(change && change.threadId),
+                messageChanged: Boolean(change && change.messageChanged),
+                messageAdded: Boolean(change && change.messageAdded),
+                messageDeleted: Boolean(change && change.messageDeleted),
+                labelAdded: Boolean(change && change.labelAdded),
+                labelRemoved: Boolean(change && change.labelRemoved)
+              };
+            }).filter(function (change) { return Boolean(change.threadId); })
             : []
         };
+      }
+
+      function p0CanApplySimpleInboxDelta(results) {
+        if (state.unifiedMode || safeId(state.currentFolderId).toUpperCase() !== "INBOX" ||
+            safeId(state.currentLabelId) || safeText(state.query) ||
+            safeMailboxFilter(state.filter) !== "all") return false;
+        if (!Array.isArray(results) || results.length !== 1) return false;
+        var result = results[0] || {};
+        return result.changed === true && result.requiresFullSync !== true &&
+          Array.isArray(result.changedThreadIds) &&
+          result.changedThreadIds.length > 0 && result.changedThreadIds.length <= 20;
+      }
+
+      function p0ThreadTimestampValue(thread) {
+        return Math.max(0, Number(thread && (thread.timestamp || thread.internalDate) || 0));
+      }
+
+      function p0SimpleInboxMerge_(existingValue, summariesValue, missingValue, connectionIdValue, options) {
+        var connectionId = safeId(connectionIdValue);
+        var existing = Array.isArray(existingValue) ? existingValue : [];
+        var summaries = Array.isArray(summariesValue) ? summariesValue : [];
+        var missing = new Set((Array.isArray(missingValue) ? missingValue : []).map(safeId).filter(Boolean));
+        var fresh = new Map();
+        summaries.forEach(function (summary) {
+          var id = safeId(summary && summary.id);
+          if (id) fresh.set(id, summary);
+        });
+        var requested = new Set(Array.from(fresh.keys()).concat(Array.from(missing)));
+        var existingIds = new Set();
+        var next = [];
+        existing.forEach(function (thread) {
+          var id = safeId(thread && thread.id);
+          if (safeId(thread && thread.accountId) !== connectionId || !requested.has(id)) {
+            next.push(thread);
+            return;
+          }
+          existingIds.add(id);
+          var replacement = fresh.get(id);
+          if (!replacement || !Array.isArray(replacement.labelIds) ||
+              replacement.labelIds.map(safeId).indexOf("INBOX") === -1) return;
+          next.push(Object.assign({}, thread, replacement, { accountId: connectionId }));
+        });
+        var minimumTimestamp = Math.max(0, Number(options && options.minimumTimestamp || 0));
+        summaries.forEach(function (summary) {
+          var id = safeId(summary && summary.id);
+          if (!id || existingIds.has(id) || !Array.isArray(summary.labelIds) ||
+              summary.labelIds.map(safeId).indexOf("INBOX") === -1) return;
+          if (minimumTimestamp && p0ThreadTimestampValue(summary) < minimumTimestamp) return;
+          next.push(Object.assign({}, summary, { accountId: connectionId }));
+        });
+        next.sort(function (left, right) {
+          return p0ThreadTimestampValue(right) - p0ThreadTimestampValue(left) ||
+            safeId(left && left.id).localeCompare(safeId(right && right.id));
+        });
+        var capacity = Math.max(0, Number(options && options.capacity || 0));
+        return capacity && next.length > capacity ? next.slice(0, capacity) : next;
+      }
+
+      async function p0ApplySimpleInboxDelta(result) {
+        var connectionId = safeId(result && result.connectionId);
+        var threadIds = Array.isArray(result && result.changedThreadIds)
+          ? Array.from(new Set(result.changedThreadIds.map(safeId).filter(Boolean)))
+          : [];
+        if (!connectionId || !threadIds.length || threadIds.length > 20) return false;
+        var namespace = p0CurrentNamespace();
+        var cacheKey = p0Runtime.currentListKey || p0ListCacheKey(mailboxViewContext());
+        var cached = p0PeekRecord("list", cacheKey) || await p0ReadRecord("list", cacheKey);
+        if (!cached || cached.namespace !== namespace ||
+            !p0ListSnapshotMatchesNamespace(cached.value, namespace)) return false;
+        var response = await callRpc({
+          op: "threadSummaries",
+          connectionId: connectionId,
+          threadIds: threadIds
+        });
+        var data = response && response.data && typeof response.data === "object"
+          ? response.data
+          : response;
+        var summaries = Array.isArray(data && data.threads)
+          ? data.threads.map(function (thread) {
+            var summary = normalizeThreadSummary(thread);
+            summary.accountId = connectionId;
+            return summary;
+          })
+          : [];
+        var missing = Array.isArray(data && data.missingThreadIds)
+          ? data.missingThreadIds.map(safeId).filter(Boolean)
+          : [];
+        if (summaries.some(function (summary) { return !Array.isArray(summary.labelIds); })) return false;
+        var covered = new Set(summaries.map(function (summary) { return safeId(summary.id); }).concat(missing));
+        if (threadIds.some(function (threadId) { return !covered.has(threadId); })) return false;
+        var accountRows = state.threads.filter(function (thread) {
+          return safeId(thread && thread.accountId) === connectionId;
+        });
+        var minimumTimestamp = state.nextPageToken && accountRows.length
+          ? Math.min.apply(null, accountRows.map(p0ThreadTimestampValue))
+          : 0;
+        state.threads = p0SimpleInboxMerge_(
+          state.threads,
+          summaries,
+          missing,
+          connectionId,
+          {
+            minimumTimestamp: minimumTimestamp,
+            capacity: state.nextPageToken ? state.threads.length : 0
+          }
+        );
+        var snapshot = Object.assign({}, cached.value, { threads: state.threads });
+        var saved = await p0WriteRecord("list", cacheKey, namespace, snapshot, 45 * 1000);
+        if (!saved) return false;
+        renderThreadList();
+        p0SetSyncStatus("Нові зміни застосовано", { persistent: false });
+        var selectedSummary = summaries.find(function (summary) {
+          return safeId(summary.id) === safeId(state.selectedThreadId) &&
+            connectionId === safeId(state.selectedConnectionId);
+        });
+        if (selectedSummary && state.thread && Array.isArray(selectedSummary.labelIds)) {
+          state.thread.labelIds = selectedSummary.labelIds.slice();
+        }
+        var selectedChange = (result.threadChanges || []).find(function (change) {
+          return safeId(change && change.threadId) === safeId(state.selectedThreadId);
+        });
+        if (selectedChange && (selectedChange.messageChanged ||
+            selectedChange.messageAdded || selectedChange.messageDeleted)) {
+          await openThread(
+            state.selectedThreadId,
+            true,
+            state.selectedConnectionId,
+            { background: true }
+          );
+        }
+        window.setTimeout(p0PrefetchVisibleThreads, 0);
+        return true;
       }
 
       async function p0RunHistoryReconcile() {
@@ -11155,6 +11311,23 @@
           p0SetSyncStatus("Пошта актуальна", { persistent: false });
           p0PublishDiagnostics();
           return true;
+        }
+
+        if (p0CanApplySimpleInboxDelta(results)) {
+          try {
+            var applied = await p0ApplySimpleInboxDelta(results[0]);
+            if (applied) {
+              p0Runtime.metrics.historyEntityReconciles += 1;
+              await Promise.all(results.map(function (result) {
+                return p0RememberHistoryCursor(result.connectionId, result.historyId);
+              }));
+              p0PublishDiagnostics();
+              return true;
+            }
+          } catch (error) {
+            // Any incomplete or ambiguous entity update uses the existing
+            // bounded full-list reconciliation below.
+          }
         }
 
         if (results.some(function (result) { return result.requiresFullSync; })) {
