@@ -224,3 +224,12 @@
 - `VERIFIED`: focused draft/client contracts `258/258`; complete Apps Script suite `707/707` in `23.349 s`; product PR checks `8/8`; `105` bilingual pairs; knowledge-hub, verification-report, and diff gates passed.
 - `PARTIAL`: `GT-073`, `B1-53`, `RCA-029`, and paired `VR-048` were created. Official Gmail `users.drafts.update` documentation exposes no atomic revision/ETag precondition, so the second read narrows but cannot eliminate the small race before `PUT`; authenticated multi-session acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, real Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0 task-code reconciliation evidence update — 2026-07-24
+
+- `VERIFIED`: the hash-bound V3/P0 audit found explicit active-registry coverage for `26/31` task IDs before reconciliation.
+- `VERIFIED`: P0 tasks `A-04` and `A-05` were not missing implementations. `A-04` maps to `B1-50`–`B1-52`, `GT-070`–`GT-072`, and `VR-045`–`VR-047`; `A-05` maps to `B1-25`, `B1-47`, `GT-036`, `GT-067`, `VR-015`, and `VR-042`.
+- `VERIFIED`: `B1-56`, `GT-076`, `RCA-032`, and `VR-051` now provide exact task-code routing. Product/docs commit `22d3350` was normally merged through PR `#124` as `de881a6450dc997b8c9a79bc16f97b7a0cd83aba`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: repeated exact coverage is `31/31`; bilingual docs `108` pairs, knowledge hub, verification reports, `3/3` validator tests, diff, and GitHub checks passed.
+- `PARTIAL`: this navigation correction does not complete native target-device offline unlock, fresh offline app shell, exact old→new one-reload transition, staging, or production acceptance.
+- `VERIFIED`: no source code, OAuth, Gmail/Telegram mutation, staging, deployment, production, or immutable release changed; shared URL Fetch quota and `T-03` remain blocking gates.
