@@ -92,3 +92,12 @@
 - Focused evidence `35/35`; повний Apps Script suite `678/678` за `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - Shared/query/filter/custom-label/oversized/incomplete paths лишаються на full-list fallback. Live Gmail, native Telegram, staging і production не перевірялися; release blockers не змінені.
 - Записи: `GT-069`, `B1-49`, `RCA-025`, `VR-044`.
+
+## REQ-0037 P0-D cache-lock contour - 2026-07-24
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Persistent mail records тепер мають explicit locked/unlocked lifecycle; low-level IndexedDB reads/writes відхиляються до verified session bootstrap.
+- Exact owner scope і connected-account set перевіряються при кожному з п’яти bootstrap paths; account reset і confirmed sign-out очищають private memory та DOM без видалення retained records.
+- Focused evidence `48/48`; повний Apps Script suite `685/685` за `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- IndexedDB records ще не encrypted at rest, а offline device-bound unlock не реалізовано; native Telegram, staging і production не перевірялися, release blockers не змінені.
+- Записи: `GT-070`, `B1-50`, `RCA-026`, `VR-045`.

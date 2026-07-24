@@ -650,3 +650,14 @@ Status: BLOCKED
 - **Source evidence:** focused P0-C/P0-B/client/adapter contracts `35/35`; повний Apps Script suite `678/678` за `25.414s`; exact implementation baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - **Межа:** shared mode, search, filters, custom labels, full-sync boundary, понад 20 changed IDs або incomplete metadata залишаються на bounded full-list fallback. Live insert/remove timing, request counts, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`. Gmail mutations, OAuth, Telegram runtime і cached body storage не змінювалися.
 - **Доказ:** [VR-044](verification-reports/reports/VR-044/README.md).
+
+## GT-070 - Persistent mail cache не мав explicit session-bound lock lifecycle
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує cache-locking частину P0 без зміни release boundary.
+- **Product task:** `B1-50` / P0-D verified-session private-cache lock.
+- **Підтверджена першопричина:** `p0HydratePersistentState()` самостійно копіював `cacheScope` і account IDs із mutable client state, а low-level IndexedDB reads/writes не вимагали окремого unlocked state. Account-changing bootstrap paths і confirmed sign-out не мали одного обов’язкового lock/rebind contract.
+- **Source correction:** додано explicit fail-closed `p0LockPrivateCache`, exact-scope/account `p0UnlockPrivateCacheFromVerifiedBootstrap` і central access gate для low-level reads/writes. Усі п’ять bootstrap paths rebind allowlist; switch, disconnect і sign-out очищають private memory та mail DOM, але не видаляють persistent records.
+- **Source evidence:** focused cache/launch/history contracts `48/48`; повний Apps Script suite `685/685` за `26.020s`; exact implementation baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- **Межа:** це verified-session source lock, не криптографічне шифрування IndexedDB і не offline device-bound unlock. Native Telegram SecureStorage, offline unlock, staging і production лишаються `UNVERIFIED` або `BLOCKED`; OAuth, Gmail/Telegram mutation та deployment не виконувалися.
+- **Доказ:** [VR-045](verification-reports/reports/VR-045/README.md).

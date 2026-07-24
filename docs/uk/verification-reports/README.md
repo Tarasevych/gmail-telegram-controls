@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-044](reports/VR-044/README.md) фіксує P0-C source verification для metadata-only entity reconciliation простого Inbox. Focused contracts пройшли `35/35`, а повний Apps Script suite — `678/678` за `25.414s`; exact insert/update/remove, cached-body preservation, event classification, page bound і account isolation мають source evidence. Live Gmail timing/request metrics, complex/shared entity reconciliation, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-045](reports/VR-045/README.md) фіксує P0-D source verification explicit verified-session private-cache lock. Focused contracts пройшли `48/48`, а повний Apps Script suite — `685/685` за `26.020s`; low-level access gate, exact owner/account rebind і reset/sign-out lock мають source evidence. Encrypted-at-rest records, offline device-bound unlock, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

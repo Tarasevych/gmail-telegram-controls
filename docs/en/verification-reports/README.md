@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-044](reports/VR-044/README.md) records P0-C source verification for metadata-only entity reconciliation of a simple Inbox. Focused contracts pass `35/35` and the complete Apps Script suite passes `678/678` in `25.414s`; exact insert/update/remove, cached-body preservation, event classification, page bounds, and account isolation have source evidence. Live Gmail timing/request metrics, complex/shared entity reconciliation, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-045](reports/VR-045/README.md) records P0-D source verification of the explicit verified-session private-cache lock. Focused contracts pass `48/48` and the complete Apps Script suite passes `685/685` in `26.020s`; the low-level access gate, exact owner/account rebind, and reset/sign-out lock have source evidence. Encrypted-at-rest records, offline device-bound unlock, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.

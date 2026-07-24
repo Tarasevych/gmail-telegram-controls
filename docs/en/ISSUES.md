@@ -650,3 +650,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused P0-C/P0-B/client/adapter contracts `35/35`; complete Apps Script suite `678/678` in `25.414s`; exact implementation baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - **Boundary:** shared mode, search, filters, custom labels, a full-sync boundary, more than 20 changed IDs, or incomplete metadata retain the bounded full-list fallback. Live insert/remove timing, request counts, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`. Gmail mutations, OAuth, Telegram runtime, and cached-body storage were unchanged.
 - **Evidence:** [VR-044](verification-reports/reports/VR-044/README.md).
+
+## GT-070 - Persistent mail cache lacked an explicit session-bound lock lifecycle
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues the cache-locking portion of P0 without changing the release boundary.
+- **Product task:** `B1-50` / P0-D verified-session private-cache lock.
+- **Confirmed root cause:** `p0HydratePersistentState()` self-populated `cacheScope` and account IDs from mutable client state, while low-level IndexedDB reads and writes required no separate unlocked state. Account-changing bootstrap paths and confirmed sign-out had no single mandatory lock/rebind contract.
+- **Source correction:** explicit fail-closed `p0LockPrivateCache`, exact-scope/account `p0UnlockPrivateCacheFromVerifiedBootstrap`, and a central access gate now protect low-level reads and writes. All five bootstrap paths rebind the allowlist; switch, disconnect, and sign-out clear private memory and mail DOM without deleting persistent records.
+- **Source evidence:** focused cache/launch/history contracts `48/48`; complete Apps Script suite `685/685` in `26.020s`; exact implementation baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- **Boundary:** this is a verified-session source lock, not cryptographic IndexedDB encryption or offline device-bound unlock. Native Telegram SecureStorage, offline unlock, staging, and production remain `UNVERIFIED` or `BLOCKED`; no OAuth, Gmail/Telegram mutation, or deployment was performed.
+- **Evidence:** [VR-045](verification-reports/reports/VR-045/README.md).
