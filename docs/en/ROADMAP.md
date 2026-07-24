@@ -471,3 +471,15 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** an encrypted-at-rest cache envelope, evidence-backed device-bound offline unlock, native account-isolation acceptance, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
 - **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-070`, `RCA-026`, `VR-045`, `REQ-0037`.
+
+## B1-51 - P0-E AES-GCM persistent-cache envelope
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** schema 3 no longer writes private `record.value` plaintext to IndexedDB. AES-256-GCM ciphertext has a random IV and metadata AAD; decrypt failure or metadata swapping fails closed and removes the damaged current-schema record.
+- **Key boundary:** one 256-bit content key is stored only in Telegram `SecureStorage` as a compact owner-scoped envelope. `RESTORABLE` is not overwritten without user action; scope mismatch and unavailable crypto disable persistent cache without blocking the online mailbox.
+- **Migration:** upgrade from the prior schema clears incompatible plaintext cache; Gmail server data and confirmed drafts are unchanged.
+- **Locally verified:** focused `55/55`; complete Apps Script suite `692/692` in `23.540s`; baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- **Still required:** native Telegram/Apps Script crypto acceptance, an encrypted bootstrap snapshot and device-bound offline unlock, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
+- **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-071`, `RCA-027`, `VR-046`, `REQ-0037`.

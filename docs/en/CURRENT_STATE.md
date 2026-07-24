@@ -101,3 +101,12 @@
 - Focused evidence `48/48`; complete Apps Script suite `685/685` in `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
 - IndexedDB records are not yet encrypted at rest and offline device-bound unlock is not implemented; native Telegram, staging, and production were not verified, and release blockers are unchanged.
 - Records: `GT-070`, `B1-50`, `RCA-026`, `VR-045`.
+
+## REQ-0037 P0-E encrypted-cache contour - 2026-07-24
+
+- **Status:** `PARTIAL`; source evidence only.
+- Persistent cache schema 3 encrypts private values with AES-256-GCM; metadata AAD prevents ciphertext swapping between records.
+- The content key is stored only in Telegram `SecureStorage`; browser storage receives no key, OAuth token, refresh token, or `initData`.
+- Upgrade clears incompatible schema-2 plaintext cache. Focused evidence `55/55`; complete Apps Script suite `692/692` in `23.540s`; baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- Native target-device key persistence, encrypted offline bootstrap, staging, and production were not verified; release blockers are unchanged.
+- Records: `GT-071`, `B1-51`, `RCA-027`, `VR-046`.

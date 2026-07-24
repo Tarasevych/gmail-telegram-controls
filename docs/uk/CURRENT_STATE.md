@@ -101,3 +101,12 @@
 - Focused evidence `48/48`; повний Apps Script suite `685/685` за `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
 - IndexedDB records ще не encrypted at rest, а offline device-bound unlock не реалізовано; native Telegram, staging і production не перевірялися, release blockers не змінені.
 - Записи: `GT-070`, `B1-50`, `RCA-026`, `VR-045`.
+
+## REQ-0037 P0-E encrypted-cache contour - 2026-07-24
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Persistent cache schema 3 шифрує private values через AES-256-GCM; metadata AAD запобігає перестановці ciphertext між records.
+- Content key зберігається лише в Telegram `SecureStorage`; browser storage не отримує key, OAuth token, refresh token або `initData`.
+- Upgrade очищає incompatible schema-2 plaintext cache. Focused evidence `55/55`; повний Apps Script suite `692/692` за `23.540s`; baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- Native target-device key persistence, offline encrypted bootstrap, staging і production не перевірялися; release blockers не змінені.
+- Записи: `GT-071`, `B1-51`, `RCA-027`, `VR-046`.
