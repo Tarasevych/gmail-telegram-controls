@@ -3581,6 +3581,108 @@
       display: none;
     }
 
+    .compose-upload-batch {
+      flex: 1 0 100%;
+      width: 100%;
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+    }
+
+    .compose-upload-batch-header,
+    .compose-upload-batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .compose-upload-batch-header {
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .compose-upload-batch-copy,
+    .compose-upload-entry-copy {
+      min-width: 0;
+    }
+
+    .compose-upload-batch-title,
+    .compose-upload-batch-status,
+    .compose-upload-entry-path,
+    .compose-upload-entry-status {
+      display: block;
+      overflow-wrap: anywhere;
+    }
+
+    .compose-upload-batch-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .compose-upload-batch-status {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .compose-upload-batch-actions {
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .compose-upload-batch-actions button,
+    .compose-upload-entry-action {
+      min-height: 34px;
+    }
+
+    .compose-upload-list {
+      display: grid;
+      gap: 4px;
+      max-height: 188px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .compose-upload-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 5px 6px;
+      border-radius: 6px;
+      background: var(--surface);
+    }
+
+    .compose-upload-entry-path {
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .compose-upload-entry-status {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .compose-upload-entry.is-rejected,
+    .compose-upload-entry.is-blocked {
+      color: var(--danger);
+    }
+
+    .compose-upload-more {
+      justify-self: start;
+      margin-top: 4px;
+    }
+
     .compose-attachment {
       display: inline-flex;
       align-items: center;
@@ -5546,7 +5648,7 @@
         <label class="sr-only" for="attachmentInput">Вибрати файли для вкладення</label>
         <input class="sr-only" id="attachmentInput" type="file" multiple aria-label="Вибрати файли для вкладення">
         <label class="sr-only" for="attachmentFolderInput">Вибрати папку для вкладення</label>
-        <input class="sr-only" id="attachmentFolderInput" type="file" multiple webkitdirectory aria-label="Вибрати папку для вкладення">
+        <input class="sr-only" id="attachmentFolderInput" type="file" multiple webkitdirectory directory aria-label="Вибрати папку для вкладення">
         <button class="outline-button" id="saveDraftButton" type="button">Зберегти чернетку</button>
         <div class="send-later-control">
           <button class="outline-button" id="sendLaterButton" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sendLaterPanel">Надіслати пізніше</button>
@@ -5784,6 +5886,8 @@
       // window and bound transient object URLs independently.
       var MAX_ATTACHMENT_DATA_CACHE_ENTRIES = 4;
       var MAX_ATTACHMENT_OBJECT_URLS = 12;
+      var MAX_FOLDER_SELECTION_FILES = 1000;
+      var COMPOSE_UPLOAD_BATCH_PAGE_SIZE = 40;
       var embeddedLaunchNonce = embeddedToken_("<?= mailboxLaunchNonce ?>");
       var embeddedLaunchRoute = decodeEmbeddedBase64Url_("<?= mailboxLaunchRouteB64 ?>", 512);
       var embeddedLaunchError = decodeEmbeddedBase64Url_("<?= mailboxLaunchErrorB64 ?>", 500);
@@ -5939,6 +6043,8 @@
         composeAttachmentJobs: new Map(),
         composeAttachmentSequence: 0,
         composeAttachmentFlushScheduled: false,
+        composeUploadBatch: null,
+        composeUploadBatchSequence: 0,
         transferSequence: 0,
         transferQueue: [],
         transferActiveCount: 0,
@@ -19905,14 +20011,23 @@
         }
       }
 
-      async function collectDirectoryFiles(handle, output, limit) {
-        if (!handle || output.length >= limit) return output;
+      async function collectDirectoryFiles(handle, result, limit, prefix) {
+        var collection = result || { entries: [], truncated: false };
+        if (!handle || collection.truncated) return collection;
+        var base = safeText(prefix);
         for await (var entry of handle.values()) {
-          if (output.length >= limit) break;
-          if (entry.kind === "file") output.push(await entry.getFile());
-          else if (entry.kind === "directory") await collectDirectoryFiles(entry, output, limit);
+          if (collection.entries.length >= limit) {
+            collection.truncated = true;
+            break;
+          }
+          var relativePath = [base, safeText(entry.name)].filter(Boolean).join("/");
+          if (entry.kind === "file") {
+            collection.entries.push({ file: await entry.getFile(), relativePath: relativePath });
+          } else if (entry.kind === "directory") {
+            await collectDirectoryFiles(entry, collection, limit, relativePath);
+          }
         }
-        return output;
+        return collection;
       }
 
       async function openDeviceFolderChooser() {
@@ -19922,9 +20037,14 @@
         }
         try {
           var directory = await window.showDirectoryPicker({ mode: "read" });
-          var files = await collectDirectoryFiles(directory, [], state.limits.maxOutgoingAttachments);
+          var files = await collectDirectoryFiles(
+            directory,
+            { entries: [], truncated: false },
+            MAX_FOLDER_SELECTION_FILES,
+            safeText(directory && directory.name)
+          );
           closeComposeSourceDialog(true);
-          addOutgoingFiles(files);
+          addOutgoingFiles(files.entries, { selectionKind: "folder", truncated: files.truncated });
         } catch (error) {
           if (safeText(error && error.name) === "AbortError") return;
           els.attachmentFolderInput.click();
@@ -21226,6 +21346,7 @@
           try { job.reader.abort(); } catch (error) { /* The reader may have completed between frames. */ }
         }
         releaseComposeAttachmentJob(job);
+        updateComposeUploadBatchEntry(job.id, "cancelled", "Скасовано користувачем.");
         state.composeAttachmentJobs.delete(job.id);
         renderComposeAttachments();
         updateComposeLifecycleControls();
@@ -21392,9 +21513,191 @@
         return item;
       }
 
+      function updateComposeUploadBatchEntry(jobId, status, reason) {
+        var batch = state.composeUploadBatch;
+        if (!batch || batch.sessionId !== state.composeSessionId) return false;
+        var entry = batch.entries.find(function (candidate) { return candidate.jobId === jobId; });
+        if (!entry) return false;
+        entry.status = safeText(status, entry.status);
+        if (reason !== undefined) entry.reason = safeText(reason);
+        return true;
+      }
+
+      function composeUploadEntryState(entry) {
+        if (!entry || !entry.jobId) return safeText(entry && entry.status, "unknown");
+        var job = state.composeAttachmentJobs.get(entry.jobId);
+        if (!job) return safeText(entry.status, "unknown");
+        if (job.state === "error") return "error";
+        if (job.state === "ready") return "ready";
+        if (job.state === "reading") return "reading";
+        if (job.state === "queued") return "queued";
+        return safeText(job.state, entry.status);
+      }
+
+      function composeUploadEntryStatus(entry) {
+        var status = composeUploadEntryState(entry);
+        var labels = {
+          queued: "У черзі",
+          reading: "Локальне читання",
+          ready: "Готово до чернетки",
+          attached: "Додано до чернетки",
+          error: "Помилка читання",
+          cancelled: "Скасовано",
+          rejected: "Не прийнято",
+          blocked: "Не розпочато"
+        };
+        var parts = [labels[status] || "Очікує"];
+        if (entry.duplicateName) parts.push("однакова назва, шлях збережено для розрізнення");
+        if (entry.reason) parts.push(entry.reason);
+        return parts.join(" · ");
+      }
+
+      function renderComposeUploadBatch() {
+        var batch = state.composeUploadBatch;
+        if (!batch || !state.compose || batch.sessionId !== state.composeSessionId) {
+          state.composeUploadBatch = null;
+          return null;
+        }
+        var host = make("section", {
+          className: "compose-upload-batch",
+          attrs: {
+            role: "region",
+            "aria-label": batch.selectionKind === "folder" ? "Підсумок вибраної папки" : "Підсумок вибраних файлів"
+          }
+        });
+        var header = make("div", { className: "compose-upload-batch-header" });
+        var copy = make("div", { className: "compose-upload-batch-copy" });
+        var selectedLabel = batch.truncated ? batch.scannedCount + "+" : String(batch.selectedCount);
+        copy.append(make("strong", {
+          className: "compose-upload-batch-title",
+          text: (batch.selectionKind === "folder" ? "Папка" : "Вибір") + ": " +
+            selectedLabel + " · " + formatSize(batch.totalBytes) +
+            (batch.totalIncomplete ? " щонайменше" : "")
+        }));
+        var liveStates = batch.entries.map(composeUploadEntryState);
+        var activeCount = liveStates.filter(function (value) {
+          return value === "queued" || value === "reading" || value === "ready";
+        }).length;
+        var attachedCount = liveStates.filter(function (value) { return value === "attached"; }).length;
+        var failedCount = liveStates.filter(function (value) { return value === "error"; }).length;
+        var rejectedCount = liveStates.filter(function (value) {
+          return value === "rejected" || value === "blocked" || value === "cancelled";
+        }).length + Number(batch.overflowCount || 0);
+        copy.append(make("span", {
+          className: "compose-upload-batch-status",
+          text: [
+            activeCount ? "у роботі " + activeCount : "",
+            attachedCount ? "додано " + attachedCount : "",
+            failedCount ? "помилок " + failedCount : "",
+            rejectedCount ? "не розпочато/відхилено " + rejectedCount : "",
+            batch.gateReason || ""
+          ].filter(Boolean).join(" · ") || "Файли перевірено."
+        }));
+        header.append(copy);
+        var actions = make("div", { className: "compose-upload-batch-actions" });
+        var details = make("button", {
+          className: "text-button",
+          type: "button",
+          text: batch.expanded ? "Сховати деталі" : "Показати деталі",
+          attrs: { "aria-expanded": batch.expanded ? "true" : "false" }
+        });
+        details.addEventListener("click", function () {
+          batch.expanded = !batch.expanded;
+          renderComposeAttachments();
+        });
+        actions.append(details);
+        if (activeCount) {
+          var cancelAll = make("button", {
+            className: "text-button",
+            type: "button",
+            text: "Скасувати всі",
+            attrs: { "aria-label": "Скасувати всі активні локальні файли цього вибору" }
+          });
+          cancelAll.addEventListener("click", function () {
+            batch.entries.map(function (entry) { return entry.jobId; }).filter(Boolean).forEach(function (jobId) {
+              if (state.composeAttachmentJobs.has(jobId)) cancelComposeAttachmentJob(jobId);
+            });
+            renderComposeAttachments();
+          });
+          actions.append(cancelAll);
+        }
+        if (batch.gateReason) {
+          var drive = make("button", {
+            className: "outline-button",
+            type: "button",
+            text: "Додати через Drive",
+            attrs: { "aria-label": "Відкрити Google Drive для великого набору файлів" }
+          });
+          drive.addEventListener("click", function () { openComposeSourceDialog("drive"); });
+          actions.append(drive);
+        }
+        header.append(actions);
+        host.append(header);
+        if (!batch.expanded) return host;
+
+        var list = make("div", { className: "compose-upload-list", attrs: { role: "list" } });
+        batch.entries.slice(0, batch.visibleRows).forEach(function (entry) {
+          var status = composeUploadEntryState(entry);
+          var row = make("div", {
+            className: "compose-upload-entry is-" + status,
+            attrs: { role: "listitem", "data-upload-entry": entry.id }
+          });
+          var rowCopy = make("div", { className: "compose-upload-entry-copy" });
+          rowCopy.append(make("span", {
+            className: "compose-upload-entry-path",
+            text: entry.relativePath,
+            attrs: { title: entry.relativePath }
+          }));
+          rowCopy.append(make("span", {
+            className: "compose-upload-entry-status",
+            text: composeUploadEntryStatus(entry)
+          }));
+          row.append(rowCopy);
+          var job = entry.jobId ? state.composeAttachmentJobs.get(entry.jobId) : null;
+          if (job && job.state === "error") {
+            var retry = make("button", {
+              className: "compose-upload-entry-action text-button",
+              type: "button",
+              text: "Ще раз",
+              attrs: { "aria-label": "Повторити читання " + entry.relativePath }
+            });
+            retry.addEventListener("click", function () { startComposeAttachmentJob(job, true); });
+            row.append(retry);
+          } else if (job && (job.state === "queued" || job.state === "reading" || job.state === "ready")) {
+            var cancel = make("button", {
+              className: "compose-upload-entry-action text-button",
+              type: "button",
+              text: "Скасувати",
+              attrs: { "aria-label": "Скасувати локальний файл " + entry.relativePath }
+            });
+            cancel.addEventListener("click", function () { cancelComposeAttachmentJob(job.id); });
+            row.append(cancel);
+          }
+          list.append(row);
+        });
+        if (batch.visibleRows < batch.entries.length) {
+          var remaining = batch.entries.length - batch.visibleRows;
+          var more = make("button", {
+            className: "compose-upload-more text-button",
+            type: "button",
+            text: "Показати ще " + Math.min(COMPOSE_UPLOAD_BATCH_PAGE_SIZE, remaining),
+            attrs: { "aria-label": "Показати більше файлів, залишилося " + remaining }
+          });
+          more.addEventListener("click", function () {
+            batch.visibleRows = Math.min(batch.entries.length, batch.visibleRows + COMPOSE_UPLOAD_BATCH_PAGE_SIZE);
+            renderComposeAttachments();
+          });
+          list.append(more);
+        }
+        host.append(list);
+        return host;
+      }
+
       function renderComposeAttachments() {
         clear(els.composeAttachments);
         if (!state.compose) return;
+        var uploadBatch = renderComposeUploadBatch();
+        if (uploadBatch) els.composeAttachments.append(uploadBatch);
         composeAttachmentJobs().sort(function (left, right) { return left.order - right.order; }).forEach(function (job) {
           els.composeAttachments.append(renderComposeAttachmentJob(job));
         });
@@ -21571,6 +21874,120 @@
         return { name: name, size: size, mimeType: mimeType };
       }
 
+      function normalizeLocalRelativePath(value, fallbackName) {
+        var raw = safeText(value, fallbackName).replace(/\\/g, "/");
+        if (!raw || raw.charAt(0) === "/" || /^[A-Za-z]:\//.test(raw) || raw.length > 1024) {
+          throw new Error("Шлях файла некоректний або задовгий.");
+        }
+        var parts = raw.split("/");
+        if (parts.some(function (part) {
+          return !part || part === "." || part === ".." || /[\u0000-\u001f\u007f]/.test(part) || Array.from(part).length > 255;
+        })) {
+          throw new Error("Шлях файла містить недозволений сегмент.");
+        }
+        var blockedNames = { "desktop.ini": true, "thumbs.db": true, ".ds_store": true };
+        if (parts.some(function (part) { return part.charAt(0) === "." || blockedNames[part.toLowerCase()]; })) {
+          throw new Error("Прихований або службовий файл не додається автоматично.");
+        }
+        return parts.join("/");
+      }
+
+      function planComposeUploadSelection(files, options) {
+        var opts = options || {};
+        var raw = Array.from(files || []);
+        var overflowCount = Math.max(0, raw.length - MAX_FOLDER_SELECTION_FILES);
+        var scanned = raw.slice(0, MAX_FOLDER_SELECTION_FILES);
+        var truncated = Boolean(opts.truncated || overflowCount);
+        var inlineValues = state.compose && state.compose.inlineAttachments || [];
+        var existingJobs = composeAttachmentJobs();
+        var existingAttachments = state.compose ? state.compose.attachments.concat(inlineValues) : [];
+        var existingCount = existingAttachments.length + existingJobs.length;
+        var existingBytes = existingAttachments.reduce(function (sum, attachment) {
+          return sum + Number(attachment.size || 0);
+        }, 0) + existingJobs.reduce(function (sum, job) { return sum + Number(job.size || 0); }, 0);
+        var existingNames = {};
+        existingAttachments.concat(existingJobs).forEach(function (entry) {
+          var key = safeText(entry.name).toLocaleLowerCase();
+          if (key) existingNames[key] = (existingNames[key] || 0) + 1;
+        });
+        var exactPaths = {};
+        var entries = scanned.map(function (selection, index) {
+          var file = selection && selection.file ? selection.file : selection;
+          var item = {
+            index: index,
+            file: file,
+            relativePath: "",
+            info: null,
+            status: "rejected",
+            reason: "",
+            duplicateName: false
+          };
+          try {
+            var info = validateOutgoingFile(file, index);
+            var relativePath = normalizeLocalRelativePath(
+              selection && selection.relativePath || file && file.webkitRelativePath,
+              info.name
+            );
+            var exactKey = relativePath.toLocaleLowerCase() + "\u0000" + info.size;
+            if (exactPaths[exactKey]) throw new Error("Цей самий файл уже присутній у виборі.");
+            exactPaths[exactKey] = true;
+            item.relativePath = relativePath;
+            item.info = info;
+            item.status = "accepted";
+          } catch (error) {
+            item.relativePath = safeText(
+              selection && selection.relativePath || file && file.webkitRelativePath || file && file.name,
+              "Файл " + (index + 1)
+            ).slice(0, 1024);
+            item.reason = safeText(error && error.message, "Файл не прийнято.");
+          }
+          return item;
+        });
+        var selectedNameCounts = {};
+        entries.filter(function (entry) { return entry.info; }).forEach(function (entry) {
+          var key = entry.info.name.toLocaleLowerCase();
+          selectedNameCounts[key] = (selectedNameCounts[key] || 0) + 1;
+        });
+        entries.forEach(function (entry) {
+          if (!entry.info) return;
+          var key = entry.info.name.toLocaleLowerCase();
+          entry.duplicateName = Boolean(existingNames[key] || selectedNameCounts[key] > 1);
+        });
+        var valid = entries.filter(function (entry) { return entry.status === "accepted"; });
+        var validBytes = valid.reduce(function (sum, entry) { return sum + entry.info.size; }, 0);
+        var availableCount = Math.max(0, state.limits.maxOutgoingAttachments - existingCount);
+        var availableBytes = Math.max(0, state.limits.maxOutgoingAttachmentsTotalBytes - existingBytes);
+        var gateReason = "";
+        if (truncated) {
+          gateReason = "Вибрано понад " + MAX_FOLDER_SELECTION_FILES + " файлів. Автоматичне читання не розпочато.";
+        } else if (valid.length > availableCount) {
+          gateReason = "Для цього листа доступно місць: " + availableCount + ". Оберіть менший набір або Google Drive.";
+        } else if (validBytes > availableBytes) {
+          gateReason = "Набір перевищує доступний ліміт на " + formatSize(validBytes - availableBytes) + ". Оберіть менший набір або Google Drive.";
+        }
+        if (gateReason) {
+          valid.forEach(function (entry) {
+            entry.status = "blocked";
+            entry.reason = gateReason;
+          });
+        }
+        return {
+          entries: entries,
+          accepted: gateReason ? [] : valid,
+          gateReason: gateReason,
+          selectedCount: raw.length,
+          scannedCount: scanned.length,
+          overflowCount: overflowCount,
+          truncated: truncated,
+          totalBytes: scanned.reduce(function (sum, selection) {
+            var file = selection && selection.file ? selection.file : selection;
+            var size = Number(file && file.size || 0);
+            return sum + (Number.isFinite(size) && size > 0 ? size : 0);
+          }, 0),
+          totalIncomplete: Boolean(opts.truncated && !overflowCount)
+        };
+      }
+
       function fileToBase64(file, options) {
         var opts = options || {};
         return new Promise(function (resolve, reject) {
@@ -21619,6 +22036,10 @@
           name: info.name,
           mimeType: info.mimeType,
           size: info.size,
+          relativePath: safeText(opts.relativePath, info.name).slice(0, 1024),
+          uploadBatchId: safeClientOperationId(opts.uploadBatchId),
+          uploadBatchEntryId: safeClientOperationId(opts.uploadBatchEntryId),
+          duplicateName: Boolean(opts.duplicateName),
           intent: opts.intent === "inline" ? "inline" : "attachment",
           inlineGroupId: safeClientOperationId(opts.inlineGroupId),
           targetRange: opts.targetRange && typeof opts.targetRange.cloneRange === "function" ? opts.targetRange.cloneRange() : null,
@@ -21685,6 +22106,7 @@
             continue;
           }
           added.push(job.attachment);
+          updateComposeUploadBatchEntry(job.id, "attached", "");
           releaseComposeAttachmentJob(job);
           state.composeAttachmentJobs.delete(job.id);
         }
@@ -21791,6 +22213,7 @@
                   size: job.size,
                   dataBase64: encoded,
                   clientAttachmentKey: job.id,
+                  relativePath: job.relativePath,
                   downloadable: false
                 };
             renderComposeAttachments();
@@ -21873,35 +22296,49 @@
         return addInlineImageFiles(file ? [file] : []);
       }
 
-      function addOutgoingFiles(files) {
+      function addOutgoingFiles(files, options) {
         if (!state.compose || composeAttachmentsLocked()) return;
-        var selected = Array.from(files || []);
         els.attachmentInput.value = "";
         if (els.attachmentFolderInput) els.attachmentFolderInput.value = "";
-        if (!selected.length) return;
-        var inlineValues = state.compose.inlineAttachments || [];
-        var existingJobs = composeAttachmentJobs();
-        var existingCount = state.compose.attachments.length + inlineValues.length + existingJobs.length;
-        var existingTotal = state.compose.attachments.concat(inlineValues).reduce(function (sum, attachment) { return sum + Number(attachment.size || 0); }, 0) +
-          existingJobs.reduce(function (sum, job) { return sum + Number(job.size || 0); }, 0);
-        var nextTotal = existingTotal;
-        var accepted = [];
-        var rejected = [];
-        selected.forEach(function (file, index) {
-          try {
-            if (existingCount + accepted.length >= state.limits.maxOutgoingAttachments) {
-              throw new Error("До листа можна додати не більше " + state.limits.maxOutgoingAttachments + " вкладень.");
-            }
-            var info = validateOutgoingFile(file, index);
-            var prospectiveTotal = nextTotal + info.size;
-            if (prospectiveTotal > state.limits.maxOutgoingAttachmentsTotalBytes) {
-              throw new Error("Загальний розмір вкладень перевищує " + formatSize(state.limits.maxOutgoingAttachmentsTotalBytes) + ".");
-            }
-            nextTotal = prospectiveTotal;
-            accepted.push(createComposeAttachmentJob(file, info));
-          } catch (error) {
-            rejected.push(safeText(error.message, "Файл не прийнято."));
-          }
+        var opts = options || {};
+        var plan = planComposeUploadSelection(files, opts);
+        var batchId = newClientOperationId();
+        var batchEntries = plan.entries.map(function (entry, index) {
+          return {
+            id: batchId + "-" + (index + 1),
+            relativePath: entry.relativePath,
+            size: Number(entry.info && entry.info.size || entry.file && entry.file.size || 0),
+            status: entry.status,
+            reason: entry.reason,
+            duplicateName: entry.duplicateName,
+            jobId: ""
+          };
+        });
+        state.composeUploadBatch = {
+          id: batchId,
+          sessionId: state.composeSessionId,
+          selectionKind: opts.selectionKind === "folder" ? "folder" : "files",
+          selectedCount: plan.selectedCount,
+          scannedCount: plan.scannedCount,
+          overflowCount: plan.overflowCount,
+          truncated: plan.truncated,
+          totalBytes: plan.totalBytes,
+          totalIncomplete: plan.totalIncomplete,
+          gateReason: plan.gateReason,
+          expanded: plan.entries.length <= 10,
+          visibleRows: COMPOSE_UPLOAD_BATCH_PAGE_SIZE,
+          entries: batchEntries
+        };
+        var accepted = plan.accepted.map(function (entry) {
+          var batchEntry = batchEntries[entry.index];
+          var job = createComposeAttachmentJob(entry.file, entry.info, {
+            relativePath: entry.relativePath,
+            uploadBatchId: batchId,
+            uploadBatchEntryId: batchEntry.id,
+            duplicateName: entry.duplicateName
+          });
+          batchEntry.jobId = job.id;
+          return job;
         });
         accepted.forEach(function (job) {
           state.composeAttachmentJobs.set(job.id, job);
@@ -21909,10 +22346,21 @@
         });
         renderComposeAttachments();
         updateComposeLifecycleControls();
-        if (accepted.length) {
-          showSnackbar("Локальна паралельна обробка: " + accepted.length + ". Редактор залишається доступним.", { success: true });
+        if (!plan.entries.length && !plan.truncated) {
+          showSnackbar(opts.selectionKind === "folder" ? "У вибраній папці немає доступних файлів." : "Файли не вибрано.", { error: true });
+          return [];
         }
-        if (rejected.length) showSnackbar(rejected[0] + (rejected.length > 1 ? " Ще відхилено: " + (rejected.length - 1) + "." : ""), { error: true });
+        if (plan.gateReason) {
+          showSnackbar(plan.gateReason, { error: true });
+          return [];
+        }
+        if (accepted.length) {
+          showSnackbar("Локальна паралельна обробка: " + accepted.length + ". Шляхи й прогрес доступні в підсумку.", { success: true });
+        }
+        var rejected = plan.entries.filter(function (entry) { return entry.status === "rejected"; });
+        if (rejected.length) {
+          showSnackbar(rejected[0].reason + (rejected.length > 1 ? " Ще відхилено: " + (rejected.length - 1) + "." : ""), { error: true });
+        }
         return accepted;
       }
 
@@ -22142,7 +22590,7 @@
         els.attachmentFolderInput.addEventListener("change", function (event) {
           var files = event.target.files;
           closeComposeSourceDialog(true);
-          addOutgoingFiles(files);
+          addOutgoingFiles(files, { selectionKind: "folder" });
         });
         els.composeDriveSearchForm.addEventListener("submit", function (event) {
           event.preventDefault();
