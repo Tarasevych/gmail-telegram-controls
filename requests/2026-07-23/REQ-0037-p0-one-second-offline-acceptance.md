@@ -67,6 +67,16 @@
 - `UNVERIFIED`: live cache-hit/request reduction, entity-level query reconciliation, native multi-account/shared acceptance, staging і production.
 - `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
 
+### Оновлення доказів P0-C — 2026-07-24
+
+- `PARTIAL`: source implementation `7bd8270b2e14525dc8e99bd95387a1ef977dde1a` і paired evidence `e87e9b357da6be8e1385cce4f2524bda9722da5a` злиті normal merge через product PR `#110` як `d2db2ef9ccbeda8221248a3bf18cc76d6f5bd4bc`; GitHub і приватний GitLab `main` мають точний parity.
+- `VERIFIED`: bounded Gmail History delta тепер класифікує message/label events за thread, а viewer-only `threadSummaries` повертає metadata лише для `1–20` exact thread IDs і явно повідомляє missing IDs.
+- `VERIFIED`: сумісний single-account Inbox без query, filter або custom label оновлює тільки змінені рядки, зберігає cached body і стабільне сортування; selected body перечитується лише для message event, а не для label-only зміни.
+- `VERIFIED`: shared/search/filter/custom-label/full-sync, понад `20` змінених thread IDs або incomplete summaries fail closed до одного bounded full-list refresh; foreign-account entity не може бути застосована до активного namespace.
+- `VERIFIED`: focused entity/History/P0/Advanced Gmail gate `35/35`; повний Apps Script suite `678/678` за `25.414 s`; product PR checks `8/8`; bilingual `101` пара; knowledge-hub, verification-report, release-state та diff gates успішні.
+- `PARTIAL`: створено `GT-069`, `B1-49`, `RCA-025` і парний `VR-044`. Live cache-hit/request reduction, arbitrary shared/query reconciliation, native target-device acceptance, staging і production лишаються `UNVERIFIED/BLOCKED`.
+- `VERIFIED`: OAuth, Gmail/Telegram mutation, staging, deployment і production не виконувалися; shared URL Fetch quota та `T-03` release blockers не обійдені.
+
 <!-- lang:en -->
 ## English
 
@@ -125,4 +135,14 @@
 - `VERIFIED`: focused History/P0/Advanced Gmail gate `30/30`; complete Apps Script suite `673/673` in `25.763 s`; product PR checks `8/8`; `100` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
 - `PARTIAL`: `GT-068`, `B1-48`, `RCA-024`, and paired `VR-043` were created. Gmail History does not establish membership in an arbitrary query/shared aggregate, so this source contour still performs one bounded full-list refresh after a real change.
 - `UNVERIFIED`: live cache-hit/request reduction, entity-level query reconciliation, native multi-account/shared acceptance, staging, and production.
+- `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
+
+### P0-C evidence update — 2026-07-24
+
+- `PARTIAL`: source implementation `7bd8270b2e14525dc8e99bd95387a1ef977dde1a` and paired evidence `e87e9b357da6be8e1385cce4f2524bda9722da5a` were normally merged through product PR `#110` as `d2db2ef9ccbeda8221248a3bf18cc76d6f5bd4bc`; GitHub and private GitLab `main` have exact parity.
+- `VERIFIED`: the bounded Gmail History delta now classifies message and label events by thread, while viewer-only `threadSummaries` returns metadata for only `1–20` exact thread IDs and explicitly reports missing IDs.
+- `VERIFIED`: a compatible single-account Inbox without a query, filter, or custom label updates only changed rows, retains cached bodies and stable ordering, and rereads the selected body only for a message event rather than a label-only change.
+- `VERIFIED`: shared/search/filter/custom-label/full-sync paths, more than `20` changed thread IDs, or incomplete summaries fail closed to one bounded full-list refresh; a foreign-account entity cannot be applied to the active namespace.
+- `VERIFIED`: focused entity/History/P0/Advanced Gmail gate `35/35`; complete Apps Script suite `678/678` in `25.414 s`; product PR checks `8/8`; `101` bilingual pairs; knowledge-hub, verification-report, release-state, and diff gates passed.
+- `PARTIAL`: `GT-069`, `B1-49`, `RCA-025`, and paired `VR-044` were created. Live cache-hit/request reduction, arbitrary shared/query reconciliation, native target-device acceptance, staging, and production remain `UNVERIFIED/BLOCKED`.
 - `VERIFIED`: no OAuth, Gmail/Telegram mutation, staging, deployment, or production action occurred; the shared URL Fetch quota and `T-03` release blockers were not bypassed.
