@@ -460,3 +460,14 @@ Status: BLOCKED
 - **Локально перевірено:** focused `35/35`; повний Apps Script suite `678/678` за `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - **Ще потрібно:** live Gmail change acceptance, request/cache-hit metrics, native multi-account/shared paths, staging і production; release gate лишається blocked shared URL Fetch quota та `T-03`.
 - **Пов’язано:** `GT-069`, `RCA-025`, `VR-044`, `REQ-0037`.
+
+## B1-50 - P0-D verified-session private-cache lock
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** private IndexedDB access тепер fail closed, доки server-established app session, opaque owner `cacheScope` та exact connected-account set не пройдуть один explicit unlock gate. Hydration більше не може self-authorize із mutable client state.
+- **Lifecycle:** усі п’ять account-changing bootstrap paths rebind allowlist; account switch, disconnect і confirmed sign-out блокують cache, очищають private memory/DOM і не видаляють persistent records.
+- **Локально перевірено:** focused `48/48`; повний Apps Script suite `685/685` за `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- **Ще потрібно:** encrypted-at-rest cache envelope, доказовий device-bound offline unlock, native account-isolation acceptance, staging і production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
+- **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-070`, `RCA-026`, `VR-045`, `REQ-0037`.

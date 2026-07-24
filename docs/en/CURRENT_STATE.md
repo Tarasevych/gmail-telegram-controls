@@ -92,3 +92,12 @@
 - Focused evidence `35/35`; complete Apps Script suite `678/678` in `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - Shared/query/filter/custom-label/oversized/incomplete paths retain the full-list fallback. Live Gmail, native Telegram, staging, and production were not verified; release blockers are unchanged.
 - Records: `GT-069`, `B1-49`, `RCA-025`, `VR-044`.
+
+## REQ-0037 P0-D cache-lock contour - 2026-07-24
+
+- **Status:** `PARTIAL`; source evidence only.
+- Persistent mail records now have an explicit locked/unlocked lifecycle; low-level IndexedDB reads and writes are rejected until a verified session bootstrap.
+- The exact owner scope and connected-account set are checked at every one of five bootstrap paths; account reset and confirmed sign-out clear private memory and DOM without deleting retained records.
+- Focused evidence `48/48`; complete Apps Script suite `685/685` in `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- IndexedDB records are not yet encrypted at rest and offline device-bound unlock is not implemented; native Telegram, staging, and production were not verified, and release blockers are unchanged.
+- Records: `GT-070`, `B1-50`, `RCA-026`, `VR-045`.

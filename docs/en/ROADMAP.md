@@ -460,3 +460,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Locally verified:** focused `35/35`; complete Apps Script suite `678/678` in `25.414s`; baseline `7bd8270b2e14525dc8e99bd95387a1ef977dde1a`.
 - **Still required:** live Gmail change acceptance, request/cache-hit metrics, native multi-account/shared paths, staging, and production; the release gate remains blocked by shared URL Fetch quota and `T-03`.
 - **Related:** `GT-069`, `RCA-025`, `VR-044`, `REQ-0037`.
+
+## B1-50 - P0-D verified-session private-cache lock
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Result:** private IndexedDB access now fails closed until the server-established app session, opaque owner `cacheScope`, and exact connected-account set pass one explicit unlock gate. Hydration can no longer self-authorize from mutable client state.
+- **Lifecycle:** all five account-changing bootstrap paths rebind the allowlist; account switch, disconnect, and confirmed sign-out lock the cache, clear private memory/DOM, and retain persistent records.
+- **Locally verified:** focused `48/48`; complete Apps Script suite `685/685` in `26.020s`; baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
+- **Still required:** an encrypted-at-rest cache envelope, evidence-backed device-bound offline unlock, native account-isolation acceptance, staging, and production. Shared URL Fetch quota and `T-03` keep the release gate blocked.
+- **Release boundary:** source/docs contour only; no OAuth, Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-070`, `RCA-026`, `VR-045`, `REQ-0037`.

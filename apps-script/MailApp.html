@@ -7011,6 +7011,7 @@
           state.session = null;
           state.refreshToken = null;
           state.renewPromise = null;
+          p0ResetAccountScopedView();
           setAccountPanelOpen(false, null, false);
           showBootError("Поточний сеанс завершено. Gmail-акаунти залишилися підключеними.", { signedOut: true });
           if (tg && typeof tg.close === "function") window.setTimeout(function () { tg.close(); }, 250);
@@ -9122,6 +9123,9 @@
           await rpc({ op: "acceptInvite", payload: { inviteToken: value } });
           var bootstrap = await rpc({ op: "bootstrap" });
           initializeFromBootstrap(bootstrap || {});
+          if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
+            throw new Error("Захищений локальний кеш не відповідає оновленій поштовій зоні.");
+          }
           await p0HydratePersistentState();
           await loadWorkspaceAccess();
           showSnackbar("Поштову зону додано.", { success: true });
@@ -9156,7 +9160,12 @@
           state.disconnectConfirmId = "";
           state.workspaceInviteToken = "";
           var bootstrap = await rpc({ op: "bootstrap" });
+          p0ResetAccountScopedView();
           initializeFromBootstrap(bootstrap || {});
+          if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
+            throw new Error("Захищений локальний кеш не відповідає поточному Gmail-сеансу.");
+          }
+          await p0HydratePersistentState();
           await loadWorkspaceAccess();
           showSnackbar(result && result.cleanupPending
             ? "Gmail від’єднано. Очищення доступу Google буде повторено сервером."
@@ -9175,6 +9184,7 @@
         p0DisconnectReaderLayoutTracking();
         clearTimeout(p0Runtime.uiSaveTimer);
         p0Runtime.uiSaveTimer = 0;
+        p0LockPrivateCache("account-context-reset");
         p0Runtime.readerGeneration += 1;
         p0Runtime.currentThreadKey = "";
         p0Runtime.currentListKey = "";
@@ -9248,6 +9258,9 @@
           resetGentleMilestones(requested);
           syncCoProcessingTicker();
           initializeFromBootstrap(bootstrap || selected || {});
+          if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
+            throw new Error("Захищений локальний кеш не відповідає вибраному Gmail-сеансу.");
+          }
           await p0HydratePersistentState();
           p0ApplyPersistedView();
           var restoredTargetView = p0Runtime.restoredUi;
@@ -9386,6 +9399,10 @@
         try {
           var bootstrap = await rpc({ op: "bootstrap" });
           initializeFromBootstrap(bootstrap || {});
+          if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
+            throw new Error("Захищений локальний кеш не відповідає оновленому Gmail-сеансу.");
+          }
+          await p0HydratePersistentState();
           var after = state.accounts.map(function (item) { return item.id + ":" + item.email; }).sort().join("|");
           if (after !== before) {
             state.googleOAuthPendingUntil = 0;
@@ -9879,6 +9896,56 @@
           members.every(function (id) { return allowed.has(id); });
       }
 
+      function p0LockPrivateCache(reason) {
+        p0Runtime.cacheUnlocked = false;
+        p0Runtime.unlockedCacheScope = "";
+        p0Runtime.unlockedAccountIds = [];
+        p0Runtime.cacheScope = "";
+        p0Runtime.allowedAccountIds = [];
+        p0Runtime.memory.clear();
+        p0Runtime.pendingDrafts = [];
+        p0Runtime.restoredUi = null;
+        p0Runtime.readerViews.clear();
+        p0Runtime.readerScrolls.clear();
+        p0Runtime.listScrolls.clear();
+        p0Runtime.currentListKey = "";
+        p0Runtime.currentThreadKey = "";
+        p0Runtime.cacheLockReason = safeText(reason, "locked").slice(0, 48);
+        return true;
+      }
+
+      function p0PrivateCacheAccessAllowed(namespace) {
+        if (p0Runtime.cacheUnlocked !== true || !state.session) return false;
+        var scope = p0SafeCacheScope(state.cacheScope);
+        var unlockedScope = p0SafeCacheScope(p0Runtime.unlockedCacheScope);
+        if (!scope || scope !== unlockedScope || p0Runtime.cacheScope !== scope) return false;
+        var currentIds = state.accounts.map(function (account) {
+          return safeId(account && account.id);
+        }).filter(Boolean).sort();
+        var unlockedIds = (p0Runtime.unlockedAccountIds || []).map(safeId).filter(Boolean).sort();
+        if (!currentIds.length || currentIds.join(",") !== unlockedIds.join(",")) return false;
+        if (!namespace) return true;
+        return p0NamespaceAllowed(namespace, unlockedIds, unlockedScope);
+      }
+
+      function p0UnlockPrivateCacheFromVerifiedBootstrap() {
+        var scope = p0SafeCacheScope(state.cacheScope);
+        var accountIds = state.accounts.map(function (account) {
+          return safeId(account && account.id);
+        }).filter(Boolean).sort();
+        if (!state.session || !scope || !accountIds.length) {
+          p0LockPrivateCache("bootstrap-denied");
+          return false;
+        }
+        p0Runtime.cacheScope = scope;
+        p0Runtime.allowedAccountIds = accountIds.slice();
+        p0Runtime.unlockedCacheScope = scope;
+        p0Runtime.unlockedAccountIds = accountIds.slice();
+        p0Runtime.cacheUnlocked = true;
+        p0Runtime.cacheLockReason = "";
+        return p0PrivateCacheAccessAllowed();
+      }
+
       function p0EvictionKeys(records, maxRecords, maxBytes) {
         var rows = (records || []).slice().sort(function (left, right) {
           return Number(left.accessedAt || left.updatedAt || 0) - Number(right.accessedAt || right.updatedAt || 0);
@@ -9920,6 +9987,7 @@
       }
 
       function p0DbGet(key) {
+        if (!p0PrivateCacheAccessAllowed()) return Promise.resolve(null);
         return p0OpenDb().then(function (db) {
           if (!db) return null;
           return new Promise(function (resolve) {
@@ -9933,6 +10001,7 @@
       }
 
       function p0DbGetAll() {
+        if (!p0PrivateCacheAccessAllowed()) return Promise.resolve([]);
         return p0OpenDb().then(function (db) {
           if (!db) return [];
           return new Promise(function (resolve) {
@@ -9946,6 +10015,7 @@
       }
 
       function p0DbPut(record) {
+        if (!record || !p0PrivateCacheAccessAllowed(record.namespace)) return Promise.resolve(false);
         return p0OpenDb().then(function (db) {
           if (!db) return false;
           return new Promise(function (resolve) {
@@ -9987,6 +10057,7 @@
       }
 
       function p0PeekRecord(kind, key) {
+        if (!p0PrivateCacheAccessAllowed()) return null;
         var fullKey = p0RecordKey(kind, key);
         var record = p0Runtime.memory.get(fullKey);
         if (!record || record.schema !== P0_CACHE_SCHEMA || record.expiresAt <= Date.now() ||
@@ -9996,6 +10067,7 @@
       }
 
       async function p0ReadRecord(kind, key) {
+        if (!p0PrivateCacheAccessAllowed()) return null;
         var memory = p0PeekRecord(kind, key);
         if (memory) return memory;
         var fullKey = p0RecordKey(kind, key);
@@ -10010,6 +10082,7 @@
       }
 
       function p0WriteRecord(kind, key, namespace, value, freshMs) {
+        if (!p0PrivateCacheAccessAllowed(namespace)) return Promise.resolve(false);
         if (!p0NamespaceAllowed(namespace, p0Runtime.allowedAccountIds)) return Promise.resolve(false);
         var safeValue = p0Clone(value);
         if (safeValue == null) return Promise.resolve(false);
@@ -10505,8 +10578,10 @@
       }
 
       async function p0HydratePersistentState() {
-        p0Runtime.cacheScope = p0SafeCacheScope(state.cacheScope);
-        p0Runtime.allowedAccountIds = state.accounts.map(function (account) { return safeId(account.id); }).filter(Boolean);
+        if (!p0PrivateCacheAccessAllowed()) {
+          p0LockPrivateCache("hydrate-denied");
+          return false;
+        }
         await Promise.all(state.accounts.map(async function (account) {
           var historyId = safeText(account && account.historyId);
           if (!/^\d{1,64}$/.test(historyId)) return false;
@@ -10547,6 +10622,7 @@
             p0Runtime.listScrolls.set(key, Number(p0Runtime.restoredUi.listScrolls[key] || 0));
           });
         }
+        return true;
       }
 
       function p0ApplyPersistedView() {
@@ -21809,6 +21885,11 @@
             bootstrap = await rpc({ op: "bootstrap" });
           }
           initializeFromBootstrap(bootstrap || {});
+          if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
+            var cacheLockError = new Error("Захищений локальний кеш не пройшов перевірку поточного сеансу.");
+            cacheLockError.code = "PRIVATE_CACHE_LOCKED";
+            throw cacheLockError;
+          }
           launchTrace.sessionReadyAt = typeof performance !== "undefined" ? performance.now() : Date.now();
           await p0HydratePersistentState();
           var attentionPromise = Promise.resolve(null);
