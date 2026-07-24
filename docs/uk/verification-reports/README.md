@@ -24,4 +24,4 @@ Permission claim перевіряється лише проти канонічн
 
 ## Найновіший звіт
 
-[VR-045](reports/VR-045/README.md) фіксує P0-D source verification explicit verified-session private-cache lock. Focused contracts пройшли `48/48`, а повний Apps Script suite — `685/685` за `26.020s`; low-level access gate, exact owner/account rebind і reset/sign-out lock мають source evidence. Encrypted-at-rest records, offline device-bound unlock, native Telegram, staging і production лишаються `UNVERIFIED` або `BLOCKED`.
+[VR-046](reports/VR-046/README.md) фіксує P0-E source verification AES-GCM persistent-cache envelope. Focused contracts пройшли `55/55`, а повний Apps Script suite — `692/692` за `23.540s`; schema-3 plaintext purge, AES-GCM roundtrip/tamper rejection і SecureStorage-only key contract мають source evidence. Native Telegram crypto, offline bootstrap, staging і production лишаються `UNVERIFIED` або `BLOCKED`.

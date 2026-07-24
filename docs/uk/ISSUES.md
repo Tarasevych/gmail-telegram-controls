@@ -661,3 +661,14 @@ Status: BLOCKED
 - **Source evidence:** focused cache/launch/history contracts `48/48`; повний Apps Script suite `685/685` за `26.020s`; exact implementation baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
 - **Межа:** це verified-session source lock, не криптографічне шифрування IndexedDB і не offline device-bound unlock. Native Telegram SecureStorage, offline unlock, staging і production лишаються `UNVERIFIED` або `BLOCKED`; OAuth, Gmail/Telegram mutation та deployment не виконувалися.
 - **Доказ:** [VR-045](verification-reports/reports/VR-045/README.md).
+
+## GT-071 - Persistent IndexedDB зберігав private record values без шифрування
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`; продовжує P0-D lock lifecycle окремим encryption-at-rest contour.
+- **Product task:** `B1-51` / P0-E AES-GCM persistent-cache envelope.
+- **Підтверджена першопричина:** schema 2 записувала cloned `record.value` безпосередньо до IndexedDB. Namespace та session lock контролювали application-level rendering, але не забезпечували cryptographic protection persistent mail після закриття WebView.
+- **Source correction:** schema 3 очищає несумісні plaintext records під час upgrade; нові values шифруються AES-256-GCM з random 96-bit IV та AAD, прив’язаним до key/kind/namespace/expiry. 256-bit content key зберігається лише як compact owner-scoped envelope у Telegram `SecureStorage`; missing key створюється, а `RESTORABLE`, mismatch, unsupported або corrupt state fail closed без consent prompt чи plaintext fallback.
+- **Source evidence:** focused crypto/cache/launch contracts `55/55`; повний Apps Script suite `692/692` за `23.540s`; exact implementation baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- **Межа:** WebCrypto roundtrip і tamper rejection перевірено у source/Node, але native Telegram SecureStorage persistence та Apps Script WebView crypto support ще не мають target-device доказу. Offline launch/bootstrap, staging і production лишаються `UNVERIFIED` або `BLOCKED`; runtime mutation не виконувалася.
+- **Доказ:** [VR-046](verification-reports/reports/VR-046/README.md).

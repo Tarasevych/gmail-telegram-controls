@@ -5778,6 +5778,7 @@
   /* TELEGRAM_VIEWPORT_BRIDGE_END */
       var MAILBOX_BRIDGE_URL = "https://tarasevych.github.io/gmail-telegram-controls/?action=mailbox";
       var TELEGRAM_SECURE_SESSION_KEY = "gmail_telegram_app_refresh_v1";
+      var TELEGRAM_SECURE_CACHE_KEY = "gmail_telegram_cache_key_v1";
       // Attachment bytes are large enough to terminate a mobile Telegram
       // WebView if every visited thread remains cached. Keep only a small LRU
       // window and bound transient object URLs independently.
@@ -6801,6 +6802,118 @@
             recordTelegramSecureStorageDiagnostic(
               telegramSecureStorageErrorCode(error, "ERROR")
             );
+            resolve(false);
+          }
+        });
+      }
+
+      function recordP0CacheCryptoDiagnostic(code) {
+        var safeCode = safeText(code, "ERROR").toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 32);
+        window.__gtCacheCryptoDiagnostics = window.__gtCacheCryptoDiagnostics || {
+          lastCode: "", events: 0
+        };
+        window.__gtCacheCryptoDiagnostics.lastCode = safeCode;
+        window.__gtCacheCryptoDiagnostics.events += 1;
+        if (p0Runtime && p0Runtime.metrics) {
+          p0Runtime.metrics.cacheCryptoFailures =
+            Number(p0Runtime.metrics.cacheCryptoFailures || 0) + 1;
+        }
+        return safeCode;
+      }
+
+      function telegramSecureCacheEnvelopeGet() {
+        if (!telegramSecureStorageAvailable()) {
+          recordP0CacheCryptoDiagnostic("API_UNAVAILABLE");
+          return Promise.resolve({
+            available: false, value: "", canRestore: false, status: "API_UNAVAILABLE"
+          });
+        }
+        return new Promise(function (resolve) {
+          var settled = false;
+          var timer = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            recordP0CacheCryptoDiagnostic("TIMEOUT");
+            resolve({
+              available: true, value: "", canRestore: false, status: "TIMEOUT"
+            });
+          }, 750);
+          try {
+            tg.SecureStorage.getItem(TELEGRAM_SECURE_CACHE_KEY, function (error, value, canRestore) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              if (error) {
+                var failedStatus = telegramSecureStorageErrorCode(error, "ERROR");
+                recordP0CacheCryptoDiagnostic(failedStatus);
+                resolve({
+                  available: true, value: "", canRestore: false, status: failedStatus
+                });
+                return;
+              }
+              var envelope = safeText(value);
+              if (envelope && !/^p0ce1\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/.test(envelope)) {
+                recordP0CacheCryptoDiagnostic("INVALID_ENVELOPE");
+                resolve({
+                  available: true, value: "", canRestore: false, status: "INVALID_ENVELOPE"
+                });
+                return;
+              }
+              var status = envelope ? "FOUND" : (canRestore === true ? "RESTORABLE" : "MISSING");
+              resolve({
+                available: true,
+                value: envelope,
+                canRestore: !envelope && canRestore === true,
+                status: status
+              });
+            });
+          } catch (error) {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            var failedStatus = telegramSecureStorageErrorCode(error, "ERROR");
+            recordP0CacheCryptoDiagnostic(failedStatus);
+            resolve({
+              available: true, value: "", canRestore: false, status: failedStatus
+            });
+          }
+        });
+      }
+
+      function telegramSecureCacheEnvelopeSet(value) {
+        var envelope = safeText(value);
+        if (!telegramSecureStorageAvailable() ||
+            !/^p0ce1\.[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/.test(envelope)) {
+          recordP0CacheCryptoDiagnostic(
+            telegramSecureStorageAvailable() ? "INVALID_ENVELOPE" : "API_UNAVAILABLE"
+          );
+          return Promise.resolve(false);
+        }
+        return new Promise(function (resolve) {
+          var settled = false;
+          var timer = window.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            recordP0CacheCryptoDiagnostic("TIMEOUT");
+            resolve(false);
+          }, 750);
+          try {
+            tg.SecureStorage.setItem(TELEGRAM_SECURE_CACHE_KEY, envelope, function (error, stored) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
+              if (error || stored === false) {
+                recordP0CacheCryptoDiagnostic(telegramSecureStorageErrorCode(error, "ERROR"));
+                resolve(false);
+                return;
+              }
+              resolve(true);
+            });
+          } catch (error) {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            recordP0CacheCryptoDiagnostic(telegramSecureStorageErrorCode(error, "ERROR"));
             resolve(false);
           }
         });
@@ -9123,6 +9236,7 @@
           await rpc({ op: "acceptInvite", payload: { inviteToken: value } });
           var bootstrap = await rpc({ op: "bootstrap" });
           initializeFromBootstrap(bootstrap || {});
+          await p0PrepareEncryptedCacheKeyForVerifiedBootstrap();
           if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
             throw new Error("Захищений локальний кеш не відповідає оновленій поштовій зоні.");
           }
@@ -9162,6 +9276,7 @@
           var bootstrap = await rpc({ op: "bootstrap" });
           p0ResetAccountScopedView();
           initializeFromBootstrap(bootstrap || {});
+          await p0PrepareEncryptedCacheKeyForVerifiedBootstrap();
           if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
             throw new Error("Захищений локальний кеш не відповідає поточному Gmail-сеансу.");
           }
@@ -9258,6 +9373,7 @@
           resetGentleMilestones(requested);
           syncCoProcessingTicker();
           initializeFromBootstrap(bootstrap || selected || {});
+          await p0PrepareEncryptedCacheKeyForVerifiedBootstrap();
           if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
             throw new Error("Захищений локальний кеш не відповідає вибраному Gmail-сеансу.");
           }
@@ -9399,6 +9515,7 @@
         try {
           var bootstrap = await rpc({ op: "bootstrap" });
           initializeFromBootstrap(bootstrap || {});
+          await p0PrepareEncryptedCacheKeyForVerifiedBootstrap();
           if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
             throw new Error("Захищений локальний кеш не відповідає оновленому Gmail-сеансу.");
           }
@@ -9763,7 +9880,7 @@
           : "all";
       }
 
-      var P0_CACHE_SCHEMA = 2;
+      var P0_CACHE_SCHEMA = 3;
       var P0_PREVIOUS_IMMUTABLE_VERSION = 69;
       var P0_CLIENT_RELEASE_VERSION = 70;
       var P0_CLIENT_RELEASE_ID = "Versie-1-v70-p0";
@@ -9778,6 +9895,8 @@
         inflight: new Map(),
         cacheScope: "",
         allowedAccountIds: [],
+        encryptionKey: null,
+        encryptionScope: "",
         currentListKey: "",
         currentThreadKey: "",
         readerGeneration: 0,
@@ -9896,12 +10015,177 @@
           members.every(function (id) { return allowed.has(id); });
       }
 
+      function p0CacheCryptoAvailable() {
+        return Boolean(
+          window.crypto && window.crypto.subtle &&
+          typeof window.crypto.getRandomValues === "function" &&
+          typeof TextEncoder === "function" &&
+          typeof TextDecoder === "function" &&
+          typeof window.btoa === "function" &&
+          typeof window.atob === "function"
+        );
+      }
+
+      function p0BytesToBase64Url(bytes) {
+        var binary = "";
+        var input = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+        for (var offset = 0; offset < input.length; offset += 0x8000) {
+          binary += String.fromCharCode.apply(null, input.subarray(offset, offset + 0x8000));
+        }
+        return window.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+      }
+
+      function p0Base64UrlToBytes(value, maxBytes) {
+        var text = safeText(value);
+        if (!/^[A-Za-z0-9_-]+$/.test(text)) return null;
+        try {
+          var padding = text.length % 4 ? "=".repeat(4 - text.length % 4) : "";
+          var binary = window.atob(text.replace(/-/g, "+").replace(/_/g, "/") + padding);
+          if (!binary.length || binary.length > Number(maxBytes || 2 * 1024 * 1024)) return null;
+          var bytes = new Uint8Array(binary.length);
+          for (var index = 0; index < binary.length; index += 1) {
+            bytes[index] = binary.charCodeAt(index);
+          }
+          return bytes;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function p0ParseSecureCacheEnvelope(value) {
+        var match = safeText(value).match(
+          /^p0ce1\.([A-Za-z0-9_-]{43})\.([A-Za-z0-9_-]{43})$/
+        );
+        if (!match) return null;
+        var keyBytes = p0Base64UrlToBytes(match[2], 32);
+        return keyBytes && keyBytes.length === 32
+          ? { version: 1, scope: match[1], keyBytes: keyBytes }
+          : null;
+      }
+
+      function p0EncryptedCacheReady() {
+        return Boolean(
+          p0CacheCryptoAvailable() &&
+          p0Runtime.encryptionKey &&
+          p0SafeCacheScope(p0Runtime.encryptionScope) &&
+          p0Runtime.encryptionScope === p0SafeCacheScope(state.cacheScope)
+        );
+      }
+
+      async function p0PrepareEncryptedCacheKeyForVerifiedBootstrap(prefetchedEnvelope) {
+        p0Runtime.encryptionKey = null;
+        p0Runtime.encryptionScope = "";
+        var scope = p0SafeCacheScope(state.cacheScope);
+        if (!state.session || !scope || !p0CacheCryptoAvailable()) {
+          recordP0CacheCryptoDiagnostic("CRYPTO_UNAVAILABLE");
+          return false;
+        }
+        var stored = await Promise.resolve(
+          prefetchedEnvelope || telegramSecureCacheEnvelopeGet()
+        );
+        var parsed = p0ParseSecureCacheEnvelope(stored && stored.value);
+        var rawKey = null;
+        if (parsed) {
+          if (parsed.scope !== scope) {
+            recordP0CacheCryptoDiagnostic("OWNER_SCOPE_MISMATCH");
+            return false;
+          }
+          rawKey = parsed.keyBytes;
+        } else {
+          if (!stored || stored.status !== "MISSING" || stored.canRestore === true) {
+            recordP0CacheCryptoDiagnostic(safeText(stored && stored.status, "KEY_UNAVAILABLE"));
+            return false;
+          }
+          rawKey = new Uint8Array(32);
+          window.crypto.getRandomValues(rawKey);
+          var envelope = "p0ce1." + scope + "." + p0BytesToBase64Url(rawKey);
+          if (!await telegramSecureCacheEnvelopeSet(envelope)) return false;
+        }
+        try {
+          p0Runtime.encryptionKey = await window.crypto.subtle.importKey(
+            "raw", rawKey, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]
+          );
+          p0Runtime.encryptionScope = scope;
+          return p0EncryptedCacheReady();
+        } catch (error) {
+          p0Runtime.encryptionKey = null;
+          p0Runtime.encryptionScope = "";
+          recordP0CacheCryptoDiagnostic("KEY_IMPORT_FAILED");
+          return false;
+        }
+      }
+
+      function p0RecordAdditionalData(record) {
+        return new TextEncoder().encode([
+          "p0", String(P0_CACHE_SCHEMA), safeText(record && record.key),
+          safeText(record && record.kind), safeText(record && record.namespace),
+          String(Number(record && record.expiresAt || 0))
+        ].join("|"));
+      }
+
+      async function p0EncryptStoredRecord(record) {
+        if (!record || !p0EncryptedCacheReady() ||
+            !p0PrivateCacheAccessAllowed(record.namespace)) return null;
+        try {
+          var iv = new Uint8Array(12);
+          window.crypto.getRandomValues(iv);
+          var clear = new TextEncoder().encode(JSON.stringify(record.value));
+          var encrypted = await window.crypto.subtle.encrypt({
+            name: "AES-GCM",
+            iv: iv,
+            additionalData: p0RecordAdditionalData(record),
+            tagLength: 128
+          }, p0Runtime.encryptionKey, clear);
+          var stored = Object.assign({}, record, {
+            cipher: {
+              version: 1,
+              algorithm: "A256GCM",
+              iv: p0BytesToBase64Url(iv),
+              data: p0BytesToBase64Url(new Uint8Array(encrypted))
+            }
+          });
+          delete stored.value;
+          return stored;
+        } catch (error) {
+          recordP0CacheCryptoDiagnostic("ENCRYPT_FAILED");
+          return null;
+        }
+      }
+
+      async function p0DecryptStoredRecord(record) {
+        if (!record) return null;
+        if (record.schema !== P0_CACHE_SCHEMA) return record;
+        if (!p0EncryptedCacheReady() || !p0PrivateCacheAccessAllowed(record.namespace)) return null;
+        var cipher = record.cipher || {};
+        var iv = p0Base64UrlToBytes(cipher.iv, 12);
+        var encrypted = p0Base64UrlToBytes(cipher.data, P0_CACHE_MAX_RECORD_BYTES + 64);
+        if (cipher.version !== 1 || cipher.algorithm !== "A256GCM" ||
+            !iv || iv.length !== 12 || !encrypted) return null;
+        try {
+          var clear = await window.crypto.subtle.decrypt({
+            name: "AES-GCM",
+            iv: iv,
+            additionalData: p0RecordAdditionalData(record),
+            tagLength: 128
+          }, p0Runtime.encryptionKey, encrypted);
+          var value = JSON.parse(new TextDecoder().decode(clear));
+          var decrypted = Object.assign({}, record, { value: value });
+          delete decrypted.cipher;
+          return decrypted;
+        } catch (error) {
+          recordP0CacheCryptoDiagnostic("DECRYPT_FAILED");
+          return null;
+        }
+      }
+
       function p0LockPrivateCache(reason) {
         p0Runtime.cacheUnlocked = false;
         p0Runtime.unlockedCacheScope = "";
         p0Runtime.unlockedAccountIds = [];
         p0Runtime.cacheScope = "";
         p0Runtime.allowedAccountIds = [];
+        p0Runtime.encryptionKey = null;
+        p0Runtime.encryptionScope = "";
         p0Runtime.memory.clear();
         p0Runtime.pendingDrafts = [];
         p0Runtime.restoredUi = null;
@@ -9968,9 +10252,13 @@
         p0Runtime.dbPromise = new Promise(function (resolve) {
           try {
             var request = window.indexedDB.open("gmail-telegram-controls-versie-1", P0_CACHE_SCHEMA);
-            request.onupgradeneeded = function () {
+            request.onupgradeneeded = function (event) {
               var db = request.result;
-              if (!db.objectStoreNames.contains("records")) db.createObjectStore("records", { keyPath: "key" });
+              if (!db.objectStoreNames.contains("records")) {
+                db.createObjectStore("records", { keyPath: "key" });
+              } else if (Number(event && event.oldVersion || 0) < P0_CACHE_SCHEMA) {
+                request.transaction.objectStore("records").clear();
+              }
             };
             request.onsuccess = function () {
               var db = request.result;
@@ -9987,13 +10275,19 @@
       }
 
       function p0DbGet(key) {
-        if (!p0PrivateCacheAccessAllowed()) return Promise.resolve(null);
+        if (!p0PrivateCacheAccessAllowed() || !p0EncryptedCacheReady()) return Promise.resolve(null);
         return p0OpenDb().then(function (db) {
           if (!db) return null;
           return new Promise(function (resolve) {
             try {
               var request = db.transaction("records", "readonly").objectStore("records").get(key);
-              request.onsuccess = function () { resolve(request.result || null); };
+              request.onsuccess = function () {
+                var stored = request.result || null;
+                p0DecryptStoredRecord(stored).then(function (record) {
+                  if (stored && stored.schema === P0_CACHE_SCHEMA && !record) p0DbDelete(key);
+                  resolve(record);
+                }).catch(function () { resolve(null); });
+              };
               request.onerror = function () { resolve(null); };
             } catch (error) { resolve(null); }
           });
@@ -10001,13 +10295,21 @@
       }
 
       function p0DbGetAll() {
-        if (!p0PrivateCacheAccessAllowed()) return Promise.resolve([]);
+        if (!p0PrivateCacheAccessAllowed() || !p0EncryptedCacheReady()) return Promise.resolve([]);
         return p0OpenDb().then(function (db) {
           if (!db) return [];
           return new Promise(function (resolve) {
             try {
               var request = db.transaction("records", "readonly").objectStore("records").getAll();
-              request.onsuccess = function () { resolve(Array.isArray(request.result) ? request.result : []); };
+              request.onsuccess = function () {
+                var stored = Array.isArray(request.result) ? request.result : [];
+                Promise.all(stored.map(p0DecryptStoredRecord)).then(function (records) {
+                  stored.forEach(function (row, index) {
+                    if (row && row.schema === P0_CACHE_SCHEMA && !records[index]) p0DbDelete(row.key);
+                  });
+                  resolve(records.filter(Boolean));
+                }).catch(function () { resolve([]); });
+              };
               request.onerror = function () { resolve([]); };
             } catch (error) { resolve([]); }
           });
@@ -10015,15 +10317,19 @@
       }
 
       function p0DbPut(record) {
-        if (!record || !p0PrivateCacheAccessAllowed(record.namespace)) return Promise.resolve(false);
-        return p0OpenDb().then(function (db) {
-          if (!db) return false;
-          return new Promise(function (resolve) {
-            try {
-              var request = db.transaction("records", "readwrite").objectStore("records").put(record);
-              request.onsuccess = function () { resolve(true); };
-              request.onerror = function () { resolve(false); };
-            } catch (error) { resolve(false); }
+        if (!record || !p0PrivateCacheAccessAllowed(record.namespace) ||
+            !p0EncryptedCacheReady()) return Promise.resolve(false);
+        return p0EncryptStoredRecord(record).then(function (storedRecord) {
+          if (!storedRecord || Object.prototype.hasOwnProperty.call(storedRecord, "value")) return false;
+          return p0OpenDb().then(function (db) {
+            if (!db) return false;
+            return new Promise(function (resolve) {
+              try {
+                var request = db.transaction("records", "readwrite").objectStore("records").put(storedRecord);
+                request.onsuccess = function () { resolve(true); };
+                request.onerror = function () { resolve(false); };
+              } catch (error) { resolve(false); }
+            });
           });
         });
       }
@@ -21842,6 +22148,7 @@
             tg.expand();
             if (typeof tg.disableVerticalSwipes === "function") tg.disableVerticalSwipes();
           }
+          var secureCacheEnvelopePromise = telegramSecureCacheEnvelopeGet();
           var opened = null;
           var secureRecoveryError = null;
           if (state.session) {
@@ -21885,6 +22192,7 @@
             bootstrap = await rpc({ op: "bootstrap" });
           }
           initializeFromBootstrap(bootstrap || {});
+          await p0PrepareEncryptedCacheKeyForVerifiedBootstrap(secureCacheEnvelopePromise);
           if (!p0UnlockPrivateCacheFromVerifiedBootstrap()) {
             var cacheLockError = new Error("Захищений локальний кеш не пройшов перевірку поточного сеансу.");
             cacheLockError.code = "PRIVATE_CACHE_LOCKED";

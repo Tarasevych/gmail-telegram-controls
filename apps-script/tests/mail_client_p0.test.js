@@ -54,7 +54,7 @@ function loadFunctions(names) {
 }
 
 test('P0 cache is bounded, versioned and account-scoped', () => {
-  assert.match(source, /var P0_CACHE_SCHEMA = 2;/);
+  assert.match(source, /var P0_CACHE_SCHEMA = 3;/);
   assert.match(source, /P0_CACHE_MAX_RECORDS = 480/);
   assert.match(source, /P0_CACHE_MAX_BYTES = 16 \* 1024 \* 1024/);
   assert.match(source, /indexedDB\.open\("gmail-telegram-controls-versie-1"/);
@@ -128,7 +128,7 @@ test('account switch clears the prior account reader before the new bootstrap', 
   assert.match(switcher, /state\.compose \|\| state\.composeBusy \|\| state\.actionBusy \|\| state\.handoffBusy/,
     'account switching must not expose an active draft or mutation in another account context');
   assert.match(switcher,
-    /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);[\s\S]{0,320}await p0HydratePersistentState\(\);[\s\S]{0,80}p0ApplyPersistedView\(\)/,
+    /initializeFromBootstrap\(bootstrap \|\| selected \|\| \{\}\);[\s\S]{0,480}await p0HydratePersistentState\(\);[\s\S]{0,80}p0ApplyPersistedView\(\)/,
     'the incoming account must hydrate only its own persisted view');
   assert.match(switcher,
     /restoredTargetView\.selectedConnectionId[\s\S]{0,240}openThread\(/,

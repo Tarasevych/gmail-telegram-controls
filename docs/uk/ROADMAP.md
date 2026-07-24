@@ -471,3 +471,15 @@ Status: BLOCKED
 - **Ще потрібно:** encrypted-at-rest cache envelope, доказовий device-bound offline unlock, native account-isolation acceptance, staging і production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
 - **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-070`, `RCA-026`, `VR-045`, `REQ-0037`.
+
+## B1-51 - P0-E AES-GCM persistent-cache envelope
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0037`.
+- **Результат:** schema 3 більше не пише private `record.value` plaintext до IndexedDB. AES-256-GCM ciphertext має random IV та metadata AAD; decrypt failure або metadata swap fail closed і пошкоджений current-schema record видаляється.
+- **Key boundary:** один 256-bit content key зберігається лише в Telegram `SecureStorage` як compact owner-scoped envelope. `RESTORABLE` не перезаписується без user action; scope mismatch і unavailable crypto вимикають persistent cache без блокування online mailbox.
+- **Migration:** upgrade з попередньої schema очищає incompatible plaintext cache; Gmail server data та confirmed drafts не змінюються.
+- **Локально перевірено:** focused `55/55`; повний Apps Script suite `692/692` за `23.540s`; baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- **Ще потрібно:** native Telegram/Apps Script crypto acceptance, encrypted bootstrap snapshot і device-bound offline unlock, staging та production. Shared URL Fetch quota та `T-03` лишають release gate blocked.
+- **Release boundary:** лише source/docs contour; без OAuth, Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-071`, `RCA-027`, `VR-046`, `REQ-0037`.

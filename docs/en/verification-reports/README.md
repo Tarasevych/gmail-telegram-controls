@@ -24,4 +24,4 @@ A permission claim is verified only against a canonical owner-granted record. A 
 
 ## Latest report
 
-[VR-045](reports/VR-045/README.md) records P0-D source verification of the explicit verified-session private-cache lock. Focused contracts pass `48/48` and the complete Apps Script suite passes `685/685` in `26.020s`; the low-level access gate, exact owner/account rebind, and reset/sign-out lock have source evidence. Encrypted-at-rest records, offline device-bound unlock, native Telegram, staging, and production remain `UNVERIFIED` or `BLOCKED`.
+[VR-046](reports/VR-046/README.md) records P0-E source verification of the AES-GCM persistent-cache envelope. Focused contracts pass `55/55` and the complete Apps Script suite passes `692/692` in `23.540s`; schema-3 plaintext purge, AES-GCM roundtrip/tamper rejection, and the SecureStorage-only key contract have source evidence. Native Telegram crypto, offline bootstrap, staging, and production remain `UNVERIFIED` or `BLOCKED`.

@@ -661,3 +661,14 @@ An authenticated, read-only Apps Script Executions inspection confirmed that the
 - **Source evidence:** focused cache/launch/history contracts `48/48`; complete Apps Script suite `685/685` in `26.020s`; exact implementation baseline `8c01143411e20f96b7ec4fc885dd1898ac2e4bbb`.
 - **Boundary:** this is a verified-session source lock, not cryptographic IndexedDB encryption or offline device-bound unlock. Native Telegram SecureStorage, offline unlock, staging, and production remain `UNVERIFIED` or `BLOCKED`; no OAuth, Gmail/Telegram mutation, or deployment was performed.
 - **Evidence:** [VR-045](verification-reports/reports/VR-045/README.md).
+
+## GT-071 - Persistent IndexedDB stored private record values without encryption
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0037`; continues the P0-D lock lifecycle through a separate encryption-at-rest contour.
+- **Product task:** `B1-51` / P0-E AES-GCM persistent-cache envelope.
+- **Confirmed root cause:** schema 2 wrote cloned `record.value` directly to IndexedDB. Namespace and session lock controlled application-level rendering but did not cryptographically protect persistent mail after WebView close.
+- **Source correction:** schema 3 clears incompatible plaintext records during upgrade; new values use AES-256-GCM with a random 96-bit IV and AAD bound to key/kind/namespace/expiry. The 256-bit content key exists only as a compact owner-scoped envelope in Telegram `SecureStorage`; a missing key is created, while `RESTORABLE`, mismatch, unsupported, or corrupt state fails closed without a consent prompt or plaintext fallback.
+- **Source evidence:** focused crypto/cache/launch contracts `55/55`; complete Apps Script suite `692/692` in `23.540s`; exact implementation baseline `6f8a357e1a650639c3a16f9d6c7601d89817e3fe`.
+- **Boundary:** WebCrypto roundtrip and tamper rejection are source/Node verified, but native Telegram SecureStorage persistence and Apps Script WebView crypto support lack target-device evidence. Offline launch/bootstrap, staging, and production remain `UNVERIFIED` or `BLOCKED`; no runtime mutation was performed.
+- **Evidence:** [VR-046](verification-reports/reports/VR-046/README.md).

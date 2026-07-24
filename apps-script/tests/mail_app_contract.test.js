@@ -192,7 +192,7 @@ test('mail list uses honest server-wide Gmail filters and has no fake oldest sor
 
   const requestSource = sourceBetween(
     '      function safeMailboxFilter(value) {',
-    '      var P0_CACHE_SCHEMA = 2;'
+    '      var P0_CACHE_SCHEMA = 3;'
   ) + sourceBetween(
     '      function mailboxViewContext() {',
     '      function formatTimestampLabel(value, fallback) {'
