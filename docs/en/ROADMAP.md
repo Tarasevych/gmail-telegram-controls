@@ -507,3 +507,14 @@ Authenticated read-only runtime evidence still shows the shared Apps Script dail
 - **Still required:** authenticated two-session acceptance on a controlled draft, staging, and production after the shared URL Fetch quota and `T-03` blockers are cleared.
 - **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
 - **Related:** `GT-073`, `RCA-029`, `VR-048`, `REQ-0037`.
+
+## B1-54 - C-03 bounded scalable folder upload
+
+- **Status:** `PARTIAL`
+- **Source request:** `REQ-0035`.
+- **Result:** device-folder and `webkitdirectory` paths now converge on one bounded batch plan before FileReader starts. The plan retains recursive relative paths, aggregate bytes, duplicate state, and per-entry outcome, while the UI presents a progressive summary with retry/cancel and a Drive fallback.
+- **Safety gate:** at most `1000` entries are scanned; traversal, hidden/service, empty, and exact-duplicate entries fail closed. Count or aggregate-byte overflow blocks the whole accepted batch before files are read, so no unexpected partial upload starts.
+- **Locally verified:** focused `9/9`; Mail App contract `93/93`; complete Apps Script suite `716/716` in `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- **Still required:** native-picker and fallback acceptance on mobile/desktop for `1/10/100/1000`, visual/accessibility evidence, and only after shared URL Fetch quota and `T-03` blockers clear, staging/production.
+- **Release boundary:** source/docs contour only; no OAuth, real Gmail/Telegram mutation, staging, production, or immutable release.
+- **Related:** `GT-074`, `RCA-030`, `VR-049`, `REQ-0035`.

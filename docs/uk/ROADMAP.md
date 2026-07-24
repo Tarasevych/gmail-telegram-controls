@@ -507,3 +507,14 @@ Status: BLOCKED
 - **Ще потрібно:** authenticated two-session acceptance на контрольній чернетці, staging і production після зняття shared URL Fetch quota та `T-03` blockers.
 - **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
 - **Пов’язано:** `GT-073`, `RCA-029`, `VR-048`, `REQ-0037`.
+
+## B1-54 - C-03 bounded scalable folder upload
+
+- **Статус:** `PARTIAL`
+- **Source request:** `REQ-0035`.
+- **Результат:** device-folder і `webkitdirectory` paths тепер сходяться в один bounded batch plan до запуску FileReader. План зберігає recursive relative paths, aggregate bytes, duplicate state і per-entry outcome, а UI показує progressive summary з retry/cancel та Drive fallback.
+- **Safety gate:** максимум `1000` scanned entries; traversal, hidden/service, empty та exact duplicate entries fail closed. Count або aggregate-byte overflow блокує весь accepted batch до читання файлів, тому частковий неочікуваний upload не стартує.
+- **Локально перевірено:** focused `9/9`; Mail App contract `93/93`; повний Apps Script suite `716/716` за `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- **Ще потрібно:** native picker і fallback acceptance на mobile/desktop для `1/10/100/1000`, visual/a11y evidence та лише після зняття shared URL Fetch quota і `T-03` blockers — staging/production.
+- **Release boundary:** лише source/docs contour; без OAuth, реальної Gmail/Telegram mutation, staging, production або immutable release.
+- **Пов’язано:** `GT-074`, `RCA-030`, `VR-049`, `REQ-0035`.

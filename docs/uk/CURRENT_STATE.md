@@ -128,3 +128,12 @@
 - Focused evidence `258/258`; повний Apps Script suite `707/707` за `23.349s`; baseline `9b00a335c0016c439a463233b67a16e1499b7222`.
 - Gmail API не документує atomic revision/ETag precondition, тому вузька TOCTOU-гонка між другим read і update лишається. Authenticated multi-session, staging і production не перевірялися; release blockers не змінені.
 - Записи: `GT-073`, `B1-53`, `RCA-029`, `VR-048`.
+
+## V3 C-03 bounded scalable folder upload
+
+- **Статус:** `PARTIAL`; source evidence only.
+- Folder selection тепер проходить через один bounded `1000`-entry planner з recursive relative paths, aggregate count/bytes gate, exact-duplicate та unsafe-path rejection до запуску локального читання.
+- Progressive batch card показує total/status, bounded rows, Drive fallback, per-file retry/cancel і cancel-all; accepted entries повторно використовують чинний transfer manager.
+- Focused evidence `9/9`; Mail App contract `93/93`; повний Apps Script suite `716/716` за `25.980s`; baseline `a33242df9689f6d483825940632df3030663d1a6`.
+- Native picker/fallback, visual mobile/desktop, staging і production не перевірялися; shared URL Fetch quota та `T-03` release blockers не змінені.
+- Записи: `GT-074`, `B1-54`, `RCA-030`, `VR-049`.

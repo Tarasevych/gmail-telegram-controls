@@ -647,6 +647,8 @@ test('local attachment staging starts every accepted file in parallel and cancel
   let nextId = 0;
   const state = {
     composeBusy: false,
+    composeSessionId: 'compose-test',
+    composeUploadBatch: null,
     compose: { attachments: [], inlineAttachments: [] },
     composeAttachmentJobs: new Map(),
     limits: {
@@ -660,6 +662,33 @@ test('local attachment staging starts every accepted file in parallel and cancel
     els: { attachmentInput: { value: 'chosen' }, attachmentFolderInput: { value: 'chosen' } },
     composeAttachmentsLocked: () => false,
     composeAttachmentJobs: () => Array.from(state.composeAttachmentJobs.values()),
+    planComposeUploadSelection(files) {
+      const entries = Array.from(files || []).map((file, index) => {
+        const info = { name: file.name, size: file.size, mimeType: file.type };
+        return {
+          index,
+          file,
+          info,
+          relativePath: file.name,
+          status: 'accepted',
+          reason: '',
+          duplicateName: false,
+        };
+      });
+      return {
+        selectedCount: entries.length,
+        scannedCount: entries.length,
+        overflowCount: 0,
+        truncated: false,
+        totalBytes: entries.reduce((sum, entry) => sum + entry.info.size, 0),
+        totalIncomplete: false,
+        gateReason: '',
+        entries,
+        accepted: entries,
+      };
+    },
+    newClientOperationId: () => 'batch-test',
+    COMPOSE_UPLOAD_BATCH_PAGE_SIZE: 40,
     validateOutgoingFile: file => ({ name: file.name, size: file.size, mimeType: file.type }),
     createComposeAttachmentJob(file, info) {
       return { id: `job-${++nextId}`, order: nextId, file, ...info, state: 'queued', cancelled: false };
@@ -694,11 +723,13 @@ test('local attachment staging starts every accepted file in parallel and cancel
   let aborts = 0;
   let released = 0;
   let scheduled = 0;
+  let batchUpdates = 0;
   const reader = { readyState: 1, abort() { aborts += 1; } };
   const cancelState = { composeAttachmentJobs: new Map([['job-cancel', { id: 'job-cancel', reader, cancelled: false }]]) };
   const cancelContext = vm.createContext({
     state: cancelState,
     safeClientOperationId: value => String(value || ''),
+    updateComposeUploadBatchEntry() { batchUpdates += 1; },
     releaseComposeAttachmentJob() { released += 1; },
     renderComposeAttachments() {},
     updateComposeLifecycleControls() {},
@@ -709,6 +740,7 @@ test('local attachment staging starts every accepted file in parallel and cancel
   vm.runInContext(cancelSource, cancelContext);
   assert.equal(cancelContext.cancelComposeAttachmentJob('job-cancel'), true);
   assert.equal(aborts, 1);
+  assert.equal(batchUpdates, 1);
   assert.equal(released, 1);
   assert.equal(cancelState.composeAttachmentJobs.has('job-cancel'), false);
   assert.equal(scheduled, 1);
@@ -2403,7 +2435,7 @@ test('inline compose images use safe local tokens and keep binary data out of HT
   );
   const inlineQueueSource = sourceBetween(
     '      function addInlineImageFiles(files) {',
-    '      function addOutgoingFiles(files) {'
+    '      function addOutgoingFiles(files, options) {'
   );
   assert.match(fileSource, /function addInlineImageFile\(file\)/);
   assert.match(inlineQueueSource, /safeInlineImageMime\(info\.mimeType\)/);
