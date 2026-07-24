@@ -7686,6 +7686,12 @@
       }
 
       function rpc(request) {
+        if (p0Runtime.offlineUnlockActive === true && !state.session) {
+          p0Runtime.metrics.offlineBlockedRequests += 1;
+          var offlineError = new Error("Офлайн-копія доступна лише для читання. Підключення відновиться у фоні.");
+          offlineError.code = "OFFLINE_CACHE_ONLY";
+          return Promise.reject(offlineError);
+        }
         var payload = translateRpcRequest(request);
         var dedupeKey = p0RpcDedupeKey(payload);
         if (dedupeKey && p0Runtime.inflight.has(dedupeKey)) return p0Runtime.inflight.get(dedupeKey);
@@ -9241,6 +9247,7 @@
             throw new Error("Захищений локальний кеш не відповідає оновленій поштовій зоні.");
           }
           await p0HydratePersistentState();
+          await p0PersistOfflineBootstrapSnapshot();
           await loadWorkspaceAccess();
           showSnackbar("Поштову зону додано.", { success: true });
         } catch (error) {
@@ -9281,6 +9288,7 @@
             throw new Error("Захищений локальний кеш не відповідає поточному Gmail-сеансу.");
           }
           await p0HydratePersistentState();
+          await p0PersistOfflineBootstrapSnapshot();
           await loadWorkspaceAccess();
           showSnackbar(result && result.cleanupPending
             ? "Gmail від’єднано. Очищення доступу Google буде повторено сервером."
@@ -9378,6 +9386,7 @@
             throw new Error("Захищений локальний кеш не відповідає вибраному Gmail-сеансу.");
           }
           await p0HydratePersistentState();
+          await p0PersistOfflineBootstrapSnapshot();
           p0ApplyPersistedView();
           var restoredTargetView = p0Runtime.restoredUi;
           try {
@@ -9520,6 +9529,7 @@
             throw new Error("Захищений локальний кеш не відповідає оновленому Gmail-сеансу.");
           }
           await p0HydratePersistentState();
+          await p0PersistOfflineBootstrapSnapshot();
           var after = state.accounts.map(function (item) { return item.id + ":" + item.email; }).sort().join("|");
           if (after !== before) {
             state.googleOAuthPendingUntil = 0;
@@ -9889,6 +9899,8 @@
       var P0_CACHE_MAX_BYTES = 16 * 1024 * 1024;
       var P0_CACHE_MAX_RECORD_BYTES = 1536 * 1024;
       var P0_CACHE_MAX_AGE_MS = 45 * 24 * 60 * 60 * 1000;
+      var P0_OFFLINE_UNLOCK_MAX_AGE_MS = 35 * 24 * 60 * 60 * 1000;
+      var P0_OFFLINE_BOOTSTRAP_KIND = "bootstrap";
       var p0Runtime = {
         dbPromise: null,
         memory: new Map(),
@@ -9897,6 +9909,7 @@
         allowedAccountIds: [],
         encryptionKey: null,
         encryptionScope: "",
+        offlineUnlockActive: false,
         currentListKey: "",
         currentThreadKey: "",
         readerGeneration: 0,
@@ -9941,7 +9954,10 @@
           historyNoopChecks: 0,
           historyListRefreshes: 0,
           historyFullResyncs: 0,
-          historyEntityReconciles: 0
+          historyEntityReconciles: 0,
+          offlineUnlocks: 0,
+          offlineUnlockFailures: 0,
+          offlineBlockedRequests: 0
         }
       };
 
@@ -10003,8 +10019,11 @@
         var expectedScope = p0SafeCacheScope(
           cacheScopeValue || (typeof p0Runtime !== "undefined" && p0Runtime.cacheScope)
         );
-        var match = value.match(/^t:([A-Za-z0-9_-]{43})\|(a|u):(.+)$/);
+        var match = value.match(/^t:([A-Za-z0-9_-]{43})\|(a|u|b):(.+)$/);
         if (!match || !expectedScope || match[1] !== expectedScope) return false;
+        if (match[2] === "b") {
+          return match[3] === "bootstrap" && ids.length > 0;
+        }
         if (match[2] === "a") {
           var accountId = safeId(match[3]);
           return accountId === match[3] && allowed.has(accountId);
@@ -10063,13 +10082,89 @@
           : null;
       }
 
-      function p0EncryptedCacheReady() {
+      function p0EncryptedCacheReady(cacheScopeValue) {
+        var expectedScope = p0SafeCacheScope(cacheScopeValue || state.cacheScope);
         return Boolean(
           p0CacheCryptoAvailable() &&
           p0Runtime.encryptionKey &&
           p0SafeCacheScope(p0Runtime.encryptionScope) &&
-          p0Runtime.encryptionScope === p0SafeCacheScope(state.cacheScope)
+          expectedScope &&
+          p0Runtime.encryptionScope === expectedScope
         );
+      }
+
+      function p0OfflineBootstrapNamespace(cacheScopeValue) {
+        var scope = p0SafeCacheScope(cacheScopeValue);
+        return scope ? "t:" + scope + "|b:bootstrap" : "";
+      }
+
+      function p0OfflineBootstrapAccount(value) {
+        var account = value || {};
+        return {
+          id: safeId(account.id),
+          name: safeText(account.name || account.displayName),
+          email: safeText(account.email || account.emailAddress),
+          initial: safeText(account.initial).slice(0, 4),
+          avatarUrl: safeUrl(account.avatarUrl, false),
+          historyId: /^\d{1,64}$/.test(safeText(account.historyId)) ? safeText(account.historyId) : "",
+          connected: account.connected !== false,
+          current: Boolean(account.current)
+        };
+      }
+
+      function p0OfflineBootstrapValue() {
+        var scope = p0SafeCacheScope(state.cacheScope);
+        var accounts = state.accounts.map(p0OfflineBootstrapAccount).filter(function (account) {
+          return Boolean(account.id);
+        });
+        var currentId = safeId(state.account && state.account.id);
+        var current = accounts.find(function (account) { return account.id === currentId; }) ||
+          accounts[0] || null;
+        var issuedAt = Date.now();
+        if (!state.session || !scope || !current || !accounts.length) return null;
+        return {
+          offlineBootstrapVersion: 1,
+          cacheSchema: P0_CACHE_SCHEMA,
+          releaseId: P0_CLIENT_RELEASE_ID,
+          issuedAt: issuedAt,
+          expiresAt: issuedAt + P0_OFFLINE_UNLOCK_MAX_AGE_MS,
+          session: { cacheScope: scope },
+          account: p0Clone(current),
+          accounts: p0Clone(accounts),
+          accountSettings: p0Clone(state.accountSettings),
+          folders: p0Clone(state.folders),
+          labels: p0Clone(state.labels),
+          initialFolderId: safeId(state.currentFolderId || "INBOX").toUpperCase(),
+          needsGoogleConnection: false
+        };
+      }
+
+      function p0ValidateOfflineBootstrapSnapshot(value, expectedScope) {
+        var snapshot = value && typeof value === "object" ? p0Clone(value) : null;
+        var scope = p0SafeCacheScope(expectedScope);
+        var now = Date.now();
+        if (!snapshot || snapshot.offlineBootstrapVersion !== 1 ||
+            snapshot.cacheSchema !== P0_CACHE_SCHEMA ||
+            p0SafeCacheScope(snapshot.session && snapshot.session.cacheScope) !== scope ||
+            !Number.isFinite(Number(snapshot.issuedAt)) ||
+            !Number.isFinite(Number(snapshot.expiresAt)) ||
+            Number(snapshot.issuedAt) > now + 5 * 60 * 1000 ||
+            Number(snapshot.expiresAt) <= now ||
+            Number(snapshot.expiresAt) - Number(snapshot.issuedAt) > P0_OFFLINE_UNLOCK_MAX_AGE_MS) {
+          return null;
+        }
+        var accounts = Array.isArray(snapshot.accounts)
+          ? snapshot.accounts.map(p0OfflineBootstrapAccount).filter(function (account) {
+            return Boolean(account.id);
+          })
+          : [];
+        var ids = accounts.map(function (account) { return account.id; });
+        if (!accounts.length || accounts.length > 20 || new Set(ids).size !== ids.length) return null;
+        var activeId = safeId(snapshot.account && snapshot.account.id);
+        if (!activeId || ids.indexOf(activeId) === -1) return null;
+        snapshot.accounts = accounts;
+        snapshot.account = accounts.find(function (account) { return account.id === activeId; });
+        return snapshot;
       }
 
       async function p0PrepareEncryptedCacheKeyForVerifiedBootstrap(prefetchedEnvelope) {
@@ -10152,10 +10247,20 @@
         }
       }
 
-      async function p0DecryptStoredRecord(record) {
+      async function p0DecryptStoredRecord(record, options) {
         if (!record) return null;
         if (record.schema !== P0_CACHE_SCHEMA) return record;
-        if (!p0EncryptedCacheReady() || !p0PrivateCacheAccessAllowed(record.namespace)) return null;
+        var opts = options || {};
+        var offlineBootstrap = opts.offlineBootstrap === true;
+        var expectedScope = p0SafeCacheScope(opts.cacheScope || state.cacheScope);
+        if (!p0EncryptedCacheReady(expectedScope)) return null;
+        if (offlineBootstrap) {
+          if (record.kind !== P0_OFFLINE_BOOTSTRAP_KIND ||
+              record.key !== p0RecordKey(P0_OFFLINE_BOOTSTRAP_KIND, expectedScope) ||
+              record.namespace !== p0OfflineBootstrapNamespace(expectedScope)) return null;
+        } else if (!p0PrivateCacheAccessAllowed(record.namespace)) {
+          return null;
+        }
         var cipher = record.cipher || {};
         var iv = p0Base64UrlToBytes(cipher.iv, 12);
         var encrypted = p0Base64UrlToBytes(cipher.data, P0_CACHE_MAX_RECORD_BYTES + 64);
@@ -10186,6 +10291,7 @@
         p0Runtime.allowedAccountIds = [];
         p0Runtime.encryptionKey = null;
         p0Runtime.encryptionScope = "";
+        p0Runtime.offlineUnlockActive = false;
         p0Runtime.memory.clear();
         p0Runtime.pendingDrafts = [];
         p0Runtime.restoredUi = null;
@@ -10199,7 +10305,8 @@
       }
 
       function p0PrivateCacheAccessAllowed(namespace) {
-        if (p0Runtime.cacheUnlocked !== true || !state.session) return false;
+        if (p0Runtime.cacheUnlocked !== true ||
+            (!state.session && p0Runtime.offlineUnlockActive !== true)) return false;
         var scope = p0SafeCacheScope(state.cacheScope);
         var unlockedScope = p0SafeCacheScope(p0Runtime.unlockedCacheScope);
         if (!scope || scope !== unlockedScope || p0Runtime.cacheScope !== scope) return false;
@@ -10226,6 +10333,28 @@
         p0Runtime.unlockedCacheScope = scope;
         p0Runtime.unlockedAccountIds = accountIds.slice();
         p0Runtime.cacheUnlocked = true;
+        p0Runtime.offlineUnlockActive = false;
+        p0Runtime.cacheLockReason = "";
+        return p0PrivateCacheAccessAllowed();
+      }
+
+      function p0UnlockPrivateCacheFromOfflineBootstrap(snapshot) {
+        var scope = p0SafeCacheScope(state.cacheScope);
+        var accountIds = state.accounts.map(function (account) {
+          return safeId(account && account.id);
+        }).filter(Boolean).sort();
+        if (state.session || !scope || !accountIds.length ||
+            !p0ValidateOfflineBootstrapSnapshot(snapshot, scope) ||
+            !p0EncryptedCacheReady(scope)) {
+          p0LockPrivateCache("offline-bootstrap-denied");
+          return false;
+        }
+        p0Runtime.cacheScope = scope;
+        p0Runtime.allowedAccountIds = accountIds.slice();
+        p0Runtime.unlockedCacheScope = scope;
+        p0Runtime.unlockedAccountIds = accountIds.slice();
+        p0Runtime.cacheUnlocked = true;
+        p0Runtime.offlineUnlockActive = true;
         p0Runtime.cacheLockReason = "";
         return p0PrivateCacheAccessAllowed();
       }
@@ -10288,6 +10417,19 @@
                   resolve(record);
                 }).catch(function () { resolve(null); });
               };
+              request.onerror = function () { resolve(null); };
+            } catch (error) { resolve(null); }
+          });
+        });
+      }
+
+      function p0DbGetStoredRecord(key) {
+        return p0OpenDb().then(function (db) {
+          if (!db) return null;
+          return new Promise(function (resolve) {
+            try {
+              var request = db.transaction("records", "readonly").objectStore("records").get(key);
+              request.onsuccess = function () { resolve(request.result || null); };
               request.onerror = function () { resolve(null); };
             } catch (error) { resolve(null); }
           });
@@ -10407,15 +10549,74 @@
           freshUntil: now + Math.max(0, Number(freshMs || 0)),
           expiresAt: now + P0_CACHE_MAX_AGE_MS
         };
-        if (kind !== "draft") p0MemoryPut(record);
+        if (kind !== "draft" && kind !== P0_OFFLINE_BOOTSTRAP_KIND) p0MemoryPut(record);
         return p0DbPut(record).then(function (saved) {
           if (!saved || kind === "draft") return saved;
           p0DbGetAll().then(function (all) {
-            var cacheRows = all.filter(function (row) { return row.kind !== "draft"; });
+            var cacheRows = all.filter(function (row) {
+              return row.kind !== "draft" && row.kind !== P0_OFFLINE_BOOTSTRAP_KIND;
+            });
             p0EvictionKeys(cacheRows, P0_CACHE_MAX_RECORDS, P0_CACHE_MAX_BYTES).forEach(p0DbDelete);
           });
           return true;
         });
+      }
+
+      function p0PersistOfflineBootstrapSnapshot() {
+        var snapshot = p0OfflineBootstrapValue();
+        var scope = p0SafeCacheScope(state.cacheScope);
+        var namespace = p0OfflineBootstrapNamespace(scope);
+        if (!snapshot || !p0PrivateCacheAccessAllowed(namespace)) return Promise.resolve(false);
+        return p0WriteRecord(
+          P0_OFFLINE_BOOTSTRAP_KIND,
+          scope,
+          namespace,
+          snapshot,
+          P0_OFFLINE_UNLOCK_MAX_AGE_MS
+        );
+      }
+
+      async function p0RestoreOfflineBootstrapFromSecureStorage(prefetchedEnvelope) {
+        p0LockPrivateCache("offline-restore-start");
+        state.session = null;
+        if (!p0CacheCryptoAvailable()) return null;
+        var stored = await Promise.resolve(
+          prefetchedEnvelope || telegramSecureCacheEnvelopeGet()
+        );
+        var parsed = p0ParseSecureCacheEnvelope(stored && stored.value);
+        if (!parsed || (stored && stored.canRestore === true)) {
+          p0Runtime.metrics.offlineUnlockFailures += 1;
+          return null;
+        }
+        try {
+          p0Runtime.encryptionKey = await window.crypto.subtle.importKey(
+            "raw", parsed.keyBytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]
+          );
+          p0Runtime.encryptionScope = parsed.scope;
+          var key = p0RecordKey(P0_OFFLINE_BOOTSTRAP_KIND, parsed.scope);
+          var encrypted = await p0DbGetStoredRecord(key);
+          var decrypted = await p0DecryptStoredRecord(encrypted, {
+            offlineBootstrap: true,
+            cacheScope: parsed.scope
+          });
+          var snapshot = p0ValidateOfflineBootstrapSnapshot(
+            decrypted && decrypted.value,
+            parsed.scope
+          );
+          if (!snapshot) throw new Error("OFFLINE_BOOTSTRAP_INVALID");
+          initializeFromBootstrap(snapshot);
+          if (!p0UnlockPrivateCacheFromOfflineBootstrap(snapshot)) {
+            throw new Error("OFFLINE_BOOTSTRAP_LOCKED");
+          }
+          await p0HydratePersistentState();
+          p0Runtime.metrics.offlineUnlocks += 1;
+          return snapshot;
+        } catch (error) {
+          p0Runtime.metrics.offlineUnlockFailures += 1;
+          recordP0CacheCryptoDiagnostic("OFFLINE_UNLOCK_FAILED");
+          p0LockPrivateCache("offline-restore-failed");
+          return null;
+        }
       }
 
       function p0CurrentNamespace() {
@@ -10908,7 +11109,9 @@
           // reactivate their opaque owner/account namespace.
           if (!p0NamespaceAllowed(record.namespace, p0Runtime.allowedAccountIds, p0Runtime.cacheScope)) return;
           usable.push(record);
-          if (record.kind !== "draft") p0MemoryPut(record);
+          if (record.kind !== "draft" && record.kind !== P0_OFFLINE_BOOTSTRAP_KIND) {
+            p0MemoryPut(record);
+          }
         });
         var namespace = p0CurrentNamespace();
         var views = usable.filter(function (record) { return record.kind === "view" && record.namespace === namespace; })
@@ -11864,13 +12067,30 @@
         p0Runtime.started = true;
         p0ExposeDiagnostics();
         p0RequestPersistentStorage();
-        window.setTimeout(p0PrefetchVisibleThreads, 0);
+        if (!p0Runtime.offlineUnlockActive) window.setTimeout(p0PrefetchVisibleThreads, 0);
         if (els.listPane) els.listPane.addEventListener("scroll", p0ScheduleUiStateSave, { passive: true });
         document.addEventListener("visibilitychange", function () {
-          if (document.visibilityState === "visible") p0RevalidateVisible();
+          if (document.visibilityState !== "visible") return;
+          if (p0Runtime.offlineUnlockActive) {
+            if (navigator.onLine !== false) boot({ force: true }).catch(function () {});
+            return;
+          }
+          p0RevalidateVisible();
         });
-        window.addEventListener("online", p0RevalidateVisible);
-        p0Runtime.backgroundTimer = window.setInterval(p0RevalidateVisible, 45000);
+        window.addEventListener("online", function () {
+          if (p0Runtime.offlineUnlockActive) {
+            boot({ force: true }).catch(function () {});
+            return;
+          }
+          p0RevalidateVisible();
+        });
+        p0Runtime.backgroundTimer = window.setInterval(function () {
+          if (p0Runtime.offlineUnlockActive) {
+            if (navigator.onLine !== false) boot({ force: true }).catch(function () {});
+            return;
+          }
+          p0RevalidateVisible();
+        }, 45000);
         p0Runtime.releaseTimer = window.setInterval(p0CheckClientRelease, 5 * 60 * 1000);
         window.setTimeout(p0CheckClientRelease, 15000);
       }
@@ -12901,13 +13121,25 @@
             renderListLoading();
           }
         }
-        if (renderedCached && opts.returnAfterCache) {
+        if (renderedCached && (opts.returnAfterCache || opts.offlineOnly)) {
           state.pendingListIntent = null;
           p0ScheduleUiStateSave();
-          window.setTimeout(function () {
-            loadThreads(true, { background: true });
-          }, 0);
+          if (opts.offlineOnly) {
+            p0SetSyncStatus("Офлайн · показано захищену локальну копію", { persistent: true });
+          } else {
+            window.setTimeout(function () {
+              loadThreads(true, { background: true });
+            }, 0);
+          }
           return true;
+        }
+        if (opts.offlineOnly || (p0Runtime.offlineUnlockActive && !state.session)) {
+          state.pendingListIntent = null;
+          if (!renderedCached) {
+            renderListState("empty", "Офлайн-копія цього списку ще не збережена.");
+          }
+          p0SetSyncStatus("Офлайн · очікую відновлення мережі", { persistent: true });
+          return false;
         }
         if (state.listLoading) return;
 
@@ -22200,6 +22432,7 @@
           }
           launchTrace.sessionReadyAt = typeof performance !== "undefined" ? performance.now() : Date.now();
           await p0HydratePersistentState();
+          await p0PersistOfflineBootstrapSnapshot();
           var attentionPromise = Promise.resolve(null);
           if (!state.needsGoogleConnection && state.account && state.account.id) {
             attentionPromise = rpc({
@@ -22294,6 +22527,39 @@
         } catch (error) {
           renderMailContext({ status: "error" });
           var reasonCode = recordMailboxSessionDiagnostic(error);
+          if (reasonCode === "TRANSIENT_NETWORK_FAILURE") {
+            var offlineBootstrap = await p0RestoreOfflineBootstrapFromSecureStorage(
+              secureCacheEnvelopePromise
+            );
+            if (offlineBootstrap) {
+              var offlineRoute = parseLocationRoute();
+              if (offlineRoute && offlineRoute.view === "list") applyListRoute(offlineRoute);
+              if (!offlineRoute) p0ApplyPersistedView();
+              bootState.hidden = true;
+              app.setAttribute("aria-busy", "false");
+              await loadThreads(true, { returnAfterCache: true, offlineOnly: true });
+              state.routeReady = true;
+              p0StartBackgroundWork();
+              if (offlineRoute && offlineRoute.view === "thread") {
+                await openThread(
+                  offlineRoute.threadId,
+                  true,
+                  offlineRoute.connectionId,
+                  { recoverToListOnFailure: true }
+                );
+              } else if (p0Runtime.restoredUi &&
+                         p0Runtime.restoredUi.selectedThreadId &&
+                         p0Runtime.restoredUi.selectedConnectionId) {
+                await openThread(
+                  p0Runtime.restoredUi.selectedThreadId,
+                  true,
+                  p0Runtime.restoredUi.selectedConnectionId,
+                  { recoverToListOnFailure: true }
+                );
+              }
+              return;
+            }
+          }
           var secureStorageCode = safeText(
             window.__gtSecureStorageDiagnostics &&
             window.__gtSecureStorageDiagnostics.lastCode
