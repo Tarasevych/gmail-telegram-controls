@@ -10,13 +10,13 @@
 | B1-04 | Виконано локально | Neutral GitHub OAuth callback із credentialless POST до Apps Script | query очищається до передачі; one-use user/chat/zone state; Google multi-login cookies не надсилаються |
 | B1-05 | Виконано | Зберегти новий redirect URI в Google OAuth client | `OAuth client saved`; точний URI прочитано назад |
 | B1-06 | Виконано | Credentialless OAuth relay та послідовні immutable v41/v42 | stable v42, staging 0, точний v41 rollback |
-| B1-07 | Не перевірено | Додати новий контрольний Gmail-акаунт через fresh OAuth flow | наявні підключення працюють; новий account choice/consent/callback не виконувався під час E4/E5 |
+| B1-07 | Не перевірено | Додати новий контрольний Gmail-обліковий запис через fresh OAuth flow | наявні під'єднання працюють; новий account choice/consent/callback не виконувався під час E4/E5 |
 | B1-08 | Виконано production для owner lane | Повний real-time acceptance у @TarasevychGmailNotifierBot | stable v55 автоматично доставив одну картку; два `/check` не створили дубль; exact-marker count лишився 1 |
 | B1-09 | Виконано | Promote, cleanup, production Web App menu | stable v55, staging 0, legacy staging 0, journal `cleaned`; menu відкриває neutral GitHub Pages bridge |
 | B1-10 | Виконано | Оновити UK/EN docs, commit і push | postmortem та lessons опубліковано у c98e69e; три documentation Actions пройшли; release tag лишається gated B1-07/B1-08 |
 
 | B1-11 | Виконано production | Відокремити realtime delivery від frozen backlog і запускати її перед maintenance | bounded recent-window lane stable v55 доставила контрольний лист перед backlog maintenance |
-| B1-12 | Частково перевірено staging | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | три ізольовані account roots і one-click switch перевірені; незалежний live fan-out із другого акаунта ще не доведено |
+| B1-12 | Частково перевірено staging | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | три ізольовані account roots і one-click switch перевірені; незалежний live fan-out із другого облікового запису ще не доведено |
 
 ## Правило руху
 
@@ -112,8 +112,8 @@ Versie 2 не відкривається без точного owner-наказ�
 ## Оновлення дорожньої карти від 2026-07-22
 
 - [x] Підтвердити автоматичну доставку для primary Gmail root.
-- [x] Підтвердити автоматичну доставку для root-2 з правильною позначкою акаунта.
-- [x] Підтвердити автоматичну доставку для root-3 з правильною позначкою акаунта.
+- [x] Підтвердити автоматичну доставку для root-2 з правильною позначкою облікового запису.
+- [x] Підтвердити автоматичну доставку для root-3 з правильною позначкою облікового запису.
 - [x] Підтвердити dedupe для кожного secondary root двома повторними /check.
 - [x] Відокремити Gmail Spam-класифікацію від product delivery failure.
 - [x] Закрити secondary-root частину B1-16 і B1-19 production evidence.
