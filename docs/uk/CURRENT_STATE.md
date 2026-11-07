@@ -11,7 +11,7 @@
 | Candidate | Apps Script immutable **v59**, історичний candidate, production acceptance `UNVERIFIED` |
 | Active staging | **0** |
 
-Immutable v59 пройшов owner-only UI acceptance: mailbox, Google avatar, три ізольовані Gmail roots, one-click switch на контрольований другий акаунт і назад без OAuth, live label UI та recovery застарілого automatic route. Після promotion два production-запуски завантажили mailbox, а cleanup підтвердив stable v59 і staging `0`.
+Immutable v59 пройшов owner-only UI acceptance: mailbox, Google avatar, три ізольовані Gmail roots, one-click switch на контрольований другий обліковий запис і назад без OAuth, live label UI та recovery застарілого automatic route. Після promotion два production-запуски завантажили mailbox, а cleanup підтвердив stable v59 і staging `0`.
 
 Post-cleanup runtime gate не пройдено: один `checkNewMail_` тривав `214.96 с` проти цільового 150-секундного worker slot, а execution windows перекрилися. Обидва executions завершилися успішно, тому simultaneous Gmail work і root cause лишаються `UNVERIFIED`; однак release gate вимагав відсутності overlap. Виконано exact rollback v59 -> v57. Після rollback `PreflightOnly` підтвердив stable і HEAD v57, staging `0`, journal `rolled_back`; свіжий production v57 launch завантажив mailbox. Immutable v59 збережено, v60 не створено.
 
