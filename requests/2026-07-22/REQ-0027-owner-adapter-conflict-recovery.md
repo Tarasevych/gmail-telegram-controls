@@ -20,7 +20,7 @@
 ### Критерії завершення
 
 - PR #11 більше не має merge conflict і не втрачає новіші `main`-докази.
-- Adapter лишається вимкненим за замовчуванням, не торкається external Gmail connections, mutations або unsupported reads і не робить hidden fallback після Advanced Service error.
+- Adapter лишається вимкненим типово, не торкається external Gmail connections, mutations або unsupported reads і не робить hidden fallback після Advanced Service error.
 - Targeted і повний локальні suites, документаційні валідатори, diff check та privacy scan мають точні результати.
 - Перевірений commit публікується звичайним push у GitHub feature branch і приватний GitLab mirror; PR evidence оновлюється без merge у `main`.
 
