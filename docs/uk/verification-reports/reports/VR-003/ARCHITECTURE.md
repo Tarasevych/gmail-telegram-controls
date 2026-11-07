@@ -28,7 +28,7 @@ Retention є bounded. Локальний record від'єднується лиш
 
 ## Multi-account fan-out
 
-`activeConnectionId` визначає UI-контекст. `notificationConnectionIds` визначає акаунти, що беруть участь в automatic fan-out (`VR3-005`). Account identity і connection-scoped callbacks зберігають контекст, а physical-card invariant запобігає копії картки для кожного view (`VR3-006`).
+`activeConnectionId` визначає UI-контекст. `notificationConnectionIds` визначає облікові записи, що беруть участь в automatic fan-out (`VR3-005`). Account identity і connection-scoped callbacks зберігають контекст, а physical-card invariant запобігає копії картки для кожного view (`VR3-006`).
 
 Версії: це розділення підтверджене у поточному кандидатові v55. Transcript не містить достатнього первинного доказу, щоб віднести перше впровадження до однієї точної попередньої версії.
 
