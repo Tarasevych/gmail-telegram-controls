@@ -232,7 +232,7 @@ The table above is the canonical machine-checked index. Every record is internal
 
 ## REQ-0032 | 2026-07-22
 
-- Українською: замінити статичний заголовок головної поштової сторінки на доступний динамічний блок фактичного активного акаунта або спільного поштового контексту.
+- Українською: замінити статичний заголовок головної поштової сторінки на доступний динамічний блок фактичного активного облікового запису або спільного поштового контексту.
 - English: replace the static main-mail-page heading with an accessible dynamic block for the actual active account or shared mail context.
 - Record: [REQ-0032](requests/2026-07-22/REQ-0032-dynamic-active-mail-context-header.md)
 - Status: `completed`
