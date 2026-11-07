@@ -22,7 +22,7 @@ Verification framework: REQ-0004
 - Обидва picker paths передають selection до одного `planComposeUploadSelection`.
 - Scan bounded до `1000` entries; overflow/truncation показується явно.
 - Relative paths нормалізуються; traversal, absolute/service, hidden, empty та exact-duplicate entries fail closed.
-- Однакові basenames у різних папках зберігаються як окремі path-aware entries і позначаються для користувача.
+- Однакові basenames у різних теках зберігаються як окремі path-aware entries і позначаються для користувача.
 - Count та aggregate-byte gates перевіряються до створення attachment jobs і FileReader work.
 - Після aggregate failure не стартує частковий upload; UI пропонує чинний Drive path.
 - Progressive batch card початково розкриває невеликі selection, показує до `40` додаткових rows за крок і має total/status, per-file retry/cancel та cancel-all.
