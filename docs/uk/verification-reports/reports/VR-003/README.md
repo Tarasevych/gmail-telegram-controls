@@ -35,7 +35,7 @@ VR-003 перетворює два приватні експорти сесій 
 - Поточний кандидат v55 пройшов усі 19 локальних test files, 432/432 (`VR3-016`).
 - `PreflightOnly` пройдено з точними hashes кандидата і без mutation (`VR3-017`).
 - v47 card-index compaction, v48 realtime lock isolation, v50 retention handling та v55 shared SENT eligibility підтверджені Git і тестами (`VR3-007` до `VR3-015`).
-- Стан multi-account delivery відокремлений від активного UI-акаунта (`VR3-005`, `VR3-006`).
+- Стан multi-account delivery відокремлений від активного UI-облікового запису (`VR3-005`, `VR3-006`).
 - У межах цього звіту не виконувалися immutable deployment v55, staging deployment, production promotion, зміни Gmail, Telegram production acceptance або OAuth acceptance (`VR3-018`, `VR3-025`, `VR3-026`).
 
 ## Навігація
