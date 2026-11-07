@@ -248,7 +248,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-DEC`; тип: `decision`
 - Актуальність: medium
 - Scope і рівень: `repository` / `E2`
-- Твердження: MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не включати до MVP без потреби.
+- Твердження: MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не вмикати до MVP без потреби.
 - Стан реалізації: partially_aligned_by_exclusion_without_capability_layer
 - Залежності: Encryption scope decision; Threat model and interoperability requirements
 - Конфлікти: none
@@ -487,7 +487,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-DEP`; тип: `dependency`
 - Актуальність: medium
 - Scope і рівень: `repository` / `E2`
-- Твердження: Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх акаунтів.
+- Твердження: Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх облікових записів.
 - Стан реалізації: partially_implemented
 - Залежності: OAuth 2.0; TLS
 - Конфлікти: none
@@ -2230,7 +2230,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-LES`; тип: `lesson`
 - Актуальність: medium
 - Scope і рівень: `repository` / `E2`
-- Твердження: `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.
+- Твердження: `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.
 - Стан реалізації: not_implemented_as_action_only_inbox
 - Залежності: Owner inbox policy; Safe rule suggestion and confirmation flow
 - Конфлікти: none
@@ -2950,7 +2950,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-PLAN`; тип: `plan`
 - Актуальність: current CI gap
 - Scope і рівень: `repository` / `E1`
-- Твердження: CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без включення credential value в repository.
+- Твердження: CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без увімкнення credential value в repository.
 - Стан реалізації: not_implemented_in_workflows
 - Залежності: none
 - Конфлікти: none
@@ -3118,7 +3118,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-PLAN`; тип: `plan`
 - Актуальність: current CI gap
 - Scope і рівень: `repository` / `E1`
-- Твердження: CI має включати lint, manifest validation, dry-run push, staging smoke test і separate security lane.
+- Твердження: CI має вмикати lint, manifest validation, dry-run push, staging smoke test і separate security lane.
 - Стан реалізації: not_implemented_in_current_workflows
 - Залежності: phase 3 reference platform path; phase 4 Gmail contextual MVP; phase 5 automation and Telegram
 - Конфлікти: none
@@ -4071,7 +4071,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-PROD`; тип: `product`
 - Актуальність: medium
 - Scope і рівень: `governance` / `E1`
-- Твердження: Цільова аудиторія включає користувачів з ADHD, executive dysfunction і частою коморбідною депресією.
+- Твердження: Цільова аудиторія охоплює користувачів з ADHD, executive dysfunction і частою коморбідною депресією.
 - Стан реалізації: unknown
 - Залежності: none
 - Конфлікти: none
@@ -4326,7 +4326,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-PRV`; тип: `privacy`
 - Актуальність: privacy
 - Scope і рівень: `mixed` / `E2`
-- Твердження: GDPR/ePrivacy controls мають включати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.
+- Твердження: GDPR/ePrivacy controls мають вмикати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.
 - Стан реалізації: partially_implemented_static_evidence_only
 - Залежності: privacy impact assessment; data-flow map; retention schedule; processor contracts
 - Конфлікти: none
@@ -4344,7 +4344,7 @@ Source request: `REQ-0004`. Кожен запис посилається на VR
 - Категорія: `KH-PRV`; тип: `privacy`
 - Актуальність: privacy
 - Scope і рівень: `mixed` / `E2`
-- Твердження: Open tracking не вмикати за замовчуванням для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.
+- Твердження: Open tracking не вмикати типово для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.
 - Стан реалізації: not_established_one_static_match_unresolved
 - Залежності: contextual review of the static match; telemetry inventory; default-setting contract
 - Конфлікти: none
