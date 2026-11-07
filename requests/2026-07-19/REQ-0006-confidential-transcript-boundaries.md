@@ -36,7 +36,7 @@
 - `REQ-0006` опубліковано до transcript extraction.
 - Encrypted originals проходять decrypt/readback/hash verification без plaintext logging.
 - Sanitized indexes містять достатній decision/action/evidence trace для повторного використання роботи.
-- Manifest прямо позначає, що включено exact, що reconstructed і що недоступне за системною межею.
+- Manifest прямо позначає, що увімкнено exact, що reconstructed і що недоступне за системною межею.
 - Жодний plaintext secret або decryption key не потрапляє до Git чи публічного repository.
 
 <!-- lang:en -->
