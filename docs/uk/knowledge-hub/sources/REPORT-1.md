@@ -45,7 +45,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R1-013 | KH-ISS-002 | issue | current | unknown | не зазначено | Наукове підґрунтя, 23 | distinct | Пуші, бейджі, банери й інші переривання можуть погіршувати фокус і самі бути частиною проблеми. |
 | R1-014 | KH-INS-002 | instruction | proposed | planned | не зазначено | Наукове підґрунтя, 27 | one-next-action | Кожен лист слід зводити до одного наступного кроку. |
 | R1-015 | KH-PROD-003 | product | proposed | planned | не зазначено | Наукове підґрунтя, 28 | batch-sessions | Вхідний потік має підтримувати batching, контроль interrupt-режимів і пріоритетні черги. |
-| R1-016 | KH-PROD-002 | product | proposed | planned | не зазначено | Наукове підґрунтя, 29 | time-framing | Часові режими мають включати таймерний, прогресивний, м'який дедлайн і режим без таймера. |
+| R1-016 | KH-PROD-002 | product | proposed | planned | не зазначено | Наукове підґрунтя, 29 | time-framing | Часові режими мають вмикати таймерний, прогресивний, м'який дедлайн і режим без таймера. |
 | R1-017 | KH-PROD-004 | product | proposed | planned | не зазначено | Наукове підґрунтя, 30 | microprogress | Обробка пошти має використовувати короткі цикли, малі цілі, швидкі завершення й неманіпулятивні мікронагороди. |
 | R1-018 | KH-EVD-005 | evidence | current | unknown | не зазначено | РДУГ і депресія, 34 | distinct | `[verified-in-report only]` Депресивні симптоми можуть перетворювати інбокс на нагадування про невиконані зобов'язання. |
 | R1-019 | KH-EVD-006 | evidence | current | unknown | не зазначено | РДУГ і депресія, 36 | comorbidity-evidence | `[verified-in-report only]` Коморбідність РДУГ і депресії описана як підсилення організаційних, мотиваційних, емоційних і діагностичних труднощів. |
@@ -72,7 +72,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R1-040 | KH-PROD-011 | product | proposed | planned | реліз 1 | Специфікація, 94 | task-triage | `Action Triage Pipeline`: `Дія`, `Чекаю`, `Інфо`, `Пізніше`, плюс автофільтри newsletters, receipts і system mail. |
 | R1-041 | KH-PROD-012 | product | proposed | planned | реліз 1 | Специфікація, 95 | distinct | `Cited Summary`: summary, три ключові джерельні речення та блок `who/what/when/next-action`. |
 | R1-042 | KH-PROD-013 | product | proposed | planned | безпековий | Специфікація, 96 | distinct | `Trust Layer`: AI-label, confidence band, показ джерел і підтвердження high-risk claims. |
-| R1-043 | KH-PROD-014 | product | proposed | planned | реліз 1 | Специфікація, 97 | reply-assistance | `Low-pressure reply mode`: три стилі чернетки, `send later` увечері за замовчуванням і редаговане hold window. |
+| R1-043 | KH-PROD-014 | product | proposed | planned | реліз 1 | Специфікація, 97 | reply-assistance | `Low-pressure reply mode`: три стилі чернетки, `send later` увечері типово і редаговане hold window. |
 | R1-044 | KH-PROD-004 | product | proposed | planned | не зазначено | Специфікація, 98 | microprogress | `Micro-achievements`: малі завершення без азартних механік і streak penalties. |
 | R1-045 | KH-PROD-010 | product | proposed | planned | реліз 1 | Специфікація, 99 | soft-reminders | `Soft reminder scheduler`: режими `м'яко`, `стандартно`, `лише digest` і групування в digest windows. |
 | R1-046 | KH-PROD-015 | product | proposed | planned | реліз 2 | Специфікація, 100 | co-processing | `Co-processing mode`: 10-25-хвилинні сесії, shared room або AI-presence timer з gentle check-ins. |
@@ -97,7 +97,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R1-065 | KH-PRV-001 | privacy | unverified | unknown | не зазначено | 81, 95-96, 107-109 | distinct | Звіт описує AI-обробку поштового контенту, але не специфікує retention, data minimization, encryption, provider boundaries або видалення даних. |
 | R1-066 | KH-EVD-007 | evidence | current | unknown | не зазначено | Реальні практики, 53 | distinct | `[verified-in-report only]` Нейровідмінні автори й користувачі описують `Inbox Functional` як практичнішу модель, ніж порожній інбокс. |
 | R1-067 | KH-EVD-008 | evidence | current | unknown | не зазначено | Реальні практики, 55 | batching-evidence | `[verified-in-report only]` Користувачі описують batching і 1-4 короткі часові блоки як спосіб уникнути безперервного реагування. |
-| R1-068 | KH-LES-002 | lesson | current | unknown | не зазначено | Реальні практики, 57 | distinct | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. |
+| R1-068 | KH-LES-002 | lesson | current | unknown | не зазначено | Реальні практики, 57 | distinct | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. |
 | R1-069 | KH-LES-003 | lesson | current | unknown | не зазначено | Реальні практики, 59 | distinct | Plain UI з текстом листа та трьома базовими діями корисніший за додаткові affordances і складні меню. |
 | R1-070 | KH-EVD-009 | evidence | current | unknown | не зазначено | Реальні практики, 61 | distinct | `[verified-in-report only]` `Send later` та редагований проміжок перед надсиланням описані як засоби зниження тривоги й perfectionism-driven avoidance. |
 | R1-071 | KH-EVD-010 | evidence | current | unknown | не зазначено | Реальні практики, 63 | distinct | `[verified-in-report only]` Body doubling, virtual co-working і легка присутність описані як практичний спосіб подолання бар'єра старту; email-specific evidence у звіті названо слабшим. |
@@ -128,7 +128,7 @@ R1 manifest: evidence=11, lesson=5. Atomic rows: evidence=12, lesson=4. Total=74
 ## Conflict references
 
 - CF-001: Кількість CTA не узгоджена: одна домінантна/primary дія проти трьох contextual або 3-4 primary дій.
-- CF-004: Evening send-later за замовчуванням не узгоджено з принципом короткої поступової персоналізації.
+- CF-004: Evening send-later типово не узгоджено з принципом короткої поступової персоналізації.
 - CF-005: Streak за регулярний triage не узгоджено з ризиками публічних streaks, penalties та over-gamification.
 - CF-007: Маніфест R1 заявляє evidence=11 і lesson=5, тоді як атомарна таблиця містить evidence=12 і lesson=4; total=74 збігається.
 - CF-008: Lifecycle `superseded` у R1-004 прикріплено до твердження на користь Inbox Functional, яке пізніші матеріали підтримують; об'єкт supersession неоднозначний.
