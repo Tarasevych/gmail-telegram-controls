@@ -24,4 +24,4 @@ REQ-0012 опрацював два приватні експорти сесій 
 - [Маніфест джерел](../../verification-reports/VR-003/source-manifest.json)
 - [Маніфест звіту](../../verification-reports/VR-003/manifest.json)
 
-Raw transcripts, normalized corpus chunks, candidate excerpts, email addresses, tokens, OAuth material, private URLs, local paths і mailbox content виключені з Git.
+Raw transcripts, normalized corpus chunks, candidate excerpts, email addresses, tokens, OAuth material, private URLs, local paths і mailbox content вимкнені з Git.
