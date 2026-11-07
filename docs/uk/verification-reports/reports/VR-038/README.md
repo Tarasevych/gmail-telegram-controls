@@ -30,7 +30,7 @@ Verification framework: REQ-0004
 
 | Твердження | Категорія | Статус | Доказ |
 |---|---|---|---|
-| Automated analysis згорнутий за замовчуванням і може бути прихований per Gmail connection | UX/state | `VERIFIED` | server/client contract tests |
+| Automated analysis згорнутий типово і може бути прихований per Gmail connection | UX/state | `VERIFIED` | server/client contract tests |
 | Trivial та відомий mobile-signature content не створює substantive summary і translation call | Analysis/privacy | `VERIFIED` | executable synthetic corpus |
 | Короткий meaningful content не відкидається лише через довжину | Analysis | `VERIFIED` | executable synthetic corpus |
 | Action, date, amount і risk claims потребують exact source-fragment support | Grounding | `VERIFIED` | normalization contract та чинний whole-thread evidence test |

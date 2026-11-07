@@ -31,8 +31,8 @@
 - Відобразилися і real profile avatar, і навмисний letter fallback.
 - Були наявні рівно три isolated Gmail roots.
 - Контрольоване switching `alternate -> primary -> alternate` завершилося без OAuth.
-- `Спільна пошта` показала фактичну name-to-address mapping трьох акаунтів, після чого initial mode відновлено.
-- Один incidental shared-membership toggle через UI automation негайно повернуто назад; authoritative readback знову показав три включені Gmail roots.
+- `Спільна пошта` показала фактичну name-to-address mapping трьох облікових записів, після чого initial mode відновлено.
+- Один incidental shared-membership toggle через UI automation негайно повернуто назад; authoritative readback знову показав три увімкнені Gmail roots.
 - OTP, CAPTCHA, passkey або Google consent screen не з'являлися.
 
 ## Promotion і production acceptance

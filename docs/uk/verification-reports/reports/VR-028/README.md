@@ -33,7 +33,7 @@ Focused Node/VM contract без мережі перевіряє:
 5. fail-closed wrong-provider state без token exchange;
 6. owner-bound connection, wrong-user denial і token-free public account DTO;
 7. access-token reuse, reconnect generation rotation, refresh success та незмінений protected record після refresh failure;
-8. revoke лише exact selected Drive source, збереження іншого акаунта і відсутність локального revoke при provider failure.
+8. revoke лише exact selected Drive source, збереження іншого облікового запису і відсутність локального revoke при provider failure.
 
 Усі identities використовують зарезервований домен `.invalid`; provider responses та Script Properties є in-memory synthetic doubles.
 
