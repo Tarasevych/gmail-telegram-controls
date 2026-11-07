@@ -33,7 +33,7 @@
 ### Критерії завершення
 
 - Baseline і after evidence містять фактичні usable-UI time, warm-launch p95 на визначеному target device, cached-message open, `A -> B -> A`, request count, reload count, duplicate bootstrap/auth count і cache-hit ratio.
-- Warm launch, cached-message open і повернення до cached state досягають `<=1000 ms`; ціль cached-message open — `<=250 ms`; skeleton або splash не рахується usable UI.
+- Warm launch, cached-message open і повернення до cached state досягають `<=1000 ms`; ціль cached-message open — `<=250 ms`; skeleton або splash не враховується usable UI.
 - Десять послідовних warm launches після linking мають `0` повторних connection overlays, duplicate bootstrap/auth, ordinary-navigation full reload, draft loss і cross-account leakage.
 - Offline launch, cached mail, logout/cache lock, same-account unlock, explicit device-data removal, quota/migration failure, multi-account/shared mode, drafts і exactly-one-release-reload мають автоматичні та supported native докази.
 - Source, tests і paired UK/EN docs публікуються окремим normal PR з green required checks, privacy scan і GitHub/private-GitLab parity.
