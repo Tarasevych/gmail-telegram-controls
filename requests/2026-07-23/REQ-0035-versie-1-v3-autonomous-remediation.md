@@ -26,7 +26,7 @@
 - `VERIFIED`: immutable `v67` збережений як історичний непросунутий артефакт.
 - `VERIFIED`: активних staging deployment немає; release journal має terminal state `acceptance_incomplete_cleaned`; Telegram menu повернуто на production.
 - `VERIFIED`: активної merge, release або rollback-операції немає; перевірені worktree чисті й не мають sequencer.
-- `PARTIAL`: попередня доказова база підтверджує `522/522` автоматичних тестів, але native p95, device-bound offline private cache, Gmail Drafts і двонапрямне перемикання акаунтів залишаються непідтвердженими.
+- `PARTIAL`: попередня доказова база підтверджує `522/522` автоматичних тестів, але native p95, device-bound offline private cache, Gmail Drafts і двонапрямне перемикання облікових записів залишаються непідтвердженими.
 - `CONFLICTING`: два файли, надані як історії чатів, є byte-identical старішими копіями V3-плану, а не transcript. Тому з них не приймаються історичні твердження про дії власника або агента.
 
 ### Маршрутизація директив
@@ -42,7 +42,7 @@
 
 ### Пріоритетний продуктовий порядок
 
-1. Усунути подвійний bootstrap і повторні повноекранні екрани підключення через ідемпотентний single-flight launch pipeline.
+1. Усунути подвійний bootstrap і повторні повноекранні екрани під'єднання через ідемпотентний single-flight launch pipeline.
 2. Побудувати `app shell + cached state + background revalidation` без повного reload під час звичайної навігації.
 3. Ізолювати persistent cache за Telegram-користувачем, Gmail connection ID і поштовим контекстом; не зберігати OAuth/Telegram secrets у browser storage.
 4. Реалізувати нормалізований cache, incremental Gmail History reconciliation, контрольований full resync, LRU/quota handling і безпечний background prefetch.
@@ -157,7 +157,7 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 - GitHub PR: `#78`
 - Normal merge у `main`: `c198dece03a85b6b59af6387a8ae4042046c921f`
 - GitHub і GitLab `main`: синхронізовано на тому самому commit.
-- Реалізовано: чинний serialized Gmail draft-save RPC включено до bounded shared transfer-state без зміни snapshot, idempotency, revision merge, canonical readback, local recovery або conflict semantics; retry використовує той самий operation/task ID і працює fail-closed після зміни compose/account context.
+- Реалізовано: чинний serialized Gmail draft-save RPC увімкнено до bounded shared transfer-state без зміни snapshot, idempotency, revision merge, canonical readback, local recovery або conflict semantics; retry використовує той самий operation/task ID і працює fail-closed після зміни compose/account context.
 - Перевірено: focused contracts `102/102`, CRLF regression `5/5`, повний Apps Script suite `580/580`, документаційні та privacy gates пройшли.
 - Live Gmail mutation, OAuth, staging і production promotion не виконувалися.
 - Залишається: URL import, server-resumable restart, справжній транспортний abort і native slow-network/minimize acceptance.
@@ -373,7 +373,7 @@ This record is a sanitized routing artifact. It contains no Gmail addresses, Tel
 
 ### Українською
 
-- Існуючий V3 contour `B-01` продовжено в межах `B1-28`, `GT-048`, `VR-018`; нові registry IDs не створювалися.
+- Наявний V3 contour `B-01` продовжено в межах `B1-28`, `GT-048`, `VR-018`; нові registry IDs не створювалися.
 - Повторна перевірка `mailboxMultiResolveAccess_` не підтвердила product source defect; `MultiAccount.gs` не змінено.
 - Новий synthetic behavioral test перевіряє `25` role-threshold комбінацій для фактичних ролей `viewer`, `responder`, `manager`, `admin`, `owner`.
 - Окремо перевірено owner/shared access, exact connection selection, zone mismatch, cross-user denial, pending/expired/revoked/replayed invites, усі підтримувані invite roles, revoked-member reactivation, revoked connection і `reauth_required`.

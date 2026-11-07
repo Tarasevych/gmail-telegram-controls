@@ -16,7 +16,7 @@
 - Усунути критичний дефект, за якого F5, hard reload, відновлення вкладки або повторне відкриття того самого route у чинному browser profile повторно споживає одноразовий Telegram launch nonce й помилково вимагає відкрити пошту через Telegram.
 - Провести окремий RCA для Telegram identity/link, app/browser session і Gmail OAuth конкретного connection; не маскувати помилку одного рівня повідомленням іншого.
 - Обмінювати одноразовий trusted Telegram launch payload на стійку захищену app session. Повторний consumed nonce має бути ідемпотентним лише за наявності чинної authenticated session того самого користувача; анонімний новий browser не може replay цей nonce.
-- Відновлювати без змішування акаунтів вибраний Gmail connection, route, folder/thread, дозволені local changes і drafts після reload, tab restore, browser-profile restart, короткої втрати мережі та паралельного відкриття вкладок.
+- Відновлювати без змішування облікових записів вибраний Gmail connection, route, folder/thread, дозволені local changes і drafts після reload, tab restore, browser-profile restart, короткої втрати мережі та паралельного відкриття вкладок.
 - Оновлювати прострочений Gmail access token у вже дозволених межах незалежно від Telegram session. Реальне revoke має вимагати reconnect лише відповідного Gmail connection, не руйнуючи app session.
 - Додати bounded retry, внутрішні sanitized reason codes, regression/integration tests, native Telegram Desktop/Mini App і browser acceptance та claim-level UK/EN evidence.
 - Не зберігати raw Telegram initData, launch nonce, OAuth tokens, cookies, private mail або signed session URLs у public docs, logs чи незахищеному browser storage.
