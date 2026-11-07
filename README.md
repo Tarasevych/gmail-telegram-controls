@@ -22,7 +22,7 @@ Current public production: Apps Script immutable v63. HEAD is exact v63; staging
 
 Прямі реєстри: [Проблеми](docs/uk/ISSUES.md) | [План](docs/uk/ROADMAP.md) | [Історія Versie 1](docs/uk/releases/VERSIE-001-2026-07-19.md) | [Правило двомовної документації](docs/uk/BILINGUAL_DOCUMENTATION.md)
 
-Репозиторій зберігає очищені історичні Apps Script baseline у `apps-script/` та кумулятивного кандидата Versie 1. Напрям продукту й перевірені докази аудиту містяться в `docs/`. Runtime-облікові дані, OAuth-сесії, вміст поштових скриньок і deployment-local конфігурація навмисно виключені з Git.
+Репозиторій зберігає очищені історичні Apps Script baseline у `apps-script/` та кумулятивного кандидата Versie 1. Напрям продукту й перевірені докази аудиту містяться в `docs/`. Runtime-облікові дані, OAuth-сесії, вміст поштових скриньок і deployment-local конфігурація навмисно вимкнені з Git.
 
 Ця сторінка не містить Gmail-облікових даних, bot token, chat ID або постійних облікових даних поштової скриньки. Telegram передає підписаний `initData` під час виконання. Для mail client ця головна сторінка видаляє Telegram metadata з історії браузера й передає `initData` до Apps Script через same-window form POST; значення ніколи не потрапляє до backend URL або client storage. Apps Script перевіряє підпис, власника, актуальність і одноразову replay claim, після чого повертає лише одноразовий launch nonce на 60 секунд. MailApp обмінює nonce на абсолютну 20-хвилинну RPC-сесію, що зберігається лише в JavaScript memory.
 

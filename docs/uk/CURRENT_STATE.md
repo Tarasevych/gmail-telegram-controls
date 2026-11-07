@@ -27,7 +27,7 @@
 
 ## Відкриті межі доказів
 
-- `GT-031` лишається `PARTIAL`: dynamic identity працює, але вузький header альтернативного акаунта обрізав частину email.
+- `GT-031` лишається `PARTIAL`: dynamic identity працює, але вузький header альтернативного облікового запису обрізав частину email.
 - `GT-032`–`GT-036` cumulative увійшли до production v63, але їхній scenario-specific P0 acceptance лишається `PARTIAL`.
 - 15-хвилинний History slot покритий automated contract; окремий runtime substage trace лишається `UNVERIFIED`.
 - Content-free worker telemetry payload не був доступний у Cloud logs під час observation window.
