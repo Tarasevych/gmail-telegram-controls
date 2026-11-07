@@ -197,7 +197,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "adhd-executive-evidence",
       "normalized_text": {
-        "uk": "`[verified-in-report only]` РДУГ пов'язується з труднощами уваги, завершення, організації, часу, форм, дедлайнів і пам'яті; корисними названо декомпозицію та зовнішню структуру.",
+        "uk": "`[verified-in-report only]` РДУГ пов’язується з труднощами уваги, завершення, організації, часу, форм, дедлайнів і пам’яті; корисними названо декомпозицію та зовнішню структуру.",
         "en": "[verified in report only] ADHD is associated with difficulties in attention, completion, organization, time, forms, deadlines, and memory; decomposition and external structure are described as useful."
       },
       "conflict_ids": [],
@@ -260,7 +260,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "time-framing",
       "normalized_text": {
-        "uk": "Потрібні різні часові режими: таймер, прогрес, м'який дедлайн і робота без секундоміра.",
+        "uk": "Потрібні різні часові режими: таймер, прогрес, м’який дедлайн і робота без секундоміра.",
         "en": "Different time modes are needed: timer, progress, soft deadline, and work without a stopwatch."
       },
       "conflict_ids": [],
@@ -368,7 +368,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "time-framing",
       "normalized_text": {
-        "uk": "Часові режими мають включати таймерний, прогресивний, м'який дедлайн і режим без таймера.",
+        "uk": "Часові режими мають вмикати таймерний, прогресивний, м’який дедлайн і режим без таймера.",
         "en": "Time modes should include timer-based, progress-based, soft-deadline, and no-timer modes."
       },
       "conflict_ids": [],
@@ -412,7 +412,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "`[verified-in-report only]` Депресивні симптоми можуть перетворювати інбокс на нагадування про невиконані зобов'язання.",
+        "uk": "`[verified-in-report only]` Депресивні симптоми можуть перетворювати інбокс на нагадування про невиконані зобов’язання.",
         "en": "[verified in report only] Depressive symptoms can turn the inbox into a reminder of unmet obligations."
       },
       "conflict_ids": [],
@@ -945,7 +945,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "reply-assistance",
       "normalized_text": {
-        "uk": "`Low-pressure reply mode`: три стилі чернетки, `send later` увечері за замовчуванням і редаговане hold window.",
+        "uk": "`Low-pressure reply mode`: три стилі чернетки, `send later` увечері типово і редаговане hold window.",
         "en": "`Low-pressure reply mode`: three draft styles, evening `send later` by default, and an editable hold window."
       },
       "conflict_ids": [
@@ -991,7 +991,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "soft-reminders",
       "normalized_text": {
-        "uk": "`Soft reminder scheduler`: режими `м'яко`, `стандартно`, `лише digest` і групування в digest windows.",
+        "uk": "`Soft reminder scheduler`: режими `м’яко`, `стандартно`, `лише digest` і групування в digest windows.",
         "en": "`Soft reminder scheduler`: `gentle`, `standard`, and `digest only` modes, grouped into digest windows."
       },
       "conflict_ids": [],
@@ -1350,7 +1350,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "Складна автентифікація, довгий onboarding і повторне введення даних створюють приховані бар'єри.",
+        "uk": "Складна автентифікація, довгий onboarding і повторне введення даних створюють приховані бар’єри.",
         "en": "Complex authentication, lengthy onboarding, and repeated data entry create hidden barriers."
       },
       "conflict_ids": [],
@@ -1392,7 +1392,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "Вбудовані маркери виду `turn...view/search` є технічними provenance-посиланнями, які потрібно окремо розв'язати під час міграції.",
+        "uk": "Вбудовані маркери виду `turn...view/search` є технічними provenance-посиланнями, які потрібно окремо розв’язати під час міграції.",
         "en": "Embedded markers such as `turn...view/search` are technical provenance references that require separate resolution during migration."
       },
       "conflict_ids": [],
@@ -1478,7 +1478,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "`Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.",
+        "uk": "`Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.",
         "en": "An `action-only inbox` should leave only action-requiring messages in inbox or unread; folders should be broad, and filters should remove even small recurring noise."
       },
       "conflict_ids": [],
@@ -1541,7 +1541,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "`[verified-in-report only]` Body doubling, virtual co-working і легка присутність описані як практичний спосіб подолання бар'єра старту; email-specific evidence у звіті названо слабшим.",
+        "uk": "`[verified-in-report only]` Body doubling, virtual co-working і легка присутність описані як практичний спосіб подолання бар’єра старту; email-specific evidence у звіті названо слабшим.",
         "en": "[verified in report only] Body doubling, virtual co-working, and light presence are described as practical ways to overcome the start barrier; the report calls email-specific evidence weaker."
       },
       "conflict_ids": [],
@@ -1583,7 +1583,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "WCAG 2.2 слід трактувати як мінімум, а COGA як стандарт якості для структури, фокусу, пам'яті, summaries, персоналізації, human help і контролю переривань.",
+        "uk": "WCAG 2.2 слід трактувати як мінімум, а COGA як стандарт якості для структури, фокусу, пам’яті, summaries, персоналізації, human help і контролю переривань.",
         "en": "WCAG 2.2 should be treated as the minimum and COGA as the quality standard for structure, focus, memory, summaries, personalization, human help, and interruption control."
       },
       "conflict_ids": [],
@@ -1818,7 +1818,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх акаунтів.",
+        "uk": "Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх облікових записів.",
         "en": "Support password-over-TLS for self-hosted or legacy systems and OAuth 2.0/XOAUTH2 for modern external accounts."
       },
       "conflict_ids": [],
@@ -1875,7 +1875,7 @@
       "lifecycle": "proposed",
       "implementation": "planned",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 25",
+      "source_span": "Серверні платформи та готові складання, 25",
       "canonical_id": "KH-INS-011",
       "canonical_category": "instruction",
       "disposition": "retained",
@@ -1896,7 +1896,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 29",
+      "source_span": "Серверні платформи та готові складання, 29",
       "canonical_id": "KH-PROD-026",
       "canonical_category": "product",
       "disposition": "retained",
@@ -1917,7 +1917,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 30",
+      "source_span": "Серверні платформи та готові складання, 30",
       "canonical_id": "KH-PROD-027",
       "canonical_category": "product",
       "disposition": "retained",
@@ -1938,7 +1938,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 31",
+      "source_span": "Серверні платформи та готові складання, 31",
       "canonical_id": "KH-PROD-028",
       "canonical_category": "product",
       "disposition": "retained",
@@ -1959,7 +1959,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 32",
+      "source_span": "Серверні платформи та готові складання, 32",
       "canonical_id": "KH-PROD-029",
       "canonical_category": "product",
       "disposition": "retained",
@@ -1980,7 +1980,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 33",
+      "source_span": "Серверні платформи та готові складання, 33",
       "canonical_id": "KH-PROD-030",
       "canonical_category": "product",
       "disposition": "retained",
@@ -2001,7 +2001,7 @@
       "lifecycle": "current",
       "implementation": "unknown",
       "priority": "—",
-      "source_span": "Серверні платформи та готові збірки, 34",
+      "source_span": "Серверні платформи та готові складання, 34",
       "canonical_id": "KH-PROD-031",
       "canonical_category": "product",
       "disposition": "retained",
@@ -2431,7 +2431,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "GDPR/ePrivacy controls мають включати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.",
+        "uk": "GDPR/ePrivacy controls мають вмикати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.",
         "en": "GDPR and ePrivacy controls should include encryption, access control, audit logs, minimization, contracts, retention, export and deletion, breach response, and residency."
       },
       "conflict_ids": [],
@@ -2473,7 +2473,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "Open tracking не вмикати за замовчуванням для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.",
+        "uk": "Open tracking не вмикати типово для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.",
         "en": "Do not enable open tracking by default for EU-sensitive use cases; add legal gating, a preference center, granular opt-in, and separation of delivery from marketing telemetry."
       },
       "conflict_ids": [],
@@ -3603,7 +3603,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "batch-sessions",
       "normalized_text": {
-        "uk": "За замовчуванням пропонувати email sessions замість постійної уваги користувача до inbox.",
+        "uk": "Типово пропонувати email sessions замість постійної уваги користувача до inbox.",
         "en": "Offer email sessions by default instead of requiring continuous user attention to the inbox."
       },
       "conflict_ids": [],
@@ -3775,7 +3775,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "Цільова аудиторія включає користувачів з ADHD, executive dysfunction і частою коморбідною депресією.",
+        "uk": "Цільова аудиторія охоплює користувачів з ADHD, executive dysfunction і частою коморбідною депресією.",
         "en": "The target audience includes users with ADHD, executive dysfunction, and frequent comorbid depression."
       },
       "conflict_ids": [],
@@ -4306,7 +4306,7 @@
       "disposition": "merged-equivalent",
       "dedup_group": "replaceable-e2e",
       "normalized_text": {
-        "uk": "Повний MIME/PGP/S/MIME layer винести в replaceable worker і не включати без потреби до MVP.",
+        "uk": "Повний MIME/PGP/S/MIME layer винести в replaceable worker і не вмикати без потреби до MVP.",
         "en": "Move the full MIME/PGP/S/MIME layer to a replaceable worker and exclude it from the MVP unless needed."
       },
       "conflict_ids": [],
@@ -4432,7 +4432,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "CI має включати lint, manifest validation, dry-run push, staging smoke test і separate security lane.",
+        "uk": "CI має вмикати lint, manifest validation, dry-run push, staging smoke test і separate security lane.",
         "en": "CI should include linting, manifest validation, dry-run push, a staging smoke test, and a separate security lane."
       },
       "conflict_ids": [],
@@ -5383,7 +5383,7 @@
       "disposition": "retained",
       "dedup_group": null,
       "normalized_text": {
-        "uk": "CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без включення credential value в repository.",
+        "uk": "CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без увімкнення credential value в repository.",
         "en": "CI/CD should use protected `CLASPRC_JSON` and `.clasp.json` in GitHub Actions without committing credential values."
       },
       "conflict_ids": [],
