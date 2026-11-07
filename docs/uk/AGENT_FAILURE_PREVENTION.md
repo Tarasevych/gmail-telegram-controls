@@ -35,7 +35,7 @@
 ## 5. Schema, ID і двомовність
 
 - Перед `REQ/GT/B1/VR` allocation: fetch authoritative main, перевірити open PR і maxima, зарезервувати ID в одному contour.
-- Machine metadata парситься за schema, не за крихким monolithic regex.
+- Machine metadata розбирається за schema, не за крихким monolithic regex.
 - Unknown, missing, duplicate key і invalid value мають різні diagnostics.
 - Кожна UK-сторінка має окреме EN-дзеркало з взаємним посиланням.
 - Hashes canonicalize line endings; LF/CRLF fixtures обов’язкові.
