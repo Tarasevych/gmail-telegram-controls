@@ -20,7 +20,7 @@
 ## Підтверджені першопричини
 
 1. `MailApp.html` містив статичний boot copy і runtime copy того самого connection message.
-2. Storage warmup викликав неіснуючий `p0OpenDatabase`; реальна функція має ім’я `p0OpenDb`. Попередній тест помилково закріпив неправильний symbol.
+2. Storage warmup викликав ненаявний `p0OpenDatabase`; реальна функція має ім’я `p0OpenDb`. Попередній тест помилково закріпив неправильний symbol.
 3. `boot()` дедуплікував лише активну Promise, але після settle дозволяв повторний повний pipeline.
 4. Persistent namespaces були account-scoped, але не містили окремого opaque Telegram-owner scope.
 5. Account attention/onboarding path міг затримувати або помилково змінювати normal launch decision.
