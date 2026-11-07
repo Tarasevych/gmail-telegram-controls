@@ -28,7 +28,7 @@
 
 Локальна перевірка коду виявила, що `gmailApiRequest_` уже правильно вибирає `mailboxMultiGmailAccessToken_`, але `mailboxFetchThreadMetadataBatch_` використовував лише `ScriptApp.getOAuthToken()`. Це могло змішати owner/legacy mailbox із вибраним зовнішнім Gmail connection. Candidate виправляє token selection без зміни OAuth records або листів.
 
-Офіційний [Gmail batch contract](https://developers.google.com/workspace/gmail/api/guides/batch) дозволяє до 100 внутрішніх Gmail API calls в одному `multipart/mixed` HTTP request і переносить outer `Authorization` на всі частини. Це сумісний напрям для зменшення `UrlFetch` calls у multi-account lane, але кожна внутрішня операція все одно рахується окремим Gmail API request. До впровадження потрібні fail-closed multipart parser, `Content-ID` alignment tests, 401/403/404/429/5xx tests і quota telemetry.
+Офіційний [Gmail batch contract](https://developers.google.com/workspace/gmail/api/guides/batch) дозволяє до 100 внутрішніх Gmail API calls в одному `multipart/mixed` HTTP request і переносить outer `Authorization` на всі частини. Це сумісний напрям для зменшення `UrlFetch` calls у multi-account lane, але кожна внутрішня операція все одно враховується окремим Gmail API request. До впровадження потрібні fail-closed multipart parser, `Content-ID` alignment tests, 401/403/404/429/5xx tests і quota telemetry.
 
 ## Поверхні публікації
 
