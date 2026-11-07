@@ -24,7 +24,7 @@ Source request: `REQ-0010`. Active product line: **Versie 1 · 2026-07-19**. Do 
 8. `activeConnectionId` впливає лише на UI; notification fan-out охоплює всі enabled connections із суворою account isolation.
 9. Результат кожної lane/connection треба зберегти; aggregation не може приховувати `REAUTH` або іншу вищу severity.
 10. Diagnostics мають бути stage-specific і sanitized: без token, email content, connection IDs та credentials.
-11. Capacity рахується за validated live records після compaction/purge; raw index length заборонений як capacity guard.
+11. Capacity враховується за validated live records після compaction/purge; raw index length заборонений як capacity guard.
 12. Acceptance має перевіряти observable behavior: одну картку, правильний account marker/callback scope, Inbox/Spam/Sent exclusions, retry і multi-account fan-out.
 
 ### Обов’язкові документаційні checks

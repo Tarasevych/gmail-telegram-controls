@@ -55,7 +55,7 @@
   - `release_apps_script_v31_product_v37.ps1` → `Stable deployment is unsupported v35.`
   - `release_apps_script_v32_product_v38.ps1` → `Stable deployment is unsupported v35.`
   - `stage_apps_script_v36.ps1` → `Stable deployment is v35, expected immutable v29.`
-- `Checkpoint 019f5d65-8209-7a00-b915-4a522dbcb612` у recovery-артефактах залишається відмічений як завершений по v28-pass, heartbeat `gmail-telegram-adhd-v28` не знайдено як активний, тимчасові процеси від цього проходу не ідентифіковано.
+- `Checkpoint 019f5d65-8209-7a00-b915-4a522dbcb612` у recovery-артефактах залишається позначений як завершений по v28-pass, heartbeat `gmail-telegram-adhd-v28` не знайдено як активний, тимчасові процеси від цього проходу не ідентифіковано.
 - Зафіксовано, що далі без ручних Google-циклів/OTP/CAPTCHA виконувати production go-live на v28-нульовій лінії неможливо; наступний безпечний крок — узгоджений release-бандл для поточного production baseline (v35) або окремий контрольний v28-branch.
 - Набір змін поки не розгортено в продакшн, збережено в git-артефактах для відкотів і ревізії.
 
