@@ -22,7 +22,7 @@ Recommendation є збереженою пропозицією, а не дока�
 | [KH-DEC-012](CLAIMS.md#kh-dec-012) | `recommendation` | `E2` | Apps Script використовувати як адаптер і control plane, а не повний data plane; важкі операції виносити назовні. |
 | [KH-DEC-013](CLAIMS.md#kh-dec-013) | `recommendation` | `E2` | Базовий bridge будувати як Telegram Bot API + Mini App + власний backend + Gmail API; TDLib/user-account flow використовувати лише свідомо. |
 | [KH-DEC-014](CLAIMS.md#kh-dec-014) | `recommendation` | `E2` | Для нових систем ставити Rspamd primary filter; SpamAssassin лишати для compatibility/legacy випадків. |
-| [KH-DEC-015](CLAIMS.md#kh-dec-015) | `recommendation` | `E2` | MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не включати до MVP без потреби. |
+| [KH-DEC-015](CLAIMS.md#kh-dec-015) | `recommendation` | `E2` | MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не вмикати до MVP без потреби. |
 | [KH-DEC-016](CLAIMS.md#kh-dec-016) | `recommendation` | `E2` | DAV strategy: integrated DAV/JMAP у Stalwart/Cyrus або окремий Radicale/Baïkal/SabreDAV; у Mailcow роль виконує SOGo. |
 | [KH-DEC-017](CLAIMS.md#kh-dec-017) | `recommendation` | `E2` | Побудувати єдиний integration facade над Gmail API, Microsoft Graph, Google People/Calendar та Telegram APIs замість provider logic у frontend. |
 | [KH-DEC-018](CLAIMS.md#kh-dec-018) | `recommendation` | `E2` | Undo send реалізувати як grace window до фактичного надсилання, а не як відкликання після доставки. |
@@ -64,7 +64,7 @@ Recommendation є збереженою пропозицією, а не дока�
 | [KH-INS-021](CLAIMS.md#kh-ins-021) | `recommendation` | `E1` | Codex має бути керованим technical reviewer і executor verification protocol; browser/CDP/runtime capability підтверджувати перед use. |
 | [KH-INS-022](CLAIMS.md#kh-ins-022) | `recommendation` | `E1` | Operational loop має бути mandatory і охоплювати actual UI, runtime та network behavior, а не лише code reading. |
 | [KH-ISS-009](CLAIMS.md#kh-iss-009) | `recommendation` | `E2` | Basic auth не слід вважати надійним шляхом для Google/Microsoft; modern auth треба врахувати в onboarding, account linking і support. |
-| [KH-LES-002](CLAIMS.md#kh-les-002) | `recommendation` | `E2` | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. |
+| [KH-LES-002](CLAIMS.md#kh-les-002) | `recommendation` | `E2` | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. |
 | [KH-LES-003](CLAIMS.md#kh-les-003) | `recommendation` | `E2` | Plain UI з текстом листа та трьома базовими діями корисніший за додаткові affordances і складні меню. |
 | [KH-LES-004](CLAIMS.md#kh-les-004) | `recommendation` | `E2` | Техніки мікростарту мають зменшувати невизначеність і вимагати лише одного мінімального руху. |
 | [KH-LES-005](CLAIMS.md#kh-les-005) | `recommendation` | `E2` | Не складати metadata, blobs, search і queues в одну БД; data plane має бути багатошаровим. |
@@ -81,11 +81,11 @@ Recommendation є збереженою пропозицією, а не дока�
 | [KH-PLAN-015](CLAIMS.md#kh-plan-015) | `recommendation` | `E1` | Quick MVP stack: Mailcow core, Roundcube/custom web shell, bundled Rspamd, integration service, Redis jobs, ADHD shell та AI triage. |
 | [KH-PLAN-016](CLAIMS.md#kh-plan-016) | `recommendation` | `E1` | Long modern stack: Stalwart core, Bulwark як reference/temporary client, own orchestration, PostgreSQL/scale backend, S3/MinIO, Redis, custom clients. |
 | [KH-PLAN-017](CLAIMS.md#kh-plan-017) | `recommendation` | `E1` | Predictability stack: Postfix + Dovecot + Rspamd + OpenDKIM/OpenDMARC/OpenARC + Roundcube + optional DAV server; найбільше integration work. |
-| [KH-PLAN-026](CLAIMS.md#kh-plan-026) | `recommendation` | `E1` | CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без включення credential value в repository. |
+| [KH-PLAN-026](CLAIMS.md#kh-plan-026) | `recommendation` | `E1` | CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без увімкнення credential value в repository. |
 | [KH-PLAN-032](CLAIMS.md#kh-plan-032) | `recommendation` | `E1` | Додати GitHub CodeQL. |
 | [KH-PLAN-033](CLAIMS.md#kh-plan-033) | `recommendation` | `E1` | Увімкнути secret scanning із першого дня. |
 | [KH-PLAN-034](CLAIMS.md#kh-plan-034) | `recommendation` | `E1` | Додати Dependabot для dependency alerts та updates. |
-| [KH-PLAN-035](CLAIMS.md#kh-plan-035) | `recommendation` | `E1` | CI має включати lint, manifest validation, dry-run push, staging smoke test і separate security lane. |
+| [KH-PLAN-035](CLAIMS.md#kh-plan-035) | `recommendation` | `E1` | CI має вмикати lint, manifest validation, dry-run push, staging smoke test і separate security lane. |
 | [KH-PLAN-037](CLAIMS.md#kh-plan-037) | `recommendation` | `E2` | Першим перевірити `appsscript.json`: Gmail scopes, `script.external_request`, triggers, capability boundaries і separation add-on/web app. |
 | [KH-PLAN-038](CLAIMS.md#kh-plan-038) | `recommendation` | `E2` | Перевірити code і Git history на hardcoded secret classes, direct webhook URLs, private identifiers у fixtures і full request/response logging. |
 | [KH-PROD-022](CLAIMS.md#kh-prod-022) | `recommendation` | `E1` | Модульна траєкторія: Postfix + Dovecot + окремі antispam, DKIM/DMARC/ARC, webmail і DAV-компоненти. |
@@ -95,7 +95,7 @@ Recommendation є збереженою пропозицією, а не дока�
 | [KH-PROD-034](CLAIMS.md#kh-prod-034) | `recommendation` | `E1` | Postfix `postscreen` є рекомендованим first perimeter layer до content filtering. |
 | [KH-PROD-035](CLAIMS.md#kh-prod-035) | `recommendation` | `E1` | Webmail candidates: Roundcube для classic/plugin IMAP, SnappyMail для lightweight UI, Nextcloud Mail для suite integration, Bulwark для JMAP/Stalwart. |
 | [KH-PROD-036](CLAIMS.md#kh-prod-036) | `recommendation` | `E1` | Delivery clients: web/PWA + service workers/VAPID, React Native або Flutter + APNs/FCM, Tauri або Electron для desktop. |
-| [KH-PRV-002](CLAIMS.md#kh-prv-002) | `recommendation` | `E2` | GDPR/ePrivacy controls мають включати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency. |
-| [KH-PRV-003](CLAIMS.md#kh-prv-003) | `recommendation` | `E2` | Open tracking не вмикати за замовчуванням для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry. |
+| [KH-PRV-002](CLAIMS.md#kh-prv-002) | `recommendation` | `E2` | GDPR/ePrivacy controls мають вмикати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency. |
+| [KH-PRV-003](CLAIMS.md#kh-prv-003) | `recommendation` | `E2` | Open tracking не вмикати типово для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry. |
 | [KH-PRV-004](CLAIMS.md#kh-prv-004) | `recommendation` | `E2` | Least privilege, чіткі межі даних, мінімальне вилучення body та раннє планування verification boundary є архітектурними вимогами. |
 | [KH-PRV-005](CLAIMS.md#kh-prv-005) | `recommendation` | `E2` | Credentials не зберігати в коді; secrets тримати у properties або external vault; logs редагувати щодо addresses, headers і token fragments. |
