@@ -20,7 +20,7 @@
 ### Критерії завершення
 
 - Запис опубліковано до product mutation і він проходить валідатори гілки `Запити`.
-- Allowlisted owner read operations можуть використовувати Advanced Gmail Service лише за явного protected flag; за замовчуванням чинний transport не змінюється.
+- Allowlisted owner read operations можуть використовувати Advanced Gmail Service лише за явного protected flag; типово чинний transport не змінюється.
 - External connection reads, усі mutations та unsupported paths залишаються на поточному connection-scoped direct HTTP transport.
 - Advanced Service error не запускає прихований direct-HTTP fallback.
 - Targeted і повний локальні suites проходять; evidence не містить mail content, tokens, `initData`, identifiers або secret properties.
