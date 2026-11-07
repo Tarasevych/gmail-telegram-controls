@@ -8,7 +8,7 @@
 ### Поточна лінія проєкту
 
 - Активна версія в розробці: **Versie 1 · 2026-07-19**.
-<!-- release-state: production=v65; candidate=v65; staging=0; status=VERIFIED; as-of=2026-07-23 -->
+<!-- release-state: production=v65; candidate=v65; staging=0; status=ПЕРЕВІРЕНО; as-of=2026-07-23 -->
 
 Поточний public production: Apps Script immutable v65. Accepted release HEAD exact v65; staging deployments: `0`; latest v70 journal `abandoned`.
 Current public production: Apps Script immutable v65. Accepted release HEAD is exact v65; staging deployments: `0`; the latest v70 journal is `abandoned`.
@@ -22,9 +22,9 @@ Current public production: Apps Script immutable v65. Accepted release HEAD is e
 
 Прямі реєстри: [Проблеми](docs/uk/ISSUES.md) | [План](docs/uk/ROADMAP.md) | [Історія Versie 1](docs/uk/releases/VERSIE-001-2026-07-19.md) | [Правило двомовної документації](docs/uk/BILINGUAL_DOCUMENTATION.md)
 
-Репозиторій зберігає очищені історичні Apps Script baseline у `apps-script/` та кумулятивного кандидата Versie 1. Напрям продукту й перевірені докази аудиту містяться в `docs/`. Runtime-облікові дані, OAuth-сесії, вміст поштових скриньок і deployment-local конфігурація навмисно вимкнені з Git.
+Репозиторій зберігає очищені історичні Apps Script baseline у `apps-script/` та кумулятивного кандидата Versie 1. Напрям продукту й перевірені докази аудиту містяться в `docs/`. Runtime-облікові дані, OAuth-сеансу, вміст поштових скриньок і deployment-local конфігурація навмисно вимкнені з Git.
 
-Ця сторінка не містить Gmail-облікових даних, bot token, chat ID або постійних облікових даних поштової скриньки. Telegram передає підписаний `initData` під час виконання. Для mail client ця головна сторінка видаляє Telegram metadata з історії браузера й передає `initData` до Apps Script через same-window form POST; значення ніколи не потрапляє до backend URL або client storage. Apps Script перевіряє підпис, власника, актуальність і одноразову replay claim, після чого повертає лише одноразовий launch nonce на 60 секунд. MailApp обмінює nonce на абсолютну 20-хвилинну RPC-сесію, що зберігається лише в JavaScript memory.
+Ця сторінка не містить Gmail-облікових даних, bot token, chat ID або постійних облікових даних поштової скриньки. Telegram передає підписаний `initData` під час виконання. Для mail client ця головна сторінка видаляє Telegram metadata з історії оглядача й передає `initData` до Apps Script через same-window form POST; значення ніколи не потрапляє до backend URL або client storage. Apps Script перевіряє підпис, власника, актуальність і одноразову replay claim, після чого повертає лише одноразовий launch nonce на 60 секунд. MailApp обмінює nonce на абсолютну 20-хвилинну RPC-сеанс, що зберігається лише в JavaScript memory.
 
 Bridge має обмежувальну CSP, надсилає POST лише до `script.google.com` і відновлює deep-link state тільки з дозволених полів `view`, `folder`, `thread`, `message`, `filter` та `panel`. Telegram-поля `tgWebAppData`, platform і version fragment ніколи не копіюються до route. CSP також дозволяє JSONP-відповідь Google Apps Script з `script.google.com`/`script.googleusercontent.com` лише для тимчасового compatibility path старих карток.
 
