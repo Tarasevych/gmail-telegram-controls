@@ -44,7 +44,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R3-012 | KH-INS-002 | product | proposed | planned | - | H06, 35 | one-next-action | Для листа показувати одну primary CTA: коротка відповідь, мотивоване відкладення або task conversion. |
 | R3-013 | KH-PROD-010 | product | proposed | planned | - | H06, 36 | soft-reminders | Quiet inbox має прибирати звук і red counters та використовувати м’який digest. |
 | R3-014 | KH-PROD-011 | product | proposed | planned | - | H06, 37 | task-triage | Листи мають маршрутизуватися у `Task / Waiting / Reference`, залишаючи в Gmail лише label/snooze trace. |
-| R3-015 | KH-PROD-003 | product | proposed | planned | - | H06, 38 | batch-sessions | За замовчуванням пропонувати email sessions замість постійної уваги користувача до inbox. |
+| R3-015 | KH-PROD-003 | product | proposed | planned | - | H06, 38 | batch-sessions | Типово пропонувати email sessions замість постійної уваги користувача до inbox. |
 | R3-016 | KH-PROD-010 | product | proposed | planned | - | H06, 39 | soft-reminders | Нагадування мають показувати кілька найвпливовіших листів без звинувачувального формулювання. |
 | R3-017 | KH-PROD-004 | product | proposed | planned | - | H06, 40 | microprogress | Мікровинагороди прив’язувати до завершеної дії, делегування або ясної відповіді, а не до нульового inbox. |
 | R3-018 | KH-PROD-037 | product | proposed | planned | - | H07, 44 | gmail-context-surface | `Context Layer`: Gmail add-on cards із трьома зрозумілими contextual actions. |
@@ -52,7 +52,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R3-020 | KH-PROD-039 | product | proposed | planned | - | H07, 44 | distinct | `Automation Layer`: `watch`, `history.list`, queue/worker та Apps Script orchestration. |
 | R3-021 | KH-DEP-010 | dependency | proposed | planned | - | H07, 44 | distinct | Важкі та довготривалі операції мають виконуватися поза Apps Script. |
 | R3-022 | KH-INS-016 | instruction | current | unknown | - | H08, 48-55 | distinct | Агент має діяти як product architect, Workspace engineer, accessibility researcher, security reviewer і release engineer та створювати technical delivery program. |
-| R3-023 | KH-PROD-040 | product | proposed | planned | основна ціль | H08, 57-58 | distinct | Цільова аудиторія включає користувачів з ADHD, executive dysfunction і частою коморбідною депресією. |
+| R3-023 | KH-PROD-040 | product | proposed | planned | основна ціль | H08, 57-58 | distinct | Цільова аудиторія охоплює користувачів з ADHD, executive dysfunction і частою коморбідною депресією. |
 | R3-024 | KH-PROD-041 | product | proposed | planned | основна ціль | H08, 59 | distinct | Мінімізувати cognitive load, decision fatigue, notification overwhelm і task paralysis. |
 | R3-025 | KH-DEP-011 | dependency | proposed | planned | - | H08, 60-66 | distinct | Передбачені Gmail add-on, web app, installable triggers, `PropertiesService`, `CacheService`, `LockService`, `UrlFetchApp` і advanced Google services. |
 | R3-026 | KH-DEC-012 | decision | proposed | planned | критична вимога | H08, 67 | apps-script-boundary | Не використовувати Apps Script для всього; Pub/Sub, Cloud Run, MIME parser, webhook relay, queue worker та OAuth backend можна виносити назовні за обґрунтуванням. |
@@ -77,13 +77,13 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R3-045 | KH-DEP-017 | dependency | proposed | planned | - | H20, 274 | external-oauth-library | Для external OAuth providers рекомендовано `googleworkspace/apps-script-oauth2` з `PropertiesService`, `CacheService`, `LockService`. |
 | R3-046 | KH-ISS-013 | issue | current | unknown | обов’язкова серіалізація | H20, 274-280 | distinct | Паралельний token refresh може спричинити race condition без lock. |
 | R3-047 | KH-PRV-005 | privacy | proposed | planned | - | H20, 276-281 | distinct | Credentials не зберігати в коді; secrets тримати у properties або external vault; logs редагувати щодо addresses, headers і token fragments. |
-| R3-048 | KH-DEC-015 | decision | proposed | planned | post-MVP | H21, 285 | replaceable-e2e | Повний MIME/PGP/S/MIME layer винести в replaceable worker і не включати без потреби до MVP. |
+| R3-048 | KH-DEC-015 | decision | proposed | planned | post-MVP | H21, 285 | replaceable-e2e | Повний MIME/PGP/S/MIME layer винести в replaceable worker і не вмикати без потреби до MVP. |
 | R3-049 | KH-DEP-020 | dependency | proposed | planned | post-MVP | H21, 285 | distinct | Запропоновані `postal-mime`, `OpenPGP.js`, `Mailvelope`, `PKI.js` і RFC 8551. |
 | R3-050 | KH-PLAN-031 | plan | proposed | planned | мінімальний контур | H22, 289-293 | distinct | Використовувати `clasp` та immutable versions/deployments для release і rollback. |
 | R3-051 | KH-PLAN-032 | plan | proposed | planned | мінімальний контур | H22, 294 | distinct | Додати GitHub CodeQL. |
 | R3-052 | KH-PLAN-033 | plan | proposed | planned | мінімальний контур | H22, 295-298 | distinct | Увімкнути secret scanning із першого дня. |
 | R3-053 | KH-PLAN-034 | plan | proposed | planned | мінімальний контур | H22, 296 | distinct | Додати Dependabot для dependency alerts та updates. |
-| R3-054 | KH-PLAN-035 | plan | proposed | planned | - | H22, 298 | distinct | CI має включати lint, manifest validation, dry-run push, staging smoke test і separate security lane. |
+| R3-054 | KH-PLAN-035 | plan | proposed | planned | - | H22, 298 | distinct | CI має вмикати lint, manifest validation, dry-run push, staging smoke test і separate security lane. |
 | R3-055 | KH-PLAN-036 | plan | unverified | blocked | - | H23, 302 | distinct | Фактичний audit репозиторію не виконано через непідтверджену доступність/індексацію; наведено лише audit plan. |
 | R3-056 | KH-PLAN-037 | plan | proposed | planned | перша черга | H25, 308-314 | distinct | Першим перевірити `appsscript.json`: Gmail scopes, `script.external_request`, triggers, capability boundaries і separation add-on/web app. |
 | R3-057 | KH-ISS-014 | issue | unverified | unknown | - | H25, 316 | distinct | Overbroad Gmail scope створює risk verification failure і збільшує blast radius; фактичний defect не підтверджено. |
@@ -128,7 +128,7 @@ Comprehensive table translation із catalog.json. Source text уже саніт
 | R3-096 | KH-DEP-015 | dependency | proposed | planned | MVP | H10, 155 | distinct | `PropertiesService`, `CacheService`, `LockService` потрібні для state, cache, refresh locking і continuation. |
 | R3-097 | KH-PROD-043 | product | proposed | planned | expansion | H10, 156 | distinct | Telegram Bot API є зовнішнім short-command і digest control surface. |
 | R3-098 | KH-PLAN-025 | plan | proposed | planned | перший deployment step | H12, 162 | distinct | Local setup: створити окремий Cloud project, увімкнути Apps Script API, виконати `clasp login`, потім `clasp create` або `clasp clone`, після чого вести код у Git. |
-| R3-099 | KH-PLAN-026 | plan | proposed | planned | - | H12, 162 | distinct | CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без включення credential value в repository. |
+| R3-099 | KH-PLAN-026 | plan | proposed | planned | - | H12, 162 | distinct | CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без увімкнення credential value в repository. |
 | R3-100 | KH-PLAN-027 | plan | proposed | planned | MVP structure | H12, 164-200 | distinct | Proposed tree розділяє `appsscript.json`, `src/addon`, `src/core`, `src/integrations`, `src/web`, `src/jobs`, `src/security`, `tests` і `.github/workflows/deploy.yml`. |
 | R3-101 | KH-LES-009 | lesson | current | unknown | - | H12, 202 | distinct | Repository tree є architectural recommendation, а не Google canonical structure; її мета - відокремити UI, business logic, integrations, background jobs і security. |
 | R3-102 | KH-PRV-004 | privacy | proposed | planned | критична | H13, 206 | least-privilege | Scope hygiene є частиною architecture: застосовувати least privilege і планувати verification boundary від початку. |
