@@ -21,7 +21,7 @@
 - Release-helper contracts v64 пройшли `2/2`, а cumulative release suite пройшов `503/503`.
 - Виправлений signed bridge contract і cumulative suite пройшли `505/505`; required checks для PR #38 і PR #39 пройшли.
 - Read-only preflight пройшов, рівно один `StageOnly` створив immutable v64 і один owner-only staging deployment, а post-stage preflight повідомив `staging_verified`.
-- Native Telegram Desktop staging показав responsive disclosure повної адреси, avatar/fallback behavior, рівно три isolated Gmail roots, контрольоване перемикання на інший акаунт і назад без OAuth та фактичний shared view трьох акаунтів.
+- Native Telegram Desktop staging показав responsive disclosure повної адреси, avatar/fallback behavior, рівно три isolated Gmail roots, контрольоване перемикання на інший обліковий запис і назад без OAuth та фактичний shared view трьох облікових записів.
 - Promotion використав одну bounded deployment mutation, два свіжі native production launches завантажили mailbox v64, cleanup видалив staging, а фінальний preflight підтвердив stable/HEAD v64 і journal `cleaned`.
 - Шість post-cleanup рядків `checkNewMail_` завершилися. Один короткий process shell тривалістю 3.164 секунди формально наклався на попередній 65.734-секундний рядок приблизно на 5.7 секунди; lease rejection узгоджується з реалізацією, але лишається inference, бо content-free substage telemetry була недоступна.
 
