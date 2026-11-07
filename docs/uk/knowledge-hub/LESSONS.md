@@ -9,7 +9,7 @@
 | Canonical ID | Нормалізоване твердження | Source IDs | Lifecycle | Implementation | Конфлікти | Gate |
 |---|---|---|---|---|---|---|
 | KH-LES-001 | Основна проблема часто полягає не в читанні листа, а в утриманні плану його подальшої обробки. | [R1-009](sources/REPORT-1.md#source-items) | current | unknown | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |
-| KH-LES-002 | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. | [R1-068](sources/REPORT-1.md#source-items) | current | unknown | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |
+| KH-LES-002 | `Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум. | [R1-068](sources/REPORT-1.md#source-items) | current | unknown | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |
 | KH-LES-003 | Plain UI з текстом листа та трьома базовими діями корисніший за додаткові affordances і складні меню. | [R1-069](sources/REPORT-1.md#source-items) | current | unknown | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |
 | KH-LES-004 | Техніки мікростарту мають зменшувати невизначеність і вимагати лише одного мінімального руху. | [R1-072](sources/REPORT-1.md#source-items) | current | unknown | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |
 | KH-LES-005 | Не складати metadata, blobs, search і queues в одну БД; data plane має бути багатошаровим. | [R2-052](sources/REPORT-2.md#source-items) | proposed | planned | none | Перевірити застосовність до обраного scope й зафіксувати рішення. |

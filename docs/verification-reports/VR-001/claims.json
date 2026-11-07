@@ -995,7 +995,7 @@
         "R3-048"
       ],
       "category": "KH-DEC",
-      "statement_uk": "MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не включати до MVP без потреби.",
+      "statement_uk": "MIME/PGP/S/MIME та E2E тримати окремим замінним capability layer і не вмикати до MVP без потреби.",
       "statement_en": "Keep MIME, PGP, S/MIME, and E2E in a separate replaceable capability layer and outside the MVP unless needed.",
       "claim_type": "decision",
       "relevance": "medium",
@@ -1979,7 +1979,7 @@
         "R2-010"
       ],
       "category": "KH-DEP",
-      "statement_uk": "Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх акаунтів.",
+      "statement_uk": "Підтримувати password-over-TLS для self-hosted/legacy і OAuth 2.0/XOAUTH2 для сучасних зовнішніх облікових записів.",
       "statement_en": "Support password-over-TLS for self-hosted or legacy systems and OAuth 2.0/XOAUTH2 for modern external accounts.",
       "claim_type": "dependency",
       "relevance": "medium",
@@ -3319,7 +3319,7 @@
         "R3-E08"
       ],
       "category": "KH-EVD",
-      "statement_uk": "Звіти пов'язують ADHD із труднощами виконавчих функцій і використовують це як підставу для декомпозиції та обмеження вибору.",
+      "statement_uk": "Звіти пов’язують ADHD із труднощами виконавчих функцій і використовують це як підставу для декомпозиції та обмеження вибору.",
       "statement_en": "The reports associate ADHD with executive-function difficulties and use this to support decomposition and constrained choice.",
       "claim_type": "evidence",
       "relevance": "Supports Focus View decomposition and bounded choices.",
@@ -3552,7 +3552,7 @@
         "R1-018"
       ],
       "category": "KH-EVD",
-      "statement_uk": "[verified-in-report only] Депресивні симптоми можуть перетворювати інбокс на нагадування про невиконані зобов'язання.",
+      "statement_uk": "[verified-in-report only] Депресивні симптоми можуть перетворювати інбокс на нагадування про невиконані зобов’язання.",
       "statement_en": "[verified in report only] Depressive symptoms can turn the inbox into a reminder of unmet obligations.",
       "claim_type": "evidence",
       "relevance": "Motivates low-pressure inbox language and interactions.",
@@ -3604,7 +3604,7 @@
         "R3-E05"
       ],
       "category": "KH-EVD",
-      "statement_uk": "Звіти пов'язують коморбідність ADHD і депресії з посиленим виконавчим, мотиваційним та емоційним навантаженням.",
+      "statement_uk": "Звіти пов’язують коморбідність ADHD і депресії з посиленим виконавчим, мотиваційним та емоційним навантаженням.",
       "statement_en": "The reports associate ADHD and depression comorbidity with greater executive, motivational, and emotional burden.",
       "claim_type": "evidence",
       "relevance": "Underpins the combined neuroinclusive design rationale.",
@@ -3899,7 +3899,7 @@
         "R1-071"
       ],
       "category": "KH-EVD",
-      "statement_uk": "[verified-in-report only] Body doubling, virtual co-working і легка присутність описані як практичний спосіб подолання бар'єра старту; email-specific evidence у звіті названо слабшим.",
+      "statement_uk": "[verified-in-report only] Body doubling, virtual co-working і легка присутність описані як практичний спосіб подолання бар’єра старту; email-specific evidence у звіті названо слабшим.",
       "statement_en": "[verified in report only] Body doubling, virtual co-working, and light presence are described as practical ways to overcome the start barrier; the report calls email-specific evidence weaker.",
       "claim_type": "evidence",
       "relevance": "Supports private co-processing sessions.",
@@ -5277,7 +5277,7 @@
         "R1-064"
       ],
       "category": "KH-HIS",
-      "statement_uk": "Вбудовані маркери виду `turn...view/search` є технічними provenance-посиланнями, які потрібно окремо розв'язати під час міграції.",
+      "statement_uk": "Вбудовані маркери виду `turn...view/search` є технічними provenance-посиланнями, які потрібно окремо розв’язати під час міграції.",
       "statement_en": "Embedded markers such as `turn...view/search` are technical provenance references that require separate resolution during migration.",
       "claim_type": "history",
       "relevance": "medium",
@@ -5971,7 +5971,7 @@
         "R1-073"
       ],
       "category": "KH-INS",
-      "statement_uk": "WCAG 2.2 слід трактувати як мінімум, а COGA як стандарт якості для структури, фокусу, пам'яті, summaries, персоналізації, human help і контролю переривань.",
+      "statement_uk": "WCAG 2.2 слід трактувати як мінімум, а COGA як стандарт якості для структури, фокусу, пам’яті, summaries, персоналізації, human help і контролю переривань.",
       "statement_en": "WCAG 2.2 should be treated as the minimum and COGA as the quality standard for structure, focus, memory, summaries, personalization, human help, and interruption control.",
       "claim_type": "instruction",
       "relevance": "current",
@@ -6445,7 +6445,7 @@
         "source_records": [
           {
             "source_id": "R2-013",
-            "source_span": "Серверні платформи та готові збірки, 25",
+            "source_span": "Серверні платформи та готові складання, 25",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -7887,7 +7887,7 @@
         "R1-062"
       ],
       "category": "KH-ISS",
-      "statement_uk": "Складна автентифікація, довгий onboarding і повторне введення даних створюють приховані бар'єри.",
+      "statement_uk": "Складна автентифікація, довгий onboarding і повторне введення даних створюють приховані бар’єри.",
       "statement_en": "Complex authentication, lengthy onboarding, and repeated data entry create hidden barriers.",
       "claim_type": "issue",
       "relevance": "current OAuth onboarding",
@@ -9324,7 +9324,7 @@
         "R1-068"
       ],
       "category": "KH-LES",
-      "statement_uk": "`Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; папки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.",
+      "statement_uk": "`Action-only inbox` має залишати в inbox/unread лише те, що потребує дії; теки повинні бути широкими, а фільтри прибирати навіть невеликий регулярний шум.",
       "statement_en": "An `action-only inbox` should leave only action-requiring messages in inbox or unread; folders should be broad, and filters should remove even small recurring noise.",
       "claim_type": "lesson",
       "relevance": "medium",
@@ -12617,7 +12617,7 @@
         "R3-099"
       ],
       "category": "KH-PLAN",
-      "statement_uk": "CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без включення credential value в repository.",
+      "statement_uk": "CI/CD має використовувати protected `CLASPRC_JSON` і `.clasp.json` у GitHub Actions без увімкнення credential value в repository.",
       "statement_en": "CI/CD should use protected `CLASPRC_JSON` and `.clasp.json` in GitHub Actions without committing credential values.",
       "claim_type": "plan",
       "relevance": "current CI gap",
@@ -13407,7 +13407,7 @@
         "R3-054"
       ],
       "category": "KH-PLAN",
-      "statement_uk": "CI має включати lint, manifest validation, dry-run push, staging smoke test і separate security lane.",
+      "statement_uk": "CI має вмикати lint, manifest validation, dry-run push, staging smoke test і separate security lane.",
       "statement_en": "CI should include linting, manifest validation, dry-run push, a staging smoke test, and a separate security lane.",
       "claim_type": "plan",
       "relevance": "current CI gap",
@@ -15065,7 +15065,7 @@
         "R3-017"
       ],
       "category": "KH-PROD",
-      "statement_uk": "Винагороджувати конкретні малі завершення без азартних механік, об'ємних цілей або штрафів за streak.",
+      "statement_uk": "Винагороджувати конкретні малі завершення без азартних механік, об’ємних цілей або штрафів за streak.",
       "statement_en": "Reward concrete small completions without gambling mechanics, oversized goals, or streak penalties.",
       "claim_type": "product",
       "relevance": "high",
@@ -16902,7 +16902,7 @@
         "source_records": [
           {
             "source_id": "R2-014",
-            "source_span": "Серверні платформи та готові збірки, 29",
+            "source_span": "Серверні платформи та готові складання, 29",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -16964,7 +16964,7 @@
         "source_records": [
           {
             "source_id": "R2-015",
-            "source_span": "Серверні платформи та готові збірки, 30",
+            "source_span": "Серверні платформи та готові складання, 30",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -17026,7 +17026,7 @@
         "source_records": [
           {
             "source_id": "R2-016",
-            "source_span": "Серверні платформи та готові збірки, 31",
+            "source_span": "Серверні платформи та готові складання, 31",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -17088,7 +17088,7 @@
         "source_records": [
           {
             "source_id": "R2-017",
-            "source_span": "Серверні платформи та готові збірки, 32",
+            "source_span": "Серверні платформи та готові складання, 32",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -17150,7 +17150,7 @@
         "source_records": [
           {
             "source_id": "R2-018",
-            "source_span": "Серверні платформи та готові збірки, 33",
+            "source_span": "Серверні платформи та готові складання, 33",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -17213,7 +17213,7 @@
         "source_records": [
           {
             "source_id": "R2-019",
-            "source_span": "Серверні платформи та готові збірки, 34",
+            "source_span": "Серверні платформи та готові складання, 34",
             "report": "R2",
             "source_dossier": "sources/REPORT-2.md",
             "github_url": "https://github.com/Tarasevych/gmail-telegram-controls/blob/2b3b9e2f678f9fa0c787247f92d7827f81e95c9a/docs/uk/knowledge-hub/sources/REPORT-2.md"
@@ -17844,7 +17844,7 @@
         "R3-023"
       ],
       "category": "KH-PROD",
-      "statement_uk": "Цільова аудиторія включає користувачів з ADHD, executive dysfunction і частою коморбідною депресією.",
+      "statement_uk": "Цільова аудиторія охоплює користувачів з ADHD, executive dysfunction і частою коморбідною депресією.",
       "statement_en": "The target audience includes users with ADHD, executive dysfunction, and frequent comorbid depression.",
       "claim_type": "product",
       "relevance": "medium",
@@ -18970,7 +18970,7 @@
         "R2-039"
       ],
       "category": "KH-PRV",
-      "statement_uk": "GDPR/ePrivacy controls мають включати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.",
+      "statement_uk": "GDPR/ePrivacy controls мають вмикати encryption, access control, audit logs, minimization, contracts, retention, export/delete, breach response і residency.",
       "statement_en": "GDPR and ePrivacy controls should include encryption, access control, audit logs, minimization, contracts, retention, export and deletion, breach response, and residency.",
       "claim_type": "privacy",
       "relevance": "privacy",
@@ -19048,7 +19048,7 @@
         "R2-041"
       ],
       "category": "KH-PRV",
-      "statement_uk": "Open tracking не вмикати за замовчуванням для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.",
+      "statement_uk": "Open tracking не вмикати типово для EU-sensitive use cases; додати legal gating, preference center, granular opt-in і розділення delivery/marketing telemetry.",
       "statement_en": "Do not enable open tracking by default for EU-sensitive use cases; add legal gating, a preference center, granular opt-in, and separation of delivery from marketing telemetry.",
       "claim_type": "privacy",
       "relevance": "privacy",

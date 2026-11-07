@@ -10,13 +10,13 @@
 | B1-04 | Виконано локально | Neutral GitHub OAuth callback із credentialless POST до Apps Script | query очищається до передачі; one-use user/chat/zone state; Google multi-login cookies не надсилаються |
 | B1-05 | Виконано | Зберегти новий redirect URI в Google OAuth client | `OAuth client saved`; точний URI прочитано назад |
 | B1-06 | Виконано | Credentialless OAuth relay та послідовні immutable v41/v42 | stable v42, staging 0, точний v41 rollback |
-| B1-07 | Ручний gate активний | Додати контрольний Gmail-акаунт через новий flow | production дійшов до Google «додаток не перевірено»; власник підтверджує consent для правильного акаунта |
+| B1-07 | Ручний gate активний | Додати контрольний Gmail-обліковий запис через новий flow | production дійшов до Google «додаток не перевірено»; власник підтверджує consent для правильного облікового запису |
 | B1-08 | В роботі | Повний real-time acceptance у @TarasevychGmailNotifierBot | v55 Sent-copy guard пройшов 432/432 і PreflightOnly; staging та контрольний live acceptance однієї картки ще не доведені |
 | B1-09 | Виконано | Promote, cleanup, production command menu | stable v42, staging 0, setup execution completed |
 | B1-10 | Виконано | Оновити UK/EN docs, commit і push | postmortem та lessons опубліковано у c98e69e; три documentation Actions пройшли; release tag лишається gated B1-07/B1-08 |
 
 | B1-11 | Виконано локально | Відокремити realtime delivery від frozen backlog і запускати її перед maintenance | bounded recent-window lane, per-connection watermark/retry, shared seen ledger; E3/E5 ще потрібні |
-| B1-12 | Виконано локально | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | main chat є «Усі повідомлення»; account roots перемикають context без дублювання картки; E5 з другим акаунтом заблоковано consent |
+| B1-12 | Виконано локально | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | main chat є «Усі повідомлення»; account roots перемикають context без дублювання картки; E5 з другим обліковим записом заблоковано consent |
 
 ## Правило руху
 
