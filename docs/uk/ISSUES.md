@@ -7,17 +7,17 @@
 | GT-001 | Вирішена і перевірена production v57 | 1 | Один лист надходить у Telegram двічі | `INBOX+SENT` self/alias копії повністю пропускаються і фіксуються як seen. Чистий external `INBOX` marker автоматично створив рівно одну картку; після двох `/check` Telegram містив один marker list item |
 | GT-002 | В роботі | 1 | Google callback відкриває сторінку Диска замість сервісу | Direct Apps Script callback відхилено через офіційно непідтримуваний Google multi-login; впроваджується neutral GitHub callback + credentialless POST; потрібен live acceptance |
 | GT-003 | Перевірена production | 1 | У header показується літера замість Google profile photo | Header використовує реальне Google profile photo з fallback; фото прочитано у staging та production v55 |
-| GT-004 | Вирішена локально | 1 | `Додати Gmail-акаунт` вимагає зайвий клік `Продовжити в Google` | Відкривати authorization URL одразу; показувати fallback лише якщо браузер блокує перехід |
-| GT-005 | Перевірена staging | 1 | Account panel рахує stale/inactive connection IDs | Preferences фільтруються за active visible IDs; staging v55 показав три ізольовані активні підключення та коректне відновлення початкового контексту |
+| GT-004 | Вирішена локально | 1 | `Додати Gmail-обліковий запис` вимагає зайвий натискання `Продовжити в Google` | Відкривати authorization URL одразу; показувати fallback лише якщо браузер блокує перехід |
+| GT-005 | Перевірена staging | 1 | Account panel рахує stale/inactive connection IDs | Preferences фільтруються за active visible IDs; staging v55 показав три ізольовані активні під'єднання та коректне відновлення початкового контексту |
 | GT-006 | Відкрита | 1 | OAuth client має більше одного enabled secret | Окремо визначити active secret за protected runtime evidence; не видаляти й не ротувати в Versie 1 без безпечного плану |
 | GT-007 | Відкрита, низький ризик | 1 | GitHub Pages попереджає про forced Node 24 для старих Actions | Оновити action pins у наступній Versie після production стабілізації |
-| GT-008 | Частково перевірена production | 1 | Немає повного real-time acceptance нового Gmail flow | E5 для вже підключеного owner-акаунта пройдено; fresh account choice/consent/callback нового Gmail-акаунта та second-account fan-out залишаються неперевіреними |
-| GT-009 | Вирішена локально | 1 | Accessibility label використовує множину для одного акаунта | `1 Gmail-акаунт`, множина для інших значень |
+| GT-008 | Частково перевірена production | 1 | Немає повного real-time acceptance нового Gmail flow | E5 для вже під'єднаного owner-облікового запису пройдено; fresh account choice/consent/callback нового Gmail-облікового запису та second-account fan-out залишаються неперевіреними |
+| GT-009 | Вирішена локально | 1 | Accessibility label використовує множину для одного облікового запису | `1 Gmail-обліковий запис`, множина для інших значень |
 | GT-010 | Розгорнута production; concurrency перевірена локально | 1 | OAuth token refresh path не мав function-local coordination; паралельні виклики могли одночасно оновлювати один token record | Stable v55 містить короткі ScriptLock-секції claim/commit/release, per-connection lease без секретів, provider I/O поза lock і generation/reconnect recheck; примусовий live refresh не виконувався |
-| GT-011 | Перевірена staging | 1 | Telegram settings не мали нативного one-click перемикання між Gmail-акаунтами | Staging v55 показав три ізольовані Gmail-підключення; one-click switch до іншого підключення та повернення до початкового контексту пройшли без OAuth |
+| GT-011 | Перевірена staging | 1 | Telegram settings не мали нативного one-click перемикання між Gmail-обліковими записами | Staging v55 показав три ізольовані Gmail-під'єднання; one-click switch до іншого під'єднання та повернення до початкового контексту пройшли без OAuth |
 | GT-012 | Перевірена staging для наявних сесій | 1 | Підписана Google-сесія переписує Apps Script web-app URL у `/macros/u/N/` і повертає Drive “файл не знайдено” | Neutral GitHub Pages bridge відкрив staging без Drive error; fresh OAuth callback ще не перевірено |
 
-| GT-013 | Перевірена production | 1 | Owner-команда /settings потрапляла у fallback і не показувала Gmail-акаунти | Production v42 маршрутизує /settings і кнопку Gmail-акаунтів у нативне Telegram-меню |
+| GT-013 | Перевірена production | 1 | Owner-команда /settings потрапляла у fallback і не показувала Gmail-облікові записи | Production v42 маршрутизує /settings і кнопку Gmail-облікових записів у нативне Telegram-меню |
 | GT-014 | Перевірена production | 1 | Telegram menu web_app відкривав Apps Script у підписаній Google-сесії та повторював Drive error | Тимчасовий command-menu замінено на `📬 Пошта · Versie 1`; Web App відкриває нейтральний GitHub Pages bridge, а не прямий Apps Script URL |
 | GT-015 | Відкрита, без мутації даних | 1 | Два connection records тієї самої owner Gmail показуються окремими кнопками | Не видаляти й не зливати записи автоматично; додати account-zone display dedupe після factual identity check |
 | GT-016 | Обмеження платформи | 1 | Telegram Web показує стандартний Open Link перед зовнішнім Google OAuth | Власний зайвий Continue with Google усунуто; системне попередження Telegram не обходити |
@@ -31,9 +31,9 @@
 | GT-023 | Вирішена і перевірена production v57 | 1 | Єдиний хвилинний `checkNewMail_` виконувався довше хвилини, тому повні worker-проходи перекривалися та вичерпували денну квоту `URLFETCH` | Immutable v57 використовує атомарний 150-секундний timer slot, лишає realtime першим і обмежує повний Gmail History backfill 15-хвилинним slot. `444/444` tests пройшли; production показав completed full/skip cadence без failed worker у acceptance window |
 | GT-024 | Вирішена і перевірена production v57 | 1 | Однаковий mailbox network error відтворився на production v55 та owner-only staging v57 під час quota incident | Після quota recovery два v55 launches і staging v57 A/B пройшли; v57 просунуто, двічі перевірено production, staging очищено. Валідний external `INBOX` автоматично створив одну картку без дубля після двох `/check` |
 | GT-025 | Інтегрована в immutable v58; live unverified | 1 | Parallel thread metadata завжди використовувала Apps Script owner token навіть у зовнішньому multi-account context | `mailboxMultiGmailAccessToken_` вибирається для активного `connectionId`, а `ScriptApp.getOAuthToken()` лишається тільки для legacy/owner lane; cumulative v58 suite пройшов, але mailbox acceptance заблокований GT-028 |
-| GT-026 | Інтегрована в immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Allowlisted owner-read adapter включено в cumulative v58, але protected flag не вмикався; зовнішні OAuth connections лишаються на власних token paths. Live quota reduction не перевірена через GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
-| GT-027 | PARTIAL; live UI перевірено у v59, production відкочено | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | v59 staging показав `+ Створити`, доступну manage-action для USER labels, bounded scroll і довгі вкладені назви без overlap; mutating operations не виконувалися. Production повернуто на v57 через GT-030 |
-| GT-028 | PARTIAL; fix live-перевірено у v59, production відкочено | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
+| GT-026 | Інтегрована в immutable v58; flag off; live unverified | 1 | Allowlisted owner Gmail reads завжди витрачають Apps Script `URLFETCH` quota, хоча офіційний Advanced Gmail Service увімкнено | Allowlisted owner-read adapter інтегровано в cumulative v58, але protected flag не вмикався; зовнішні OAuth connections лишаються на власних token paths. Live quota reduction не перевірена через GT-028. Source requests: `REQ-0024`, `REQ-0027`, `REQ-0028` |
+| GT-027 | PARTIAL; live UI перевірено у v59, production повернуто попередній стан | 1 | Sidebar і profile manager мали різні label state/render paths, не мали узгоджених create/manage controls і ламали довгі назви | v59 staging показав `+ Створити`, доступну manage-action для USER labels, bounded scroll і довгі вкладені назви без overlap; mutating operations не виконувалися. Production повернуто на v57 через GT-030 |
+| GT-028 | PARTIAL; fix live-перевірено у v59, production повернуто попередній стан | 1 | Launcher зберігав одноразовий thread route у Telegram WebView history, а невдалий automatic open лишав reader у error-state без повернення до вже завантаженого списку | v59 staging і два production launches відновили stale automatic route у список без network/Drive error; повторно збережений Telegram route все ще дає content-free recovery notice. Production повернуто на v57 через окремий GT-030 |
 | GT-029 | Вирішена та синхронізована | 1 | Root README називав v37 поточним production, хоча verified runtime працював на v57, створюючи конфлікт для людей і recovery-агентів | `docs/release-state.json`, парні CURRENT_STATE сторінки та Release state CI синхронізують canonical mutable state; runtime source audit не знайшов читання GitHub Markdown ботом, тому це не runtime root cause. Source request: `REQ-0031` |
 | GT-030 | BLOCKED; exact rollback до v57 виконано | 1 | Post-cleanup v59 execution перевищив 150-секундний worker-slot target і перекрився з наступним execution window; simultaneous Gmail work не доведено | v59 -> v57 exact rollback; stable і HEAD v57, staging 0, journal `rolled_back`, rollback mailbox launch пройшов. Root cause і безпечний cumulative fix лишаються `UNVERIFIED`; v60 не створено |
 | GT-031 | PARTIAL; source candidate | 1 | Головний заголовок і fallback-профіль були жорстко прив’язані до одного імені та не показували фактичний активний або спільний поштовий контекст | REQ-0032 додає похідний від чинних opaque connection IDs блок, повний email, доступне shared mapping і синхронні render-hooks; production лишається v57 до окремого acceptance |
@@ -43,16 +43,16 @@
 - Apps Script stable: v42; staging: 0; immutable v41 збережено як rollback.
 - Локальні тести: 418/418.
 - setupTelegramControls завершився в Apps Script editor; Telegram menu став command-menu.
-- Production /settings показав ізольовані Gmail-акаунти, one-click callbacks і прямий GitHub OAuth launcher.
+- Production /settings показав ізольовані Gmail-облікові записи, one-click callbacks і прямий GitHub OAuth launcher.
 - Реальний OAuth дійшов до нового Google consent gate; consent не підтверджено, callback success ще не доведено.
 - REQ-0009: контрольний новий лист не з'явився після minute trigger і manual /check; webhook був healthy, тому збій локалізовано до frozen Gmail scan та порядку worker-ів.
 
 ## Production-доказ 2026-07-21
 
-- Bridge-only PR #2 злитий як `a7df53c`; product PR #1 після normal merge-конфлікту злитий як `ee9286e`. Конфлікт `delete/modify` вирішено збереженням уже перевіреного bridge з `main`, без відкату коду Versie 1.
+- Bridge-only PR #2 злитий як `a7df53c`; product PR #1 після normal merge-конфлікту злитий як `ee9286e`. Конфлікт `delete/modify` вирішено збереженням уже перевіреного bridge з `main`, без повернення стану коду Versie 1.
 - Immutable Apps Script v55 спочатку пройшов E4 у staging, потім stable deployment просунуто з v50 на v55. Після E5 тимчасовий staging видалено.
 - Фінальний `PreflightOnly`: stable v55, `headState=candidate_v55`, immutable ready, staging 0, legacy staging 0, journal `cleaned`.
-- Staging E4: Web App відкрив mailbox без Drive error, показав profile photo, три ізольовані Gmail-підключення та one-click switch із відновленням початкового контексту.
+- Staging E4: Web App відкрив mailbox без Drive error, показав profile photo, три ізольовані Gmail-під'єднання та one-click switch із відновленням початкового контексту.
 - Production E5: контрольний owner self-message з `SENT+INBOX` автоматично створив одну картку; два `/check` повернули «Нових листів немає», а exact-marker search двічі показав один результат.
 - Production menu: `📬 Пошта · Versie 1` відкриває статичний GitHub Pages bridge. Випадкові листи, OAuth records і Gmail-зони не змінювалися.
 - Перше production-відкриття вимагало одного refresh після skeleton; `clasp logs` не запустився без підтвердженого GCP project ID. Обидва спостереження лишаються відкритими як GT-021/GT-022.
@@ -96,8 +96,8 @@
 ## Доповнення від 2026-07-22: приймання всіх Gmail-коренів
 
 - Попередню примітку про неперевірений inbound fan-out для другорядних коренів скасовано новим production evidence.
-- Root-2: чистий Inbox-вхід створив рівно одну картку з правильною позначкою акаунта; два повторні /check не створили дубль.
-- Root-3: чистий Inbox-вхід створив рівно одну картку з правильною позначкою акаунта; два повторні /check не створили дубль.
+- Root-2: чистий Inbox-вхід створив рівно одну картку з правильною позначкою облікового запису; два повторні /check не створили дубль.
+- Root-3: чистий Inbox-вхід створив рівно одну картку з правильною позначкою облікового запису; два повторні /check не створили дубль.
 - Початкове потрапляння контрольного root-2 листа у Spam є зовнішньою Gmail-класифікацією, а не дефектом delivery: production навмисно виключає Spam.
 - Видимий viewport Telegram не є достатнім доказом відсутності картки. Остаточний count перевіряється accessibility-index за унікальним sanitized marker.
 - GT-018, GT-019, GT-023 і GT-024 не мають відкритого secondary-root acceptance blocker для production v57.
@@ -137,10 +137,10 @@
 - **Доказ:** focused contracts `17/17`, cumulative suite `501/501`, два production launches, сім послідовних завершених runtime rows і final stable/HEAD v63 preflight. Див. [VR-011](verification-reports/reports/VR-011/README.md).
 - **Межа:** окремий 15-хвилинний History substage має automated-contract evidence; dedicated runtime substage trace лишається UNVERIFIED.
 
-## GT-031 — Ідентичність активного акаунта може обрізатися у вузькому header
+## GT-031 — Ідентичність активного облікового запису може обрізатися у вузькому header
 
 - **Статус:** PARTIAL — dynamic active/shared identity працює у production v63, а native acceptance підтвердив перемикання між трьома isolated roots без OAuth.
-- **Залишкове спостереження:** header контрольованого альтернативного акаунта обрізав завершення довгого email у вузькому view. Primary root коректно зберіг letter fallback за відсутності profile photo; інший root показав фактичне фото.
+- **Залишкове спостереження:** header контрольованого альтернативного облікового запису обрізав завершення довгого email у вузькому view. Primary root коректно зберіг letter fallback за відсутності profile photo; інший root показав фактичне фото.
 - **Потрібне виправлення:** зберегти повну адресу через wrapping, compact disclosure або accessible full-value tooltip без зменшення tap target і без використання фото як єдиного identifier.
 - **Доказ:** [VR-011](verification-reports/reports/VR-011/README.md). Source request: `REQ-0033`.
 
@@ -156,7 +156,7 @@
 ## GT-033 — Повторне завантаження та блокування внутрішньої навігації
 
 - **Статус:** PARTIAL — root cause, source implementation, local performance contracts і v63 native list/account acceptance VERIFIED; measured production `A -> B -> A` trace лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
-- **Першопричина:** list routes очищували всі rows перед кожним RPC; кожне відкриття листа відкидало detail; `threadLoading` втрачав другий клік; прийняті responses перебудовували весь list DOM.
+- **Першопричина:** list routes очищували всі rows перед кожним RPC; кожне відкриття листа відкидало detail; `threadLoading` втрачав другий натискання; прийняті responses перебудовували весь list DOM.
 - **Baseline:** local preview cold usable list `898 ms`; B open `431 ms`; already visited A reopen `409 ms`; static trace показує три `getThread` плюс три `attentionState` RPC для `A -> B -> A`.
 - **Source fix:** warm list/thread restore, concurrent generation guards, request dedupe, keyed row reuse, збережені scroll/view state і відсутність document reload для звичайної навігації.
 - **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
@@ -175,7 +175,7 @@
 
 - **Статус:** PARTIAL — чинний Gmail autosave і local checkpoint наявні у production v63; offline/restart/cross-session acceptance лишається UNVERIFIED. Release evidence: [VR-011](verification-reports/reports/VR-011/README.md).
 - **Першопричина:** Gmail autosave вже використовував stable operation ID і stale-response guards, але незбережені зміни лишалися лише в пам’яті до завершення debounced server request.
-- **Source fix:** негайний bounded IndexedDB text checkpoint для кожного connection, чинне debounced Gmail Draft save, lifecycle flushes, виключення attachment bytes, cleanup після canonical acknowledgement та явний local-versus-Gmail conflict choice.
+- **Source fix:** негайний bounded IndexedDB text checkpoint для кожного connection, чинне debounced Gmail Draft save, lifecycle flushes, виняток attachment bytes, cleanup після canonical acknowledgement та явний local-versus-Gmail conflict choice.
 - **Межа:** інший пристрій може продовжити лише Gmail-confirmed draft. Browser-local recovery ніколи не позначається server-confirmed.
 - **Доказ:** [VR-009](verification-reports/reports/VR-009/README.md). Source request: `REQ-0033`.
 - **English mirror:** [docs/en/ISSUES.md](../en/ISSUES.md).

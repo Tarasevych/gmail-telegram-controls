@@ -12,13 +12,13 @@
 
 ### Realtime-смуга доставки
 
-- v42 виявив збій доставки: maintenance і frozen backlog pass виконувалися перед delivery, тоді як frozen upper bound не міг включити лист, створений після початку цього проходу.
+- v42 виявив збій доставки: maintenance і frozen backlog pass виконувалися перед delivery, тоді як frozen upper bound не міг увімкнути лист, створений після початку цього проходу.
 - v43 додав bounded newest-first realtime lane, per-connection watermark/retry state, shared seen dedupe та delivery-first scheduling. Frozen scanner залишився recovery-механізмом.
 - v44 виправив узгодження scope/query швидкої смуги.
 - v45-v46 зберігали помилки кожного етапу, щоб пізніший success або maintenance output їх не приховував.
 - v48 ізолював realtime від спільного `UserLock`, який міг утримуватися під час повільного I/O.
 - v51 зберіг та агрегував результат кожної multi-account смуги й пріоритет `REAUTH`.
-- v52-v54 розширили контрольне acceptance на Spam і відновили точний Spam-кейс із логу.
+- v52-v54 розширили контрольне acceptance на Spam і відновили точний Spam-випадок із логу.
 - v55 виключає `SENT+INBOX` із notification eligibility, щоб один логічний лист не створював дві картки. Це виправлення v55 має статус `unverified`.
 
 ### Frozen backlog scanner
@@ -44,9 +44,9 @@
 ### Multi-account fan-out
 
 - Аналіз source v42 показав, що notification fan-out використовував `notificationConnectionIds`; active account був UI-вибором, а не межею доставки.
-- v51 виправив втрату per-account результатів, зберіг reauthorization failures і зробив outcomes кожного акаунта спостережуваними.
+- v51 виправив втрату per-account результатів, зберіг reauthorization failures і зробив outcomes кожного облікового запису спостережуваними.
 - Shared seen ledger гарантує at-most-once створення картки, тоді як callbacks і labels залишаються connection-scoped.
-- Runtime acceptance з усіма потрібними реальними акаунтами не доводиться лише source inspection і має статус `unverified`, якщо в наданому логу немає acceptance-доказу.
+- Runtime acceptance з усіма потрібними реальними обліковими записами не доводиться лише source inspection і має статус `unverified`, якщо в наданому логу немає acceptance-доказу.
 
 ### Immutable release, staging і rollback
 
@@ -70,9 +70,9 @@
 | 9 | v48 | Realtime delivery чекала на сторонню роботу | Shared `UserLock` охоплював повільний I/O | v48 | Використовувати account-scoped locks і не тримати lock під час external I/O |
 | 10 | v50 | Накопичувалися `delete_too_old` records | Retention не мав повного purge terminal state | v50 | Визначити й тестувати lifecycle transitions і terminal cleanup |
 | 11 | v47 | Compaction існував, але не запобіг guard failure | Capacity call site і далі використовував старий raw index | v49-v50 | Тестувати кожного caller інваріанта, не лише helper |
-| 12 | v51 | Результати частини акаунтів зникали | Fan-out return values відкидалися | v51 | Збирати typed result кожного connection і перевіряти cardinality |
+| 12 | v51 | Результати частини облікових записів зникали | Fan-out return values відкидалися | v51 | Збирати typed result кожного connection і перевіряти cardinality |
 | 13 | v51 | `REAUTH` міг виглядати як outcome нижчої severity | Aggregation не зберігав severity precedence | v51 | Визначити explicit severity lattice і тестувати mixed outcomes |
-| 14 | v52-v54 | Контрольний лист `kimnata` не доставлявся | Лист був у Spam, а відповідний шлях припускав Inbox | v52-v54 | Тестувати canonical eligibility для Inbox, Spam та виключених Sent-комбінацій |
+| 14 | v52-v54 | Контрольний лист `kimnata` не доставлявся | Лист був у Spam, а відповідний шлях припускав Inbox | v52-v54 | Тестувати canonical eligibility для Inbox, Spam та вимкнених Sent-комбінацій |
 | 15 | v51 | Retry міг дублювати або втрачати create/journal transition | External creation і journal visibility були eventually consistent | v51 | Використовувати idempotency keys і readback recovery для ambiguous mutations |
 | 16 | unverified version | Runtime probe падав за валідного endpoint | Probe використовував GET замість required POST | Правильний POST probe | Зберігати method, auth і payload в одному executable probe contract |
 | 17 | unverified version | Структурно рівний test object не проходив `deepStrictEqual` | Objects походили з різних VM realms | Realm-safe assertion | Порівнювати serialized/domain fields, а не realm prototypes |
