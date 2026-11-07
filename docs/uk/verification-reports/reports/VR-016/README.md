@@ -10,7 +10,7 @@
 
 ## Перевірені першопричини
 
-1. GitHub bridge показував повноекранний mailbox handoff з текстом підключення.
+1. GitHub bridge показував повноекранний mailbox handoff з текстом під'єднання.
 2. Apps Script `MailApp.html` містив статичний видимий `bootState` з тим самим повідомленням.
 3. `boot()` одразу повторно викликав `setBootLoading()`, очищав і створював той самий екран ще раз.
 4. Приватний persistent cache гідратується лише після server bootstrap, оскільки саме bootstrap встановлює allowlist Telegram/Gmail connection IDs. Це правильна security ordering, але вона не дає показати приватну офлайн-пошту до мережевої перевірки.
