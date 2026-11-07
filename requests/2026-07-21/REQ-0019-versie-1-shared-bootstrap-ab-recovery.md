@@ -29,7 +29,7 @@
 
 - Apps Script Executions доказово розрізняють URLFetch quota, bootstrap transport, session replay і Gmail API failure без читання чи публікації secret properties.
 - Два свіжі production-запуски v55 завантажують mailbox без network error до перевірки candidate.
-- Owner-only staging candidate проходить signed Telegram Desktop bootstrap, avatar, три account roots і перемикання на контрольований другий акаунт та назад без нового OAuth.
+- Owner-only staging candidate проходить signed Telegram Desktop bootstrap, avatar, три account roots і перемикання на контрольований другий обліковий запис та назад без нового OAuth.
 - Після promotion два свіжі production-запуски проходять acceptance; HEAD застосовується до trigger лише через штатний cleanup.
 - Щонайменше чотири trigger opportunities підтверджують відсутність overlapping workers, 150-секундний worker slot і 15-хвилинний History slot.
 - Один контрольований inbound marker із owner-джерела, яке не входить до primary Gmail `Send mail as` aliases, створює рівно одну Telegram card і не дублюється після двох `/check`. Self/alias probes з `INBOX+SENT` мають бути пропущені чинним dedupe-інваріантом.

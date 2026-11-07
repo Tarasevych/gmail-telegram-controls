@@ -13,7 +13,7 @@
 
 Власник явно надав дозвіл продовжити раніше заблоковані E4/E5, deployment і merge для найновішої поточної `Versie 1`. Єдиним допустимим source commit є `ae8fa827784296062c1f5cfe65334824d0fcb2c2`; нова номерна Versie не створюється.
 
-Дозволена послідовність: повторний `PreflightOnly`, створення immutable/staging deployment з exact candidate bundle, контрольоване E4/E5 acceptance без змішування Gmail-акаунтів або Telegram-зон, promotion того самого immutable candidate у production і normal-history merge PR `#1` у `main`. Кожний наступний крок виконується лише після успішного попереднього gate.
+Дозволена послідовність: повторний `PreflightOnly`, створення immutable/staging deployment з exact candidate bundle, контрольоване E4/E5 acceptance без змішування Gmail-облікових записів або Telegram-зон, promotion того самого immutable candidate у production і normal-history merge PR `#1` у `main`. Кожний наступний крок виконується лише після успішного попереднього gate.
 
 Заборонено змінювати випадкові листи, підмінювати candidate старішою версією, створювати паралельний release, робити force/reset/rebase/amend або проходити OTP, CAPTCHA чи нову Google consent-згоду без зупинки. Для acceptance допускається лише явно маркована синтетична перевірка в одній підтвердженій Gmail/Telegram зоні.
 
