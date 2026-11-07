@@ -4223,7 +4223,7 @@
 
   <div class="app-shell" id="app" aria-busy="true">
     <header class="brandbar">
-      <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Відкрити папки" aria-expanded="false">
+      <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Відкрити теки" aria-expanded="false">
         <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
       </button>
       <h1>Пошта Павла</h1>
@@ -4275,12 +4275,12 @@
       </button>
     </div>
 
-    <aside class="sidebar" id="sidebar" aria-label="Папки й мітки">
+    <aside class="sidebar" id="sidebar" aria-label="Теки й мітки">
       <button class="primary-button sidebar-compose" id="sidebarComposeButton" type="button">
         <svg class="icon" aria-hidden="true"><use href="#i-compose"></use></svg>
         Новий лист
       </button>
-      <nav class="nav-section" id="folderNav" aria-label="Поштові папки"></nav>
+      <nav class="nav-section" id="folderNav" aria-label="Поштові теки"></nav>
       <section class="nav-section" id="categorySection" aria-labelledby="categoriesHeading" hidden>
         <div class="nav-heading"><span id="categoriesHeading">Категорії</span></div>
         <nav id="categoryNav" aria-label="Категорії Gmail"></nav>
@@ -4292,7 +4292,7 @@
         <nav id="labelNav" aria-label="Мітки Gmail"></nav>
       </section>
     </aside>
-    <button class="drawer-scrim" id="drawerScrim" type="button" aria-label="Закрити меню папок"></button>
+    <button class="drawer-scrim" id="drawerScrim" type="button" aria-label="Закрити меню тек"></button>
 
     <section class="list-pane" id="listPane" aria-label="Вхідні">
       <header class="list-toolbar">
@@ -4383,12 +4383,12 @@
           </div>
         </header>
         <div class="gmail-metadata-content" id="focusSettingsContent" aria-live="polite">
-          <p class="account-panel-note">Створіть персональні правила кольору й важливості для активного Gmail-акаунта.</p>
+          <p class="account-panel-note">Створіть персональні правила кольору й важливості для активного Gmail-облікового запису.</p>
         </div>
       </section>
-      <div class="account-list" id="accountList" role="list" aria-label="Підключені облікові записи"></div>
+      <div class="account-list" id="accountList" role="list" aria-label="Під’єднані облікові записи"></div>
       <div class="account-panel-actions">
-        <button class="account-connect-button" id="connectGoogleAccount" type="button">＋ Додати Gmail-акаунт</button>
+        <button class="account-connect-button" id="connectGoogleAccount" type="button">＋ Додати Gmail-обліковий запис</button>
         <a class="account-connect-button" id="continueGoogleOAuth" href="#" target="_blank" rel="noopener noreferrer" hidden>Продовжити в Google</a>
         <button class="outline-button" id="signOutMailboxSession" type="button">Вийти з цього сеансу</button>
       </div>
@@ -4402,7 +4402,7 @@
           <p class="account-panel-note">Натисніть «Оновити», щоб отримати актуальні дані активної скриньки безпосередньо з Gmail.</p>
         </div>
       </section>
-      <p class="account-panel-note">Кожна скринька має окремий Google OAuth-доступ і прив’язана до вашого Telegram ID. Пароль вводиться лише на сторінці Google. Поточний акаунт завжди позначено на картці.</p>
+      <p class="account-panel-note">Кожна скринька має окремий Google OAuth-доступ і прив’язана до вашого Telegram ID. Пароль вводиться лише на сторінці Google. Поточний обліковий запис завжди позначено на картці.</p>
     </section>
 
     <div class="onboarding-layer" id="onboardingLayer" hidden>
@@ -4693,8 +4693,8 @@
         </button>
         <label class="sr-only" for="attachmentInput">Вибрати файли для вкладення</label>
         <input class="sr-only" id="attachmentInput" type="file" multiple aria-label="Вибрати файли для вкладення">
-        <label class="sr-only" for="attachmentFolderInput">Вибрати папку для вкладення</label>
-        <input class="sr-only" id="attachmentFolderInput" type="file" multiple webkitdirectory aria-label="Вибрати папку для вкладення">
+        <label class="sr-only" for="attachmentFolderInput">Вибрати теку для вкладення</label>
+        <input class="sr-only" id="attachmentFolderInput" type="file" multiple webkitdirectory aria-label="Вибрати теку для вкладення">
         <button class="outline-button" id="saveDraftButton" type="button">Зберегти чернетку</button>
         <div class="send-later-control">
           <button class="outline-button" id="sendLaterButton" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sendLaterPanel">Надіслати пізніше</button>
@@ -4752,19 +4752,19 @@
               <p class="compose-source-note">Файли читаються локально паралельно. Редактор можна продовжувати використовувати або згорнути; до Gmail потрапляють лише повністю готові вкладення. Якщо закрити Mini App до завершення, незавершені файли потрібно вибрати знову.</p>
               <div class="compose-source-device-actions">
                 <button class="primary-button" id="chooseDeviceAttachment" type="button">Вибрати файли</button>
-                <button class="outline-button" id="chooseDeviceFolder" type="button">Вибрати папку</button>
+                <button class="outline-button" id="chooseDeviceFolder" type="button">Вибрати теку</button>
               </div>
             </section>
             <section id="composeSourceDrivePanel" role="tabpanel" aria-labelledby="composeSourceDriveTab" hidden>
               <div class="compose-source-actions">
-                <label>Акаунт Google Drive
-                  <select id="composeDriveAccount" aria-label="Акаунт Google Drive"></select>
+                <label>Обліковий запис Google Drive
+                  <select id="composeDriveAccount" aria-label="Обліковий запис Google Drive"></select>
                 </label>
-                <button class="outline-button" id="composeDriveConnect" type="button">＋ Підключити Drive</button>
+                <button class="outline-button" id="composeDriveConnect" type="button">＋ Під’єднати Drive</button>
                 <a class="primary-button" id="composeDriveContinue" href="#" target="_blank" rel="noopener noreferrer" role="button" hidden>Продовжити в Google Drive</a>
                 <button class="text-button" id="composeDriveRefresh" type="button">↻ Оновити</button>
               </div>
-              <p class="compose-source-note">Акаунт Drive обирається незалежно від Gmail-адреси, з якої надсилається лист.</p>
+              <p class="compose-source-note">Обліковий запис Drive обирається незалежно від Gmail-адреси, з якої надсилається лист.</p>
               <form class="compose-source-form" id="composeDriveSearchForm">
                 <label>Пошук у Google Drive
                   <input id="composeDriveQuery" type="search" autocomplete="off" placeholder="Назва файла">
@@ -4776,17 +4776,17 @@
             </section>
             <section id="composeSourceBoxPanel" role="tabpanel" aria-labelledby="composeSourceBoxTab" hidden>
               <div class="compose-source-actions">
-                <label>Акаунт Box
-                  <select id="composeBoxAccount" aria-label="Акаунт Box"></select>
+                <label>Обліковий запис Box
+                  <select id="composeBoxAccount" aria-label="Обліковий запис Box"></select>
                 </label>
-                <a class="primary-button box-connect-link" id="composeBoxConnect" href="#" target="_blank" rel="noopener noreferrer" role="button">＋ Підключити Box</a>
+                <a class="primary-button box-connect-link" id="composeBoxConnect" href="#" target="_blank" rel="noopener noreferrer" role="button">＋ Під’єднати Box</a>
                 <button class="text-button" id="composeBoxRefresh" type="button">↻ Оновити</button>
               </div>
-              <p class="compose-source-note">Акаунт Box обирається незалежно від Gmail-відправника та Google Drive. Можна підключити кілька Box-акаунтів.</p>
+              <p class="compose-source-note">Обліковий запис Box обирається незалежно від Gmail-відправника та Google Drive. Можна під’єднати кілька Box-облікових записів.</p>
               <p class="compose-source-note" id="composeBoxConnectionStatus" role="status" aria-live="polite"></p>
               <div class="compose-box-disconnected" id="composeBoxDisconnected">
-                <h4>Box не підключено</h4>
-                <p class="compose-source-note">Підключіть свій Box, щоб переглядати папки й додавати файли до листа. Паролі й OAuth-токени в Mini App не показуються.</p>
+                <h4>Box не під’єднано</h4>
+                <p class="compose-source-note">Під’єднайте свій Box, щоб переглядати теки й додавати файли до листа. Паролі й OAuth-токени в Mini App не показуються.</p>
               </div>
               <div class="compose-box-connected" id="composeBoxConnected" hidden>
                 <div class="compose-box-account">
@@ -4795,13 +4795,13 @@
                     <span class="compose-box-capacity" id="composeBoxCapacity">Місткість не вказана</span>
                   </div>
                   <div class="compose-box-account-actions">
-                    <button class="text-button" id="composeBoxDisconnect" type="button">Відключити</button>
+                    <button class="text-button" id="composeBoxDisconnect" type="button">Вимкнути</button>
                   </div>
                 </div>
                 <nav class="compose-box-breadcrumbs" id="composeBoxBreadcrumbs" aria-label="Шлях у Box"></nav>
                 <form class="compose-source-form" id="composeBoxSearchForm">
-                  <label>Пошук у поточній папці Box
-                    <input id="composeBoxQuery" type="search" autocomplete="off" placeholder="Назва файла або папки">
+                  <label>Пошук у поточній теці Box
+                    <input id="composeBoxQuery" type="search" autocomplete="off" placeholder="Назва файла або теки">
                   </label>
                   <button class="outline-button" type="submit">Знайти</button>
                 </form>
@@ -4825,12 +4825,12 @@
                   <button class="primary-button" type="submit">Додати як вкладення</button>
                 </div>
               </form>
-              <p class="compose-source-note" id="composePublicSourceStatus" role="status" aria-live="polite">Прямі публічні файли можна додати як вкладення. Сторінки YouTube, Vimeo, Instagram, TikTok, Google, OneDrive, Dropbox, Box, iCloud, MEGA та pCloud вставляються в текст листа як безпечні клікабельні посилання. Приватні файли потребують авторизації відповідного сервісу.</p>
+              <p class="compose-source-note" id="composePublicSourceStatus" role="status" aria-live="polite">Прямі публічні файли можна додати як вкладення. Сторінки YouTube, Vimeo, Instagram, TikTok, Google, OneDrive, Dropbox, Box, iCloud, MEGA та pCloud вставляються в текст листа як безпечні доступні для натискання посилання. Приватні файли потребують авторизації відповідного сервісу.</p>
             </section>
           </div>
           <div class="box-disconnect-layer" id="composeBoxDisconnectLayer" hidden>
             <section class="box-disconnect-dialog" id="composeBoxDisconnectDialog" role="alertdialog" aria-modal="true" aria-labelledby="composeBoxDisconnectTitle" aria-describedby="composeBoxDisconnectDescription" tabindex="-1">
-              <h3 id="composeBoxDisconnectTitle">Відключити Box?</h3>
+              <h3 id="composeBoxDisconnectTitle">Вимкнути Box?</h3>
               <p id="composeBoxDisconnectDescription">Буде відкликано лише доступ цього застосунку до Box. Файли в Box, чернетка й пошта не видаляються.</p>
               <p class="compose-source-note" id="composeBoxDisconnectStatus" role="status" aria-live="polite"></p>
               <div class="box-disconnect-actions">
@@ -4872,7 +4872,7 @@
     <div class="state-content">
       <div class="spinner" aria-hidden="true"></div>
       <h2>Відкриваю пошту</h2>
-      <p>Захищено підключаю Gmail до вашого Telegram.</p>
+      <p>Захищено під’єдную Gmail до вашого Telegram.</p>
     </div>
   </div>
 
@@ -5318,7 +5318,7 @@
         return {
           type: type,
           id: id,
-          name: safeText(item.name || item.filename, type === "folder" ? "Папка" : "Файл").slice(0, 255),
+          name: safeText(item.name || item.filename, type === "folder" ? "Тека" : "Файл").slice(0, 255),
           mimeType: type === "file" ? safeText(item.mimeType || item.contentType, "application/octet-stream").toLowerCase().slice(0, 160) : "",
           size: type === "file" ? Math.max(0, Number(item.size || 0)) : 0,
           itemCount: type === "folder" && Number.isFinite(Number(item.itemCount)) ? Math.max(0, Math.floor(Number(item.itemCount))) : null,
@@ -5333,12 +5333,12 @@
         (Array.isArray(value) ? value : []).forEach(function (item) {
           var id = normalizeBoxItemId(item && (item.id || item.folderId));
           if (!id || output.some(function (entry) { return entry.id === id; })) return;
-          output.push({ id: id, name: safeText(item.name, id === "0" ? "Усі файли" : "Папка").slice(0, 160) });
+          output.push({ id: id, name: safeText(item.name, id === "0" ? "Усі файли" : "Тека").slice(0, 160) });
         });
         if (!output.length || output[0].id !== "0") output.unshift({ id: "0", name: "Усі файли" });
         var currentId = normalizeBoxItemId(fallbackFolderId) || "0";
         if (!output.some(function (entry) { return entry.id === currentId; })) {
-          output.push({ id: currentId, name: currentId === "0" ? "Усі файли" : "Папка" });
+          output.push({ id: currentId, name: currentId === "0" ? "Усі файли" : "Тека" });
         }
         return output;
       }
@@ -5757,7 +5757,7 @@
           state.refreshToken = null;
           state.renewPromise = null;
           setAccountPanelOpen(false, null, false);
-          showBootError("Поточний сеанс завершено. Gmail-акаунти залишилися підключеними.", { signedOut: true });
+          showBootError("Поточний сеанс завершено. Gmail-облікові записи залишилися під’єднаними.", { signedOut: true });
           if (tg && typeof tg.close === "function") window.setTimeout(function () { tg.close(); }, 250);
         } catch (error) {
           showSnackbar(safeText(error && error.message, "Не вдалося завершити поточний сеанс."), { error: true });
@@ -6453,7 +6453,7 @@
         var content = make("div", { className: "state-content" });
         content.append(make("div", { className: "spinner", attrs: { "aria-hidden": "true" } }));
         content.append(make("h2", { text: "Відкриваю пошту" }));
-        content.append(make("p", { text: "Захищено підключаю Gmail до вашого Telegram." }));
+        content.append(make("p", { text: "Захищено під’єдную Gmail до вашого Telegram." }));
         bootState.append(content);
         bootState.hidden = false;
       }
@@ -6705,13 +6705,13 @@
             type: "button",
             attrs: {
               "aria-pressed": state.unifiedMode ? "true" : "false",
-              "aria-label": "Спільна стрічка, " + unifiedCount + " Gmail-" + (unifiedCount === 1 ? "акаунт" : "акаунтів")
+              "aria-label": "Спільна стрічка, " + unifiedCount + " Gmail-" + (unifiedCount === 1 ? "обліковий запис" : "облікових записів")
             }
           });
           var unifiedCopy = make("div", { className: "account-card-copy" });
           unifiedCopy.append(make("strong", { text: "Спільна стрічка" }));
           unifiedCopy.append(make("span", {
-            text: unifiedCount + " " + (unifiedCount === 1 ? "акаунт" : "акаунтів") + " · кожен лист має позначку скриньки"
+            text: unifiedCount + " " + (unifiedCount === 1 ? "обліковий запис" : "облікових записів") + " · кожен лист має позначку скриньки"
           }));
           unifiedView.append(make("span", { className: "avatar", text: "≡" }), unifiedCopy);
           unifiedView.addEventListener("click", function () {
@@ -6728,7 +6728,7 @@
         if (!state.accounts.length) {
           els.accountList.append(make("p", {
             className: "account-panel-note",
-            text: "Ще немає підключених Gmail-скриньок. Додайте першу через офіційну сторінку Google."
+            text: "Ще немає під’єднаних Gmail-скриньок. Додайте першу через офіційну сторінку Google."
           }));
         }
         state.accounts.forEach(function (account) {
@@ -6740,7 +6740,7 @@
               role: "button",
               "data-account-id": account.id,
               "data-account-current": account.current ? "true" : "false",
-              "aria-label": (account.email || account.name) + ", підключено" + (account.current ? ", поточний" : "")
+              "aria-label": (account.email || account.name) + ", під’єднано" + (account.current ? ", поточний" : "")
             }
           });
           card.disabled = Boolean(account.current);
@@ -6750,7 +6750,7 @@
           copy.append(make("strong", { text: account.name }));
           copy.append(make("span", { text: account.email }));
           card.append(copy);
-          card.append(make("span", { className: "account-status", text: account.current ? "Підключено · поточний" : "Підключено" }));
+          card.append(make("span", { className: "account-status", text: account.current ? "Під’єднано · поточний" : "Під’єднано" }));
           wrapper.append(card);
           var choices = make("div", { className: "account-choice-row" });
           var unified = state.accountSettings.unifiedConnectionIds.indexOf(account.id) !== -1;
@@ -6896,7 +6896,7 @@
       }
 
       function gmailMetadataSettingText(name, section) {
-        if (!section || !section.supported) return safeText(section && section.message, "Недоступно для цього підключення");
+        if (!section || !section.supported) return safeText(section && section.message, "Недоступно для цього під’єднання");
         var value = section.value || {};
         if (name === "language") return "Мова інтерфейсу: " + safeText(value.displayLanguage, "не вказано");
         if (name === "imap") return (value.enabled ? "Увімкнено" : "Вимкнено") +
@@ -6985,7 +6985,7 @@
         });
         if (!userLabels.length) labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Користувацьких міток ще немає." }));
         var systemCount = metadata.labels.filter(function (label) { return label.type === "system"; }).length;
-        labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Системні папки й мітки Gmail: " + systemCount + ". Вони синхронізуються, але не перейменовуються й не видаляються." }));
+        labelsCard.append(make("p", { className: "gmail-metadata-muted", text: "Системні теки й мітки Gmail: " + systemCount + ". Вони синхронізуються, але не перейменовуються й не видаляються." }));
         els.gmailMetadataContent.append(labelsCard);
 
         var sendAsCard = make("section", { className: "gmail-metadata-card" });
@@ -7156,7 +7156,7 @@
           className: "gmail-metadata-muted",
           text: metrics.enabled
             ? "Збір увімкнено лише для цієї Gmail-скриньки. Це не оцінка продуктивності й не серія."
-            : "Збір вимкнено. Нічого нового не рахується, доки ви самі його не ввімкнете."
+            : "Збір вимкнено. Нічого нового не враховується, доки ви самі його не ввімкнете."
         }));
         var week = metrics.last7Days;
         var grid = make("div", { className: "gmail-metadata-card" });
@@ -7226,7 +7226,7 @@
         var activeId = safeId(state.account && state.account.id);
         var config = state.focusConfigAccountId === activeId ? state.focusConfig : null;
         if (!config) {
-          els.focusSettingsContent.append(make("p", { className: "account-panel-note", text: "Натисніть «Правила», щоб налаштувати автоматичне виділення листів цього Gmail-акаунта." }));
+          els.focusSettingsContent.append(make("p", { className: "account-panel-note", text: "Натисніть «Правила», щоб налаштувати автоматичне виділення листів цього Gmail-облікового запису." }));
           return;
         }
         var createCard = make("section", { className: "gmail-metadata-card" });
@@ -7465,7 +7465,7 @@
           await loadWorkspaceAccess();
           showSnackbar(result && result.cleanupPending
             ? "Gmail від’єднано. Очищення доступу Google буде повторено сервером."
-            : "Gmail-акаунт від’єднано.", { success: true });
+            : "Gmail-обліковий запис від’єднано.", { success: true });
           await loadThreads(true);
         } catch (error) {
           showSnackbar(safeText(error && error.message, "Не вдалося від’єднати Gmail."), { error: true });
@@ -7522,7 +7522,7 @@
             setOnboardingOpen(true, { step: 1, invoker: els.accountAvatar });
           }
         } catch (error) {
-          showSnackbar(safeText(error && error.message, "Не вдалося перемкнути Gmail-акаунт."), { error: true });
+          showSnackbar(safeText(error && error.message, "Не вдалося перемкнути Gmail-обліковий запис."), { error: true });
         }
       }
 
@@ -7551,7 +7551,7 @@
           renderAccountPanel();
           showSnackbar(enabled ? "Налаштування ввімкнено." : "Налаштування вимкнено.", { success: true });
         } catch (error) {
-          showSnackbar(safeText(error && error.message, "Не вдалося оновити налаштування акаунта."), { error: true });
+          showSnackbar(safeText(error && error.message, "Не вдалося оновити налаштування облікового запису."), { error: true });
         }
       }
 
@@ -7604,7 +7604,7 @@
           els.continueGoogleOAuth.hidden = opened;
           if (!opened) els.continueGoogleOAuth.focus();
           showSnackbar(opened
-            ? "Google відкрито. Оберіть акаунт і після завершення поверніться до Telegram."
+            ? "Google відкрито. Оберіть обліковий запис і після завершення поверніться до Telegram."
             : "Браузер заблокував відкриття. Натисніть «Продовжити в Google».", { success: true });
         } catch (error) {
           if (browserPopup && !browserPopup.closed) {
@@ -7613,7 +7613,7 @@
           state.googleOAuthPendingUntil = 0;
           els.continueGoogleOAuth.removeAttribute("href");
           els.continueGoogleOAuth.hidden = true;
-          showSnackbar(safeText(error && error.message, "Не вдалося почати підключення Gmail."), { error: true });
+          showSnackbar(safeText(error && error.message, "Не вдалося почати під’єднання Gmail."), { error: true });
         } finally {
           els.connectGoogleAccount.disabled = false;
         }
@@ -7634,7 +7634,7 @@
             els.continueGoogleOAuth.hidden = true;
             await loadWorkspaceAccess();
             await loadThreads(true);
-            showSnackbar("Новий Gmail-акаунт підключено.", { success: true });
+            showSnackbar("Новий Gmail-обліковий запис під’єднано.", { success: true });
           }
         } catch (error) {
           // The external Google window may still be open. Retry on the next
@@ -8377,7 +8377,7 @@
         els.focusSessionBar.append(make("div", {
           className: "focus-session-copy",
           text: state.unifiedMode
-            ? "Оберіть одну Gmail-скриньку — короткі сесії ніколи не змішують акаунти."
+            ? "Оберіть одну Gmail-скриньку — короткі сесії ніколи не змішують облікові записи."
             : state.backlogRescue.active
             ? state.backlogRescue.completedCount + " із " + state.backlogRescue.selectedCount +
               " рішень готово. Можна зупинитися будь-коли."
@@ -8491,7 +8491,7 @@
             ? (state.backlogRescue.active
               ? "У цьому короткому блоці більше немає доступних листів. Можна завершити сесію."
               : "Тут з’являться важливі листи та розмови зі станом «Дія» або «Чекаю». Натисніть «Підібрати короткий блок», щоб безпечно розібрати частину Вхідних.")
-            : (state.query ? "За цим запитом нічого не знайдено." : "У цій папці немає листів."));
+            : (state.query ? "За цим запитом нічого не знайдено." : "У цій теці немає листів."));
           return;
         }
 
@@ -8517,7 +8517,7 @@
             top.append(make("span", {
               className: "thread-account-badge",
               text: thread.accountEmail,
-              attrs: { title: "Gmail-акаунт: " + thread.accountEmail }
+              attrs: { title: "Gmail-обліковий запис: " + thread.accountEmail }
             }));
           }
           if (hasFocus) {
@@ -10005,7 +10005,7 @@
         els.handoffDescription.textContent = kind === "calendar"
           ? "Дата й час не вгадуються. Заповніть їх самі; Google Calendar ще покаже форму перед збереженням."
           : "Після підтвердження лист отримає стан «Дія», а цей текст стане вашим наступним кроком.";
-        els.handoffAccount.textContent = "Gmail-акаунт: " + safeText(handoff.account && handoff.account.email, state.thread.accountEmail);
+        els.handoffAccount.textContent = "Gmail-обліковий запис: " + safeText(handoff.account && handoff.account.email, state.thread.accountEmail);
         els.handoffTitleInput.value = safeText(proposal.title);
         els.handoffDeadline.textContent = kind === "calendar" ? safeText(proposal.deadlineText) : "";
         els.handoffTimezone.textContent = kind === "calendar" ? safeText(proposal.timezone, "UTC") : "";
@@ -10063,7 +10063,7 @@
             dialog.threadId !== state.thread.id || dialog.accountId !== state.thread.accountId ||
             dialog.accountEmail !== safeText(state.thread.accountEmail).trim().toLowerCase() ||
             dialog.gmailUrl !== safeText(state.thread.handoff && state.thread.handoff.gmailUrl)) {
-          showSnackbar("Лист або Gmail-акаунт змінився. Відкрийте пропозицію ще раз.", { error: true });
+          showSnackbar("Лист або Gmail-обліковий запис змінився. Відкрийте пропозицію ще раз.", { error: true });
           return;
         }
         var title = safeText(els.handoffTitleInput.value).trim().slice(0, 320);
@@ -10332,7 +10332,7 @@
           chips.append(make("span", {
             className: "state-chip",
             text: "📮 " + state.thread.accountEmail,
-            attrs: { title: "Цей лист належить Gmail-акаунту " + state.thread.accountEmail }
+            attrs: { title: "Цей лист належить Gmail-обліковому запису " + state.thread.accountEmail }
           }));
         }
         chips.append(make("span", {
@@ -11744,7 +11744,7 @@
 
         clear(els.onboardingSummary);
         if (step === 3) {
-          var accountEmail = safeText(state.account && state.account.email, "Поточний Gmail-акаунт");
+          var accountEmail = safeText(state.account && state.account.email, "Поточний Gmail-обліковий запис");
           els.onboardingSummary.append(
             make("p", {}, make("strong", { text: "Gmail: " }), document.createTextNode(accountEmail)),
             make("p", {}, make("strong", { text: "Темп: " }), document.createTextNode(onboardingPresetLabel(state.onboardingDraft.sessionPreset))),
@@ -13242,7 +13242,7 @@
           ? "Доступно з оригіналу: " + (originalAttachments.length || Number(message.attachmentCount || 0)) +
             (originalAttachments.length ? " · " + formatSize(originalAttachments.reduce(function (sum, attachment) {
               return sum + Number(attachment.size || 0);
-            }, 0)) : "") + ". За замовчуванням не додаються."
+            }, 0)) : "") + ". Типово не додаються."
           : "";
       }
 
@@ -14508,7 +14508,7 @@
       function insertPublicSourceLink() {
         var href = safeComposeLink(els.composePublicSourceUrl.value);
         if (!href || href.indexOf("https:") !== 0) {
-          els.composePublicSourceStatus.textContent = "Вкажіть повне безпечне HTTPS-посилання без логіна й пароля в адресі.";
+          els.composePublicSourceStatus.textContent = "Вкажіть повне безпечне HTTPS-посилання без входу й пароля в адресі.";
           return false;
         }
         var label = publicSourceLinkLabel(href, els.composePublicLinkText.value);
@@ -14662,9 +14662,9 @@
         state.activeDriveSourceConnectionId = safeText(data.activeSourceConnectionId);
         clear(els.composeDriveAccount);
         if (!state.driveAccounts.length) {
-          els.composeDriveAccount.append(make("option", { text: "Drive не підключено", attrs: { value: "" } }));
+          els.composeDriveAccount.append(make("option", { text: "Drive не під’єднано", attrs: { value: "" } }));
           els.composeDriveAccount.disabled = true;
-          els.composeDriveStatus.textContent = "Підключіть Google Drive і оберіть потрібний акаунт.";
+          els.composeDriveStatus.textContent = "Під’єднайте Google Drive і оберіть потрібний обліковий запис.";
           return;
         }
         state.driveAccounts.forEach(function (account) {
@@ -14684,7 +14684,7 @@
 
       async function loadDriveAccounts(options) {
         var settings = options || {};
-        els.composeDriveStatus.textContent = "Перевіряю підключені Google Drive-акаунти…";
+        els.composeDriveStatus.textContent = "Перевіряю під’єднані Google Drive-облікові записи…";
         try {
           var data = await rpc({ op: "sourceAccounts", provider: "drive" });
           renderDriveAccounts(data);
@@ -14708,11 +14708,11 @@
           els.composeDriveContinue.dataset.expiresAt = String(Number(start && start.expiresAt || 0));
           els.composeDriveContinue.hidden = false;
           els.composeDriveContinue.focus();
-          els.composeDriveStatus.textContent = "Посилання готове. Натисніть «Продовжити в Google Drive», оберіть акаунт і після дозволу поверніться сюди.";
+          els.composeDriveStatus.textContent = "Посилання готове. Натисніть «Продовжити в Google Drive», оберіть обліковий запис і після дозволу поверніться сюди.";
         } catch (error) {
           els.composeDriveContinue.removeAttribute("href");
           els.composeDriveContinue.hidden = true;
-          els.composeDriveStatus.textContent = safeText(error.message, "Не вдалося почати підключення Drive.");
+          els.composeDriveStatus.textContent = safeText(error.message, "Не вдалося почати під’єднання Drive.");
         } finally {
           els.composeDriveConnect.disabled = false;
         }
@@ -14736,7 +14736,7 @@
 
       async function loadDriveSources(query) {
         if (!state.activeDriveSourceConnectionId) {
-          els.composeDriveStatus.textContent = "Спочатку підключіть і оберіть Google Drive-акаунт.";
+          els.composeDriveStatus.textContent = "Спочатку під’єднайте і оберіть Google Drive-обліковий запис.";
           clear(els.composeDriveResults);
           return;
         }
@@ -14770,12 +14770,12 @@
         }
         clear(els.composeBoxAccount);
         if (!state.boxAccounts.length) {
-          els.composeBoxAccount.append(make("option", { text: "Box не підключено", attrs: { value: "" } }));
+          els.composeBoxAccount.append(make("option", { text: "Box не під’єднано", attrs: { value: "" } }));
           els.composeBoxAccount.disabled = true;
           state.boxConnection = { loaded: true, status: "disconnected", connected: false, account: null, capacity: null };
           els.composeBoxDisconnected.hidden = false;
           els.composeBoxConnected.hidden = true;
-          els.composeBoxConnectionStatus.textContent = "Підключіть Box і оберіть потрібний акаунт.";
+          els.composeBoxConnectionStatus.textContent = "Під’єднайте Box і оберіть потрібний обліковий запис.";
         } else {
           state.boxAccounts.forEach(function (account) {
             var option = make("option", {
@@ -14796,8 +14796,8 @@
           els.composeBoxDisconnected.hidden = true;
           els.composeBoxConnected.hidden = false;
           els.composeBoxIdentity.textContent = [safeText(account.name, "Box"), safeText(account.email)].filter(Boolean).join(" · ");
-          els.composeBoxCapacity.textContent = "Підключено лише для читання";
-          els.composeBoxConnectionStatus.textContent = "Обрано Box: " + safeText(account.email || account.name, "акаунт");
+          els.composeBoxCapacity.textContent = "Під’єднано лише для читання";
+          els.composeBoxConnectionStatus.textContent = "Обрано Box: " + safeText(account.email || account.name, "обліковий запис");
         }
         if (previous && previous !== state.activeBoxSourceConnectionId) {
           state.boxFolderId = "0";
@@ -14813,7 +14813,7 @@
       async function loadBoxStatus(options) {
         var settings = options || {};
         var version = ++state.boxStatusVersion;
-        els.composeBoxConnectionStatus.textContent = "Перевіряю підключені Box-акаунти…";
+        els.composeBoxConnectionStatus.textContent = "Перевіряю під’єднані Box-облікові записи…";
         try {
           var accounts = await rpc({ op: "sourceAccounts", provider: "box" });
           if (version !== state.boxStatusVersion) return state.boxConnection;
@@ -14834,7 +14834,7 @@
       async function startBoxConnection(event) {
         if (event) event.preventDefault();
         els.composeBoxConnect.setAttribute("aria-disabled", "true");
-        els.composeBoxConnectionStatus.textContent = "Готую захищене підключення Box…";
+        els.composeBoxConnectionStatus.textContent = "Готую захищене під’єднання Box…";
         try {
           var start = normalizeBoxConnectStart(await rpc({ op: "sourceConnectStart", provider: "box" }));
           if (!start.authorizationUrl || !/^https:\/\/account\.box\.com\/api\/oauth2\/authorize\?/i.test(start.authorizationUrl)) {
@@ -14844,7 +14844,7 @@
           if (!openSafeUrl(start.authorizationUrl, false)) throw new Error("Не вдалося відкрити сторінку Box.");
           els.composeBoxConnectionStatus.textContent = "Завершіть вхід у Box у відкритій вкладці, потім поверніться сюди й натисніть «Оновити».";
         } catch (error) {
-          els.composeBoxConnectionStatus.textContent = safeText(error.message, "Не вдалося почати підключення Box.");
+          els.composeBoxConnectionStatus.textContent = safeText(error.message, "Не вдалося почати під’єднання Box.");
         } finally {
           els.composeBoxConnect.href = "#";
           els.composeBoxConnect.setAttribute("aria-disabled", "false");
@@ -14899,7 +14899,7 @@
         var item = make("article", { className: "compose-source-item compose-box-folder", attrs: { role: "listitem" } });
         var details = make("div", {});
         details.append(make("strong", { text: "📁 " + entry.name }));
-        var countLabel = entry.itemCount == null ? "Папка" : ("Папка · елементів: " + entry.itemCount);
+        var countLabel = entry.itemCount == null ? "Тека" : ("Тека · елементів: " + entry.itemCount);
         details.append(make("span", { text: [countLabel, entry.modifiedTime].filter(Boolean).join(" · ") }));
         var actions = make("div", { className: "compose-source-item-actions" });
         var open = make("button", { className: "outline-button", type: "button", text: "Відкрити" });
@@ -14928,7 +14928,7 @@
 
       async function loadBoxSources(options) {
         if (!state.activeBoxSourceConnectionId) {
-          els.composeBoxListStatus.textContent = "Спочатку підключіть і оберіть Box-акаунт.";
+          els.composeBoxListStatus.textContent = "Спочатку під’єднайте і оберіть Box-обліковий запис.";
           clear(els.composeBoxResults);
           return null;
         }
@@ -14973,7 +14973,7 @@
           renderBoxSourceResults();
           els.composeBoxListStatus.textContent = state.boxItems.length
             ? "Показано: " + state.boxItems.length + (state.boxNextPageToken ? " · є ще" : "")
-            : "У цій папці нічого не знайдено.";
+            : "У цій теці нічого не знайдено.";
           return normalized;
         } catch (error) {
           if (version === state.boxRequestVersion) {
@@ -15009,11 +15009,11 @@
           state.boxNextPageToken = "";
           await loadBoxStatus({ loadList: false });
           closeBoxDisconnectDialog(false);
-          els.composeBoxConnectionStatus.textContent = "Box відключено. Файли й пошта не змінені.";
+          els.composeBoxConnectionStatus.textContent = "Box вимкнено. Файли й пошта не змінені.";
           showSnackbar("Доступ до Box відкликано.", { success: true });
           window.setTimeout(function () { els.composeBoxConnect.focus(); }, 0);
         } catch (error) {
-          els.composeBoxDisconnectStatus.textContent = safeText(error.message, "Не вдалося відключити Box.");
+          els.composeBoxDisconnectStatus.textContent = safeText(error.message, "Не вдалося вимкнути Box.");
           els.composeBoxDisconnectCancel.disabled = false;
           els.composeBoxDisconnectConfirm.disabled = false;
         }
@@ -15774,7 +15774,7 @@
             event.preventDefault();
             els.continueGoogleOAuth.removeAttribute("href");
             els.continueGoogleOAuth.hidden = true;
-            showSnackbar("Посилання Google завершилося. Створіть нове підключення.", { error: true });
+            showSnackbar("Посилання Google завершилося. Створіть нове під’єднання.", { error: true });
           }
         });
         els.filterSelect.addEventListener("change", function () {
@@ -15905,7 +15905,7 @@
             event.preventDefault();
             els.composeDriveContinue.removeAttribute("href");
             els.composeDriveContinue.hidden = true;
-            els.composeDriveStatus.textContent = "Посилання Google завершилося. Створіть нове підключення.";
+            els.composeDriveStatus.textContent = "Посилання Google завершилося. Створіть нове під’єднання.";
           }
         });
         els.composeDriveRefresh.addEventListener("click", function () { loadDriveAccounts({ loadList: true }); });
@@ -16304,7 +16304,7 @@
           timestampLabel: "08:12",
           unread: true,
           important: true,
-          focus: { priority: "critical", label: "Не пропустити", color: "#d93025", rank: 4, source: "rule", reason: "Правило: безпека акаунта" }
+          focus: { priority: "critical", label: "Не пропустити", color: "#d93025", rank: 4, source: "rule", reason: "Правило: безпека облікового запису" }
         },
         {
           id: "t-nova",
