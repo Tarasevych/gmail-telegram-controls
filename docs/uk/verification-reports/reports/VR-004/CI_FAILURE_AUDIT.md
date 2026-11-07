@@ -83,7 +83,7 @@ Representative logs підтверджують класифікацію: [f4fc31
 3. Невідоме значення лишається fail-closed.
 4. `Permission basis` приймає лише canonical value.
 5. UK/EN language markers є обов'язковими.
-6. Verification source hashes рахуються після canonical LF normalization.
+6. Verification source hashes враховуються після canonical LF normalization.
 7. LF і CRLF fixtures повинні давати однаковий canonical hash.
 8. Перед push запускаються request, bilingual, knowledge-hub і verification validators.
 9. Після push перевіряються лише нові runs; старі failed runs не переписуються й не перезапускаються масово.
