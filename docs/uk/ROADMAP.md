@@ -10,13 +10,13 @@
 | B1-04 | Виконано локально | Neutral GitHub OAuth callback із credentialless POST до Apps Script | query очищається до передачі; one-use user/chat/zone state; Google multi-login cookies не надсилаються |
 | B1-05 | Виконано | Зберегти новий redirect URI в Google OAuth client | `OAuth client saved`; точний URI прочитано назад |
 | B1-06 | Виконано | Credentialless OAuth relay та послідовні immutable v41/v42 | stable v42, staging 0, точний v41 rollback |
-| B1-07 | Не перевірено | Додати новий контрольний Gmail-акаунт через fresh OAuth flow | наявні підключення працюють; новий account choice/consent/callback не виконувався під час E4/E5 |
+| B1-07 | Не перевірено | Додати новий контрольний Gmail-обліковий запис через fresh OAuth flow | наявні під'єднання працюють; новий account choice/consent/callback не виконувався під час E4/E5 |
 | B1-08 | Виконано production для owner lane | Повний real-time acceptance у @TarasevychGmailNotifierBot | stable v55 автоматично доставив одну картку; два `/check` не створили дубль; exact-marker count лишився 1 |
 | B1-09 | Виконано | Promote, cleanup, production Web App menu | stable v55, staging 0, legacy staging 0, journal `cleaned`; menu відкриває neutral GitHub Pages bridge |
 | B1-10 | Виконано | Оновити UK/EN docs, commit і push | postmortem та lessons опубліковано у c98e69e; три documentation Actions пройшли; release tag лишається gated B1-07/B1-08 |
 
 | B1-11 | Виконано production | Відокремити realtime delivery від frozen backlog і запускати її перед maintenance | bounded recent-window lane stable v55 доставила контрольний лист перед backlog maintenance |
-| B1-12 | Частково перевірено staging | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | три ізольовані account roots і one-click switch перевірені; незалежний live fan-out із другого акаунта ще не доведено |
+| B1-12 | Частково перевірено staging | Агрегувати всі notification accounts в один фізичний Telegram-потік з account identity та account-scoped діями | три ізольовані account roots і one-click switch перевірені; незалежний live fan-out із другого облікового запису ще не доведено |
 
 ## Правило руху
 
@@ -111,8 +111,8 @@ Versie 2 не відкривається без точного owner-наказ�
 ## Оновлення дорожньої карти від 2026-07-22
 
 - [x] Підтвердити автоматичну доставку для primary Gmail root.
-- [x] Підтвердити автоматичну доставку для root-2 з правильною позначкою акаунта.
-- [x] Підтвердити автоматичну доставку для root-3 з правильною позначкою акаунта.
+- [x] Підтвердити автоматичну доставку для root-2 з правильною позначкою облікового запису.
+- [x] Підтвердити автоматичну доставку для root-3 з правильною позначкою облікового запису.
 - [x] Підтвердити dedupe для кожного secondary root двома повторними /check.
 - [x] Відокремити Gmail Spam-класифікацію від product delivery failure.
 - [x] Закрити secondary-root частину B1-16 і B1-19 production evidence.
@@ -143,9 +143,9 @@ Versie 2 не відкривається без точного owner-наказ�
 
 - **Статус:** VERIFIED — source, native staging і production acceptance пройшли в immutable v64.
 - **Дата:** 2026-07-22.
-- **Обсяг:** замінити static owner heading на блок, похідний від opaque connection ID, для одного акаунта або фактичного shared view без другої state-моделі.
-- **Реалізація:** повне ім'я/email, український родовий відмінок із safe fallback, `Спільна пошта` лише для двох або більше включених акаунтів, accessible name-to-email disclosure, loading/empty/error states, responsive wrapping і narrow-screen disclosure повної адреси.
-- **Acceptance:** три isolated roots, real avatar і fallback, switch на інший акаунт та повернення без OAuth, actual shared mapping і два fresh production launches.
+- **Обсяг:** замінити static owner heading на блок, похідний від opaque connection ID, для одного облікового запису або фактичного shared view без другої state-моделі.
+- **Реалізація:** повне ім'я/email, український родовий відмінок із safe fallback, `Спільна пошта` лише для двох або більше увімкнених облікових записів, accessible name-to-email disclosure, loading/empty/error states, responsive wrapping і narrow-screen disclosure повної адреси.
+- **Acceptance:** три isolated roots, real avatar і fallback, switch на інший обліковий запис та повернення без OAuth, actual shared mapping і два fresh production launches.
 - **Тести:** focused `88/88`; final cumulative suite `505/505`.
 - **Доказ:** [GT-031](ISSUES.md), [VR-013](verification-reports/reports/VR-013/README.md). Source requests: `REQ-0032` і `REQ-0033`.
 - **English mirror:** [docs/en/ROADMAP.md](../en/ROADMAP.md).
@@ -195,7 +195,7 @@ Versie 2 не відкривається без точного owner-наказ�
 ## P0 gate продовження після v67
 
 - [x] Усунути дубльовану видиму послідовність bridge та bootstrap loading.
-- [x] Зберегти єдиний bootstrap/auth single-flight і блокування приватного кешу до серверної перевірки акаунтів.
+- [x] Зберегти єдиний bootstrap/auth single-flight і блокування приватного кешу до серверної перевірки облікових записів.
 - [x] Зберегти immutable v67, повернути production menu та після неповного acceptance видалити лише точний тимчасовий staging deployment v67.
 - [ ] Додати відтворюване внутрішнє вимірювання time-to-interactive без overhead керування desktop і screenshot.
 - [ ] Погодити та реалізувати device-bound unlock або single-origin architecture до заяви про offline-запуск приватної пошти.
@@ -286,7 +286,7 @@ Versie 2 не відкривається без точного owner-наказ�
 
 Status: PARTIAL
 
-Реалізовано першу незавершену смугу продовження B-03: отримання деталей ланцюжка/листа тепер проходить через обмежену спільну чергу передач без блокування cache-first рендерингу. Focused contract-тести пройшли 104/104, а повний Apps Script suite — 577/577. У B1-31 залишаються збереження чернеток, URL import, server-resumable restart, справжній abort там, де його підтримує транспорт, і native acceptance для повільної мережі/згортання.
+Реалізовано першу незавершену смугу продовження B-03: отримання деталей ланцюжка/листа тепер проходить через обмежену спільну чергу передач без блокування cache-first відмальовування. Focused contract-тести пройшли 104/104, а повний Apps Script suite — 577/577. У B1-31 залишаються збереження чернеток, URL import, server-resumable restart, справжній abort там, де його підтримує транспорт, і native acceptance для повільної мережі/згортання.
 
 ## 2026-07-23: інкремент B1-31 для збереження чернеток
 
@@ -334,7 +334,7 @@ Status: BLOCKED
 - **Статус:** PARTIAL
 - **Source request:** `REQ-0035`
 - **Завершено у source:** strict Drive callback envelope, fail-closed provider binding після one-use state consume та збереження чинної owner/account/token-generation ізоляції.
-- **Локальний evidence gate:** focused synthetic test має підтвердити exact route/redirect, bounded hash-only state, replay/expiry, sanitized errors, token-free DTO, refresh failure і відключення лише exact selected Drive account.
+- **Локальний evidence gate:** focused synthetic test має підтвердити exact route/redirect, bounded hash-only state, replay/expiry, sanitized errors, token-free DTO, refresh failure і вимкнення лише exact selected Drive account.
 - **Release boundary:** це source-only V3 `D-01`; real Google OAuth, consent, Gmail, Telegram, staging, production та release helper не входять у контур.
 - **Ще потрібно:** native provider redirect, deployed callback, provider refresh/revocation і Mini App acceptance. До такого evidence статус лишається `PARTIAL`.
 - **Доказ:** [GT-057](ISSUES.md), [VR-028](verification-reports/reports/VR-028/README.md).
